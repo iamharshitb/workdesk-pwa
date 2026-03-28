@@ -6,10 +6,9 @@
   <title>WorkDesk — Input</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#04070f">
+  <meta name="theme-color" content="#07090f">
   <style>
-    /* Input page task card actions */
-    .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:8px;flex-wrap:wrap}
+    .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
   </style>
 </head>
 <body>
@@ -27,11 +26,9 @@
 
 <div class="page">
 
-  <!-- ══ TEAM MEMBERS ══ -->
+  <!-- TEAM MEMBERS -->
   <div class="panel fi" style="animation-delay:.03s">
-    <div class="panel-hd">
-      <span class="panel-title">Team Members</span>
-    </div>
+    <div class="panel-hd"><span class="panel-title">Team Members</span></div>
     <div class="panel-body">
       <div id="member-list"></div>
       <div class="add-member-row">
@@ -42,28 +39,24 @@
     </div>
   </div>
 
-  <!-- ══ NEW TASK ══ -->
+  <!-- NEW TASK -->
   <div class="panel fi" style="animation-delay:.08s">
     <div class="panel-hd">
       <span class="panel-title">New Task</span>
-      <span id="edit-badge" style="display:none;font-size:9px;color:var(--amber);letter-spacing:.06em">EDITING</span>
+      <span id="edit-badge" style="display:none;font-size:12px;color:var(--amber);font-weight:700">EDITING</span>
     </div>
     <div class="panel-body">
 
-      <!-- Task name -->
-      <input class="task-input" id="f-task" placeholder="What's the task?" maxlength="120"
-        onkeydown="if(event.key==='Enter')document.getElementById('f-task').blur()">
+      <input class="task-input" id="f-task" placeholder="What's the overall task?" maxlength="120"
+        onkeydown="if(event.key==='Enter')this.blur()">
 
-      <!-- Tap to assign -->
-      <div class="sect-label" style="margin-top:12px">Assign team members</div>
+      <div class="sect-label">Assign team members</div>
       <div class="member-chips" id="chip-area">
-        <span style="font-size:9px;color:var(--text3);letter-spacing:.06em">Add team members above first</span>
+        <span style="font-size:14px;color:var(--text3);font-weight:600">Add team members above first</span>
       </div>
 
-      <!-- Role inputs — appear after tapping -->
-      <div id="role-section" style="display:none"></div>
+      <div id="role-section"></div>
 
-      <!-- Priority -->
       <div class="sect-label">Priority</div>
       <div class="p-row" id="p-row">
         <button class="p-chip" data-p="critical" onclick="selectPriority(this)">Critical</button>
@@ -72,23 +65,22 @@
         <button class="p-chip" data-p="low"      onclick="selectPriority(this)">Low</button>
       </div>
 
-      <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ REGISTER TASK</button>
+      <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ Register Task</button>
       <button id="cancel-btn" onclick="cancelEdit()"
-        style="display:none;width:100%;margin-top:6px;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:.08em;cursor:pointer">
-        CANCEL EDIT
+        style="display:none;width:100%;margin-top:8px;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">
+        Cancel Edit
       </button>
-
     </div>
   </div>
 
-  <!-- ══ TASK LIST ══ -->
+  <!-- TASK LIST -->
   <div class="panel fi" style="animation-delay:.13s">
     <div class="panel-hd">
       <span class="panel-title">All Tasks</span>
-      <span id="task-count" style="font-size:9px;color:var(--text2);letter-spacing:.06em"></span>
+      <span id="task-count" style="font-size:12px;color:var(--text2);font-weight:600"></span>
     </div>
     <div class="panel-body" id="task-list">
-      <div id="page-loader"><span class="loader"></span>LOADING...</div>
+      <div id="page-loader"><span class="loader"></span>Loading...</div>
     </div>
   </div>
 
@@ -98,9 +90,10 @@
 <div class="modal-overlay" id="del-modal">
   <div class="modal">
     <div class="modal-title">⚠ Delete Task</div>
-    <div class="modal-sub">Enter password to permanently delete this task.</div>
+    <div class="modal-sub">Enter your delete password to remove this task permanently.</div>
     <div class="modal-task-name" id="del-modal-task"></div>
-    <input class="modal-inp" type="password" id="del-pw-inp" placeholder="Password..." onkeydown="if(event.key==='Enter')confirmDelete()">
+    <input class="modal-inp" type="password" id="del-pw-inp" placeholder="Password..."
+      onkeydown="if(event.key==='Enter')confirmDelete()">
     <div class="modal-err" id="del-pw-err">Incorrect password. Try again.</div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeDeleteModal()">Cancel</button>
@@ -112,24 +105,42 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { onUserReady, getMembers, addMember as fbAddMember, deleteMember as fbDeleteMember,
-         getTasks, addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
-         DELETE_PASSWORD } from './js/firebase.js';
+import {
+  onUserReady, getMembers, addMember as fbAddMember, deleteMember as fbDeleteMember,
+  getTasks, addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
+  DELETE_PASSWORD
+} from './js/firebase.js';
 
 let members = [], tasks = [];
-let selectedMembers = {}; // { memberId: { name, role } }
+// selectedMembers stores: { memberId: { name, role } }
+// role = the respective task text for that member
+let selectedMembers = {};
 let selectedPriority = 'medium';
 let editingId = null;
+let pendingDeleteId = null;
 
-// ── BOOTSTRAP ──────────────────────────────────────────────────────────
+// ── THEME ──────────────────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('wd_theme') || 'dark';
+if (savedTheme === 'light') {
+  document.body.classList.add('light');
+  document.getElementById('theme-btn').textContent = '☽ Dark';
+}
+window.toggleTheme = () => {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('wd_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
+};
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 onUserReady(async () => {
   [members, tasks] = await Promise.all([getMembers(), getTasks()]);
   renderMemberList();
   renderChips();
   renderTaskList();
+  document.getElementById('page-loader').remove();
 });
 
-// ── MEMBERS ─────────────────────────────────────────────────────────────
+// ── MEMBERS ────────────────────────────────────────────────────────────────
 window.addMember = async () => {
   const inp = document.getElementById('m-inp');
   const name = inp.value.trim();
@@ -145,7 +156,7 @@ window.addMember = async () => {
 };
 
 window.removeMember = async (id) => {
-  if (!confirm('Remove member?')) return;
+  if (!confirm('Remove this member?')) return;
   await fbDeleteMember(id);
   members = members.filter(m => m.id !== id);
   delete selectedMembers[id];
@@ -155,29 +166,28 @@ window.removeMember = async (id) => {
 function renderMemberList() {
   const el = document.getElementById('member-list');
   if (!members.length) { el.innerHTML = ''; return; }
-  el.innerHTML = members.map(m => `
-    <div class="member-list-item">
-      <span class="mli-name">
-        <span class="mli-av">${initials(m.name)}</span>
-        ${esc(m.name)}
-      </span>
+  el.innerHTML = members.map(m =>
+    `<div class="member-list-item">
+      <span class="mli-name"><span class="mli-av">${initials(m.name)}</span>${esc(m.name)}</span>
       <button class="del-btn" onclick="removeMember('${m.id}')">✕</button>
-    </div>`).join('') + '<div class="divider"></div>';
+    </div>`
+  ).join('') + '<div class="divider"></div>';
 }
 
-// ── CHIPS ────────────────────────────────────────────────────────────────
+// ── CHIPS ──────────────────────────────────────────────────────────────────
 function renderChips() {
   const el = document.getElementById('chip-area');
   if (!members.length) {
-    el.innerHTML = '<span style="font-size:9px;color:var(--text3);letter-spacing:.06em">Add team members above first</span>';
+    el.innerHTML = '<span style="font-size:14px;color:var(--text3);font-weight:600">Add team members above first</span>';
     return;
   }
-  el.innerHTML = members.map(m => `
-    <div class="m-chip${selectedMembers[m.id] ? ' sel' : ''}" onclick="toggleMember('${m.id}','${esc(m.name)}')">
+  el.innerHTML = members.map(m =>
+    `<div class="m-chip${selectedMembers[m.id] ? ' sel' : ''}" onclick="toggleMember('${m.id}', '${esc(m.name)}')">
       <span class="m-av">${initials(m.name)}</span>
       <span>${esc(m.name)}</span>
       <span class="m-ck">✓</span>
-    </div>`).join('');
+    </div>`
+  ).join('');
 }
 
 window.toggleMember = (id, name) => {
@@ -190,30 +200,36 @@ window.toggleMember = (id, name) => {
   renderRoleSection();
 };
 
-// ── ROLE SECTION ─────────────────────────────────────────────────────────
+// ── ROLE SECTION ──────────────────────────────────────────────────────────
+// KEY FIX: We use a global setRole(id, value) function instead of inline
+// oninput with quotes — this avoids the HTML quote-escaping bug that was
+// preventing role values from being saved.
+window.setRole = (id, value) => {
+  if (selectedMembers[id]) selectedMembers[id].role = value;
+};
+
 function renderRoleSection() {
   const sec = document.getElementById('role-section');
   const sel = Object.entries(selectedMembers);
-  if (!sel.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
-  sec.style.display = '';
+  if (!sel.length) { sec.innerHTML = ''; return; }
   sec.innerHTML = `
-    <div class="role-section">
-      <div class="sect-label" style="margin-top:0">Respective Task</div>
-      ${sel.map(([id, m]) => `
-        <div class="role-row">
+    <div style="border-top:1px solid var(--border);padding-top:13px;margin-top:13px">
+      <div class="sect-label" style="margin-top:0">Respective Task for each member</div>
+      ${sel.map(([id, m]) =>
+        `<div class="role-row">
           <span class="role-name">${esc(m.name.split(' ')[0])}</span>
-          <input class="role-input" placeholder="What's their task in this?"
+          <input class="role-input"
+            id="role-${id}"
+            placeholder="What's their specific task?"
             value="${esc(m.role)}"
-            oninput="selectedMembers['${id}'].role=this.value"
-            maxlength="60">
-        </div>`).join('')}
+            oninput="setRole('${id}', this.value)"
+            maxlength="80">
+        </div>`
+      ).join('')}
     </div>`;
 }
 
-// ── PRIORITY ─────────────────────────────────────────────────────────────
-// Pre-select medium
-document.querySelector('.p-chip.pm').classList.add('pm');
-
+// ── PRIORITY ──────────────────────────────────────────────────────────────
 window.selectPriority = (btn) => {
   document.querySelectorAll('.p-chip').forEach(b => b.className = 'p-chip');
   const p = btn.dataset.p;
@@ -221,46 +237,47 @@ window.selectPriority = (btn) => {
   btn.classList.add({ critical:'pc', high:'ph', medium:'pm', low:'pl' }[p]);
 };
 
-// ── SUBMIT ────────────────────────────────────────────────────────────────
+// ── SUBMIT ─────────────────────────────────────────────────────────────────
 window.submitTask = async () => {
   const label = document.getElementById('f-task').value.trim();
   if (!label) { shake('f-task'); return; }
 
-  const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({ id, name: m.name, role: m.role }));
+  // Collect members with their respective tasks (role field)
+  const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({
+    id,
+    name: m.name,
+    role: m.role.trim()   // role = respective task text
+  }));
+
   const btn = document.getElementById('send-btn');
-  btn.disabled = true;
-  btn.textContent = '...';
+  btn.disabled = true; btn.textContent = '...';
 
   try {
     if (editingId) {
       await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr });
       const idx = tasks.findIndex(t => t.id === editingId);
       if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr };
-      toast('Task updated ✓');
-      cancelEdit();
+      toast('Task updated ✓'); cancelEdit();
     } else {
       const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, status: 'todo' });
-      toast('Task registered ✓');
-      resetForm();
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, status: 'todo', memberStatus: {} });
+      toast('Task registered ✓'); resetForm();
     }
     renderTaskList();
   } catch(e) { toast('Error: ' + e.message, 'err'); }
 
   btn.disabled = false;
-  btn.textContent = editingId ? '⬡ UPDATE TASK' : '⬡ REGISTER TASK';
+  btn.textContent = editingId ? '⬡ Update Task' : '⬡ Register Task';
 };
 
-// ── EDIT ──────────────────────────────────────────────────────────────────
+// ── EDIT ───────────────────────────────────────────────────────────────────
 window.editTask = (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
+  const t = tasks.find(t => t.id === id); if (!t) return;
   editingId = id;
   document.getElementById('f-task').value = t.label;
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
-  // highlight priority
   document.querySelectorAll('.p-chip').forEach(b => {
     b.className = 'p-chip';
     if (b.dataset.p === selectedPriority) b.classList.add({critical:'pc',high:'ph',medium:'pm',low:'pl'}[selectedPriority]);
@@ -268,26 +285,41 @@ window.editTask = (id) => {
   renderChips(); renderRoleSection();
   document.getElementById('edit-badge').style.display = '';
   document.getElementById('cancel-btn').style.display = '';
-  document.getElementById('send-btn').textContent = '⬡ UPDATE TASK';
+  document.getElementById('send-btn').textContent = '⬡ Update Task';
   document.getElementById('f-task').scrollIntoView({ behavior: 'smooth' });
   document.getElementById('f-task').focus();
 };
 
 window.cancelEdit = () => {
-  editingId = null;
-  resetForm();
+  editingId = null; resetForm();
   document.getElementById('edit-badge').style.display = 'none';
   document.getElementById('cancel-btn').style.display = 'none';
-  document.getElementById('send-btn').textContent = '⬡ REGISTER TASK';
+  document.getElementById('send-btn').textContent = '⬡ Register Task';
+};
+
+// ── CYCLE STATUS ───────────────────────────────────────────────────────────
+window.cycleStatus = async (id) => {
+  const t = tasks.find(t => t.id === id); if (!t) return;
+  const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
+  t.status = next;
+  await fbUpdateTask(id, { status: next });
+  renderTaskList();
+};
+
+// ── TOGGLE OVERALL DONE ────────────────────────────────────────────────────
+window.toggleDone = async (id) => {
+  const t = tasks.find(t => t.id === id); if (!t) return;
+  const next = t.status === 'done' ? 'todo' : 'done';
+  t.status = next;
+  await fbUpdateTask(id, { status: next });
+  renderTaskList();
+  toast(next === 'done' ? '✓ Task complete!' : 'Task reopened');
 };
 
 // ── DELETE (password protected) ────────────────────────────────────────────
-let _pendingDeleteId = null;
-
 window.deleteTask = (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
-  _pendingDeleteId = id;
+  const t = tasks.find(t => t.id === id); if (!t) return;
+  pendingDeleteId = id;
   document.getElementById('del-modal-task').textContent = t.label;
   document.getElementById('del-pw-inp').value = '';
   document.getElementById('del-pw-err').style.display = 'none';
@@ -295,123 +327,85 @@ window.deleteTask = (id) => {
   document.getElementById('del-modal').classList.add('open');
   setTimeout(() => document.getElementById('del-pw-inp').focus(), 120);
 };
-
 window.closeDeleteModal = () => {
   document.getElementById('del-modal').classList.remove('open');
-  _pendingDeleteId = null;
+  pendingDeleteId = null;
 };
-
 window.confirmDelete = async () => {
   const pw = document.getElementById('del-pw-inp').value;
   const errEl = document.getElementById('del-pw-err');
   const inp = document.getElementById('del-pw-inp');
   try {
-    await fbDeleteTask(_pendingDeleteId, pw);
-    tasks = tasks.filter(t => t.id !== _pendingDeleteId);
-    closeDeleteModal();
-    renderTaskList();
-    toast('Task deleted');
+    await fbDeleteTask(pendingDeleteId, pw);
+    tasks = tasks.filter(t => t.id !== pendingDeleteId);
+    closeDeleteModal(); renderTaskList(); toast('Task deleted');
   } catch(e) {
-    inp.classList.add('wrong');
-    errEl.style.display = 'block';
-    inp.value = '';
-    inp.focus();
-    setTimeout(() => inp.classList.remove('wrong'), 600);
+    inp.classList.add('wrong'); errEl.style.display = 'block'; inp.value = '';
+    inp.focus(); setTimeout(() => inp.classList.remove('wrong'), 600);
   }
 };
 
-// ── CYCLE STATUS ───────────────────────────────────────────────────────────
-window.cycleStatus = async (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
-  const next = { todo: 'inprog', inprog: 'done', done: 'todo' }[t.status || 'todo'];
-  t.status = next;
-  await fbUpdateTask(id, { status: next });
-  renderTaskList();
-};
-
-window.cycleToggDone = async (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
-  const next = t.status === 'done' ? 'todo' : 'done';
-  t.status = next;
-  await fbUpdateTask(id, { status: next });
-  renderTaskList();
-};
-
-// ── TASK LIST ───────────────────────────────────────────────────────────────
+// ── TASK LIST ──────────────────────────────────────────────────────────────
 function renderTaskList() {
   const el = document.getElementById('task-list');
   document.getElementById('task-count').textContent = tasks.length ? tasks.length + ' tasks' : '';
-  if (!tasks.length) {
-    el.innerHTML = '<div class="empty"><div class="ei">◻</div>No tasks yet</div>';
-    return;
-  }
+  if (!tasks.length) { el.innerHTML = '<div class="empty"><div class="ei">◻</div>No tasks yet</div>'; return; }
   el.innerHTML = tasks.map((t, i) => {
-    const pc = { critical:'pc', high:'ph', medium:'pm', low:'pl' }[t.priority || 'medium'];
-    const stTag = { todo:'t-todo', inprog:'t-ip', done:'t-done' }[t.status || 'todo'];
-    const stLbl = { todo:'Todo', inprog:'In Progress', done:'Done' }[t.status || 'todo'];
-    const pTag  = { critical:'t-crit', high:'t-high', medium:'t-med', low:'t-low' }[t.priority || 'medium'];
+    const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+    const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+    const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+    const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
     const isDone = t.status === 'done';
-    const memberPills = (t.members || []).map(m =>
-      `<span class="m-pill" style="display:inline-flex"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${m.role ? esc(m.role) : 'Not set'}</span></span>`
+    // Show each member with their respective task
+    const memberPills = (t.members||[]).map(m =>
+      `<span class="m-pill">
+        <span class="m-pill-name">${esc(m.name)}</span>
+        <span class="m-pill-role">${m.role ? esc(m.role) : 'No task set'}</span>
+      </span>`
     ).join('');
     return `
       <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
         <div class="tc-title">${esc(t.label)}</div>
         <div class="tc-meta">
-          <span class="tag ${pTag}">${t.priority || 'medium'}</span>
+          <span class="tag ${pTag}">${t.priority||'medium'}</span>
           <span class="tag ${stTag}">${stLbl}</span>
         </div>
         <div class="tc-members">${memberPills}</div>
         <div class="tc-actions-input">
           <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-          <button class="mark-done-btn${isDone?' undone':''}" onclick="cycleToggDone('${t.id}')">${isDone?'↩ Reopen':'✓ Mark Done'}</button>
-          <button class="del-btn" onclick="editTask('${t.id}')" title="Edit">✎</button>
-          <button class="del-btn" onclick="deleteTask('${t.id}')" title="Delete">✕</button>
+          <button class="mark-done-btn${isDone?' undone':''}" onclick="toggleDone('${t.id}')">
+            ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+          </button>
+          <button class="del-btn" onclick="editTask('${t.id}')" title="Edit" style="font-size:17px">✎</button>
+          <button class="del-btn" onclick="deleteTask('${t.id}')" title="Delete" style="font-size:17px">✕</button>
         </div>
       </div>`;
   }).join('');
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
+// ── UTILS ──────────────────────────────────────────────────────────────────
 function resetForm() {
   document.getElementById('f-task').value = '';
-  selectedMembers = {};
-  selectedPriority = 'medium';
+  selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');
   renderChips(); renderRoleSection();
 }
 
-function initials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
 function shake(id) {
   const el = document.getElementById(id);
   el.style.borderColor = 'var(--red)';
-  el.animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:200});
-  setTimeout(() => el.style.borderColor = '', 900);
+  el.animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:220});
+  setTimeout(()=>el.style.borderColor='',900);
 }
-
 let _tt;
-function toast(msg, type = '') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = 'toast ' + type;
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type;
   void el.offsetWidth; el.classList.add('show');
-  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2400);
-}
-
-// ── THEME TOGGLE ──────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('wd_theme') || 'dark';
-if (savedTheme === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☽ Dark'; }
-function toggleTheme() {
-  const isLight = document.body.classList.toggle('light');
-  localStorage.setItem('wd_theme', isLight ? 'light' : 'dark');
-  document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2400);
 }
 </script>
 </body>

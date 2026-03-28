@@ -111,7 +111,7 @@ window.toggleTheme = () => {
 onUserReady(async () => {
   [tasks, members] = await Promise.all([getTasks(), getMembers()]);
   if (!MY_NAME) {
-    MY_NAME = prompt('Your name (so we can show your tasks):') || '';
+    MY_NAME = prompt('Your name (to show your tasks):') || '';
     if (MY_NAME) localStorage.setItem('wd_myname', MY_NAME);
   }
   renderAll();
@@ -121,87 +121,136 @@ onUserReady(async () => {
 
 function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); }
 
-// STATS
+// ── HELPER: get member's individual status on a task ──────────────────────
+// memberStatus is { memberId: 'todo'|'done' } stored on each task in Firestore
+// Falls back to overall task status for old tasks that don't have memberStatus yet
+function getMemberStatus(task, memberId) {
+  if (task.memberStatus && task.memberStatus[memberId] !== undefined) {
+    return task.memberStatus[memberId];
+  }
+  // Fallback for old tasks: use overall task status
+  return task.status || 'todo';
+}
+
+// ── UPDATE member's individual status ─────────────────────────────────────
+async function setMemberStatus(taskId, memberId, newStatus) {
+  const t = tasks.find(t => t.id === taskId); if (!t) return;
+  if (!t.memberStatus) t.memberStatus = {};
+  t.memberStatus[memberId] = newStatus;
+
+  // Update overall task status:
+  // If ALL members are done → overall done
+  // If ANY member is inprog → overall inprog
+  // Otherwise → todo
+  const memberIds = (t.members||[]).map(m => m.id);
+  const allDone = memberIds.length > 0 && memberIds.every(id => (t.memberStatus[id]||'todo') === 'done');
+  const anyInprog = memberIds.some(id => (t.memberStatus[id]||'todo') === 'inprog');
+  const overallStatus = allDone ? 'done' : anyInprog ? 'inprog' : 'todo';
+  t.status = overallStatus;
+
+  const updates = { status: overallStatus };
+  updates[`memberStatus.${memberId}`] = newStatus;
+  await updateTask(taskId, updates);
+  renderAll();
+  toast(newStatus === 'done' ? '✓ Respective task done!' : 'Reopened');
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────────
 function renderStats() {
   const total = tasks.length;
   const done = tasks.filter(t => t.status === 'done').length;
   const inprog = tasks.filter(t => t.status === 'inprog').length;
   const crit = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
   const pct = total ? Math.round(done / total * 100) : 0;
-  set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
+  set('s-total',total); set('s-inprog',inprog); set('s-done',done); set('s-crit',crit);
   set('prog-pct', pct + '%');
   document.getElementById('prog-fill').style.width = pct + '%';
 }
 
-// MY TASKS
+// ── MY TASKS ───────────────────────────────────────────────────────────────
 function renderMyTasks() {
   const el = document.getElementById('my-tasks-list');
+  const myId = members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id;
   const mine = MY_NAME
-    ? tasks.filter(t => (t.members || []).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
+    ? tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
     : tasks;
-  if (!mine.length) { el.innerHTML = `<div class="empty"><div class="ei">◈</div>${MY_NAME ? 'No tasks assigned to you yet' : 'No tasks yet'}</div>`; return; }
+  if (!mine.length) {
+    el.innerHTML = `<div class="empty"><div class="ei">◈</div>${MY_NAME ? 'No tasks assigned to you yet' : 'No tasks yet'}</div>`;
+    return;
+  }
   const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
-  const sorted = [...mine].sort((a,b) => (so[a.status]??1)-(so[b.status]??1) || (po[a.priority]??2)-(po[b.priority]??2));
-  el.innerHTML = sorted.map((t, i) => myTaskCard(t, i)).join('');
+  const sorted = [...mine].sort((a,b) => (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2));
+  el.innerHTML = sorted.map((t,i) => {
+    const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+    const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
+    const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+    const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+    const isDone = t.status === 'done';
+    const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
+    const myRespTask = myMemberData?.role || '';
+    const myMemberId = myMemberData ? members.find(m=>m.name.toLowerCase()===MY_NAME.toLowerCase())?.id : null;
+    const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
+    const myIsDone = myStatus === 'done';
+    const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
+    return `
+      <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
+        <div class="tc-title">${esc(t.label)}</div>
+        <div class="tc-meta">
+          <span class="tag ${pTag}">${t.priority||'Medium'}</span>
+          <span class="tag ${stTag}">${stLbl}</span>
+        </div>
+        <div class="tc-members">
+          <span class="m-pill">
+            <span class="m-pill-name">You</span>
+            <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
+          </span>
+          ${others.map(m => {
+            const otherId = members.find(mm=>mm.name.toLowerCase()===m.name.toLowerCase())?.id;
+            const otherStatus = otherId ? getMemberStatus(t, otherId) : t.status;
+            const otherDone = otherStatus === 'done';
+            return `<span class="m-pill" style="${otherDone?'opacity:.6':''}">
+              <span class="m-pill-name">${esc(m.name)}${otherDone?' ✓':''}</span>
+              <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
+            </span>`;
+          }).join('')}
+        </div>
+        <div class="tc-actions">
+          <button class="sc-btn" onclick="cycleOverall('${t.id}')">${stLbl} →</button>
+          ${myMemberId ? `
+          <button class="mark-done-btn${myIsDone?' undone':''}"
+            onclick="setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
+            ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
+          </button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
 }
 
-function myTaskCard(t, i) {
-  const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
-  const isDone = t.status === 'done';
-  const myData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
-  const myRespTask = myData?.role || '';
-  const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
-  return `
-    <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
-      <div class="tc-title">${esc(t.label)}</div>
-      <div class="tc-meta">
-        <span class="tag ${pTag}">${t.priority||'Medium'}</span>
-        <span class="tag ${stTag}">${stLbl}</span>
-      </div>
-      <div class="tc-members">
-        <span class="m-pill">
-          <span class="m-pill-name">You${myRespTask ? '' : ''}</span>
-          <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
-        </span>
-        ${others.map(m => `<span class="m-pill">
-          <span class="m-pill-name">${esc(m.name)}</span>
-          <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
-        </span>`).join('')}
-      </div>
-      <div class="tc-actions">
-        <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
-          ${isDone ? '↩ Reopen' : '✓ Mark Done'}
-        </button>
-      </div>
-    </div>`;
-}
-
-// BY MEMBER
+// ── BY MEMBER ──────────────────────────────────────────────────────────────
+// Progress = how many of THIS member's respective tasks are done (via memberStatus)
 function renderByMember() {
   const el = document.getElementById('by-member-list');
-  if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet. Add via Input.</div>'; return; }
+  if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet.</div>'; return; }
   let html = '';
   members.forEach(m => {
     const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
-    const done = mTasks.filter(t => t.status === 'done').length;
-    const pct = mTasks.length ? Math.round(done / mTasks.length * 100) : 0;
+    // Progress: count tasks where THIS member's memberStatus is 'done'
+    const memberDone = mTasks.filter(t => getMemberStatus(t, m.id) === 'done').length;
+    const total = mTasks.length;
+    const pct = total ? Math.round(memberDone / total * 100) : 0;
     html += `<div class="member-section">
       <div class="member-hd">
         <span class="member-av">${initials(m.name)}</span>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="member-name">${esc(m.name)}</span>
-            <span class="member-cnt">${done}/${mTasks.length} · ${pct}%</span>
+            <span class="member-cnt">${memberDone}/${total} resp. tasks done · ${pct}%</span>
           </div>
           <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
       </div>
       ${mTasks.length
-        ? mTasks.map((t, i) => memberTaskCard(t, m, i)).join('')
+        ? mTasks.map((t,i) => memberTaskCard(t, m, i)).join('')
         : '<div class="empty" style="padding:12px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
     </div>`;
   });
@@ -212,9 +261,10 @@ function memberTaskCard(t, member, i) {
   const mData = (t.members||[]).find(mm => mm.id === member.id);
   const respTask = mData?.role || '';
   const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
-  const isDone = t.status === 'done';
+  const memberStatus = getMemberStatus(t, member.id);
+  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[memberStatus];
+  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[memberStatus];
+  const isDone = memberStatus === 'done';
   return `
     <div class="task-card ${pc}${isDone?' is-done':''}" style="margin-left:12px">
       <div class="tc-title">${esc(t.label)}</div>
@@ -226,15 +276,15 @@ function memberTaskCard(t, member, i) {
         </span>
       </div>
       <div class="tc-actions">
-        <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
+        <button class="mark-done-btn${isDone?' undone':''}"
+          onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
           ${isDone ? '↩ Reopen' : '✓ Mark Done'}
         </button>
       </div>
     </div>`;
 }
 
-// FOLLOW-UP
+// ── FOLLOW-UP ──────────────────────────────────────────────────────────────
 function renderFollowup() {
   const el = document.getElementById('followup-list');
   const others = MY_NAME
@@ -244,34 +294,35 @@ function renderFollowup() {
   let html = '';
   others.forEach(m => {
     const allT = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
-    const inprog = allT.filter(t => t.status === 'inprog');
-    const todo = allT.filter(t => t.status === 'todo').slice(0, 2);
-    if (!inprog.length && !todo.length) return;
-    const done = allT.filter(t => t.status === 'done').length;
-    const pct = allT.length ? Math.round(done / allT.length * 100) : 0;
+    const inprog = allT.filter(t => { const s=getMemberStatus(t,m.id); return s==='inprog'||s==='todo'; }).slice(0,3);
+    const memberDone = allT.filter(t => getMemberStatus(t,m.id) === 'done').length;
+    const pct = allT.length ? Math.round(memberDone/allT.length*100) : 0;
+    if (!allT.length) return;
     html += `<div class="fu-card">
       <div class="fu-person">
         <span class="fu-av">${initials(m.name)}</span>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="fu-name">${esc(m.name)}</span>
-            <span style="font-size:12px;font-weight:600;color:var(--text3)">${done}/${allT.length} done</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text3)">${memberDone}/${allT.length} done</span>
           </div>
           <div class="member-prog" style="margin-top:5px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
       </div>`;
-    if (inprog.length) {
+    const working = allT.filter(t => getMemberStatus(t,m.id) === 'inprog');
+    const todo = allT.filter(t => getMemberStatus(t,m.id) === 'todo').slice(0,2);
+    if (working.length) {
       html += `<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
-      inprog.forEach(t => {
-        const mData = (t.members||[]).find(mm => mm.id === m.id);
-        const respTask = mData?.role || '';
-        const isDone = t.status === 'done';
+      working.forEach(t => {
+        const mData=(t.members||[]).find(mm=>mm.id===m.id);
+        const isDone = getMemberStatus(t,m.id)==='done';
         html += `<div class="fu-task-row">
           <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${respTask ? esc(respTask) : 'Not set'}</div>
+          <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
           <div class="fu-task-actions">
-            <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
-              ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+            <button class="mark-done-btn${isDone?' undone':''}"
+              onclick="setMemberStatusWindow('${t.id}','${m.id}','${isDone?'todo':'done'}')">
+              ${isDone?'↩ Reopen':'✓ Mark Done'}
             </button>
           </div>
         </div>`;
@@ -280,11 +331,10 @@ function renderFollowup() {
     if (todo.length) {
       html += `<div class="fu-section-label" style="color:var(--text2);margin-top:10px">Next up</div>`;
       todo.forEach(t => {
-        const mData = (t.members||[]).find(mm => mm.id === m.id);
-        const respTask = mData?.role || '';
+        const mData=(t.members||[]).find(mm=>mm.id===m.id);
         html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
           <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${respTask ? esc(respTask) : 'Not set'}</div>
+          <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
         </div>`;
       });
     }
@@ -293,32 +343,33 @@ function renderFollowup() {
   el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
 }
 
-// STATUS ACTIONS
-window.cycleStatus = async (id) => {
+// ── ACTIONS ────────────────────────────────────────────────────────────────
+// Cycle overall task status (not per-member)
+window.cycleOverall = async (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
   const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
-  t.status = next; await updateTask(id, {status: next});
-  renderAll(); toast(next === 'done' ? '✓ Done!' : 'Status updated');
-};
-window.markDone = async (id) => {
-  const t = tasks.find(t => t.id === id); if (!t) return;
-  const next = t.status === 'done' ? 'todo' : 'done';
-  t.status = next; await updateTask(id, {status: next});
-  renderAll(); toast(next === 'done' ? '✓ Task complete!' : 'Task reopened');
+  t.status = next;
+  await updateTask(id, {status: next});
+  renderAll(); toast('Overall status updated');
 };
 
-// TABS
+// Per-member done toggle — exposed as window function so HTML onclick can call it
+window.setMemberStatusWindow = (taskId, memberId, newStatus) => {
+  setMemberStatus(taskId, memberId, newStatus);
+};
+
+// ── TABS ───────────────────────────────────────────────────────────────────
 window.switchTab = (id, btn) => {
-  ['mytasks','bymember','followup'].forEach(t => document.getElementById('tab-'+t).style.display = t === id ? '' : 'none');
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  ['mytasks','bymember','followup'].forEach(t => document.getElementById('tab-'+t).style.display = t===id?'':'none');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 };
 
-// TIMER
+// ── TIMER ──────────────────────────────────────────────────────────────────
 let tTotal=25*60,tLeft=25*60,tRunning=false,tInterval=null;
-const pad = n => String(n).padStart(2,'0');
-const fmtTime = s => pad(Math.floor(s/60))+':'+pad(s%60);
-function updateTimerUI() {
+const pad=n=>String(n).padStart(2,'0');
+const fmtTime=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+function updateTimerUI(){
   const d=document.getElementById('t-disp'),s=document.getElementById('t-st');
   d.textContent=fmtTime(tLeft);
   if(!tRunning){d.className='timer-digits';s.textContent='Ready'}
@@ -335,14 +386,14 @@ window.toggleTimer=()=>{
 };
 window.resetTimer=()=>{clearInterval(tInterval);tRunning=false;tLeft=tTotal;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ Start';updateTimerUI()};
 
-// NOTES
+// ── NOTES ──────────────────────────────────────────────────────────────────
 const nta=document.getElementById('notes-ta');
 nta.value=localStorage.getItem('wd_notes')||'';
 document.getElementById('notes-cnt').textContent=nta.value.length+' chars';
 nta.addEventListener('input',()=>{localStorage.setItem('wd_notes',nta.value);document.getElementById('notes-cnt').textContent=nta.value.length+' chars'});
 window.clearNotes=()=>{if(!confirm('Clear notes?'))return;nta.value='';localStorage.removeItem('wd_notes');document.getElementById('notes-cnt').textContent='0 chars'};
 
-// UTILS
+// ── UTILS ───────────────────────────────────────────────────────────────────
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
