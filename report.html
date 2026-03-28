@@ -1,32 +1,819 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>WorkDesk — Report</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorkDesk — Monthly Report</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#04070f">
+  <link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+  /* ── SCREEN BASE ── */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#07090f;--surface:#0d1018;--surface2:#131620;
+    --border:#1a1e2e;--border2:#222638;
+    --neon:#00e5b8;--neon2:#00b4e5;--purple:#9d7eff;
+    --amber:#f5a800;--red:#ff3a5e;--pink:#ff4fa3;
+    --text:#dde6f8;--text2:#6a7a99;--text3:#2e3a52;
+    --sans:'League Spartan',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+    --doto:'Doto',monospace;
+    --a4-w:794px; /* A4 at 96dpi */
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── SCREEN NAV ── */
+  .screen-nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 20px;
+    background:rgba(7,9,15,.97);
+    border-bottom:1px solid var(--border2);
+    position:sticky;top:0;z-index:100;
+    backdrop-filter:blur(10px);
+  }
+  .nav-brand{font-family:var(--sans);font-size:18px;font-weight:800;color:var(--neon);display:flex;align-items:center;gap:8px}
+  .brand-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:pdot 2.2s ease-in-out infinite}
+  @keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
+  .nav-links{display:flex;gap:3px}
+  .nav-link{padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;border:1px solid transparent;transition:all .15s}
+  .nav-link:hover{color:var(--text);background:var(--surface2)}
+  .nav-link.active{color:var(--neon);border-color:rgba(0,229,184,.25);background:rgba(0,229,184,.06)}
+  .nav-right{display:flex;align-items:center;gap:10px}
+
+  /* ── CONTROLS BAR ── */
+  .controls-bar{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:14px 20px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border2);
+  }
+  .ctrl-label{font-size:13px;font-weight:700;color:var(--text2)}
+  .month-select{
+    background:var(--surface2);border:1.5px solid var(--border2);
+    border-radius:10px;padding:8px 14px;color:var(--text);
+    font-family:var(--sans);font-size:14px;font-weight:600;
+    outline:none;cursor:pointer;transition:border-color .15s;
+  }
+  .month-select:focus{border-color:var(--neon)}
+  .sheet-input{
+    flex:1;min-width:200px;max-width:380px;
+    background:var(--surface2);border:1.5px solid var(--border2);
+    border-radius:10px;padding:8px 14px;color:var(--text);
+    font-family:var(--mono);font-size:12px;
+    outline:none;transition:border-color .15s;
+  }
+  .sheet-input:focus{border-color:var(--neon2)}
+  .sheet-input::placeholder{color:var(--text3)}
+  .btn-load{
+    padding:8px 16px;border-radius:10px;border:none;
+    background:var(--neon2);color:var(--bg);
+    font-family:var(--sans);font-size:13px;font-weight:800;
+    cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn-load:hover{filter:brightness(1.1)}
+  .btn-export{
+    padding:8px 18px;border-radius:10px;border:none;
+    background:var(--neon);color:var(--bg);
+    font-family:var(--sans);font-size:13px;font-weight:800;
+    cursor:pointer;transition:all .15s;white-space:nowrap;
+    margin-left:auto;
+    box-shadow:0 4px 0 rgba(0,0,0,.2),0 2px 12px rgba(0,229,184,.2);
+  }
+  .btn-export:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn-export:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+
+  /* ── REPORT WRAPPER ── */
+  .report-wrap{
+    display:flex;
+    gap:0;
+    justify-content:center;
+    padding:24px 20px 60px;
+    overflow-x:auto;
+  }
+
+  /* ── A4 PANEL ── */
+  .a4{
+    width:var(--a4-w);
+    min-height:1123px; /* A4 height at 96dpi */
+    flex-shrink:0;
+    background:#ffffff;
+    color:#111827;
+    font-family:var(--sans);
+    position:relative;
+    box-shadow:0 8px 40px rgba(0,0,0,.5);
+  }
+  .a4:first-child{ border-radius:12px 0 0 12px; }
+  .a4:last-child{ border-radius:0 12px 12px 0; }
+  .a4-divider{
+    width:1px;background:#d1d5db;flex-shrink:0;
+  }
+
+  /* ── A4 CONTENT SPACING ── */
+  .a4-inner{padding:36px 40px}
+
+  /* ── A4 HEADER ── */
+  .a4-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    padding-bottom:20px;
+    border-bottom:2px solid #111827;
+    margin-bottom:24px;
+  }
+  .a4-org{font-size:10px;font-weight:700;color:#6b7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+  .a4-dept{font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.07em;margin-bottom:6px}
+  .a4-title{font-size:28px;font-weight:900;color:#111827;line-height:1.1;letter-spacing:-.02em}
+  .a4-title span{color:#00c4a7}
+  .a4-month-badge{
+    background:#111827;color:#fff;
+    font-size:11px;font-weight:700;
+    padding:6px 14px;border-radius:20px;
+    letter-spacing:.06em;white-space:nowrap;
+  }
+
+  /* ── SECTION TITLE ── */
+  .sec-title{
+    font-size:10px;font-weight:700;color:#6b7280;
+    letter-spacing:.12em;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+    margin-bottom:14px;
+  }
+  .sec-title::after{content:'';flex:1;height:1px;background:#e5e7eb}
+
+  /* ── STATS RING ROW ── */
+  .ring-row{display:flex;align-items:center;gap:24px;margin-bottom:24px}
+  .ring-wrap{position:relative;flex-shrink:0}
+  .ring-wrap svg{display:block}
+  .ring-center{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    text-align:center;
+  }
+  .ring-pct{font-family:var(--doto);font-size:22px;font-weight:700;color:#111827;line-height:1}
+  .ring-lbl{font-size:9px;font-weight:700;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1}
+  .stat-box{
+    background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+    padding:10px 12px;
+  }
+  .stat-box-n{font-family:var(--doto);font-size:22px;font-weight:700;line-height:1;margin-bottom:2px}
+  .stat-box-l{font-size:10px;font-weight:700;color:#6b7280;letter-spacing:.06em;text-transform:uppercase}
+  .c-blue{color:#2563eb}.c-amber{color:#d97706}.c-green{color:#059669}.c-red{color:#dc2626}
+
+  /* ── MEMBER TABLE ── */
+  .member-table{width:100%;border-collapse:collapse;margin-bottom:22px}
+  .member-table th{
+    font-size:9px;font-weight:700;color:#9ca3af;letter-spacing:.1em;text-transform:uppercase;
+    padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left;
+  }
+  .member-table td{
+    padding:8px 8px;border-bottom:1px solid #f3f4f6;
+    font-size:12px;font-weight:500;color:#374151;
+    vertical-align:middle;
+  }
+  .member-table tr:last-child td{border-bottom:none}
+  .mini-bar-wrap{background:#e5e7eb;border-radius:3px;height:5px;width:80px}
+  .mini-bar-fill{height:100%;border-radius:3px;background:#059669;transition:width .4s}
+
+  /* ── TASK LIST IN REPORT ── */
+  .report-task{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:8px 10px;border-radius:8px;margin-bottom:6px;
+    background:#f9fafb;border:1px solid #e5e7eb;
+  }
+  .report-task.done-t{background:#f0fdf4;border-color:#bbf7d0}
+  .report-task.crit-t{background:#fff1f2;border-color:#fecaca}
+  .report-task.pend-t{background:#fffbeb;border-color:#fde68a}
+  .rt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+  .rt-body{flex:1;min-width:0}
+  .rt-name{font-size:12px;font-weight:700;color:#111827;margin-bottom:3px;line-height:1.3}
+  .rt-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .rt-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+  .tag-done{background:#dcfce7;color:#166534}
+  .tag-inprog{background:#fef3c7;color:#92400e}
+  .tag-todo{background:#f3f4f6;color:#6b7280}
+  .tag-crit{background:#fee2e2;color:#991b1b}
+  .tag-high{background:#fef3c7;color:#92400e}
+  .tag-med{background:#dbeafe;color:#1e40af}
+  .tag-low{background:#d1fae5;color:#065f46}
+  .rt-members{font-size:10px;color:#6b7280;margin-top:2px}
+
+  /* ── COMMS STATS CARDS ── */
+  .comms-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+  .comms-card{
+    border-radius:10px;padding:12px 14px;
+    border-top:3px solid #e5e7eb;
+  }
+  .comms-card-icon{font-size:20px;margin-bottom:6px}
+  .comms-card-label{font-size:9px;font-weight:700;color:#6b7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+  .comms-card-val{font-family:var(--doto);font-size:24px;font-weight:700;color:#111827;line-height:1}
+  .comms-card-sub{font-size:10px;color:#9ca3af;margin-top:3px}
+
+  /* ── RANKED LIST ── */
+  .ranked-list{margin-bottom:20px}
+  .ranked-item{
+    display:flex;align-items:center;gap:10px;
+    padding:7px 0;border-bottom:1px solid #f3f4f6;
+  }
+  .ranked-item:last-child{border-bottom:none}
+  .rank-num{font-family:var(--doto);font-size:16px;font-weight:700;color:#d1d5db;width:28px;flex-shrink:0}
+  .rank-num.top{color:#111827}
+  .rank-body{flex:1;min-width:0}
+  .rank-name{font-size:12px;font-weight:700;color:#111827;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-bar-wrap{background:#f3f4f6;border-radius:2px;height:3px;margin-top:4px}
+  .rank-bar-fill{height:100%;border-radius:2px}
+  .rank-count{font-family:var(--doto);font-size:14px;font-weight:700;color:#374151;flex-shrink:0}
+
+  /* ── EVENTS LIST ── */
+  .event-row{
+    display:flex;align-items:center;gap:10px;
+    padding:7px 10px;border-radius:8px;margin-bottom:5px;
+    background:#f9fafb;border:1px solid #e5e7eb;
+  }
+  .event-date{
+    width:36px;text-align:center;flex-shrink:0;
+  }
+  .event-day{font-family:var(--doto);font-size:16px;font-weight:700;color:#2563eb;line-height:1}
+  .event-mon{font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:.06em;text-transform:uppercase}
+  .event-body{flex:1;min-width:0}
+  .event-name{font-size:12px;font-weight:700;color:#111827;margin-bottom:1px}
+  .event-sub{font-size:10px;color:#9ca3af}
+  .event-status{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.05em;white-space:nowrap}
+  .es-done{background:#dcfce7;color:#166534}
+  .es-live{background:#fee2e2;color:#991b1b}
+  .es-up{background:#dbeafe;color:#1e40af}
+
+  /* ── BAR CHART ── */
+  .bar-chart{display:flex;gap:8px;align-items:flex-end;height:70px;margin-bottom:6px}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .bar-fill{width:100%;border-radius:4px 4px 0 0;transition:height .4s}
+  .bar-label{font-size:9px;font-weight:700;color:#9ca3af;letter-spacing:.04em}
+  .bar-val{font-size:9px;font-weight:700;color:#374151}
+
+  /* ── EMAIL ROW ── */
+  .email-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:7px 10px;border-radius:7px;margin-bottom:5px;
+    background:#f9fafb;border:1px solid #e5e7eb;
+  }
+  .email-name{font-size:12px;font-weight:700;color:#111827}
+  .email-sub{font-size:10px;color:#9ca3af;margin-top:1px}
+  .email-count{font-family:var(--doto);font-size:18px;font-weight:700;color:#374151}
+
+  /* ── NOTE BOX ── */
+  .note-box{
+    background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;
+    padding:10px 12px;margin-bottom:12px;
+  }
+  .note-box-title{font-size:9px;font-weight:700;color:#0369a1;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+  .note-box-text{font-size:11px;color:#374151;line-height:1.5}
+
+  /* ── FOOTER ── */
+  .a4-footer{
+    position:absolute;bottom:24px;left:40px;right:40px;
+    display:flex;align-items:center;justify-content:space-between;
+    border-top:1px solid #e5e7eb;padding-top:10px;
+  }
+  .a4-footer-left{font-size:9px;color:#9ca3af;font-weight:600;letter-spacing:.04em}
+  .a4-footer-right{font-size:9px;color:#9ca3af;font-weight:600}
+
+  /* ── LOADING STATE ── */
+  .loading-state{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:60px;color:#9ca3af;font-size:13px;font-weight:600;
+  }
+  .loader{
+    display:inline-block;width:14px;height:14px;
+    border:2px solid #e5e7eb;border-top-color:#00c4a7;
+    border-radius:50%;animation:spin .6s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── COMMS CONFIG BANNER ── */
+  .config-banner{
+    background:#fffbeb;border:1px solid #fde68a;border-radius:8px;
+    padding:10px 14px;margin-bottom:16px;
+    font-size:11px;color:#92400e;line-height:1.5;
+  }
+  .config-banner strong{color:#78350f}
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body{background:#fff !important}
+    .screen-nav,.controls-bar{display:none !important}
+    .report-wrap{
+      padding:0 !important;
+      gap:0 !important;
+      justify-content:flex-start !important;
+      overflow:visible !important;
+    }
+    .a4{
+      box-shadow:none !important;
+      border-radius:0 !important;
+      page-break-after:avoid;
+    }
+    .a4:first-child{page-break-after:always}
+    .a4-divider{display:none}
+  }
+  </style>
 </head>
 <body>
-<nav class="nav">
-  <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
-  <div class="nav-links">
-    <a href="index.html" class="nav-link">Dashboard</a>
-    <a href="input.html" class="nav-link">Input</a>
-    <a href="report.html" class="nav-link active">Report</a>
-  </div>
-</nav>
-<div class="page">
-  <div class="panel fi" style="margin-top:20px">
-    <div class="panel-body" style="text-align:center;padding:40px 20px">
-      <div style="font-size:28px;opacity:.2;margin-bottom:14px">◈</div>
-      <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--neon);letter-spacing:.15em;text-shadow:0 0 12px rgba(0,245,200,.4);margin-bottom:8px">MONTHLY REPORT</div>
-      <div style="font-size:10px;color:var(--text2);letter-spacing:.06em;line-height:1.8;max-width:260px;margin:0 auto">
-        Auto-generated from your task data.<br>Team output · completions · blockers resolved.<br><br>
-        <span style="color:var(--text3)">Coming in the next version.</span>
-      </div>
+
+<!-- SCREEN NAV -->
+<nav class="screen-nav">
+  <div class="nav-brand"><span class="brand-dot"></span>WorkDesk</div>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="input.html" class="nav-link">Input</a>
+      <a href="report.html" class="nav-link active">Report</a>
     </div>
   </div>
+</nav>
+
+<!-- CONTROLS -->
+<div class="controls-bar">
+  <span class="ctrl-label">Month</span>
+  <select class="month-select" id="month-sel" onchange="loadReport()">
+    <!-- populated by JS -->
+  </select>
+
+  <span class="ctrl-label" style="margin-left:16px">Comms Sheet CSV</span>
+  <input class="sheet-input" id="sheet-url"
+    placeholder="Paste Google Sheet CSV link here..."
+    value="">
+  <button class="btn-load" onclick="loadComms()">Load Comms Data</button>
+
+  <button class="btn-export" onclick="exportPDF()">⬇ Export PDF</button>
 </div>
+
+<!-- REPORT PANELS -->
+<div class="report-wrap">
+
+  <!-- LEFT: TASK REPORT -->
+  <div class="a4" id="a4-tasks">
+    <div class="a4-inner">
+
+      <div class="a4-header">
+        <div>
+          <div class="a4-org">BBM-IN &nbsp;·&nbsp; M/MBC-IN</div>
+          <div class="a4-dept">Internal Communications</div>
+          <div class="a4-title">Monthly<br><span id="rpt-month-title">Report</span></div>
+        </div>
+        <div class="a4-month-badge" id="rpt-month-badge">—</div>
+      </div>
+
+      <div id="tasks-body">
+        <div class="loading-state"><span class="loader"></span>Loading task data...</div>
+      </div>
+
+    </div>
+    <div class="a4-footer">
+      <div class="a4-footer-left">BBM-IN · M/MBC-IN · Internal Communications</div>
+      <div class="a4-footer-right" id="footer-date"></div>
+    </div>
+  </div>
+
+  <div class="a4-divider"></div>
+
+  <!-- RIGHT: COMMS DASHBOARD -->
+  <div class="a4" id="a4-comms">
+    <div class="a4-inner">
+
+      <div class="a4-header">
+        <div>
+          <div class="a4-org">BBM-IN &nbsp;·&nbsp; M/MBC-IN</div>
+          <div class="a4-dept">Internal Communications</div>
+          <div class="a4-title">Comms<br><span id="rpt-comms-month">Overview</span></div>
+        </div>
+        <div class="a4-month-badge" id="rpt-comms-badge">—</div>
+      </div>
+
+      <div id="comms-body">
+        <div class="config-banner">
+          <strong>Connect your Google Sheet →</strong><br>
+          Paste your published CSV link in the bar above and click "Load Comms Data".<br><br>
+          <strong>Sheet column order (Row 1 = headers, Row 2+ = data):</strong><br>
+          video_views · video_count · blog_views · article_count · livestream_views · livestream_count · subscribers · subscribers_new · events_held · event_attendees · w1_views · w2_views · w3_views · w4_views · emails_sent<br><br>
+          Then one row per video: <em>video_title, video_views</em><br>
+          Then one row per article: <em>article_title, article_date, article_read_min, article_views</em><br>
+          Then one row per event: <em>event_day, event_month, event_name, event_sub, event_status</em><br>
+          Then one row per email type: <em>email_type, email_sub, email_count</em>
+        </div>
+      </div>
+
+    </div>
+    <div class="a4-footer">
+      <div class="a4-footer-left">Data sources: Video Platform · Blog CMS · Events System · Subscriber DB</div>
+      <div class="a4-footer-right" id="comms-footer-date"></div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { onUserReady, getTasks, getMembers } from './js/firebase.js';
+
+let allTasks = [], allMembers = [];
+let selectedMonth = '';
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function populateMonthSelector() {
+  const sel = document.getElementById('month-sel');
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.toISOString().slice(0,7);
+    const lbl = monthNames[d.getMonth()] + ' ' + d.getFullYear();
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  selectedMonth = sel.value;
+}
+
+// Set footer dates
+const now = new Date();
+const footerStr = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+document.getElementById('footer-date').textContent = 'Generated ' + footerStr;
+document.getElementById('comms-footer-date').textContent = 'Generated ' + footerStr;
+
+populateMonthSelector();
+
+onUserReady(async () => {
+  [allTasks, allMembers] = await Promise.all([getTasks(), getMembers()]);
+  renderTaskReport();
+});
+
+window.loadReport = () => {
+  selectedMonth = document.getElementById('month-sel').value;
+  renderTaskReport();
+  // Update comms month labels
+  const [y,m] = selectedMonth.split('-');
+  const lbl = monthNames[parseInt(m)-1] + ' ' + y;
+  document.getElementById('rpt-comms-month').textContent = lbl;
+  document.getElementById('rpt-comms-badge').textContent = lbl;
+};
+
+// ── TASK REPORT ────────────────────────────────────────────────────────────
+function renderTaskReport() {
+  const [y,m] = selectedMonth.split('-');
+  const lbl = monthNames[parseInt(m)-1] + ' ' + y;
+  document.getElementById('rpt-month-title').textContent = lbl;
+  document.getElementById('rpt-month-badge').textContent = lbl;
+  document.getElementById('rpt-comms-month').textContent = lbl;
+  document.getElementById('rpt-comms-badge').textContent = lbl;
+
+  // Filter tasks for selected month
+  const monthTasks = allTasks.filter(t => t.month === selectedMonth);
+
+  const total   = monthTasks.length;
+  const done    = monthTasks.filter(t => t.status === 'done').length;
+  const inprog  = monthTasks.filter(t => t.status === 'inprog').length;
+  const todo    = monthTasks.filter(t => t.status === 'todo').length;
+  const crit    = monthTasks.filter(t => t.priority === 'critical').length;
+  const pct     = total ? Math.round(done/total*100) : 0;
+
+  // Completed tasks
+  const shipped = monthTasks.filter(t => t.status === 'done');
+  // Pending (todo + inprog)
+  const pending = monthTasks.filter(t => t.status !== 'done');
+  // Critical (not done)
+  const critOpen = monthTasks.filter(t => t.priority === 'critical' && t.status !== 'done');
+
+  // Member contribution
+  const memberStats = allMembers.map(m => {
+    const assigned = monthTasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
+    const mDone = assigned.filter(t => {
+      const ms = t.memberStatus || {};
+      return ms[m.id] === 'done';
+    }).length;
+    return { name: m.name, assigned: assigned.length, done: mDone, pct: assigned.length ? Math.round(mDone/assigned.length*100) : 0 };
+  }).filter(m => m.assigned > 0).sort((a,b) => b.pct - a.pct);
+
+  const el = document.getElementById('tasks-body');
+
+  if (!total) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#9ca3af;font-size:14px;font-weight:600">
+      No tasks registered for ${lbl}
+    </div>`;
+    return;
+  }
+
+  // SVG ring
+  const R=44, C=2*Math.PI*R, offset=C-(pct/100)*C;
+  const ringColor = pct>=80?'#059669':pct>=50?'#d97706':'#dc2626';
+
+  el.innerHTML = `
+    <!-- TEAM SUMMARY -->
+    <div class="sec-title">Team Summary</div>
+    <div class="ring-row">
+      <div class="ring-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="${R}" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+          <circle cx="55" cy="55" r="${R}" fill="none" stroke="${ringColor}" stroke-width="8"
+            stroke-dasharray="${C}" stroke-dashoffset="${offset}"
+            stroke-linecap="round" transform="rotate(-90 55 55)"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-pct" style="color:${ringColor}">${pct}%</div>
+          <div class="ring-lbl">done</div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-n c-blue">${total}</div>
+          <div class="stat-box-l">Total Tasks</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-n c-green">${done}</div>
+          <div class="stat-box-l">Completed</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-n c-amber">${inprog}</div>
+          <div class="stat-box-l">In Progress</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-n c-red">${crit}</div>
+          <div class="stat-box-l">Critical</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEMBER CONTRIBUTION -->
+    ${memberStats.length ? `
+    <div class="sec-title">Member Contribution</div>
+    <table class="member-table">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Assigned</th>
+          <th>Done</th>
+          <th>Progress</th>
+          <th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${memberStats.map(m => `
+        <tr>
+          <td style="font-weight:700">${esc(m.name)}</td>
+          <td>${m.assigned}</td>
+          <td style="color:#059669;font-weight:700">${m.done}</td>
+          <td><div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:${m.pct}%;background:${m.pct>=80?'#059669':m.pct>=50?'#d97706':'#dc2626'}"></div></div></td>
+          <td style="font-weight:700;color:${m.pct>=80?'#059669':m.pct>=50?'#d97706':'#dc2626'}">${m.pct}%</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    <!-- WHAT WE SHIPPED -->
+    ${shipped.length ? `
+    <div class="sec-title">What We Shipped (${shipped.length})</div>
+    <div style="margin-bottom:18px">
+      ${shipped.map(t => taskRow(t,'done-t','#059669','tag-done','Done')).join('')}
+    </div>` : ''}
+
+    <!-- CRITICAL HIGHLIGHTS -->
+    ${critOpen.length ? `
+    <div class="sec-title">Critical — Open (${critOpen.length})</div>
+    <div style="margin-bottom:18px">
+      ${critOpen.map(t => taskRow(t,'crit-t','#dc2626','tag-crit','Critical')).join('')}
+    </div>` : ''}
+
+    <!-- PENDING / CARRY FORWARD -->
+    ${pending.length ? `
+    <div class="sec-title">Pending / Carry-forward (${pending.length})</div>
+    <div>
+      ${pending.map(t => {
+        const isDone = t.status==='done';
+        const isIP = t.status==='inprog';
+        return taskRow(t,'pend-t', isIP?'#d97706':'#6b7280', isIP?'tag-inprog':'tag-todo', isIP?'In Progress':'Todo');
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+function taskRow(t, cardClass, dotColor, tagClass, tagLabel) {
+  const pTag = {critical:'tag-crit',high:'tag-high',medium:'tag-med',low:'tag-low'}[t.priority||'medium'];
+  const members = (t.members||[]).map(m=>m.name).join(', ');
+  return `
+    <div class="report-task ${cardClass}">
+      <div class="rt-dot" style="background:${dotColor}"></div>
+      <div class="rt-body">
+        <div class="rt-name">${esc(t.label)}</div>
+        <div class="rt-meta">
+          <span class="rt-tag ${tagClass}">${tagLabel}</span>
+          <span class="rt-tag ${pTag}">${t.priority||'medium'}</span>
+          ${t.dueDate?`<span class="rt-tag" style="background:#dbeafe;color:#1e40af">📅 ${fmtDate(t.dueDate)}</span>`:''}
+        </div>
+        ${members?`<div class="rt-members">👥 ${esc(members)}</div>`:''}
+      </div>
+    </div>`;
+}
+
+// ── COMMS REPORT (Google Sheet CSV) ───────────────────────────────────────
+window.loadComms = async () => {
+  const url = document.getElementById('sheet-url').value.trim();
+  if (!url) { alert('Please paste a Google Sheet CSV URL first.'); return; }
+  const btn = document.querySelector('.btn-load');
+  btn.textContent = 'Loading...'; btn.disabled = true;
+  try {
+    // Use a CORS proxy since Google Sheets CSV needs it
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('Could not fetch sheet. Make sure it is published as CSV.');
+    const csv = await res.text();
+    parseAndRenderComms(csv);
+  } catch(e) {
+    document.getElementById('comms-body').innerHTML = `
+      <div class="config-banner" style="background:#fff1f2;border-color:#fecaca">
+        <strong>Could not load sheet:</strong> ${esc(e.message)}<br><br>
+        Make sure your Google Sheet is published: File → Share → Publish to web → CSV.
+      </div>`;
+  }
+  btn.textContent = 'Load Comms Data'; btn.disabled = false;
+};
+
+function parseAndRenderComms(csv) {
+  const rows = csv.trim().split('\n').map(r =>
+    r.split(',').map(c => c.replace(/^"|"$/g,'').trim())
+  );
+  if (rows.length < 2) { document.getElementById('comms-body').innerHTML = '<div class="config-banner">Sheet appears empty.</div>'; return; }
+
+  // Row 0 = headers, Row 1 = main stats
+  const stats = rows[1] || [];
+  const videoViews   = stats[0]||'—';
+  const videoCount   = stats[1]||'—';
+  const blogViews    = stats[2]||'—';
+  const articleCount = stats[3]||'—';
+  const lsViews      = stats[4]||'—';
+  const lsCount      = stats[5]||'—';
+  const subs         = stats[6]||'—';
+  const subsNew      = stats[7]||'—';
+  const events       = stats[8]||'—';
+  const attendees    = stats[9]||'—';
+  const w1=stats[10]||0, w2=stats[11]||0, w3=stats[12]||0, w4=stats[13]||0;
+  const emailsTotal  = stats[14]||'—';
+
+  // Parse sections: videos start after row 1
+  let videos=[], articles=[], eventsArr=[], emails=[];
+  let section='';
+  for (let i=2;i<rows.length;i++) {
+    const r = rows[i];
+    if (!r[0]) continue;
+    if (r[0]==='video_title') { section='video'; continue; }
+    if (r[0]==='article_title') { section='article'; continue; }
+    if (r[0]==='event_day') { section='event'; continue; }
+    if (r[0]==='email_type') { section='email'; continue; }
+    if (section==='video') videos.push({title:r[0],views:r[1]});
+    if (section==='article') articles.push({title:r[0],date:r[1],mins:r[2],views:r[3]});
+    if (section==='event') eventsArr.push({day:r[0],mon:r[1],name:r[2],sub:r[3],status:r[4]});
+    if (section==='email') emails.push({type:r[0],sub:r[1],count:r[2]});
+  }
+
+  // Bar chart
+  const wVals = [parseInt(w1)||0,parseInt(w2)||0,parseInt(w3)||0,parseInt(w4)||0];
+  const wMax = Math.max(...wVals,1);
+  const barColors = ['#dc2626','#dc2626','#d97706','#06b6d4'];
+  const bars = wVals.map((v,i)=>{
+    const h = Math.max(8, Math.round((v/wMax)*60));
+    return `<div class="bar-col">
+      <div class="bar-val">${v>999?(v/1000).toFixed(1)+'K':v}</div>
+      <div class="bar-fill" style="height:${h}px;background:${barColors[i]}"></div>
+      <div class="bar-label">W${i+1}</div>
+    </div>`;
+  }).join('');
+
+  const [y,m] = selectedMonth.split('-');
+  const lbl = monthNames[parseInt(m)-1].toUpperCase() + ' ' + y;
+
+  document.getElementById('comms-body').innerHTML = `
+    <!-- MAIN STATS CARDS -->
+    <div class="sec-title">Channel Stats</div>
+    <div class="comms-cards">
+      <div class="comms-card" style="background:#fff1f2;border-top-color:#f87171">
+        <div class="comms-card-icon">🎬</div>
+        <div class="comms-card-label">Video Views</div>
+        <div class="comms-card-val">${fmt(videoViews)}</div>
+        <div class="comms-card-sub">Across ${videoCount} videos this month</div>
+      </div>
+      <div class="comms-card" style="background:#f0f9ff;border-top-color:#38bdf8">
+        <div class="comms-card-icon">✍️</div>
+        <div class="comms-card-label">Blog Views</div>
+        <div class="comms-card-val">${fmt(blogViews)}</div>
+        <div class="comms-card-sub">${articleCount} articles published</div>
+      </div>
+      <div class="comms-card" style="background:#fffbeb;border-top-color:#fbbf24">
+        <div class="comms-card-icon">📡</div>
+        <div class="comms-card-label">Livestream Views</div>
+        <div class="comms-card-val">${fmt(lsViews)}</div>
+        <div class="comms-card-sub">${lsCount} leadership forum(s)</div>
+      </div>
+      <div class="comms-card" style="background:#f5f3ff;border-top-color:#a78bfa">
+        <div class="comms-card-icon">👥</div>
+        <div class="comms-card-label">Subscribers</div>
+        <div class="comms-card-val">${fmt(subs)}</div>
+        <div class="comms-card-sub">+${fmt(subsNew)} added this month</div>
+      </div>
+      <div class="comms-card" style="background:#f0fdf4;border-top-color:#34d399">
+        <div class="comms-card-icon">📅</div>
+        <div class="comms-card-label">Events Held</div>
+        <div class="comms-card-val">${events}</div>
+        <div class="comms-card-sub">${fmt(attendees)}+ total attendees</div>
+      </div>
+      <div class="comms-card" style="background:#fefce8;border-top-color:#fbbf24">
+        <div class="comms-card-icon">📧</div>
+        <div class="comms-card-label">Emails Sent</div>
+        <div class="comms-card-val">${emailsTotal}</div>
+        <div class="comms-card-sub">Total emailers this month</div>
+      </div>
+    </div>
+
+    <!-- WEEKLY DISTRIBUTION -->
+    <div class="sec-title">Weekly View Distribution</div>
+    <div class="bar-chart">${bars}</div>
+    <div style="margin-bottom:18px"></div>
+
+    <!-- TOP VIDEOS -->
+    ${videos.length ? `
+    <div class="sec-title">Top Videos This Month</div>
+    <div class="ranked-list" style="margin-bottom:18px">
+      ${videos.slice(0,6).map((v,i)=>{
+        const maxV = parseInt(videos[0].views)||1;
+        const w = Math.round((parseInt(v.views)||0)/maxV*100);
+        const colors=['#f59e0b','#f59e0b','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
+        return `<div class="ranked-item">
+          <div class="rank-num${i<2?' top':''}">${String(i+1).padStart(2,'0')}</div>
+          <div class="rank-body">
+            <div class="rank-name">${esc(v.title)}</div>
+            <div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${w}%;background:${colors[i]}"></div></div>
+          </div>
+          <div class="rank-count">${fmt(v.views)}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- EVENTS -->
+    ${eventsArr.length ? `
+    <div class="sec-title">Events This Month</div>
+    <div style="margin-bottom:18px">
+      ${eventsArr.slice(0,5).map(e=>{
+        const sc = {done:'es-done',live:'es-live',upcoming:'es-up'}[e.status?.toLowerCase()]||'es-up';
+        return `<div class="event-row">
+          <div class="event-date">
+            <div class="event-day">${e.day}</div>
+            <div class="event-mon">${e.mon}</div>
+          </div>
+          <div class="event-body">
+            <div class="event-name">${esc(e.name)}</div>
+            <div class="event-sub">${esc(e.sub)}</div>
+          </div>
+          <span class="event-status ${sc}">${(e.status||'').toUpperCase()}</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- EMAIL CAMPAIGNS -->
+    ${emails.length ? `
+    <div class="sec-title">Email Campaigns</div>
+    <div>
+      ${emails.map(e=>`
+        <div class="email-row">
+          <div>
+            <div class="email-name">${esc(e.type)}</div>
+            <div class="email-sub">${esc(e.sub)}</div>
+          </div>
+          <div class="email-count">${e.count}</div>
+        </div>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+// ── EXPORT PDF ─────────────────────────────────────────────────────────────
+window.exportPDF = () => {
+  window.print();
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function fmtDate(d){
+  if(!d)return'';
+  const [y,m,day]=d.split('-');
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${day} ${mo[parseInt(m)-1]}`;
+}
+function fmt(v){
+  const n=parseFloat(String(v).replace(/,/g,''));
+  if(isNaN(n))return v;
+  if(n>=1000)return(n/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return String(v);
+}
+</script>
 </body>
 </html>
