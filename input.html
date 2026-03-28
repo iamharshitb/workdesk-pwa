@@ -8,30 +8,13 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#04070f">
   <style>
-    .member-list-item{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;margin-bottom:5px}
-    .mli-name{font-size:11px;color:var(--text);letter-spacing:.04em;display:flex;align-items:center;gap:7px}
-    .mli-av{width:20px;height:20px;border-radius:50%;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--purple)}
-    .divider{height:1px;background:var(--border);margin:4px 0 12px}
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .18s}
-    .modal-overlay.open{opacity:1;pointer-events:all}
-    .modal{background:#070b18;border:1px solid rgba(255,62,108,.3);border-radius:14px;padding:20px 18px;width:280px;box-shadow:0 0 40px rgba(0,0,0,.8);transform:translateY(10px);transition:transform .2s}
-    .modal-overlay.open .modal{transform:translateY(0)}
-    .modal-title{font-family:var(--display);font-size:10px;font-weight:700;color:var(--red);letter-spacing:.18em;text-transform:uppercase;margin-bottom:5px;text-align:center}
-    .modal-sub{font-size:10px;color:var(--text2);margin-bottom:10px;line-height:1.5;text-align:center}
-    .modal-task-name{font-size:11px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-left:2px solid var(--red);border-radius:6px;padding:6px 9px;margin-bottom:12px}
-    .modal-inp{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--neon);font-family:var(--mono);font-size:13px;outline:none;letter-spacing:.1em;caret-color:var(--neon);transition:border-color .15s;margin-bottom:8px}
-    .modal-inp:focus{border-color:rgba(255,62,108,.5)}
-    .modal-inp.wrong{border-color:var(--red)}
-    .modal-err{font-size:10px;color:var(--red);letter-spacing:.05em;margin-bottom:10px;min-height:16px}
-    .modal-btns{display:flex;gap:7px}
-    .modal-cancel{flex:1;padding:9px;border-radius:7px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:.07em;cursor:pointer}
-    .modal-confirm{flex:1;padding:9px;border-radius:7px;border:1px solid rgba(255,62,108,.4);background:rgba(255,62,108,.09);color:var(--red);font-family:var(--mono);font-size:10px;letter-spacing:.07em;cursor:pointer}
-    .modal-confirm:hover{background:rgba(255,62,108,.18)}
+    /* Input page task card actions */
+    .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:8px;flex-wrap:wrap}
   </style>
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
+  <div class="nav-brand"><span class="brand-dot"></span>WorkDesk</div>
   <div class="nav-right">
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -72,7 +55,7 @@
         onkeydown="if(event.key==='Enter')document.getElementById('f-task').blur()">
 
       <!-- Tap to assign -->
-      <div class="sect-label" style="margin-top:12px">Tap to assign team members</div>
+      <div class="sect-label" style="margin-top:12px">Assign team members</div>
       <div class="member-chips" id="chip-area">
         <span style="font-size:9px;color:var(--text3);letter-spacing:.06em">Add team members above first</span>
       </div>
@@ -347,6 +330,15 @@ window.cycleStatus = async (id) => {
   renderTaskList();
 };
 
+window.cycleToggDone = async (id) => {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  const next = t.status === 'done' ? 'todo' : 'done';
+  t.status = next;
+  await fbUpdateTask(id, { status: next });
+  renderTaskList();
+};
+
 // ── TASK LIST ───────────────────────────────────────────────────────────────
 function renderTaskList() {
   const el = document.getElementById('task-list');
@@ -358,23 +350,25 @@ function renderTaskList() {
   el.innerHTML = tasks.map((t, i) => {
     const pc = { critical:'pc', high:'ph', medium:'pm', low:'pl' }[t.priority || 'medium'];
     const stTag = { todo:'t-todo', inprog:'t-ip', done:'t-done' }[t.status || 'todo'];
-    const stLbl = { todo:'○ TODO', inprog:'● IN PROG', done:'✓ DONE' }[t.status || 'todo'];
+    const stLbl = { todo:'Todo', inprog:'In Progress', done:'Done' }[t.status || 'todo'];
     const pTag  = { critical:'t-crit', high:'t-high', medium:'t-med', low:'t-low' }[t.priority || 'medium'];
-    const members = (t.members || []).map(m => `<span class="tag t-person">@${esc(m.name)}</span>`).join('');
+    const isDone = t.status === 'done';
+    const memberPills = (t.members || []).map(m =>
+      `<span class="m-pill" style="display:inline-flex"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${m.role ? esc(m.role) : 'Not set'}</span></span>`
+    ).join('');
     return `
-      <div class="task-card ${pc} fi" style="animation-delay:${i*.04}s">
+      <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
         <div class="tc-title">${esc(t.label)}</div>
         <div class="tc-meta">
           <span class="tag ${pTag}">${t.priority || 'medium'}</span>
           <span class="tag ${stTag}">${stLbl}</span>
-          ${members}
         </div>
-        <div class="tc-actions">
-          <button class="sc-btn tag ${stTag}" onclick="cycleStatus('${t.id}')" style="cursor:pointer">
-            ${stLbl} →
-          </button>
-          <button class="del-btn" onclick="editTask('${t.id}')">✎</button>
-          <button class="del-btn" onclick="deleteTask('${t.id}')">✕</button>
+        <div class="tc-members">${memberPills}</div>
+        <div class="tc-actions-input">
+          <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
+          <button class="mark-done-btn${isDone?' undone':''}" onclick="cycleToggDone('${t.id}')">${isDone?'↩ Reopen':'✓ Mark Done'}</button>
+          <button class="del-btn" onclick="editTask('${t.id}')" title="Edit">✎</button>
+          <button class="del-btn" onclick="deleteTask('${t.id}')" title="Delete">✕</button>
         </div>
       </div>`;
   }).join('');
