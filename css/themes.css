@@ -18,11 +18,12 @@ body.theme-ios {
   --nav-bg:rgba(28,28,30,.85); --grid:transparent;
   --shadow-card:0 4px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);
   --shadow-neon:0 4px 16px rgba(10,132,255,.3);
-  background-color:#1c1c1e;
+  background-color:#1a0a2e;
   background-image:
-    radial-gradient(ellipse 70% 50% at 20% 10%,rgba(94,92,230,.18) 0%,transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(48,209,88,.1) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 40% at 60% 30%,rgba(10,132,255,.08) 0%,transparent 60%);
+    linear-gradient(160deg, #2d1b69 0%, #1a0a2e 35%, #0d0d2b 65%, #1a1035 100%),
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(120,80,220,.55) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 85%, rgba(80,40,180,.45) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 45%, rgba(160,100,255,.2) 0%, transparent 60%);
 }
 body.theme-ios .panel {
   background:rgba(44,44,46,.72);
