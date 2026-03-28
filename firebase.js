@@ -70,6 +70,7 @@ export async function addTask(data) {
     status: "todo",
     memberStatus,
     month,
+    dueDate: data.dueDate || null,   // "YYYY-MM-DD" string or null
     createdAt: serverTimestamp(),
     completedAt: null,
   });

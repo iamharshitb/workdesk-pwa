@@ -9,6 +9,51 @@
   <meta name="theme-color" content="#07090f">
   <style>
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
+    /* Date picker */
+    .date-row{display:flex;align-items:center;gap:10px;margin-top:13px}
+    .date-label{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
+    input[type="date"].date-inp{
+      flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r);
+      padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:15px;font-weight:500;
+      outline:none;transition:border-color .15s;cursor:pointer;
+    }
+    input[type="date"].date-inp:focus{border-color:var(--neon)}
+    input[type="date"].date-inp::-webkit-calendar-picker-indicator{
+      filter:invert(1);opacity:.5;cursor:pointer;
+    }
+    body.light input[type="date"].date-inp::-webkit-calendar-picker-indicator{filter:none;opacity:.6}
+    /* Due date badge on task card */
+    .due-badge{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;
+      background:rgba(0,180,229,.08);color:var(--neon2);border:1.5px solid rgba(0,180,229,.2);
+    }
+    .due-badge.overdue{background:rgba(255,58,94,.09);color:var(--red);border-color:rgba(255,58,94,.25)}
+    .due-badge.today{background:rgba(245,168,0,.09);color:var(--amber);border-color:rgba(245,168,0,.25)}
+    /* Date range filter */
+    .range-panel{background:var(--panel);border:1.5px solid var(--border2);border-radius:var(--rr);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow-card)}
+    .range-body{padding:13px 16px}
+    .range-row{display:flex;gap:9px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+    .range-sep{font-size:13px;font-weight:700;color:var(--text3)}
+    .range-btn{
+      width:100%;padding:10px;border-radius:var(--r);border:none;
+      background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:14px;font-weight:800;
+      cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.2),0 2px 10px rgba(0,229,184,.2);transition:all .15s;
+    }
+    .range-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .range-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+    .range-clear{
+      width:100%;padding:8px;border-radius:var(--r);margin-top:7px;
+      border:1.5px solid var(--border2);background:none;color:var(--text2);
+      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+    }
+    .range-clear:hover{border-color:rgba(255,58,94,.35);color:var(--red)}
+    .range-results{margin-top:10px}
+    .range-banner{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 12px;background:rgba(0,229,184,.06);border:1px solid rgba(0,229,184,.2);
+      border-radius:9px;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--neon);
+    }
   </style>
 </head>
 <body>
@@ -65,11 +110,31 @@
         <button class="p-chip" data-p="low"      onclick="selectPriority(this)">Low</button>
       </div>
 
+      <div class="date-row">
+        <span class="date-label">📅 Due Date</span>
+        <input type="date" class="date-inp" id="f-due" min="">
+      </div>
+
       <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ Register Task</button>
       <button id="cancel-btn" onclick="cancelEdit()"
         style="display:none;width:100%;margin-top:8px;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">
         Cancel Edit
       </button>
+    </div>
+  </div>
+
+  <!-- DATE RANGE FILTER -->
+  <div class="range-panel fi" style="animation-delay:.09s">
+    <div class="panel-hd"><span class="panel-title">Date Range Filter</span></div>
+    <div class="range-body">
+      <div class="range-row">
+        <input type="date" class="date-inp" id="range-from" style="flex:1">
+        <span class="range-sep">→</span>
+        <input type="date" class="date-inp" id="range-to" style="flex:1">
+      </div>
+      <button class="range-btn" onclick="applyDateRange()">Show Tasks in Range</button>
+      <button class="range-clear" id="range-clear-btn" onclick="clearDateRange()" style="display:none">✕ Clear Filter</button>
+      <div class="range-results" id="range-results"></div>
     </div>
   </div>
 
@@ -275,6 +340,8 @@ window.submitTask = async () => {
   const label = document.getElementById('f-task').value.trim();
   if (!label) { shake('f-task'); return; }
 
+  const dueDate = document.getElementById('f-due').value || null;
+
   // Collect members with their respective tasks (role field)
   const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({
     id,
@@ -287,13 +354,13 @@ window.submitTask = async () => {
 
   try {
     if (editingId) {
-      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr });
+      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate });
       const idx = tasks.findIndex(t => t.id === editingId);
-      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr };
+      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate };
       toast('Task updated ✓'); cancelEdit();
     } else {
-      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, status: 'todo', memberStatus: {} });
+      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate });
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
     }
     renderTaskList();
@@ -309,6 +376,7 @@ window.editTask = (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
   editingId = id;
   document.getElementById('f-task').value = t.label;
+  document.getElementById('f-due').value = t.dueDate || '';
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -403,6 +471,7 @@ function renderTaskList() {
         <div class="tc-meta">
           <span class="tag ${pTag}">${t.priority||'medium'}</span>
           <span class="tag ${stTag}">${stLbl}</span>
+          ${t.dueDate ? dueBadge(t.dueDate, t.status) : ''}
         </div>
         <div class="tc-members">${memberPills}</div>
         <div class="tc-actions-input">
@@ -416,6 +485,95 @@ function renderTaskList() {
       </div>`;
   }).join('');
 }
+
+// ── DUE DATE BADGE ────────────────────────────────────────────────────────
+function dueBadge(dueDate, status) {
+  if (!dueDate || status === 'done') return '';
+  const today = new Date().toISOString().split('T')[0];
+  const isOverdue = dueDate < today;
+  const isToday = dueDate === today;
+  const cls = isOverdue ? 'overdue' : isToday ? 'today' : '';
+  const label = isOverdue ? '⚠ Overdue' : isToday ? '⚡ Due Today' : '📅 ' + formatDate(dueDate);
+  return `<span class="due-badge ${cls}">${label}</span>`;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${day} ${months[parseInt(m)-1]}`;
+}
+
+// ── DATE RANGE FILTER ─────────────────────────────────────────────────────
+window.applyDateRange = () => {
+  const from = document.getElementById('range-from').value;
+  const to   = document.getElementById('range-to').value;
+  if (!from || !to) { toast('Pick both dates', 'err'); return; }
+  if (from > to) { toast('Start date must be before end date', 'err'); return; }
+
+  // Filter tasks by createdAt date (stored as month "YYYY-MM" + dueDate)
+  // We match on dueDate if set, else on month
+  const filtered = tasks.filter(t => {
+    const d = t.dueDate || (t.month ? t.month + '-01' : null);
+    if (!d) return false;
+    return d >= from && d <= to;
+  });
+
+  const resultsEl = document.getElementById('range-results');
+  const clearBtn  = document.getElementById('range-clear-btn');
+  clearBtn.style.display = '';
+
+  if (!filtered.length) {
+    resultsEl.innerHTML = '<div class="empty" style="padding:16px 0 4px"><div class="ei">◻</div>No tasks in this date range</div>';
+    return;
+  }
+
+  const done   = filtered.filter(t => t.status === 'done').length;
+  const inprog = filtered.filter(t => t.status === 'inprog').length;
+  const todo   = filtered.filter(t => t.status === 'todo').length;
+  const pct    = Math.round(done / filtered.length * 100);
+
+  resultsEl.innerHTML = `
+    <div class="range-banner">
+      ${formatDate(from)} → ${formatDate(to)} &nbsp;·&nbsp; ${filtered.length} tasks &nbsp;·&nbsp; ${pct}% done
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+        <div style="font-size:20px;font-weight:800;color:var(--neon)">${done}</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Done</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+        <div style="font-size:20px;font-weight:800;color:var(--amber)">${inprog}</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">In Prog</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+        <div style="font-size:20px;font-weight:800;color:var(--text2)">${todo}</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Todo</div>
+      </div>
+    </div>
+    ${filtered.map(t => {
+      const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+      const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+      const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+      const isDone = t.status === 'done';
+      const memberPills = (t.members||[]).map(m =>
+        `<span class="m-pill" style="display:inline-flex"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${m.role ? esc(m.role) : 'Not set'}</span></span>`
+      ).join('');
+      return `<div class="task-card ${pc}${isDone?' is-done':''}">
+        <div class="tc-title">${esc(t.label)}</div>
+        <div class="tc-meta">
+          <span class="tag ${stTag}">${stLbl}</span>
+          ${t.dueDate ? dueBadge(t.dueDate, t.status) : ''}
+        </div>
+        <div class="tc-members">${memberPills}</div>
+      </div>`;
+    }).join('')}`;
+};
+
+window.clearDateRange = () => {
+  document.getElementById('range-results').innerHTML = '';
+  document.getElementById('range-clear-btn').style.display = 'none';
+};
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────
 function updateSummary() {
@@ -436,6 +594,7 @@ function updateSummary() {
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function resetForm() {
   document.getElementById('f-task').value = '';
+  document.getElementById('f-due').value = '';
   selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');
