@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Major+Mono+Display&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap');
+@import url('themes.css');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -18,17 +19,7 @@
   --shadow-card:0 2px 12px rgba(0,0,0,.4);
 }
 
-body.light{
-  --bg:#eef2fa;--bg2:#ffffff;--bg3:#e4eaf5;--panel:#ffffff;
-  --border:#d4daf0;--border2:#c0cadf;
-  --neon:#007a6b;--neon2:#005fa3;--purple:#5533cc;
-  --amber:#b87000;--red:#cc1040;
-  --text:#111827;--text2:#4a5a78;--text3:#9aa5be;
-  --nav-bg:rgba(238,242,250,.97);
-  --grid:rgba(0,100,180,.02);
-  --shadow-neon:0 4px 20px rgba(0,122,107,.12);
-  --shadow-card:0 2px 12px rgba(0,0,0,.08);
-}
+/* Light mode handled by theme-arctic in themes.css */
 
 html{font-size:17px}
 body{

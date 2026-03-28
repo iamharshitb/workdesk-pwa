@@ -2,25 +2,18 @@
 // Handles all 7 themes × 5 font combos. Persists to localStorage.
 
 export const THEMES = [
-  { id:'neon',      name:'Neon Dark',     sub:'Teal on Black',         dot:'#00e5b8', bg:'#07090f' },
-  { id:'midnight',  name:'Midnight Blue', sub:'Navy + Electric Blue',  dot:'#4d9fff', bg:'#060c1a' },
-  { id:'synthwave', name:'Synthwave',     sub:'Purple + Pink',         dot:'#ff4fa3', bg:'#0a0614' },
-  { id:'forest',    name:'Forest',        sub:'Dark Green + Lime',     dot:'#39d353', bg:'#040c08' },
-  { id:'slate',     name:'Slate',         sub:'Cool Grays + White',    dot:'#94a3b8', bg:'#0f1117' },
-  { id:'warm',      name:'Warm Dark',     sub:'Brown + Amber + Gold',  dot:'#f5a800', bg:'#0f0a06' },
-  { id:'arctic',    name:'Arctic',        sub:'White + Ice Blue',      dot:'#0077cc', bg:'#f0f6ff' },
-  { id:'retro',     name:'Retro',         sub:'Black & White · CRT',   dot:'#ffffff', bg:'#0a0a0a' },
-  { id:'ios',       name:'iOS Glass',     sub:'Frosted · Liquid Glass',dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'pixel',     name:'Material Pixel',sub:'Google M3 · Bold',      dot:'#c8b6ff', bg:'#1a1c2e' },
-  { id:'ios-light', name:'iOS Glass Light',sub:'Frosted · Luminous White',dot:'#007aff', bg:'#f2f2f7' },
+  { id:'neon',     name:'Neon Dark',      sub:'Teal on Black',         dot:'#00e5b8', bg:'#07090f' },
+  { id:'midnight', name:'Midnight Blue',  sub:'Navy + Electric Blue',  dot:'#4d9fff', bg:'#060c1a' },
+  { id:'retro',    name:'Retro',          sub:'Black & White · CRT',   dot:'#ffffff', bg:'#0a0a0a' },
+  { id:'ios',      name:'iOS Glass',      sub:'Frosted · Liquid Glass',dot:'#0a84ff', bg:'#1c1c1e' },
+  { id:'pixel',    name:'Material Pixel', sub:'Google M3 · Bold',      dot:'#c8b6ff', bg:'#1a1c2e' },
 ];
 
 export const FONTS = [
-  { id:'spartan', name:'League Spartan',  sub:'+ IBM Plex Mono' },
-  { id:'grotesk', name:'Space Grotesk',   sub:'+ JetBrains Mono' },
-  { id:'syne',    name:'Syne',            sub:'+ Share Tech Mono' },
-  { id:'bebas',   name:'Bebas Style',     sub:'+ Share Tech Mono' },
-  { id:'outfit',  name:'Outfit',          sub:'+ Fira Code' },
+  { id:'spartan',   name:'League Spartan',  sub:'Clean · Modern · Default' },
+  { id:'nothing',   name:'Nothing Brand',   sub:'Orbitron · Geometric Dot' },
+  { id:'spacex',    name:'SpaceX Style',    sub:'Rajdhani · Wide · Technical' },
+  { id:'majormono', name:'Major Mono',      sub:'Typewriter · Hacker · Retro' },
 ];
 
 let currentTheme = localStorage.getItem('wd_theme') || 'neon';

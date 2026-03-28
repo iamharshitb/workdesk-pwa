@@ -1,18 +1,34 @@
 /* ══════════════════════════════════════════════════════
    WORKDESK THEME SYSTEM
    Apply theme class to <body> e.g. body.theme-midnight
-   Apply font class to <body> e.g. body.font-syne
+   Apply font class to <body> e.g. body.font-nothing
 ══════════════════════════════════════════════════════ */
 
 /* ── FONT IMPORTS ── */
-@import url('https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap');
+/* ── FONT IMPORTS ── */
+/* League Spartan — primary sans */
+/* Rajdhani — SpaceX / aerospace feel (wide, technical, condensed) */
+/* Orbitron — Nothing brand adjacent (geometric, futuristic dot-matrix feel) */
+/* Major Mono Display — typewriter/code aesthetic */
+/* IBM Plex Mono — mono base */
+@import url('https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Major+Mono+Display&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap');
 
 /* ── FONT CLASSES ── */
-body.font-spartan   { --sans:'League Spartan',sans-serif; --mono:'IBM Plex Mono',monospace; }
-body.font-grotesk   { --sans:'Space Grotesk',sans-serif;  --mono:'JetBrains Mono',monospace; }
-body.font-syne      { --sans:'Syne',sans-serif;           --mono:'Share Tech Mono',monospace; }
-body.font-bebas     { --sans:'Outfit',sans-serif;         --mono:'Share Tech Mono',monospace; }
-body.font-outfit    { --sans:'Outfit',sans-serif;         --mono:'Fira Code',monospace; }
+/* League Spartan — default, already set in style.css */
+body.font-spartan    { --sans:'League Spartan',sans-serif;    --mono:'IBM Plex Mono',monospace; }
+
+/* Nothing brand — Orbitron for display, Share Tech Mono for body feel */
+body.font-nothing    { --sans:'Orbitron',sans-serif;          --mono:'Share Tech Mono',monospace; }
+
+/* SpaceX / Aerospace — Rajdhani (wide, technical, condensed caps) */
+body.font-spacex     { --sans:'Rajdhani',sans-serif;          --mono:'IBM Plex Mono',monospace; }
+
+/* Major Mono — typewriter/hacker, pairs beautifully with Retro theme */
+body.font-majormono  { --sans:'Major Mono Display',monospace; --mono:'Share Tech Mono',monospace; }
+
+
+
+
 
 /* ══════════════════════════════════════════════════════
    THEME 1: NEON DARK (default — already in style.css)
@@ -51,130 +67,76 @@ body.theme-midnight .mark-done-btn { background:var(--neon); color:#fff; }
 /* ══════════════════════════════════════════════════════
    THEME 3: SYNTHWAVE
 ══════════════════════════════════════════════════════ */
-body.theme-synthwave {
-  --bg:#0a0614; --bg2:#120920; --bg3:#1a0f2e; --panel:#120920;
-  --border:#220f40; --border2:#341560;
-  --neon:#ff4fa3; --neon2:#c44dff; --purple:#7b4fff;
-  --amber:#ff9f43; --red:#ff3a5e;
-  --text:#f0d6ff; --text2:#7a4d99; --text3:#3a1a60;
-  --nav-bg:rgba(10,6,20,.97); --grid:rgba(255,79,163,.012);
-  --shadow-card:0 2px 16px rgba(0,0,0,.5);
-  --shadow-neon:0 4px 24px rgba(255,79,163,.2);
-  background-image:
-    radial-gradient(ellipse 80% 30% at 50% 0%,rgba(196,77,255,.06) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent,transparent 23px,rgba(255,79,163,.01) 23px,rgba(255,79,163,.01) 24px),
-    repeating-linear-gradient(90deg,transparent,transparent 23px,rgba(255,79,163,.01) 23px,rgba(255,79,163,.01) 24px);
-}
-body.theme-synthwave .brand-dot { background:var(--neon); box-shadow:0 0 10px var(--neon),0 0 20px var(--neon2); }
-body.theme-synthwave .prog-fill { background:linear-gradient(90deg,var(--neon2),var(--neon)); }
-body.theme-synthwave .send-btn  { background:linear-gradient(135deg,var(--neon2),var(--neon)); color:#fff; border:none; }
-body.theme-synthwave .t-go      { background:rgba(255,79,163,.1); border-color:rgba(255,79,163,.4); color:var(--neon); }
-body.theme-synthwave .mark-done-btn { background:linear-gradient(135deg,var(--neon2),var(--neon)); color:#fff; border:none; }
-body.theme-synthwave .panel-title::before { background:linear-gradient(180deg,var(--neon2),var(--neon)); }
-body.theme-synthwave .stat-n.sn-g { color:var(--neon); }
-body.theme-synthwave .nav-link.active { color:var(--neon); border-color:rgba(255,79,163,.3); background:rgba(255,79,163,.07); }
+
+
+
+
+
+
+
+
+
 
 /* ══════════════════════════════════════════════════════
    THEME 4: FOREST
 ══════════════════════════════════════════════════════ */
-body.theme-forest {
-  --bg:#040c08; --bg2:#081408; --bg3:#0c1e10; --panel:#081408;
-  --border:#102018; --border2:#183028;
-  --neon:#39d353; --neon2:#7adf7a; --purple:#a8ff78;
-  --amber:#f0b429; --red:#ff5252;
-  --text:#d4f5d4; --text2:#4a7a4a; --text3:#1e401e;
-  --nav-bg:rgba(4,12,8,.97); --grid:rgba(57,211,83,.012);
-  --shadow-card:0 2px 12px rgba(0,0,0,.4);
-  --shadow-neon:0 4px 20px rgba(57,211,83,.15);
-}
-body.theme-forest .brand-dot { background:var(--neon); box-shadow:0 0 10px var(--neon); }
-body.theme-forest .prog-fill { background:var(--neon); box-shadow:0 0 8px rgba(57,211,83,.4); }
-body.theme-forest .send-btn  { background:var(--neon); color:#04100a; }
-body.theme-forest .t-go      { background:rgba(57,211,83,.1); border-color:rgba(57,211,83,.4); color:var(--neon); }
-body.theme-forest .mark-done-btn { background:var(--neon); color:#04100a; box-shadow:0 4px 0 rgba(0,0,0,.25),0 2px 12px rgba(57,211,83,.2); }
+
+
+
+
+
+
 
 /* ══════════════════════════════════════════════════════
    THEME 5: SLATE
 ══════════════════════════════════════════════════════ */
-body.theme-slate {
-  --bg:#0f1117; --bg2:#161b25; --bg3:#1c2235; --panel:#161b25;
-  --border:#222840; --border2:#2e3650;
-  --neon:#e2e8f8; --neon2:#94a3b8; --purple:#a78bfa;
-  --amber:#f59e0b; --red:#f87171;
-  --text:#e2e8f8; --text2:#64748b; --text3:#2a3550;
-  --nav-bg:rgba(15,17,23,.97); --grid:rgba(226,232,248,.01);
-  --shadow-card:0 2px 12px rgba(0,0,0,.4);
-  --shadow-neon:0 4px 16px rgba(148,163,184,.1);
-}
-body.theme-slate .brand-dot { background:#94a3b8; box-shadow:0 0 8px #94a3b8; }
-body.theme-slate .panel-title { color:#94a3b8; text-shadow:none; }
-body.theme-slate .panel-title::before { background:#94a3b8; box-shadow:none; }
-body.theme-slate .prog-fill { background:#94a3b8; box-shadow:none; }
-body.theme-slate .send-btn  { background:#e2e8f8; color:#0f1117; box-shadow:0 4px 0 rgba(0,0,0,.3); }
-body.theme-slate .t-go      { background:rgba(226,232,248,.08); border-color:rgba(226,232,248,.25); color:#e2e8f8; }
-body.theme-slate .mark-done-btn { background:#e2e8f8; color:#0f1117; border:none; }
-body.theme-slate .nav-link.active { color:#e2e8f8; border-color:rgba(226,232,248,.2); background:rgba(226,232,248,.06); }
-body.theme-slate .sn-g { color:#94a3b8 !important; }
+
+
+
+
+
+
+
+
+
+
 
 /* ══════════════════════════════════════════════════════
    THEME 6: WARM DARK
 ══════════════════════════════════════════════════════ */
-body.theme-warm {
-  --bg:#0f0a06; --bg2:#1a1008; --bg3:#241808; --panel:#1a1008;
-  --border:#2e1e0a; --border2:#3e2a10;
-  --neon:#f5a800; --neon2:#ff8c42; --purple:#e06c75;
-  --amber:#f5a800; --red:#e06c75;
-  --text:#f5e6c8; --text2:#8a6a3a; --text3:#3a2a10;
-  --nav-bg:rgba(15,10,6,.97); --grid:rgba(245,168,0,.012);
-  --shadow-card:0 2px 12px rgba(0,0,0,.4);
-  --shadow-neon:0 4px 20px rgba(245,168,0,.15);
-}
-body.theme-warm .brand-dot { background:var(--neon); box-shadow:0 0 10px var(--neon); }
-body.theme-warm .prog-fill { background:linear-gradient(90deg,var(--neon),var(--neon2)); box-shadow:0 0 8px rgba(245,168,0,.4); }
-body.theme-warm .send-btn  { background:var(--neon); color:#0f0a06; }
-body.theme-warm .t-go      { background:rgba(245,168,0,.1); border-color:rgba(245,168,0,.4); color:var(--neon); }
-body.theme-warm .mark-done-btn { background:var(--neon); color:#0f0a06; box-shadow:0 4px 0 rgba(0,0,0,.25),0 2px 12px rgba(245,168,0,.2); }
-body.theme-warm .panel-title { color:var(--neon); }
-body.theme-warm .panel-title::before { background:var(--neon); }
-body.theme-warm .nav-link.active { color:var(--neon); border-color:rgba(245,168,0,.3); background:rgba(245,168,0,.07); }
-body.theme-warm .sn-g { color:var(--neon) !important; }
+
+
+
+
+
+
+
+
+
+
 
 /* ══════════════════════════════════════════════════════
    THEME 7: ARCTIC (light)
 ══════════════════════════════════════════════════════ */
-body.theme-arctic {
-  --bg:#f0f6ff; --bg2:#ffffff; --bg3:#e8f0fc; --panel:#ffffff;
-  --border:#d0ddf5; --border2:#b8caf0;
-  --neon:#0077cc; --neon2:#0099e6; --purple:#5533cc;
-  --amber:#c47a00; --red:#cc1040;
-  --text:#111827; --text2:#4a5a80; --text3:#8899cc;
-  --nav-bg:rgba(240,246,255,.97); --grid:rgba(0,119,204,.02);
-  --shadow-card:0 2px 12px rgba(0,0,0,.08);
-  --shadow-neon:0 4px 16px rgba(0,119,204,.12);
-}
-body.theme-arctic {
-  background-image:
-    radial-gradient(ellipse 80% 30% at 50% 0%,rgba(0,153,230,.06) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent,transparent 23px,rgba(0,119,204,.02) 23px,rgba(0,119,204,.02) 24px),
-    repeating-linear-gradient(90deg,transparent,transparent 23px,rgba(0,119,204,.02) 23px,rgba(0,119,204,.02) 24px);
-}
-body.theme-arctic .brand-dot { background:var(--neon); box-shadow:0 0 8px rgba(0,119,204,.4); }
-body.theme-arctic .panel-title { color:var(--neon); text-shadow:none; }
-body.theme-arctic .panel-title::before { background:var(--neon); box-shadow:none; }
-body.theme-arctic .nav-bg { background:rgba(240,246,255,.97); }
-body.theme-arctic .prog-fill { background:var(--neon); box-shadow:none; }
-body.theme-arctic .send-btn  { background:var(--neon); color:#fff; box-shadow:0 4px 0 rgba(0,80,160,.3); }
-body.theme-arctic .t-go      { background:rgba(0,119,204,.1); border-color:rgba(0,119,204,.4); color:var(--neon); }
-body.theme-arctic .mark-done-btn { background:var(--neon); color:#fff; border:none; box-shadow:0 4px 0 rgba(0,80,160,.25); }
-body.theme-arctic .task-card { box-shadow:0 1px 6px rgba(0,0,0,.08); }
-body.theme-arctic .panel { box-shadow:0 2px 12px rgba(0,0,0,.06); }
-body.theme-arctic .stat-pill { box-shadow:0 1px 6px rgba(0,0,0,.06); }
-body.theme-arctic .sn-g { color:#059669 !important; }
-body.theme-arctic .sn-a { color:#d97706 !important; }
-body.theme-arctic .sn-r { color:#dc2626 !important; }
-body.theme-arctic .sn-b { color:var(--neon) !important; }
-body.theme-arctic .timer-slim-digits { color:var(--text); }
-body.theme-arctic .timer-slim-digits.run { color:var(--neon); text-shadow:none; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── THEME SWITCHER PANEL ── */
 .theme-panel-overlay {
@@ -522,177 +484,94 @@ body.theme-pixel .stat-n { font-weight:800 }
    THEME 11: iOS GLASS LIGHT
    Frosted glass on bright luminous white/blue background
 ══════════════════════════════════════════════════════ */
-body.theme-ios-light {
-  --bg:#f2f2f7; --bg2:rgba(255,255,255,.72); --bg3:rgba(242,242,247,.8); --panel:rgba(255,255,255,.72);
-  --border:rgba(0,0,0,.08); --border2:rgba(0,0,0,.12);
-  --neon:#007aff; --neon2:#34c759; --purple:#5856d6;
-  --amber:#ff9500; --red:#ff3b30;
-  --text:#000000; --text2:rgba(60,60,67,.6); --text3:rgba(60,60,67,.3);
-  --nav-bg:rgba(242,242,247,.85); --grid:transparent;
-  --shadow-card:0 2px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);
-  --shadow-neon:0 4px 16px rgba(0,122,255,.2);
-  background-color:#f2f2f7;
-  background-image:
-    radial-gradient(ellipse 70% 50% at 20% 10%,rgba(88,86,214,.12) 0%,transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(52,199,89,.1) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 40% at 60% 30%,rgba(0,122,255,.08) 0%,transparent 60%);
-}
-body.theme-ios-light .nav {
-  background:rgba(242,242,247,.85);
-  backdrop-filter:blur(24px) saturate(200%);
-  -webkit-backdrop-filter:blur(24px) saturate(200%);
-  border-bottom:1px solid rgba(0,0,0,.1);
-}
-body.theme-ios-light .nav-brand { color:var(--neon);text-shadow:none }
-body.theme-ios-light .brand-dot { background:var(--neon);box-shadow:0 0 8px rgba(0,122,255,.4);animation:pdot 2.2s ease-in-out infinite }
-body.theme-ios-light .nav-link { color:var(--text2) }
-body.theme-ios-light .nav-link:hover { color:var(--text);background:rgba(0,0,0,.05) }
-body.theme-ios-light .nav-link.active { color:var(--neon);border-color:rgba(0,122,255,.25);background:rgba(0,122,255,.08) }
-body.theme-ios-light .btn-theme-toggle { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.1);color:var(--text2) }
-body.theme-ios-light .panel {
-  background:rgba(255,255,255,.72);
-  backdrop-filter:blur(20px) saturate(180%);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
-  border:1px solid rgba(255,255,255,.8);
-  border-radius:18px !important;
-  box-shadow:0 2px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);
-}
-body.theme-ios-light .panel-title { color:var(--neon);text-shadow:none }
-body.theme-ios-light .panel-title::before { background:var(--neon);box-shadow:none }
-body.theme-ios-light .panel-hd { border-bottom:1px solid rgba(0,0,0,.07) }
-body.theme-ios-light .stat-pill {
-  background:rgba(255,255,255,.75);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.9);
-  border-radius:14px !important;
-  box-shadow:0 2px 12px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9);
-}
-body.theme-ios-light .stat-n { color:#000 }
-body.theme-ios-light .sn-g { color:#34c759 !important }
-body.theme-ios-light .sn-a { color:#ff9500 !important }
-body.theme-ios-light .sn-r { color:#ff3b30 !important }
-body.theme-ios-light .sn-b { color:#007aff !important }
-body.theme-ios-light .stat-l { color:rgba(60,60,67,.5) }
-body.theme-ios-light .prog-wrap {
-  background:rgba(255,255,255,.7);
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.9);
-  border-radius:14px !important;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);
-}
-body.theme-ios-light .prog-label { color:var(--text2) }
-body.theme-ios-light .prog-pct { color:var(--neon) }
-body.theme-ios-light .prog-track { background:rgba(0,0,0,.08) }
-body.theme-ios-light .prog-fill { background:var(--neon);box-shadow:none }
-body.theme-ios-light .task-card {
-  background:rgba(255,255,255,.75);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.9);
-  border-radius:14px !important;
-  box-shadow:0 2px 14px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9);
-}
-body.theme-ios-light .task-card:hover { border-color:rgba(0,122,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.1) }
-body.theme-ios-light .task-card.status-inprog {
-  background:rgba(255,149,0,.06);
-  border-color:rgba(255,149,0,.2);
-}
-body.theme-ios-light .task-card.status-done { opacity:.55 }
-body.theme-ios-light .tc-title { color:#000 }
-body.theme-ios-light .tag { border-radius:20px !important }
-body.theme-ios-light .t-todo { background:rgba(0,0,0,.05);color:rgba(60,60,67,.6);border-color:rgba(0,0,0,.1) }
-body.theme-ios-light .t-ip   { background:rgba(255,149,0,.1);color:#ff9500;border-color:rgba(255,149,0,.2) }
-body.theme-ios-light .t-done { background:rgba(52,199,89,.1);color:#34c759;border-color:rgba(52,199,89,.2) }
-body.theme-ios-light .t-crit { background:rgba(255,59,48,.08);color:#ff3b30;border-color:rgba(255,59,48,.2) }
-body.theme-ios-light .t-med  { background:rgba(0,122,255,.08);color:#007aff;border-color:rgba(0,122,255,.2) }
-body.theme-ios-light .t-high { background:rgba(255,149,0,.08);color:#ff9500;border-color:rgba(255,149,0,.2) }
-body.theme-ios-light .t-low  { background:rgba(52,199,89,.08);color:#34c759;border-color:rgba(52,199,89,.2) }
-body.theme-ios-light .m-pill { background:rgba(88,86,214,.07);border:1px solid rgba(88,86,214,.15);border-radius:10px !important }
-body.theme-ios-light .m-pill-name { color:var(--purple) }
-body.theme-ios-light .m-pill-role { color:var(--text2) }
-body.theme-ios-light .m-chip {
-  background:rgba(255,255,255,.7);
-  border:1px solid rgba(0,0,0,.1);
-  border-radius:22px !important;
-  color:var(--text2);
-}
-body.theme-ios-light .m-chip:hover { border-color:rgba(0,122,255,.3);color:var(--text) }
-body.theme-ios-light .m-chip.sel { background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.4);color:var(--neon) }
-body.theme-ios-light .m-chip .m-av { background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1);color:var(--text2) }
-body.theme-ios-light .m-chip.sel .m-av { background:rgba(0,122,255,.15);border-color:rgba(0,122,255,.3);color:var(--neon) }
-body.theme-ios-light .m-chip.sel .m-ck { background:var(--neon);color:#fff }
-body.theme-ios-light .send-btn {
-  background:linear-gradient(180deg,#1e8fff,#007aff);
-  border:none;border-radius:14px !important;color:#fff;
-  box-shadow:0 4px 0 rgba(0,80,200,.25),0 2px 16px rgba(0,122,255,.3),inset 0 1px 0 rgba(255,255,255,.3);
-  text-shadow:0 1px 2px rgba(0,0,0,.2);
-}
-body.theme-ios-light .send-btn:hover { filter:brightness(1.06) }
-body.theme-ios-light .mark-done-btn {
-  background:linear-gradient(180deg,#3ddb65,#34c759);
-  border:none;border-radius:22px !important;color:#fff;
-  box-shadow:0 4px 0 rgba(0,120,50,.2),0 2px 12px rgba(52,199,89,.25),inset 0 1px 0 rgba(255,255,255,.3);
-}
-body.theme-ios-light .mark-done-btn.undone {
-  background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.1);
-  color:var(--text2);box-shadow:none;
-}
-body.theme-ios-light .sc-btn { background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.08);color:var(--text2);border-radius:20px !important }
-body.theme-ios-light .sc-btn:hover { border-color:rgba(0,122,255,.3);color:var(--neon) }
-body.theme-ios-light .t-go {
-  background:linear-gradient(180deg,#1e8fff,#007aff);border:none;
-  color:#fff;border-radius:14px !important;
-  box-shadow:0 4px 0 rgba(0,80,200,.2),inset 0 1px 0 rgba(255,255,255,.25);
-}
-body.theme-ios-light .t-pa { background:linear-gradient(180deg,#ffaa20,#ff9500);border:none;color:#fff;border-radius:14px !important;box-shadow:0 4px 0 rgba(180,80,0,.2) }
-body.theme-ios-light .t-rst { background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.1);color:var(--text2);border-radius:14px !important;box-shadow:none }
-body.theme-ios-light .t-pre { background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.1);color:var(--text2);border-radius:9px !important }
-body.theme-ios-light .t-pre.ap { background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.3);color:var(--neon) }
-body.theme-ios-light .timer-slim-digits { color:#000 }
-body.theme-ios-light .timer-slim-digits.run { color:var(--neon);text-shadow:none }
-body.theme-ios-light .timer-slim-digits.end { color:var(--red) }
-body.theme-ios-light .timer-slim-st { color:var(--text2) }
-body.theme-ios-light .tabs { border-bottom:1px solid rgba(0,0,0,.1) }
-body.theme-ios-light .tab { color:var(--text2) }
-body.theme-ios-light .tab.active { color:var(--neon);border-bottom-color:var(--neon) }
-body.theme-ios-light .fu-card {
-  background:rgba(255,255,255,.72);
-  backdrop-filter:blur(16px);
-  border:1px solid rgba(0,122,255,.12);
-  border-radius:14px !important;
-  box-shadow:0 2px 14px rgba(0,0,0,.06);
-}
-body.theme-ios-light .fu-name { color:var(--neon) }
-body.theme-ios-light .fu-task-row { background:rgba(0,0,0,.04);border-left-color:var(--neon);border-radius:8px }
-body.theme-ios-light .fu-task-name { color:#000 }
-body.theme-ios-light .member-hd {
-  background:rgba(88,86,214,.07);border:1px solid rgba(88,86,214,.15);
-  border-radius:12px !important;
-  backdrop-filter:blur(8px);
-}
-body.theme-ios-light .member-name { color:var(--purple) }
-body.theme-ios-light .member-prog { background:rgba(0,0,0,.08) }
-body.theme-ios-light .member-prog-fill { background:var(--neon) }
-body.theme-ios-light .notes-ta {
-  background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.1);
-  color:#000;
-}
-body.theme-ios-light .notes-ta:focus { border-color:rgba(0,122,255,.4) }
-body.theme-ios-light .notes-ta::placeholder { color:rgba(60,60,67,.35) }
-body.theme-ios-light .role-input { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.12);color:#000 }
-body.theme-ios-light .role-input:focus { border-color:rgba(0,122,255,.4) }
-body.theme-ios-light .p-chip { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.1);color:var(--text2);border-radius:22px !important }
-body.theme-ios-light .p-chip.pc { background:rgba(255,59,48,.08);border-color:rgba(255,59,48,.3);color:#ff3b30 }
-body.theme-ios-light .p-chip.ph { background:rgba(255,149,0,.08);border-color:rgba(255,149,0,.3);color:#ff9500 }
-body.theme-ios-light .p-chip.pm { background:rgba(0,122,255,.08);border-color:rgba(0,122,255,.3);color:#007aff }
-body.theme-ios-light .p-chip.pl { background:rgba(52,199,89,.08);border-color:rgba(52,199,89,.3);color:#34c759 }
-body.theme-ios-light .task-input { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.12);color:#000;caret-color:var(--neon) }
-body.theme-ios-light .task-input:focus { border-color:rgba(0,122,255,.4);box-shadow:0 0 0 4px rgba(0,122,255,.1) }
-body.theme-ios-light .add-member-inp { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.1);color:#000 }
-body.theme-ios-light .add-member-btn { background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.3);color:var(--neon) }
-body.theme-ios-light .member-list-item { background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.08) }
-body.theme-ios-light .mli-name { color:#000 }
-body.theme-ios-light .filter-banner { background:rgba(0,122,255,.07);border-color:rgba(0,122,255,.2);color:var(--neon) }
-body.theme-ios-light .toast { background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-color:rgba(0,122,255,.2);color:var(--neon);box-shadow:0 4px 20px rgba(0,0,0,.12) }
-body.theme-ios-light .toast.err { border-color:rgba(255,59,48,.3);color:#ff3b30 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
