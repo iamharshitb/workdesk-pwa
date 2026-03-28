@@ -119,6 +119,7 @@
       <a href="report.html" class="nav-link">Report</a>
     </div>
     <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
   </div>
 </nav>
 
@@ -204,8 +205,9 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { onUserReady, getTasks, getMembers, updateTask } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
+import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
 let MY_NAME = localStorage.getItem('wd_myname') || '';
@@ -214,17 +216,62 @@ let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|null
 // Theme handled by theme.js
 initTheme();
 window.toggleThemePanel = toggleThemePanel;
+initAudio();
+
+// Mute button init
+function updateMuteBtn() {
+  const btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getMuted() ? '🔇' : '🔊';
+}
+window.handleMuteToggle = () => { toggleMute(); updateMuteBtn(); };
+updateMuteBtn();
 
 // BOOTSTRAP
 onUserReady(async () => {
-  [tasks, members] = await Promise.all([getTasks(), getMembers()]);
+  // Ask for name first (before listener fires so renderAll has MY_NAME)
   if (!MY_NAME) {
     MY_NAME = prompt('Your name (to show your tasks):') || '';
     if (MY_NAME) localStorage.setItem('wd_myname', MY_NAME);
   }
-  renderAll();
-  document.getElementById('page-loader').style.display = 'none';
-  document.getElementById('main').style.display = '';
+
+  // Load members once (they don't change often)
+  members = await getMembers();
+
+  // Real-time task listener — fires immediately + on every change
+  onTasksChanged(({ tasks: liveTasks, changes }) => {
+    tasks = liveTasks;
+
+    // Check for newly added tasks that include this user
+    changes.forEach(({ type, task }) => {
+      if (type === 'added') {
+        const assignedToMe = MY_NAME &&
+          (task.members || []).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase());
+        if (assignedToMe) {
+          playTaskAssigned();
+          toast('📋 New task assigned to you!');
+        }
+      }
+      if (type === 'modified') {
+        // If a task just became done and you're assigned, play a chime
+        const assignedToMe = MY_NAME &&
+          (task.members || []).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase());
+        if (assignedToMe && task.status === 'done') {
+          // Only play if it wasn't done before (avoid re-playing on unrelated updates)
+          const prev = tasks.find(t => t.id === task.id);
+          if (prev && prev.status !== 'done') playTimerDone();
+        }
+      }
+    });
+
+    renderAll();
+
+    // Show main content on first load
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+      loader.style.display = 'none';
+      document.getElementById('main').style.display = '';
+    }
+  });
 });
 
 function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); }
@@ -493,9 +540,9 @@ async function setMemberStatus(taskId, memberId, newStatus) {
   updates[`memberStatus.${memberId}`] = newStatus;
   await updateTask(taskId, updates);
   renderAll();
-  if (allDone) toast('🎉 All done! Task complete!');
-  else if (newStatus === 'done') toast('✓ Your part is done!');
-  else toast('↩ Reopened');
+  if (allDone) { playTimerDone(); toast('🎉 All done! Task complete!'); }
+  else if (newStatus === 'done') { playMarkDone(); toast('✓ Your part is done!'); }
+  else { playReopen(); toast('↩ Reopened'); }
 }
 
 // ── CYCLE OVERALL (todo ↔ inprog only) ────────────────────────────────────
@@ -582,6 +629,7 @@ window.toggleTimer=()=>{
       document.getElementById('t-toggle').className='t-btn t-go';
       document.getElementById('t-toggle').textContent='▶ Start';
       document.getElementById('t-st').textContent='Done! ✓';
+      playTimerDone();
       return;
     }
     tLeft--; updateTimerUI();

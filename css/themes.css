@@ -575,3 +575,400 @@ body.theme-pixel .stat-n { font-weight:800 }
 
 
 
+
+/* ══════════════════════════════════════════════════════
+   THEME 12: BIG SUR
+   Warm coral gradient bleeding through frosted glass.
+   macOS Big Sur vitreous tinted panels.
+══════════════════════════════════════════════════════ */
+body.theme-bigsur {
+  --bg:#1a0a0a;
+  --bg2:rgba(120,40,40,.38);
+  --bg3:rgba(100,30,30,.45);
+  --panel:rgba(120,40,40,.38);
+  --border:rgba(255,160,120,.12);
+  --border2:rgba(255,160,120,.2);
+  --neon:#4fa3ff;
+  --neon2:#5ac8fa;
+  --purple:#bf5af2;
+  --amber:#ff9f0a;
+  --red:#ff453a;
+  --text:#fff;
+  --text2:rgba(255,220,210,.6);
+  --text3:rgba(255,200,180,.3);
+  --nav-bg:rgba(60,15,15,.88);
+  --grid:transparent;
+  --shadow-card:0 4px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,200,180,.12);
+  --shadow-neon:0 4px 16px rgba(79,163,255,.25);
+  background-color:#1a0a0a;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 20% -10%, #c0392b 0%, #e74c3c 25%, #e67e22 55%, transparent 80%),
+    radial-gradient(ellipse 80% 60% at 90% 100%, #8e44ad 0%, transparent 60%);
+}
+body.theme-bigsur .nav {
+  background:rgba(60,15,15,.88);
+  backdrop-filter:blur(28px) saturate(200%);
+  -webkit-backdrop-filter:blur(28px) saturate(200%);
+  border-bottom:1px solid rgba(255,160,120,.15);
+}
+body.theme-bigsur .panel {
+  background:rgba(120,40,40,.38);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,160,120,.18);
+  border-radius:18px !important;
+  box-shadow:0 4px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,200,180,.12);
+}
+body.theme-bigsur .panel-hd { border-bottom:1px solid rgba(255,160,120,.1) }
+body.theme-bigsur .panel-title { color:#5ac8fa;text-shadow:none }
+body.theme-bigsur .panel-title::before { background:#5ac8fa;box-shadow:none }
+body.theme-bigsur .stat-pill {
+  background:rgba(120,40,40,.45);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,160,120,.18);
+  border-radius:16px !important;
+  box-shadow:0 2px 16px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,200,180,.1);
+}
+body.theme-bigsur .sn-g { color:#30d158 !important }
+body.theme-bigsur .sn-a { color:#ff9f0a !important }
+body.theme-bigsur .sn-r { color:#ff453a !important }
+body.theme-bigsur .sn-b { color:#5ac8fa !important }
+body.theme-bigsur .prog-wrap {
+  background:rgba(120,40,40,.4);
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(255,160,120,.15);
+  border-radius:16px !important;
+}
+body.theme-bigsur .prog-track { background:rgba(0,0,0,.25) }
+body.theme-bigsur .prog-fill { background:linear-gradient(90deg,#4fa3ff,#5ac8fa);box-shadow:none }
+body.theme-bigsur .prog-pct { color:#5ac8fa }
+body.theme-bigsur .task-card {
+  background:rgba(100,30,30,.42);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,160,120,.15);
+  border-radius:16px !important;
+  box-shadow:0 2px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,200,180,.08);
+}
+body.theme-bigsur .task-card.status-inprog {
+  background:rgba(255,159,10,.12);
+  border-color:rgba(255,159,10,.25);
+}
+body.theme-bigsur .tc-title { color:#fff }
+body.theme-bigsur .send-btn {
+  background:linear-gradient(180deg,#1e8fff,#007aff);
+  border:none;border-radius:14px !important;color:#fff;
+  box-shadow:0 4px 0 rgba(0,0,0,.3),0 2px 16px rgba(79,163,255,.3),inset 0 1px 0 rgba(255,255,255,.25);
+}
+body.theme-bigsur .mark-done-btn {
+  background:linear-gradient(180deg,#3ddb65,#30d158);
+  border:none;border-radius:22px !important;color:#fff;
+  box-shadow:0 4px 0 rgba(0,0,0,.25),0 2px 12px rgba(48,209,88,.25),inset 0 1px 0 rgba(255,255,255,.2);
+}
+body.theme-bigsur .mark-done-btn.undone {
+  background:rgba(120,40,40,.6);border:1px solid rgba(255,160,120,.2);
+  color:var(--text2);box-shadow:none;
+}
+body.theme-bigsur .t-go {
+  background:linear-gradient(180deg,#1e8fff,#007aff);border:none;color:#fff;
+  border-radius:14px !important;box-shadow:0 4px 0 rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.2);
+}
+body.theme-bigsur .t-pa { background:rgba(255,159,10,.2);border:1px solid rgba(255,159,10,.4);color:#ff9f0a;border-radius:14px !important }
+body.theme-bigsur .t-rst { background:rgba(120,40,40,.5);border:1px solid rgba(255,160,120,.15);color:var(--text2);border-radius:14px !important }
+body.theme-bigsur .t-pre { background:rgba(100,30,30,.5);border:1px solid rgba(255,160,120,.15);color:var(--text2);border-radius:9px !important }
+body.theme-bigsur .t-pre.ap { background:rgba(79,163,255,.15);border-color:rgba(79,163,255,.35);color:#5ac8fa }
+body.theme-bigsur .m-chip { background:rgba(100,30,30,.5);border-color:rgba(255,160,120,.2);border-radius:22px !important }
+body.theme-bigsur .m-chip.sel { background:rgba(79,163,255,.18);border-color:rgba(79,163,255,.45);color:#5ac8fa }
+body.theme-bigsur .m-pill { background:rgba(191,90,242,.12);border:1px solid rgba(191,90,242,.2);border-radius:10px !important }
+body.theme-bigsur .m-pill-name { color:#bf5af2 }
+body.theme-bigsur .member-hd { background:rgba(191,90,242,.1);border:1px solid rgba(191,90,242,.2);border-radius:14px !important }
+body.theme-bigsur .fu-card { background:rgba(100,30,30,.42);backdrop-filter:blur(16px);border:1px solid rgba(255,160,120,.15);border-radius:14px !important }
+body.theme-bigsur .tab.active { color:#5ac8fa;border-bottom-color:#5ac8fa;text-shadow:none }
+body.theme-bigsur .nav-link.active { color:#5ac8fa;border-color:rgba(90,200,250,.3);background:rgba(90,200,250,.1) }
+body.theme-bigsur .brand-dot { background:#5ac8fa;box-shadow:0 0 8px #5ac8fa;animation:pdot 2.2s ease-in-out infinite }
+body.theme-bigsur .sc-btn { background:rgba(100,30,30,.5);border:1px solid rgba(255,160,120,.2);color:var(--text2);border-radius:20px !important }
+body.theme-bigsur .p-chip { border-radius:22px !important;background:rgba(100,30,30,.5);border-color:rgba(255,160,120,.2);color:var(--text2) }
+body.theme-bigsur .p-chip.pc { background:rgba(255,69,58,.15);border-color:rgba(255,69,58,.4);color:#ff453a }
+body.theme-bigsur .p-chip.ph { background:rgba(255,159,10,.12);border-color:rgba(255,159,10,.35);color:#ff9f0a }
+body.theme-bigsur .p-chip.pm { background:rgba(90,200,250,.1);border-color:rgba(90,200,250,.35);color:#5ac8fa }
+body.theme-bigsur .p-chip.pl { background:rgba(48,209,88,.1);border-color:rgba(48,209,88,.35);color:#30d158 }
+body.theme-bigsur .timer-slim-digits.run { color:#5ac8fa;text-shadow:0 0 16px rgba(90,200,250,.4) }
+body.theme-bigsur .notes-ta { background:rgba(100,30,30,.45);border:1px solid rgba(255,160,120,.15);color:#fff }
+body.theme-bigsur .notes-ta:focus { border-color:rgba(90,200,250,.4) }
+body.theme-bigsur .task-input { background:rgba(100,30,30,.45);border-color:rgba(255,160,120,.2);color:#fff;caret-color:#5ac8fa }
+body.theme-bigsur .task-input:focus { border-color:rgba(90,200,250,.4);box-shadow:0 0 0 3px rgba(90,200,250,.1) }
+body.theme-bigsur .role-input { background:rgba(100,30,30,.45);border-color:rgba(255,160,120,.18);color:#fff }
+body.theme-bigsur .role-input:focus { border-color:rgba(90,200,250,.35) }
+body.theme-bigsur .prog-label { color:var(--text2) }
+body.theme-bigsur .stat-l { color:rgba(255,200,180,.4) }
+body.theme-bigsur .toast { background:rgba(60,15,15,.9);backdrop-filter:blur(20px);border-color:rgba(90,200,250,.3);color:#5ac8fa }
+body.theme-bigsur .filter-banner { background:rgba(79,163,255,.1);border-color:rgba(79,163,255,.25);color:#5ac8fa }
+
+/* ══════════════════════════════════════════════════════
+   THEME 13: iOS SYSTEM DARK
+   Deep navy-charcoal. No glow. Pill shapes everywhere.
+   Tight & clean like iOS Settings / Control Centre dark.
+══════════════════════════════════════════════════════ */
+body.theme-ios-system {
+  --bg:#1c1c1e;
+  --bg2:#2c2c2e;
+  --bg3:#3a3a3c;
+  --panel:#2c2c2e;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.12);
+  --neon:#0a84ff;
+  --neon2:#30d158;
+  --purple:#bf5af2;
+  --amber:#ff9f0a;
+  --red:#ff453a;
+  --text:#ffffff;
+  --text2:rgba(235,235,245,.6);
+  --text3:rgba(235,235,245,.3);
+  --nav-bg:#1c1c1e;
+  --grid:transparent;
+  --shadow-card:0 1px 0 rgba(255,255,255,.06),0 4px 16px rgba(0,0,0,.4);
+  --shadow-neon:none;
+}
+body.theme-ios-system .nav {
+  background:#1c1c1e;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  backdrop-filter:none;
+}
+body.theme-ios-system .panel {
+  background:#2c2c2e;border:none;
+  border-radius:16px !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 16px rgba(0,0,0,.35);
+}
+body.theme-ios-system .panel-hd { border-bottom:1px solid rgba(255,255,255,.07) }
+body.theme-ios-system .panel-title { color:#0a84ff;text-shadow:none }
+body.theme-ios-system .panel-title::before { background:#0a84ff;box-shadow:none }
+body.theme-ios-system .stat-pill {
+  background:#2c2c2e;border:none;border-radius:14px !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05),0 2px 10px rgba(0,0,0,.3);
+}
+body.theme-ios-system .sn-g { color:#30d158 !important }
+body.theme-ios-system .sn-a { color:#ff9f0a !important }
+body.theme-ios-system .sn-r { color:#ff453a !important }
+body.theme-ios-system .sn-b { color:#0a84ff !important }
+body.theme-ios-system .prog-wrap { background:#2c2c2e;border:none;border-radius:14px !important }
+body.theme-ios-system .prog-track { background:rgba(255,255,255,.1);height:5px }
+body.theme-ios-system .prog-fill { background:#0a84ff;box-shadow:none }
+body.theme-ios-system .prog-pct { color:#0a84ff }
+body.theme-ios-system .task-card {
+  background:#2c2c2e;border:none;border-radius:14px !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05),0 2px 12px rgba(0,0,0,.3);
+}
+body.theme-ios-system .task-card.status-inprog { background:#3a2a1e;box-shadow:0 1px 0 rgba(255,159,10,.1),0 2px 12px rgba(0,0,0,.3) }
+body.theme-ios-system .task-card::before { width:0 }
+body.theme-ios-system .task-card.pc { border-left:3px solid #ff453a }
+body.theme-ios-system .task-card.ph { border-left:3px solid #ff9f0a }
+body.theme-ios-system .task-card.pm { border-left:3px solid #0a84ff }
+body.theme-ios-system .task-card.pl { border-left:3px solid #30d158 }
+body.theme-ios-system .send-btn {
+  background:#0a84ff;border:none;border-radius:14px !important;color:#fff;
+  box-shadow:0 3px 0 rgba(0,0,0,.4);letter-spacing:.01em;
+}
+body.theme-ios-system .send-btn:hover { filter:brightness(1.1) }
+body.theme-ios-system .mark-done-btn {
+  background:#30d158;border:none;border-radius:100px !important;color:#fff;
+  box-shadow:0 3px 0 rgba(0,0,0,.35);
+}
+body.theme-ios-system .mark-done-btn.undone {
+  background:#3a3a3c;border:none;color:var(--text2);
+  box-shadow:0 2px 0 rgba(0,0,0,.3);
+}
+body.theme-ios-system .t-go { background:#0a84ff;border:none;color:#fff;border-radius:14px !important;box-shadow:0 3px 0 rgba(0,0,0,.35) }
+body.theme-ios-system .t-pa { background:#ff9f0a;border:none;color:#fff;border-radius:14px !important;box-shadow:0 3px 0 rgba(0,0,0,.35) }
+body.theme-ios-system .t-rst { background:#3a3a3c;border:none;color:var(--text2);border-radius:14px !important }
+body.theme-ios-system .t-pre { background:#3a3a3c;border:none;color:var(--text2);border-radius:9px !important }
+body.theme-ios-system .t-pre.ap { background:rgba(10,132,255,.2);color:#0a84ff }
+body.theme-ios-system .m-chip { background:#3a3a3c;border:none;border-radius:100px !important }
+body.theme-ios-system .m-chip.sel { background:rgba(10,132,255,.2);border:1.5px solid rgba(10,132,255,.5);color:#0a84ff }
+body.theme-ios-system .m-pill { background:#3a3a3c;border:none;border-radius:10px !important }
+body.theme-ios-system .m-pill-name { color:#bf5af2 }
+body.theme-ios-system .member-hd { background:rgba(191,90,242,.12);border:none;border-radius:12px !important }
+body.theme-ios-system .fu-card { background:#2c2c2e;border:none;border-radius:14px !important;box-shadow:0 1px 0 rgba(255,255,255,.04),0 2px 12px rgba(0,0,0,.3) }
+body.theme-ios-system .sc-btn { background:#3a3a3c;border:none;color:var(--text2);border-radius:100px !important }
+body.theme-ios-system .sc-btn:hover { background:rgba(10,132,255,.15);color:#0a84ff }
+body.theme-ios-system .p-chip { background:#3a3a3c;border:none;color:var(--text2);border-radius:100px !important }
+body.theme-ios-system .p-chip.pc { background:rgba(255,69,58,.2);color:#ff453a }
+body.theme-ios-system .p-chip.ph { background:rgba(255,159,10,.18);color:#ff9f0a }
+body.theme-ios-system .p-chip.pm { background:rgba(10,132,255,.18);color:#0a84ff }
+body.theme-ios-system .p-chip.pl { background:rgba(48,209,88,.16);color:#30d158 }
+body.theme-ios-system .tab.active { color:#0a84ff;border-bottom-color:#0a84ff;text-shadow:none }
+body.theme-ios-system .nav-link { border-radius:100px !important }
+body.theme-ios-system .nav-link.active { color:#0a84ff;border-color:rgba(10,132,255,.3);background:rgba(10,132,255,.12) }
+body.theme-ios-system .brand-dot { background:#0a84ff;box-shadow:none;animation:pdot 2.2s ease-in-out infinite }
+body.theme-ios-system .timer-slim-digits.run { color:#0a84ff;text-shadow:none }
+body.theme-ios-system .timer-slim-digits.end { color:#ff453a }
+body.theme-ios-system .task-input { background:#3a3a3c;border:none;color:#fff;caret-color:#0a84ff }
+body.theme-ios-system .task-input:focus { box-shadow:0 0 0 3px rgba(10,132,255,.25) }
+body.theme-ios-system .role-input { background:#3a3a3c;border:none;color:#fff }
+body.theme-ios-system .role-input:focus { box-shadow:0 0 0 2px rgba(10,132,255,.25) }
+body.theme-ios-system .notes-ta { background:#3a3a3c;border:none;color:#fff }
+body.theme-ios-system .notes-ta:focus { box-shadow:0 0 0 3px rgba(10,132,255,.2) }
+body.theme-ios-system .stat-l { color:rgba(235,235,245,.35) }
+body.theme-ios-system .toast { background:#2c2c2e;border:1px solid rgba(10,132,255,.3);color:#0a84ff;box-shadow:0 4px 20px rgba(0,0,0,.5) }
+body.theme-ios-system .prog-label { color:var(--text2) }
+body.theme-ios-system .filter-banner { background:rgba(10,132,255,.12);border-color:rgba(10,132,255,.25);color:#0a84ff }
+body.theme-ios-system .member-prog { background:rgba(255,255,255,.1) }
+body.theme-ios-system .member-prog-fill { background:#0a84ff;box-shadow:none }
+
+/* ══════════════════════════════════════════════════════
+   THEME 14: iOS HEALTH
+   Pure white. Pastel colour-blocked cards. Airy & light.
+   Bold numbers. Minimal borders. Apple Health app vibes.
+══════════════════════════════════════════════════════ */
+body.theme-health {
+  --bg:#f2f2f7;
+  --bg2:#ffffff;
+  --bg3:#f2f2f7;
+  --panel:#ffffff;
+  --border:rgba(0,0,0,.06);
+  --border2:rgba(0,0,0,.1);
+  --neon:#007aff;
+  --neon2:#34c759;
+  --purple:#5e5ce6;
+  --amber:#ff9500;
+  --red:#ff3b30;
+  --text:#000000;
+  --text2:rgba(60,60,67,.6);
+  --text3:rgba(60,60,67,.3);
+  --nav-bg:rgba(242,242,247,.95);
+  --grid:transparent;
+  --shadow-card:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
+  --shadow-neon:none;
+}
+body.theme-health {
+  background-color:#f2f2f7;
+  background-image:none;
+}
+body.theme-health .nav {
+  background:rgba(242,242,247,.95);
+  border-bottom:1px solid rgba(0,0,0,.08);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+body.theme-health .nav-brand { color:#007aff;text-shadow:none }
+body.theme-health .brand-dot { background:#007aff;box-shadow:none;animation:pdot 2.2s ease-in-out infinite }
+body.theme-health .nav-link { color:var(--text2) }
+body.theme-health .nav-link:hover { color:#000;background:rgba(0,0,0,.04) }
+body.theme-health .nav-link.active { color:#007aff;border-color:rgba(0,122,255,.2);background:rgba(0,122,255,.07);border-radius:100px !important }
+body.theme-health .btn-theme-toggle { background:#fff;border-color:rgba(0,0,0,.1);color:var(--text2);box-shadow:0 1px 3px rgba(0,0,0,.06) }
+body.theme-health .panel {
+  background:#fff;border:none;border-radius:16px !important;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
+}
+body.theme-health .panel-hd { border-bottom:1px solid rgba(0,0,0,.06) }
+body.theme-health .panel-title { color:#007aff;text-shadow:none }
+body.theme-health .panel-title::before { background:#007aff;box-shadow:none }
+
+/* Pastel stat pills — each a different health-app pastel */
+body.theme-health .stats-row .stat-pill:nth-child(1) { background:#e8f5e9;border:none;border-radius:16px !important }
+body.theme-health .stats-row .stat-pill:nth-child(2) { background:#fff3e0;border:none;border-radius:16px !important }
+body.theme-health .stats-row .stat-pill:nth-child(3) { background:#e3f2fd;border:none;border-radius:16px !important }
+body.theme-health .stats-row .stat-pill:nth-child(4) { background:#fce4ec;border:none;border-radius:16px !important }
+body.theme-health .sn-g { color:#2e7d32 !important }
+body.theme-health .sn-a { color:#e65100 !important }
+body.theme-health .sn-b { color:#1565c0 !important }
+body.theme-health .sn-r { color:#c62828 !important }
+body.theme-health .stat-l { color:rgba(0,0,0,.45) }
+
+body.theme-health .prog-wrap { background:#fff;border:none;border-radius:14px !important;box-shadow:0 1px 3px rgba(0,0,0,.05) }
+body.theme-health .prog-track { background:rgba(0,0,0,.06);height:6px }
+body.theme-health .prog-fill { background:#007aff;box-shadow:none }
+body.theme-health .prog-pct { color:#007aff }
+body.theme-health .prog-label { color:var(--text2) }
+
+/* Pastel task cards */
+body.theme-health .task-card {
+  background:#fff;border:none;border-radius:16px !important;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+}
+body.theme-health .task-card::before { width:0 }
+body.theme-health .task-card.pc { background:#fff5f5;border-left:4px solid #ff3b30 }
+body.theme-health .task-card.ph { background:#fffbf0;border-left:4px solid #ff9500 }
+body.theme-health .task-card.pm { background:#f0f8ff;border-left:4px solid #007aff }
+body.theme-health .task-card.pl { background:#f0fdf4;border-left:4px solid #34c759 }
+body.theme-health .task-card.status-inprog.ph { background:#fff8e8 }
+body.theme-health .task-card.status-done { opacity:.5 }
+body.theme-health .tc-title { color:#000;font-size:15px }
+
+body.theme-health .tag { border-radius:20px !important }
+body.theme-health .t-todo { background:rgba(0,0,0,.05);color:rgba(60,60,67,.6);border-color:rgba(0,0,0,.08) }
+body.theme-health .t-ip   { background:#fff3e0;color:#e65100;border-color:rgba(255,149,0,.2) }
+body.theme-health .t-done { background:#e8f5e9;color:#2e7d32;border-color:rgba(52,199,89,.2) }
+body.theme-health .t-crit { background:#fce4ec;color:#c62828;border-color:rgba(255,59,48,.2) }
+body.theme-health .t-med  { background:#e3f2fd;color:#1565c0;border-color:rgba(0,122,255,.2) }
+body.theme-health .t-high { background:#fff3e0;color:#e65100;border-color:rgba(255,149,0,.2) }
+body.theme-health .t-low  { background:#e8f5e9;color:#2e7d32;border-color:rgba(52,199,89,.2) }
+
+body.theme-health .m-pill { background:#f0f0ff;border:1px solid rgba(94,92,230,.15);border-radius:10px !important }
+body.theme-health .m-pill-name { color:#5e5ce6 }
+body.theme-health .m-pill-role { color:var(--text2) }
+
+body.theme-health .m-chip { background:#f2f2f7;border:1.5px solid rgba(0,0,0,.1);border-radius:100px !important;color:var(--text2) }
+body.theme-health .m-chip:hover { border-color:rgba(0,122,255,.3);color:#000 }
+body.theme-health .m-chip.sel { background:#e3f2fd;border-color:rgba(0,122,255,.4);color:#007aff }
+body.theme-health .m-chip .m-av { background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.08);color:var(--text2) }
+body.theme-health .m-chip.sel .m-av { background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.3);color:#007aff }
+body.theme-health .m-chip.sel .m-ck { background:#007aff;color:#fff }
+
+body.theme-health .send-btn {
+  background:#007aff;border:none;border-radius:100px !important;color:#fff;
+  box-shadow:0 4px 0 rgba(0,80,200,.25),0 2px 12px rgba(0,122,255,.2);
+  font-size:15px;letter-spacing:.01em;
+}
+body.theme-health .send-btn:hover { filter:brightness(1.06) }
+body.theme-health .mark-done-btn {
+  background:#34c759;border:none;border-radius:100px !important;color:#fff;
+  box-shadow:0 4px 0 rgba(0,120,50,.2),0 2px 10px rgba(52,199,89,.2);
+}
+body.theme-health .mark-done-btn.undone {
+  background:rgba(0,0,0,.06);border:none;color:var(--text2);box-shadow:none;
+}
+body.theme-health .sc-btn { background:rgba(0,0,0,.05);border:none;color:var(--text2);border-radius:100px !important }
+body.theme-health .sc-btn:hover { background:rgba(0,122,255,.1);color:#007aff }
+body.theme-health .p-chip { background:#f2f2f7;border:1.5px solid rgba(0,0,0,.08);color:var(--text2);border-radius:100px !important }
+body.theme-health .p-chip.pc { background:#fce4ec;border-color:rgba(255,59,48,.25);color:#c62828 }
+body.theme-health .p-chip.ph { background:#fff3e0;border-color:rgba(255,149,0,.25);color:#e65100 }
+body.theme-health .p-chip.pm { background:#e3f2fd;border-color:rgba(0,122,255,.25);color:#1565c0 }
+body.theme-health .p-chip.pl { background:#e8f5e9;border-color:rgba(52,199,89,.25);color:#2e7d32 }
+body.theme-health .t-go { background:#007aff;border:none;color:#fff;border-radius:100px !important;box-shadow:0 4px 0 rgba(0,80,200,.2) }
+body.theme-health .t-pa { background:#ff9500;border:none;color:#fff;border-radius:100px !important;box-shadow:0 4px 0 rgba(180,80,0,.2) }
+body.theme-health .t-rst { background:rgba(0,0,0,.06);border:none;color:var(--text2);border-radius:100px !important }
+body.theme-health .t-pre { background:#fff;border:1.5px solid rgba(0,0,0,.1);color:var(--text2);border-radius:9px !important;box-shadow:0 1px 3px rgba(0,0,0,.05) }
+body.theme-health .t-pre.ap { background:#e3f2fd;border-color:rgba(0,122,255,.3);color:#007aff }
+body.theme-health .tab.active { color:#007aff;border-bottom-color:#007aff;text-shadow:none }
+body.theme-health .tabs { border-bottom:1px solid rgba(0,0,0,.08) }
+body.theme-health .tab { color:var(--text2) }
+body.theme-health .member-hd { background:#f0f0ff;border:1px solid rgba(94,92,230,.12);border-radius:14px !important }
+body.theme-health .member-name { color:#5e5ce6 }
+body.theme-health .member-prog { background:rgba(0,0,0,.07) }
+body.theme-health .member-prog-fill { background:#007aff;box-shadow:none }
+body.theme-health .fu-card { background:#fff;border:none;border-radius:14px !important;box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04) }
+body.theme-health .fu-name { color:#007aff }
+body.theme-health .fu-task-row { background:#f2f2f7;border-left-color:#007aff;border-radius:8px }
+body.theme-health .fu-task-name { color:#000 }
+body.theme-health .timer-slim-digits { color:#000 }
+body.theme-health .timer-slim-digits.run { color:#007aff;text-shadow:none }
+body.theme-health .timer-slim-digits.end { color:#ff3b30 }
+body.theme-health .timer-slim-st { color:var(--text2) }
+body.theme-health .task-input { background:#fff;border:1.5px solid rgba(0,0,0,.1);color:#000;caret-color:#007aff }
+body.theme-health .task-input:focus { border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,.1) }
+body.theme-health .role-input { background:#fff;border:1.5px solid rgba(0,0,0,.1);color:#000 }
+body.theme-health .role-input:focus { border-color:#007aff }
+body.theme-health .role-name { color:#5e5ce6 }
+body.theme-health .notes-ta { background:#fff;border:1.5px solid rgba(0,0,0,.08);color:#000 }
+body.theme-health .notes-ta:focus { border-color:#007aff }
+body.theme-health .notes-ta::placeholder { color:rgba(60,60,67,.3) }
+body.theme-health .add-member-inp { background:#fff;border:1.5px solid rgba(0,0,0,.1);color:#000 }
+body.theme-health .add-member-btn { background:rgba(0,122,255,.08);border-color:rgba(0,122,255,.25);color:#007aff }
+body.theme-health .member-list-item { background:#fff;border-color:rgba(0,0,0,.07) }
+body.theme-health .mli-name { color:#000 }
+body.theme-health .mli-av { background:rgba(94,92,230,.1);border-color:rgba(94,92,230,.2);color:#5e5ce6 }
+body.theme-health .filter-banner { background:rgba(0,122,255,.07);border-color:rgba(0,122,255,.18);color:#007aff }
+body.theme-health .toast { background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-color:rgba(0,122,255,.2);color:#007aff;box-shadow:0 4px 20px rgba(0,0,0,.12) }
+body.theme-health .toast.err { border-color:rgba(255,59,48,.25);color:#ff3b30 }
+body.theme-health .sect-label { color:rgba(60,60,67,.5) }

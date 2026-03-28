@@ -6,7 +6,10 @@ export const THEMES = [
   { id:'midnight', name:'Midnight Blue',  sub:'Navy + Electric Blue',  dot:'#4d9fff', bg:'#060c1a' },
   { id:'retro',    name:'Retro',          sub:'Black & White · CRT',   dot:'#ffffff', bg:'#0a0a0a' },
   { id:'ios',      name:'iOS Glass',      sub:'Frosted · Liquid Glass',dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'pixel',    name:'Material Pixel', sub:'Google M3 · Bold',      dot:'#c8b6ff', bg:'#1a1c2e' },
+  { id:'pixel',      name:'Material Pixel',  sub:'Google M3 · Bold',          dot:'#c8b6ff', bg:'#1a1c2e' },
+  { id:'bigsur',     name:'Big Sur',          sub:'macOS · Warm Coral Glass',  dot:'#5ac8fa', bg:'#1a0a0a' },
+  { id:'ios-system', name:'iOS System Dark',  sub:'Control Centre · Clean',    dot:'#0a84ff', bg:'#1c1c1e' },
+  { id:'health',     name:'iOS Health',       sub:'Pastel · Airy · White',     dot:'#007aff', bg:'#f2f2f7' },
 ];
 
 export const FONTS = [

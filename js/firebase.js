@@ -1,12 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-  getDocs, getDoc, setDoc, query, orderBy, serverTimestamp
+  getDocs, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// ── PASTE YOUR FIREBASE CONFIG HERE ─────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyAYz6qdqMDgHmstAB-Dbh1ByJBMjjR8Fsw",
   authDomain: "workdesk-ba979.firebaseapp.com",
@@ -15,20 +15,8 @@ const firebaseConfig = {
   messagingSenderId: "300966370113",
   appId: "1:300966370113:web:c444bfaeaf4c28b2da5fc0"
 };
-// ─────────────────────────────────────────────────────────────────────────
-
-// ── WORKSPACE ID ─────────────────────────────────────────────────────────
-// This single ID is shared by everyone using the app.
-// Everyone who opens the link reads/writes to the same Firestore path.
-// Change this to any unique string you like (e.g. your team name).
 const WORKSPACE_ID = "harshit-team-2026";
-// ─────────────────────────────────────────────────────────────────────────
-
-// ── DELETE PASSWORD ───────────────────────────────────────────────────────
-// Set your delete password here. Anyone who knows this can delete tasks.
-// For extra security you can also store this in Firestore (see README).
-export const DELETE_PASSWORD = "abc@123";
-// ─────────────────────────────────────────────────────────────────────────
+export const DELETE_PASSWORD = "workdesk@delete";
 
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
@@ -41,41 +29,74 @@ export function onUserReady(cb) {
   });
 }
 
-// All data lives under /workspaces/{WORKSPACE_ID}/
-function wsCol(name) {
-  return collection(db, "workspaces", WORKSPACE_ID, name);
-}
-function wsDoc(name, id) {
-  return doc(db, "workspaces", WORKSPACE_ID, name, id);
-}
+function wsCol(name) { return collection(db, "workspaces", WORKSPACE_ID, name); }
+function wsDoc(name, id) { return doc(db, "workspaces", WORKSPACE_ID, name, id); }
 
-// ── MEMBERS ──────────────────────────────────────────────────────────────
+// ── MEMBERS ───────────────────────────────────────────────────────────────
 export async function getMembers() {
   const snap = await getDocs(query(wsCol("members"), orderBy("createdAt")));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-
 export async function addMember(name) {
   const ref = await addDoc(wsCol("members"), { name, createdAt: serverTimestamp() });
   return ref.id;
 }
-
 export async function deleteMember(id) {
   await deleteDoc(wsDoc("members", id));
 }
 
-// ── TASKS ─────────────────────────────────────────────────────────────────
+// ── TASKS: one-time fetch (still used for report page) ────────────────────
 export async function getTasks() {
   const snap = await getDocs(query(wsCol("tasks"), orderBy("createdAt", "desc")));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// ── TASKS: real-time listener ─────────────────────────────────────────────
+// Returns an unsubscribe function. Call it to stop listening.
+//
+// onTasksChanged(callback) — fires immediately with full task list,
+// then fires again every time any task is added, modified or deleted.
+//
+// The callback receives:
+//   { tasks, changes }
+//   tasks   — full current array of all tasks (sorted newest first)
+//   changes — array of { type: 'added'|'modified'|'removed', task }
+//             so callers can react specifically to new tasks landing
+//
+export function onTasksChanged(callback) {
+  const q = query(wsCol("tasks"), orderBy("createdAt", "desc"));
+  let isFirstSnapshot = true;
+
+  const unsub = onSnapshot(q, (snap) => {
+    const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // On the very first snapshot, treat all docs as initial load — no sounds
+    // On subsequent snapshots, report what actually changed
+    const changes = isFirstSnapshot
+      ? []
+      : snap.docChanges().map(change => ({
+          type: change.type,          // 'added' | 'modified' | 'removed'
+          task: { id: change.doc.id, ...change.doc.data() }
+        }));
+
+    isFirstSnapshot = false;
+    callback({ tasks, changes });
+  });
+
+  return unsub; // call this to detach the listener when page unloads
+}
+
+// ── WRITE OPERATIONS (unchanged) ──────────────────────────────────────────
 export async function addTask(data) {
   const month = new Date().toISOString().slice(0, 7);
+  const memberStatus = {};
+  (data.members || []).forEach(m => { memberStatus[m.id] = 'todo'; });
   const ref = await addDoc(wsCol("tasks"), {
     ...data,
     status: "todo",
+    memberStatus,
     month,
+    dueDate: data.dueDate || null,
     createdAt: serverTimestamp(),
     completedAt: null,
   });
@@ -88,12 +109,7 @@ export async function updateTask(id, data) {
   await updateDoc(wsDoc("tasks", id), upd);
 }
 
-// Password is verified client-side against DELETE_PASSWORD constant above.
-// For a stricter approach, move the password into a Firestore doc that only
-// you can read — see README for instructions.
 export async function deleteTask(id, password) {
-  if (password !== DELETE_PASSWORD) {
-    throw new Error("Incorrect password");
-  }
+  if (password !== DELETE_PASSWORD) throw new Error("Incorrect password");
   await deleteDoc(wsDoc("tasks", id));
 }

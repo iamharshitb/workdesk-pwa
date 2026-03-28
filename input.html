@@ -67,6 +67,7 @@
       <a href="report.html" class="nav-link">Report</a>
     </div>
     <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
   </div>
 </nav>
 
@@ -204,11 +205,13 @@
 
 <script type="module">
 import {
-  onUserReady, getMembers, addMember as fbAddMember, deleteMember as fbDeleteMember,
-  getTasks, addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
+  onUserReady, getMembers, onTasksChanged,
+  addMember as fbAddMember, deleteMember as fbDeleteMember,
+  addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
   DELETE_PASSWORD
 } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
+import { initAudio, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let members = [], tasks = [];
 // selectedMembers stores: { memberId: { name, role } }
@@ -221,15 +224,43 @@ let pendingDeleteId = null;
 // Theme handled by theme.js
 initTheme();
 window.toggleThemePanel = toggleThemePanel;
+initAudio();
+function updateMuteBtn() {
+  const btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getMuted() ? '🔇' : '🔊';
+}
+window.handleMuteToggle = () => { toggleMute(); updateMuteBtn(); };
+updateMuteBtn();
 
 // ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 onUserReady(async () => {
-  [members, tasks] = await Promise.all([getMembers(), getTasks()]);
+  members = await getMembers();
   renderMemberList();
   renderChips();
-  renderTaskList();
-  updateSummary();
-  document.getElementById('page-loader').remove();
+
+  // Real-time task listener
+  onTasksChanged(({ tasks: liveTasks, changes }) => {
+    tasks = liveTasks;
+
+    // Play sound if a new task was added that includes this user
+    const myName = localStorage.getItem('wd_myname') || '';
+    changes.forEach(({ type, task }) => {
+      if (type === 'added' && myName) {
+        const assignedToMe = (task.members || [])
+          .some(m => m.name.toLowerCase() === myName.toLowerCase());
+        if (assignedToMe) {
+          playTaskAssigned();
+          toast('📋 New task assigned to you!');
+        }
+      }
+    });
+
+    renderTaskList();
+    updateSummary();
+
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.remove();
+  });
 });
 
 // ── MEMBERS ────────────────────────────────────────────────────────────────
@@ -356,6 +387,11 @@ window.submitTask = async () => {
       const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate });
       tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
+      // Play sound if you're assigned to this task
+      const myName = localStorage.getItem('wd_myname') || '';
+      if (myName && memberArr.some(m => m.name.toLowerCase() === myName.toLowerCase())) {
+        playTaskAssigned();
+      }
     }
     renderTaskList();
     updateSummary();
@@ -408,6 +444,7 @@ window.toggleDone = async (id) => {
   const next = t.status === 'done' ? 'todo' : 'done';
   t.status = next;
   await fbUpdateTask(id, { status: next });
+  if (next === 'done') playMarkDone(); else playReopen();
   renderTaskList();
   toast(next === 'done' ? '✓ Task complete!' : 'Task reopened');
 };
