@@ -12,6 +12,7 @@ export const THEMES = [
   { id:'retro',     name:'Retro',         sub:'Black & White · CRT',   dot:'#ffffff', bg:'#0a0a0a' },
   { id:'ios',       name:'iOS Glass',     sub:'Frosted · Liquid Glass',dot:'#0a84ff', bg:'#1c1c1e' },
   { id:'pixel',     name:'Material Pixel',sub:'Google M3 · Bold',      dot:'#c8b6ff', bg:'#1a1c2e' },
+  { id:'ios-light', name:'iOS Glass Light',sub:'Frosted · Luminous White',dot:'#007aff', bg:'#f2f2f7' },
 ];
 
 export const FONTS = [
