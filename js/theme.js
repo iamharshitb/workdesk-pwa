@@ -1,18 +1,23 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
-// Handles all 7 themes × 5 font combos. Persists to localStorage.
 
 export const THEMES = [
-  { id:'ios',        name:'iOS Glass',       sub:'Frosted · Liquid Glass',    dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'bigsur',     name:'Big Sur',         sub:'macOS · Warm Coral Glass',  dot:'#5ac8fa', bg:'#1a0a0a' },
-  { id:'ios-system', name:'iOS System Dark', sub:'Control Centre · Clean',    dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'health',     name:'iOS Health',      sub:'Pastel · Airy · White',     dot:'#007aff', bg:'#f2f2f7' },
+  { id:'ios',        name:'iOS Glass',       sub:'Frosted · Liquid Glass',   dot:'#0a84ff', bg:'#1c1c1e' },
+  { id:'bigsur',     name:'Big Sur',         sub:'macOS · Warm Coral Glass', dot:'#5ac8fa', bg:'#1a0a0a' },
+  { id:'ios-system', name:'iOS System Dark', sub:'Control Centre · Clean',   dot:'#0a84ff', bg:'#1c1c1e' },
+  { id:'health',     name:'iOS Health',      sub:'Pastel · Airy · White',    dot:'#007aff', bg:'#f2f2f7' },
 ];
 
-let currentTheme = localStorage.getItem('wd_theme') || 'neon';
+// Default to ios if no saved theme, or if saved theme no longer exists
+function getValidTheme() {
+  const saved = localStorage.getItem('wd_theme') || 'ios';
+  return THEMES.find(t => t.id === saved) ? saved : 'ios';
+}
+
+let currentTheme = getValidTheme();
 
 export function applyTheme(themeId) {
-  THEMES.forEach(t => document.body.classList.remove('theme-'+t.id));
-  document.body.classList.add('theme-'+themeId);
+  THEMES.forEach(t => document.body.classList.remove('theme-' + t.id));
+  document.body.classList.add('theme-' + themeId);
   currentTheme = themeId;
   localStorage.setItem('wd_theme', themeId);
   updateSwatchActive();
@@ -28,32 +33,42 @@ function updateSwatchActive() {
   });
 }
 
-export function buildThemePanel() {
-  // Overlay
+function buildThemePanel() {
   const overlay = document.createElement('div');
   overlay.className = 'theme-panel-overlay';
   overlay.id = 'theme-overlay';
-  overlay.onclick = e => { if(e.target===overlay) closeThemePanel(); };
+  overlay.onclick = e => { if (e.target === overlay) closeThemePanel(); };
 
-  // Panel
   const panel = document.createElement('div');
   panel.className = 'theme-panel';
   panel.innerHTML = `
-    
+    <div class="tp-title">🎨 Theme</div>
+    <div class="theme-swatches">
+      ${THEMES.map(t => `
+        <div class="swatch${t.id === currentTheme ? ' active' : ''}" data-theme="${t.id}"
+          onclick="window.__applyTheme('${t.id}')">
+          <div class="swatch-dot" style="background:${t.dot};border-color:${t.bg}"></div>
+          <div>
+            <div class="swatch-name">${t.name}</div>
+            <div class="swatch-sub">${t.sub}</div>
+          </div>
+        </div>`).join('')}
+    </div>
   `;
 
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
 
-  // Expose to window for onclick handlers
-  window.__applyTheme = (id) => { applyTheme(id); updateSwatchActive(); };
-  window.__applyFont  = (id) => { applyFont(id);  updateFontActive(); };
+  window.__applyTheme = (id) => { applyTheme(id); };
 }
 
 export function toggleThemePanel() {
-  const overlay = document.getElementById('theme-overlay');
-  if (!overlay) { buildThemePanel(); document.getElementById('theme-overlay').classList.add('open'); }
-  else overlay.classList.toggle('open');
+  let overlay = document.getElementById('theme-overlay');
+  if (!overlay) {
+    buildThemePanel();
+    overlay = document.getElementById('theme-overlay');
+  }
+  overlay.classList.toggle('open');
 }
 
 function closeThemePanel() {
