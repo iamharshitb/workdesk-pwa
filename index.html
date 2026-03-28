@@ -6,11 +6,11 @@
   <title>WorkDesk — Dashboard</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#04070f">
+  <meta name="theme-color" content="#07090f">
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
+  <div class="nav-brand"><span class="brand-dot"></span>WorkDesk</div>
   <div class="nav-right">
     <div class="nav-links">
       <a href="index.html" class="nav-link active">Dashboard</a>
@@ -21,11 +21,10 @@
   </div>
 </nav>
 
-<div id="page-loader"><span class="loader"></span>LOADING...</div>
+<div id="page-loader"><span class="loader"></span>Loading...</div>
 
 <div class="page" id="main" style="display:none">
 
-  <!-- STATS -->
   <div class="stats-row fi">
     <div class="stat-pill"><div class="stat-n sn-b" id="s-total">0</div><div class="stat-l">Total</div></div>
     <div class="stat-pill"><div class="stat-n sn-a" id="s-inprog">0</div><div class="stat-l">In Prog</div></div>
@@ -33,7 +32,6 @@
     <div class="stat-pill"><div class="stat-n sn-r" id="s-crit">0</div><div class="stat-l">Critical</div></div>
   </div>
 
-  <!-- PROGRESS -->
   <div class="prog-wrap fi" style="animation-delay:.05s">
     <div class="prog-top">
       <span class="prog-label">Overall Progress</span>
@@ -42,7 +40,6 @@
     <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
   </div>
 
-  <!-- TASK TABS -->
   <div class="panel fi" style="animation-delay:.1s">
     <div class="panel-hd"><span class="panel-title">Task Tracker</span></div>
     <div class="panel-body">
@@ -57,13 +54,12 @@
     </div>
   </div>
 
-  <!-- TIMER -->
   <div class="panel fi" style="animation-delay:.15s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
     <div class="panel-body">
       <div class="timer-wrap">
         <div class="timer-digits" id="t-disp">25:00</div>
-        <div class="timer-st" id="t-st">READY</div>
+        <div class="timer-st" id="t-st">Ready</div>
       </div>
       <div class="t-presets">
         <button class="t-pre ap" onclick="setPreset(25,this)">25m</button>
@@ -76,20 +72,19 @@
         <span class="t-cl">min custom</span>
       </div>
       <div class="t-btns">
-        <button class="t-btn t-go" id="t-toggle" onclick="toggleTimer()">▶ START</button>
-        <button class="t-btn t-rst" onclick="resetTimer()">↺ RESET</button>
+        <button class="t-btn t-go" id="t-toggle" onclick="toggleTimer()">▶ Start</button>
+        <button class="t-btn t-rst" onclick="resetTimer()">↺ Reset</button>
       </div>
     </div>
   </div>
 
-  <!-- NOTES -->
   <div class="panel fi" style="animation-delay:.2s">
     <div class="panel-hd"><span class="panel-title">Quick Notes</span></div>
     <div class="panel-body">
-      <textarea class="notes-ta" id="notes-ta" placeholder="Scratch pad..."></textarea>
+      <textarea class="notes-ta" id="notes-ta" placeholder="Scratch pad — type anything..."></textarea>
       <div class="notes-foot">
         <span class="notes-cnt" id="notes-cnt">0 chars</span>
-        <button class="notes-clr" onclick="clearNotes()">CLEAR</button>
+        <button class="notes-clr" onclick="clearNotes()">Clear</button>
       </div>
     </div>
   </div>
@@ -103,7 +98,7 @@ import { onUserReady, getTasks, getMembers, updateTask } from './js/firebase.js'
 let tasks = [], members = [];
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 
-// ── THEME ─────────────────────────────────────────────────────────────────
+// THEME
 const savedTheme = localStorage.getItem('wd_theme') || 'dark';
 if (savedTheme === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☽ Dark'; }
 window.toggleTheme = () => {
@@ -112,11 +107,11 @@ window.toggleTheme = () => {
   document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
 };
 
-// ── BOOTSTRAP ──────────────────────────────────────────────────────────────
+// BOOTSTRAP
 onUserReady(async () => {
   [tasks, members] = await Promise.all([getTasks(), getMembers()]);
   if (!MY_NAME) {
-    MY_NAME = prompt('Your name (to identify "My Tasks"):') || '';
+    MY_NAME = prompt('Your name (so we can show your tasks):') || '';
     if (MY_NAME) localStorage.setItem('wd_myname', MY_NAME);
   }
   renderAll();
@@ -126,214 +121,228 @@ onUserReady(async () => {
 
 function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); }
 
-// ── STATS ──────────────────────────────────────────────────────────────────
+// STATS
 function renderStats() {
-  const total=tasks.length, done=tasks.filter(t=>t.status==='done').length;
-  const inprog=tasks.filter(t=>t.status==='inprog').length;
-  const crit=tasks.filter(t=>t.priority==='critical'&&t.status!=='done').length;
-  const pct=total?Math.round(done/total*100):0;
-  set('s-total',total);set('s-inprog',inprog);set('s-done',done);set('s-crit',crit);
-  set('prog-pct',pct+'%');
-  document.getElementById('prog-fill').style.width=pct+'%';
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === 'done').length;
+  const inprog = tasks.filter(t => t.status === 'inprog').length;
+  const crit = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
+  set('prog-pct', pct + '%');
+  document.getElementById('prog-fill').style.width = pct + '%';
 }
 
-// ── MY TASKS ───────────────────────────────────────────────────────────────
+// MY TASKS
 function renderMyTasks() {
-  const el=document.getElementById('my-tasks-list');
-  const mine=MY_NAME?tasks.filter(t=>(t.members||[]).some(m=>m.name.toLowerCase()===MY_NAME.toLowerCase())):tasks;
-  if(!mine.length){el.innerHTML=`<div class="empty"><div class="ei">◈</div>${MY_NAME?'No tasks assigned to you':'No tasks yet'}</div>`;return}
-  const po={critical:0,high:1,medium:2,low:3},so={inprog:0,todo:1,done:2};
-  const sorted=[...mine].sort((a,b)=>(so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2));
-  el.innerHTML=sorted.map((t,i)=>myTaskCard(t,i)).join('');
+  const el = document.getElementById('my-tasks-list');
+  const mine = MY_NAME
+    ? tasks.filter(t => (t.members || []).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
+    : tasks;
+  if (!mine.length) { el.innerHTML = `<div class="empty"><div class="ei">◈</div>${MY_NAME ? 'No tasks assigned to you yet' : 'No tasks yet'}</div>`; return; }
+  const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
+  const sorted = [...mine].sort((a,b) => (so[a.status]??1)-(so[b.status]??1) || (po[a.priority]??2)-(po[b.priority]??2));
+  el.innerHTML = sorted.map((t, i) => myTaskCard(t, i)).join('');
 }
 
-function myTaskCard(t,i) {
-  const pc={critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const pTag={critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-  const stTag={todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl={todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
-  const isDone=t.status==='done';
-  const myData=(t.members||[]).find(m=>m.name.toLowerCase()===(MY_NAME||'').toLowerCase());
-  const myTask=myData?.role||'—';
-  const others=(t.members||[]).filter(m=>m.name.toLowerCase()!==(MY_NAME||'').toLowerCase());
+function myTaskCard(t, i) {
+  const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+  const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
+  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+  const isDone = t.status === 'done';
+  const myData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
+  const myRespTask = myData?.role || '';
+  const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
   return `
     <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
       <div class="tc-title">${esc(t.label)}</div>
       <div class="tc-meta">
-        <span class="tag ${pTag}">${t.priority||'medium'}</span>
+        <span class="tag ${pTag}">${t.priority||'Medium'}</span>
         <span class="tag ${stTag}">${stLbl}</span>
       </div>
       <div class="tc-members">
-        <span class="m-pill"><span class="m-pill-name">You</span><span class="m-pill-role">${esc(myTask)}</span></span>
-        ${others.map(m=>`<span class="m-pill"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${esc(m.role||'—')}</span></span>`).join('')}
+        <span class="m-pill">
+          <span class="m-pill-name">You${myRespTask ? '' : ''}</span>
+          <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
+        </span>
+        ${others.map(m => `<span class="m-pill">
+          <span class="m-pill-name">${esc(m.name)}</span>
+          <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
+        </span>`).join('')}
       </div>
       <div class="tc-actions">
         <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="${isDone?'Undo':'Mark as done'}">
-          ${isDone?'✓':'○'}
+        <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
+          ${isDone ? '↩ Reopen' : '✓ Mark Done'}
         </button>
       </div>
     </div>`;
 }
 
-// ── BY MEMBER ──────────────────────────────────────────────────────────────
+// BY MEMBER
 function renderByMember() {
-  const el=document.getElementById('by-member-list');
-  if(!members.length){el.innerHTML='<div class="empty"><div class="ei">◈</div>No members yet.</div>';return}
-  let html='';
-  members.forEach(m=>{
-    const mTasks=tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
-    const done=mTasks.filter(t=>t.status==='done').length;
-    const total=mTasks.length;
-    const pct=total?Math.round(done/total*100):0;
-    html+=`<div class="member-section">
+  const el = document.getElementById('by-member-list');
+  if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet. Add via Input.</div>'; return; }
+  let html = '';
+  members.forEach(m => {
+    const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
+    const done = mTasks.filter(t => t.status === 'done').length;
+    const pct = mTasks.length ? Math.round(done / mTasks.length * 100) : 0;
+    html += `<div class="member-section">
       <div class="member-hd">
         <span class="member-av">${initials(m.name)}</span>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="member-name">${esc(m.name)}</span>
-            <span class="member-cnt">${done}/${total} · ${pct}%</span>
+            <span class="member-cnt">${done}/${mTasks.length} · ${pct}%</span>
           </div>
           <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
       </div>
-      ${mTasks.length?mTasks.map((t,i)=>memberTaskCard(t,m,i)).join(''):'<div class="empty" style="padding:10px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
+      ${mTasks.length
+        ? mTasks.map((t, i) => memberTaskCard(t, m, i)).join('')
+        : '<div class="empty" style="padding:12px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
     </div>`;
   });
-  el.innerHTML=html;
+  el.innerHTML = html;
 }
 
-function memberTaskCard(t,member,i) {
-  const mData=(t.members||[]).find(mm=>mm.id===member.id);
-  const respTask=mData?.role||'—';
-  const pc={critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const stTag={todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl={todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
-  const isDone=t.status==='done';
+function memberTaskCard(t, member, i) {
+  const mData = (t.members||[]).find(mm => mm.id === member.id);
+  const respTask = mData?.role || '';
+  const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+  const isDone = t.status === 'done';
   return `
-    <div class="task-card ${pc}${isDone?' is-done':''}" style="margin-left:10px">
+    <div class="task-card ${pc}${isDone?' is-done':''}" style="margin-left:12px">
       <div class="tc-title">${esc(t.label)}</div>
       <div class="tc-meta">
         <span class="tag ${stTag}">${stLbl}</span>
-        <span class="tag" style="background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.2)">
-          Resp. Task: ${esc(respTask)}
+        <span class="m-pill" style="display:inline-flex">
+          <span class="m-pill-name">Resp. Task</span>
+          <span class="m-pill-role">${respTask ? esc(respTask) : 'Not set'}</span>
         </span>
       </div>
       <div class="tc-actions">
         <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="${isDone?'Undo':'Mark done'}">
-          ${isDone?'✓':'○'}
+        <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
+          ${isDone ? '↩ Reopen' : '✓ Mark Done'}
         </button>
       </div>
     </div>`;
 }
 
-// ── FOLLOW-UP ──────────────────────────────────────────────────────────────
+// FOLLOW-UP
 function renderFollowup() {
-  const el=document.getElementById('followup-list');
-  const others=MY_NAME?members.filter(m=>m.name.toLowerCase()!==MY_NAME.toLowerCase()):members;
-  if(!others.length){el.innerHTML='<div class="empty"><div class="ei">◈</div>No other members</div>';return}
-  let html='';
-  others.forEach(m=>{
-    const allT=tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
-    const inprog=allT.filter(t=>t.status==='inprog');
-    const todo=allT.filter(t=>t.status==='todo').slice(0,2);
-    if(!inprog.length&&!todo.length)return;
-    const done=allT.filter(t=>t.status==='done').length;
-    const pct=allT.length?Math.round(done/allT.length*100):0;
-    html+=`<div class="fu-card">
+  const el = document.getElementById('followup-list');
+  const others = MY_NAME
+    ? members.filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+    : members;
+  if (!others.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No other team members</div>'; return; }
+  let html = '';
+  others.forEach(m => {
+    const allT = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
+    const inprog = allT.filter(t => t.status === 'inprog');
+    const todo = allT.filter(t => t.status === 'todo').slice(0, 2);
+    if (!inprog.length && !todo.length) return;
+    const done = allT.filter(t => t.status === 'done').length;
+    const pct = allT.length ? Math.round(done / allT.length * 100) : 0;
+    html += `<div class="fu-card">
       <div class="fu-person">
         <span class="fu-av">${initials(m.name)}</span>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="fu-name">${esc(m.name)}</span>
-            <span style="font-size:11px;color:var(--text3)">${done}/${allT.length} done</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text3)">${done}/${allT.length} done</span>
           </div>
-          <div class="member-prog" style="margin-top:4px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
+          <div class="member-prog" style="margin-top:5px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
       </div>`;
-    if(inprog.length){
-      html+=`<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
-      inprog.forEach(t=>{
-        const mData=(t.members||[]).find(mm=>mm.id===m.id);
-        const respTask=mData?.role||'—';
-        const isDone=t.status==='done';
-        html+=`<div class="fu-task-row">
+    if (inprog.length) {
+      html += `<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
+      inprog.forEach(t => {
+        const mData = (t.members||[]).find(mm => mm.id === m.id);
+        const respTask = mData?.role || '';
+        const isDone = t.status === 'done';
+        html += `<div class="fu-task-row">
           <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${esc(respTask)}</div>
+          <div class="fu-task-role">Resp. Task: ${respTask ? esc(respTask) : 'Not set'}</div>
           <div class="fu-task-actions">
-            <span class="tag t-ip">IN PROG</span>
-            <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="Mark done" style="width:30px;height:30px;font-size:14px">${isDone?'✓':'○'}</button>
+            <button class="mark-done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
+              ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+            </button>
           </div>
         </div>`;
       });
     }
-    if(todo.length){
-      html+=`<div class="fu-section-label" style="color:var(--text2);margin-top:9px">Next up</div>`;
-      todo.forEach(t=>{
-        const mData=(t.members||[]).find(mm=>mm.id===m.id);
-        const respTask=mData?.role||'—';
-        html+=`<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.75">
+    if (todo.length) {
+      html += `<div class="fu-section-label" style="color:var(--text2);margin-top:10px">Next up</div>`;
+      todo.forEach(t => {
+        const mData = (t.members||[]).find(mm => mm.id === m.id);
+        const respTask = mData?.role || '';
+        html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
           <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${esc(respTask)}</div>
+          <div class="fu-task-role">Resp. Task: ${respTask ? esc(respTask) : 'Not set'}</div>
         </div>`;
       });
     }
-    html+=`</div>`;
+    html += `</div>`;
   });
-  el.innerHTML=html||'<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
+  el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
 }
 
-// ── STATUS ACTIONS ─────────────────────────────────────────────────────────
-window.cycleStatus=async(id)=>{
-  const t=tasks.find(t=>t.id===id);if(!t)return;
-  const next={todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
-  t.status=next;await updateTask(id,{status:next});
-  renderAll();toast(next==='done'?'✓ Done!':'Status updated');
+// STATUS ACTIONS
+window.cycleStatus = async (id) => {
+  const t = tasks.find(t => t.id === id); if (!t) return;
+  const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
+  t.status = next; await updateTask(id, {status: next});
+  renderAll(); toast(next === 'done' ? '✓ Done!' : 'Status updated');
 };
-window.markDone=async(id)=>{
-  const t=tasks.find(t=>t.id===id);if(!t)return;
-  const next=t.status==='done'?'todo':'done';
-  t.status=next;await updateTask(id,{status:next});
-  renderAll();toast(next==='done'?'✓ Task complete!':'Reopened');
+window.markDone = async (id) => {
+  const t = tasks.find(t => t.id === id); if (!t) return;
+  const next = t.status === 'done' ? 'todo' : 'done';
+  t.status = next; await updateTask(id, {status: next});
+  renderAll(); toast(next === 'done' ? '✓ Task complete!' : 'Task reopened');
 };
 
-// ── TABS ───────────────────────────────────────────────────────────────────
-window.switchTab=(id,btn)=>{
-  ['mytasks','bymember','followup'].forEach(t=>document.getElementById('tab-'+t).style.display=t===id?'':'none');
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+// TABS
+window.switchTab = (id, btn) => {
+  ['mytasks','bymember','followup'].forEach(t => document.getElementById('tab-'+t).style.display = t === id ? '' : 'none');
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 };
 
-// ── TIMER ──────────────────────────────────────────────────────────────────
+// TIMER
 let tTotal=25*60,tLeft=25*60,tRunning=false,tInterval=null;
-function pad(n){return String(n).padStart(2,'0')}
-function fmtTime(s){return pad(Math.floor(s/60))+':'+pad(s%60)}
-function updateTimerUI(){
+const pad = n => String(n).padStart(2,'0');
+const fmtTime = s => pad(Math.floor(s/60))+':'+pad(s%60);
+function updateTimerUI() {
   const d=document.getElementById('t-disp'),s=document.getElementById('t-st');
   d.textContent=fmtTime(tLeft);
-  if(!tRunning){d.className='timer-digits';s.textContent='READY'}
-  else if(tLeft<=60){d.className='timer-digits end';s.textContent='ENDING'}
-  else{d.className='timer-digits run';s.textContent='RUNNING'}
+  if(!tRunning){d.className='timer-digits';s.textContent='Ready'}
+  else if(tLeft<=60){d.className='timer-digits end';s.textContent='Ending soon!'}
+  else{d.className='timer-digits run';s.textContent='Running'}
 }
 window.setPreset=(mins,btn)=>{resetTimer();tTotal=mins*60;tLeft=tTotal;document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));btn.classList.add('ap');document.getElementById('t-custom').value='';updateTimerUI()};
 window.setCustom=()=>{const v=parseInt(document.getElementById('t-custom').value);if(!v||v<1)return;resetTimer();tTotal=v*60;tLeft=tTotal;document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));updateTimerUI()};
 window.toggleTimer=()=>{
-  if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ RESUME';updateTimerUI();return}
+  if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ Resume';updateTimerUI();return}
   if(tLeft===0)tLeft=tTotal;tRunning=true;
-  document.getElementById('t-toggle').className='t-btn t-pa';document.getElementById('t-toggle').textContent='⏸ PAUSE';
-  tInterval=setInterval(()=>{if(tLeft<=0){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ START';document.getElementById('t-st').textContent='DONE ✓';return}tLeft--;updateTimerUI()},1000)
+  document.getElementById('t-toggle').className='t-btn t-pa';document.getElementById('t-toggle').textContent='⏸ Pause';
+  tInterval=setInterval(()=>{if(tLeft<=0){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ Start';document.getElementById('t-st').textContent='Done! ✓';return}tLeft--;updateTimerUI()},1000)
 };
-window.resetTimer=()=>{clearInterval(tInterval);tRunning=false;tLeft=tTotal;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ START';updateTimerUI()};
+window.resetTimer=()=>{clearInterval(tInterval);tRunning=false;tLeft=tTotal;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ Start';updateTimerUI()};
 
-// ── NOTES ──────────────────────────────────────────────────────────────────
+// NOTES
 const nta=document.getElementById('notes-ta');
 nta.value=localStorage.getItem('wd_notes')||'';
 document.getElementById('notes-cnt').textContent=nta.value.length+' chars';
 nta.addEventListener('input',()=>{localStorage.setItem('wd_notes',nta.value);document.getElementById('notes-cnt').textContent=nta.value.length+' chars'});
 window.clearNotes=()=>{if(!confirm('Clear notes?'))return;nta.value='';localStorage.removeItem('wd_notes');document.getElementById('notes-cnt').textContent='0 chars'};
 
-// ── UTILS ───────────────────────────────────────────────────────────────────
+// UTILS
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
