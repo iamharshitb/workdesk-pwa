@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorkDesk — Input</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#04070f">
+  <style>
+    .member-list-item{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;margin-bottom:5px}
+    .mli-name{font-size:11px;color:var(--text);letter-spacing:.04em;display:flex;align-items:center;gap:7px}
+    .mli-av{width:20px;height:20px;border-radius:50%;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--purple)}
+    .divider{height:1px;background:var(--border);margin:4px 0 12px}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .18s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:#070b18;border:1px solid rgba(255,62,108,.3);border-radius:14px;padding:20px 18px;width:280px;box-shadow:0 0 40px rgba(0,0,0,.8);transform:translateY(10px);transition:transform .2s}
+    .modal-overlay.open .modal{transform:translateY(0)}
+    .modal-title{font-family:var(--display);font-size:10px;font-weight:700;color:var(--red);letter-spacing:.18em;text-transform:uppercase;margin-bottom:5px;text-align:center}
+    .modal-sub{font-size:10px;color:var(--text2);margin-bottom:10px;line-height:1.5;text-align:center}
+    .modal-task-name{font-size:11px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-left:2px solid var(--red);border-radius:6px;padding:6px 9px;margin-bottom:12px}
+    .modal-inp{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--neon);font-family:var(--mono);font-size:13px;outline:none;letter-spacing:.1em;caret-color:var(--neon);transition:border-color .15s;margin-bottom:8px}
+    .modal-inp:focus{border-color:rgba(255,62,108,.5)}
+    .modal-inp.wrong{border-color:var(--red)}
+    .modal-err{font-size:10px;color:var(--red);letter-spacing:.05em;margin-bottom:10px;min-height:16px}
+    .modal-btns{display:flex;gap:7px}
+    .modal-cancel{flex:1;padding:9px;border-radius:7px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:.07em;cursor:pointer}
+    .modal-confirm{flex:1;padding:9px;border-radius:7px;border:1px solid rgba(255,62,108,.4);background:rgba(255,62,108,.09);color:var(--red);font-family:var(--mono);font-size:10px;letter-spacing:.07em;cursor:pointer}
+    .modal-confirm:hover{background:rgba(255,62,108,.18)}
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Dashboard</a>
+    <a href="input.html" class="nav-link active">Input</a>
+    <a href="report.html" class="nav-link">Report</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ══ TEAM MEMBERS ══ -->
+  <div class="panel fi" style="animation-delay:.03s">
+    <div class="panel-hd">
+      <span class="panel-title">Team Members</span>
+    </div>
+    <div class="panel-body">
+      <div id="member-list"></div>
+      <div class="add-member-row">
+        <input class="add-member-inp" id="m-inp" placeholder="Member name..." maxlength="24"
+          onkeydown="if(event.key==='Enter')addMember()">
+        <button class="add-member-btn" onclick="addMember()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NEW TASK ══ -->
+  <div class="panel fi" style="animation-delay:.08s">
+    <div class="panel-hd">
+      <span class="panel-title">New Task</span>
+      <span id="edit-badge" style="display:none;font-size:9px;color:var(--amber);letter-spacing:.06em">EDITING</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- Task name -->
+      <input class="task-input" id="f-task" placeholder="What's the task?" maxlength="120"
+        onkeydown="if(event.key==='Enter')document.getElementById('f-task').blur()">
+
+      <!-- Tap to assign -->
+      <div class="sect-label" style="margin-top:12px">Tap to assign team members</div>
+      <div class="member-chips" id="chip-area">
+        <span style="font-size:9px;color:var(--text3);letter-spacing:.06em">Add team members above first</span>
+      </div>
+
+      <!-- Role inputs — appear after tapping -->
+      <div id="role-section" style="display:none"></div>
+
+      <!-- Priority -->
+      <div class="sect-label">Priority</div>
+      <div class="p-row" id="p-row">
+        <button class="p-chip" data-p="critical" onclick="selectPriority(this)">Critical</button>
+        <button class="p-chip" data-p="high"     onclick="selectPriority(this)">High</button>
+        <button class="p-chip pm" data-p="medium" onclick="selectPriority(this)">Medium</button>
+        <button class="p-chip" data-p="low"      onclick="selectPriority(this)">Low</button>
+      </div>
+
+      <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ REGISTER TASK</button>
+      <button id="cancel-btn" onclick="cancelEdit()"
+        style="display:none;width:100%;margin-top:6px;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:.08em;cursor:pointer">
+        CANCEL EDIT
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══ TASK LIST ══ -->
+  <div class="panel fi" style="animation-delay:.13s">
+    <div class="panel-hd">
+      <span class="panel-title">All Tasks</span>
+      <span id="task-count" style="font-size:9px;color:var(--text2);letter-spacing:.06em"></span>
+    </div>
+    <div class="panel-body" id="task-list">
+      <div id="page-loader"><span class="loader"></span>LOADING...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PASSWORD DELETE MODAL -->
+<div class="modal-overlay" id="del-modal">
+  <div class="modal">
+    <div class="modal-title">⚠ Delete Task</div>
+    <div class="modal-sub">Enter password to permanently delete this task.</div>
+    <div class="modal-task-name" id="del-modal-task"></div>
+    <input class="modal-inp" type="password" id="del-pw-inp" placeholder="Password..." onkeydown="if(event.key==='Enter')confirmDelete()">
+    <div class="modal-err" id="del-pw-err">Incorrect password. Try again.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { onUserReady, getMembers, addMember as fbAddMember, deleteMember as fbDeleteMember,
+         getTasks, addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
+         DELETE_PASSWORD } from './js/firebase.js';
+
+let members = [], tasks = [];
+let selectedMembers = {}; // { memberId: { name, role } }
+let selectedPriority = 'medium';
+let editingId = null;
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────
+onUserReady(async () => {
+  [members, tasks] = await Promise.all([getMembers(), getTasks()]);
+  renderMemberList();
+  renderChips();
+  renderTaskList();
+});
+
+// ── MEMBERS ─────────────────────────────────────────────────────────────
+window.addMember = async () => {
+  const inp = document.getElementById('m-inp');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (members.find(m => m.name.toLowerCase() === name.toLowerCase())) { toast('Already exists', 'err'); return; }
+  inp.value = '';
+  try {
+    const id = await fbAddMember(name);
+    members.push({ id, name });
+    renderMemberList(); renderChips();
+    toast('Member added');
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+};
+
+window.removeMember = async (id) => {
+  if (!confirm('Remove member?')) return;
+  await fbDeleteMember(id);
+  members = members.filter(m => m.id !== id);
+  delete selectedMembers[id];
+  renderMemberList(); renderChips(); renderRoleSection();
+};
+
+function renderMemberList() {
+  const el = document.getElementById('member-list');
+  if (!members.length) { el.innerHTML = ''; return; }
+  el.innerHTML = members.map(m => `
+    <div class="member-list-item">
+      <span class="mli-name">
+        <span class="mli-av">${initials(m.name)}</span>
+        ${esc(m.name)}
+      </span>
+      <button class="del-btn" onclick="removeMember('${m.id}')">✕</button>
+    </div>`).join('') + '<div class="divider"></div>';
+}
+
+// ── CHIPS ────────────────────────────────────────────────────────────────
+function renderChips() {
+  const el = document.getElementById('chip-area');
+  if (!members.length) {
+    el.innerHTML = '<span style="font-size:9px;color:var(--text3);letter-spacing:.06em">Add team members above first</span>';
+    return;
+  }
+  el.innerHTML = members.map(m => `
+    <div class="m-chip${selectedMembers[m.id] ? ' sel' : ''}" onclick="toggleMember('${m.id}','${esc(m.name)}')">
+      <span class="m-av">${initials(m.name)}</span>
+      <span>${esc(m.name)}</span>
+      <span class="m-ck">✓</span>
+    </div>`).join('');
+}
+
+window.toggleMember = (id, name) => {
+  if (selectedMembers[id]) {
+    delete selectedMembers[id];
+  } else {
+    selectedMembers[id] = { name, role: '' };
+  }
+  renderChips();
+  renderRoleSection();
+};
+
+// ── ROLE SECTION ─────────────────────────────────────────────────────────
+function renderRoleSection() {
+  const sec = document.getElementById('role-section');
+  const sel = Object.entries(selectedMembers);
+  if (!sel.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
+  sec.style.display = '';
+  sec.innerHTML = `
+    <div class="role-section">
+      <div class="sect-label" style="margin-top:0">Role in this task</div>
+      ${sel.map(([id, m]) => `
+        <div class="role-row">
+          <span class="role-name">${esc(m.name.split(' ')[0])}</span>
+          <input class="role-input" placeholder="e.g. Lead, Reviewer, Support..."
+            value="${esc(m.role)}"
+            oninput="selectedMembers['${id}'].role=this.value"
+            maxlength="60">
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── PRIORITY ─────────────────────────────────────────────────────────────
+// Pre-select medium
+document.querySelector('.p-chip.pm').classList.add('pm');
+
+window.selectPriority = (btn) => {
+  document.querySelectorAll('.p-chip').forEach(b => b.className = 'p-chip');
+  const p = btn.dataset.p;
+  selectedPriority = p;
+  btn.classList.add({ critical:'pc', high:'ph', medium:'pm', low:'pl' }[p]);
+};
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────
+window.submitTask = async () => {
+  const label = document.getElementById('f-task').value.trim();
+  if (!label) { shake('f-task'); return; }
+
+  const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({ id, name: m.name, role: m.role }));
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  try {
+    if (editingId) {
+      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr });
+      const idx = tasks.findIndex(t => t.id === editingId);
+      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr };
+      toast('Task updated ✓');
+      cancelEdit();
+    } else {
+      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr });
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, status: 'todo' });
+      toast('Task registered ✓');
+      resetForm();
+    }
+    renderTaskList();
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+
+  btn.disabled = false;
+  btn.textContent = editingId ? '⬡ UPDATE TASK' : '⬡ REGISTER TASK';
+};
+
+// ── EDIT ──────────────────────────────────────────────────────────────────
+window.editTask = (id) => {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('f-task').value = t.label;
+  selectedPriority = t.priority || 'medium';
+  selectedMembers = {};
+  (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
+  // highlight priority
+  document.querySelectorAll('.p-chip').forEach(b => {
+    b.className = 'p-chip';
+    if (b.dataset.p === selectedPriority) b.classList.add({critical:'pc',high:'ph',medium:'pm',low:'pl'}[selectedPriority]);
+  });
+  renderChips(); renderRoleSection();
+  document.getElementById('edit-badge').style.display = '';
+  document.getElementById('cancel-btn').style.display = '';
+  document.getElementById('send-btn').textContent = '⬡ UPDATE TASK';
+  document.getElementById('f-task').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('f-task').focus();
+};
+
+window.cancelEdit = () => {
+  editingId = null;
+  resetForm();
+  document.getElementById('edit-badge').style.display = 'none';
+  document.getElementById('cancel-btn').style.display = 'none';
+  document.getElementById('send-btn').textContent = '⬡ REGISTER TASK';
+};
+
+// ── DELETE (password protected) ────────────────────────────────────────────
+let _pendingDeleteId = null;
+
+window.deleteTask = (id) => {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  _pendingDeleteId = id;
+  document.getElementById('del-modal-task').textContent = t.label;
+  document.getElementById('del-pw-inp').value = '';
+  document.getElementById('del-pw-err').style.display = 'none';
+  document.getElementById('del-pw-inp').classList.remove('wrong');
+  document.getElementById('del-modal').classList.add('open');
+  setTimeout(() => document.getElementById('del-pw-inp').focus(), 120);
+};
+
+window.closeDeleteModal = () => {
+  document.getElementById('del-modal').classList.remove('open');
+  _pendingDeleteId = null;
+};
+
+window.confirmDelete = async () => {
+  const pw = document.getElementById('del-pw-inp').value;
+  const errEl = document.getElementById('del-pw-err');
+  const inp = document.getElementById('del-pw-inp');
+  try {
+    await fbDeleteTask(_pendingDeleteId, pw);
+    tasks = tasks.filter(t => t.id !== _pendingDeleteId);
+    closeDeleteModal();
+    renderTaskList();
+    toast('Task deleted');
+  } catch(e) {
+    inp.classList.add('wrong');
+    errEl.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+    setTimeout(() => inp.classList.remove('wrong'), 600);
+  }
+};
+
+// ── CYCLE STATUS ───────────────────────────────────────────────────────────
+window.cycleStatus = async (id) => {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  const next = { todo: 'inprog', inprog: 'done', done: 'todo' }[t.status || 'todo'];
+  t.status = next;
+  await fbUpdateTask(id, { status: next });
+  renderTaskList();
+};
+
+// ── TASK LIST ───────────────────────────────────────────────────────────────
+function renderTaskList() {
+  const el = document.getElementById('task-list');
+  document.getElementById('task-count').textContent = tasks.length ? tasks.length + ' tasks' : '';
+  if (!tasks.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">◻</div>No tasks yet</div>';
+    return;
+  }
+  el.innerHTML = tasks.map((t, i) => {
+    const pc = { critical:'pc', high:'ph', medium:'pm', low:'pl' }[t.priority || 'medium'];
+    const stTag = { todo:'t-todo', inprog:'t-ip', done:'t-done' }[t.status || 'todo'];
+    const stLbl = { todo:'○ TODO', inprog:'● IN PROG', done:'✓ DONE' }[t.status || 'todo'];
+    const pTag  = { critical:'t-crit', high:'t-high', medium:'t-med', low:'t-low' }[t.priority || 'medium'];
+    const members = (t.members || []).map(m => `<span class="tag t-person">@${esc(m.name)}</span>`).join('');
+    return `
+      <div class="task-card ${pc} fi" style="animation-delay:${i*.04}s">
+        <div class="tc-title">${esc(t.label)}</div>
+        <div class="tc-meta">
+          <span class="tag ${pTag}">${t.priority || 'medium'}</span>
+          <span class="tag ${stTag}">${stLbl}</span>
+          ${members}
+        </div>
+        <div class="tc-actions">
+          <button class="sc-btn tag ${stTag}" onclick="cycleStatus('${t.id}')" style="cursor:pointer">
+            ${stLbl} →
+          </button>
+          <button class="del-btn" onclick="editTask('${t.id}')">✎</button>
+          <button class="del-btn" onclick="deleteTask('${t.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function resetForm() {
+  document.getElementById('f-task').value = '';
+  selectedMembers = {};
+  selectedPriority = 'medium';
+  document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
+  document.querySelector('[data-p="medium"]').classList.add('pm');
+  renderChips(); renderRoleSection();
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--red)';
+  el.animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:200});
+  setTimeout(() => el.style.borderColor = '', 900);
+}
+
+let _tt;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast ' + type;
+  void el.offsetWidth; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WorkDesk — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#04070f">
+  <style>
+    /* progress bar */
+    .prog-bar-wrap{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 13px;margin-bottom:10px}
+    .prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+    .prog-label{font-size:9px;color:var(--text2);letter-spacing:.1em;text-transform:uppercase}
+    .prog-pct{font-family:var(--display);font-size:16px;font-weight:700;color:var(--neon);text-shadow:0 0 10px rgba(0,245,200,.4)}
+    .prog-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+    .prog-fill{height:100%;background:var(--neon);border-radius:2px;box-shadow:0 0 8px rgba(0,245,200,.4);transition:width .6s cubic-bezier(.4,0,.2,1)}
+    /* my-tasks mine indicator */
+    .mine-badge{font-size:8px;padding:1px 6px;border-radius:20px;background:rgba(0,245,200,.07);border:1px solid rgba(0,245,200,.2);color:var(--neon);letter-spacing:.05em}
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link active">Dashboard</a>
+    <a href="input.html" class="nav-link">Input</a>
+    <a href="report.html" class="nav-link">Report</a>
+  </div>
+</nav>
+
+<div id="page-loader"><span class="loader"></span>LOADING...</div>
+
+<div class="page" id="main" style="display:none">
+
+  <!-- ══ STATS ══ -->
+  <div class="stats-row fi">
+    <div class="stat-pill">
+      <div class="stat-n sn-b" id="s-total">0</div>
+      <div class="stat-l">Total</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-n sn-a" id="s-inprog">0</div>
+      <div class="stat-l">In Prog</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-n sn-g" id="s-done">0</div>
+      <div class="stat-l">Done</div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-n sn-r" id="s-blocked">0</div>
+      <div class="stat-l">Critical</div>
+    </div>
+  </div>
+
+  <!-- ══ PROGRESS ══ -->
+  <div class="prog-bar-wrap fi" style="animation-delay:.05s">
+    <div class="prog-top">
+      <span class="prog-label">Completion</span>
+      <span class="prog-pct" id="prog-pct">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- ══ TASK TABS ══ -->
+  <div class="panel fi" style="animation-delay:.1s">
+    <div class="panel-hd"><span class="panel-title">Task Tracker</span></div>
+    <div class="panel-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('mytasks',this)">My Tasks</button>
+        <button class="tab" onclick="switchTab('bymember',this)">By Member</button>
+        <button class="tab" onclick="switchTab('followup',this)">Follow-up</button>
+      </div>
+
+      <!-- TAB: MY TASKS -->
+      <div id="tab-mytasks">
+        <div id="my-tasks-list"></div>
+      </div>
+
+      <!-- TAB: BY MEMBER -->
+      <div id="tab-bymember" style="display:none">
+        <div id="by-member-list"></div>
+      </div>
+
+      <!-- TAB: FOLLOW-UP -->
+      <div id="tab-followup" style="display:none">
+        <div style="font-size:9px;color:var(--text2);letter-spacing:.08em;margin-bottom:10px">
+          Tasks currently in progress — by team member
+        </div>
+        <div id="followup-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TIMER ══ -->
+  <div class="panel fi" style="animation-delay:.15s">
+    <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
+    <div class="panel-body">
+      <div class="timer-wrap">
+        <div class="timer-digits" id="t-disp">25:00</div>
+        <div class="timer-st" id="t-st">READY</div>
+      </div>
+      <div class="t-presets">
+        <button class="t-pre ap" onclick="setPreset(25,this)">25m</button>
+        <button class="t-pre" onclick="setPreset(45,this)">45m</button>
+        <button class="t-pre" onclick="setPreset(60,this)">60m</button>
+        <button class="t-pre" onclick="setPreset(90,this)">90m</button>
+      </div>
+      <div class="t-cr">
+        <input class="t-ci" type="number" id="t-custom" placeholder="mm" min="1" max="300" onchange="setCustom()">
+        <span class="t-cl">min custom</span>
+      </div>
+      <div class="t-btns">
+        <button class="t-btn t-go" id="t-toggle" onclick="toggleTimer()">▶ START</button>
+        <button class="t-btn t-rst" onclick="resetTimer()">↺ RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NOTES ══ -->
+  <div class="panel fi" style="animation-delay:.2s">
+    <div class="panel-hd"><span class="panel-title">Quick Notes</span></div>
+    <div class="panel-body">
+      <textarea class="notes-ta" id="notes-ta" placeholder="Scratch pad..."></textarea>
+      <div class="notes-foot">
+        <span class="notes-cnt" id="notes-cnt">0 chars</span>
+        <button class="notes-clr" onclick="clearNotes()">CLEAR</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { onUserReady, getTasks, getMembers, updateTask } from './js/firebase.js';
+
+let tasks = [], members = [];
+let MY_NAME = localStorage.getItem('wd_myname') || '';
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────
+onUserReady(async () => {
+  [tasks, members] = await Promise.all([getTasks(), getMembers()]);
+  // ask for name if not set
+  if (!MY_NAME) {
+    MY_NAME = prompt('Your name (to identify "My Tasks"):') || '';
+    if (MY_NAME) localStorage.setItem('wd_myname', MY_NAME);
+  }
+  renderStats();
+  renderMyTasks();
+  renderByMember();
+  renderFollowup();
+  document.getElementById('page-loader').style.display = 'none';
+  document.getElementById('main').style.display = '';
+});
+
+// ── STATS ──────────────────────────────────────────────────────────────
+function renderStats() {
+  const total  = tasks.length;
+  const inprog = tasks.filter(t => t.status === 'inprog').length;
+  const done   = tasks.filter(t => t.status === 'done').length;
+  const crit   = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
+  const pct    = total ? Math.round(done / total * 100) : 0;
+  set('s-total',   total);
+  set('s-inprog',  inprog);
+  set('s-done',    done);
+  set('s-blocked', crit);
+  set('prog-pct',  pct + '%');
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// ── MY TASKS TAB ────────────────────────────────────────────────────────
+// "My tasks" = tasks where a member whose name matches MY_NAME is assigned
+function renderMyTasks() {
+  const el = document.getElementById('my-tasks-list');
+  const mine = MY_NAME
+    ? tasks.filter(t => (t.members || []).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
+    : tasks; // if no name, show all
+
+  if (!mine.length) {
+    el.innerHTML = `<div class="empty"><div class="ei">◈</div>${MY_NAME ? 'No tasks assigned to you' : 'No tasks yet'}</div>`;
+    return;
+  }
+  // sort: critical → high → medium → low, then by status (inprog first)
+  const po = {critical:0,high:1,medium:2,low:3};
+  const so = {inprog:0,todo:1,done:2};
+  const sorted = [...mine].sort((a,b)=> (so[a.status]??1)-(so[b.status]??1) || (po[a.priority]??2)-(po[b.priority]??2));
+  el.innerHTML = sorted.map((t,i) => taskCard(t, i, true)).join('');
+}
+
+// ── BY MEMBER TAB ───────────────────────────────────────────────────────
+function renderByMember() {
+  const el = document.getElementById('by-member-list');
+  if (!members.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet. Add via Input.</div>';
+    return;
+  }
+  let html = '';
+  members.forEach(m => {
+    const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
+    const active = mTasks.filter(t => t.status !== 'done').length;
+    html += `
+      <div class="member-section">
+        <div class="member-hd">
+          <span class="member-av">${initials(m.name)}</span>
+          <span class="member-name">${esc(m.name)}</span>
+          <span class="member-cnt">${active} active · ${mTasks.length} total</span>
+        </div>
+        ${mTasks.length
+          ? mTasks.map((t,i) => memberTaskRow(t, m, i)).join('')
+          : '<div class="empty" style="padding:12px 0 4px"><div class="ei">·</div>No tasks</div>'}
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function memberTaskRow(t, member, i) {
+  const mData = (t.members||[]).find(mm => mm.id === member.id);
+  const role = mData?.role || '—';
+  const stTag = { todo:'t-todo', inprog:'t-ip', done:'t-done' }[t.status||'todo'];
+  const stLbl = { todo:'TODO', inprog:'IN PROG', done:'DONE' }[t.status||'todo'];
+  const pc = { critical:'pc', high:'ph', medium:'pm', low:'pl' }[t.priority||'medium'];
+  return `
+    <div class="task-card ${pc}" style="margin-left:8px;animation:fu .32s ease ${i*.04}s both">
+      <div class="tc-title">${esc(t.label)}</div>
+      <div class="tc-meta">
+        <span class="tag ${stTag}">${stLbl}</span>
+        <span class="tag t-person">role: ${esc(role)}</span>
+      </div>
+      <div class="tc-actions">
+        <button class="sc-btn tag ${stTag}" onclick="cycleStatus('${t.id}')" style="cursor:pointer">${stLbl} →</button>
+      </div>
+    </div>`;
+}
+
+// ── FOLLOW-UP TAB ────────────────────────────────────────────────────────
+// Shows: tasks currently "inprog" for other team members (not me)
+// Plus: their next "todo" task
+function renderFollowup() {
+  const el = document.getElementById('followup-list');
+  const otherMembers = MY_NAME
+    ? members.filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+    : members;
+
+  if (!otherMembers.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">◈</div>No other team members</div>';
+    return;
+  }
+
+  let html = '';
+  otherMembers.forEach(m => {
+    const inprog = tasks.filter(t =>
+      t.status === 'inprog' && (t.members||[]).some(mm => mm.id === m.id)
+    );
+    const next = tasks.filter(t =>
+      t.status === 'todo' && (t.members||[]).some(mm => mm.id === m.id)
+    ).slice(0, 2);
+
+    if (!inprog.length && !next.length) return;
+
+    html += `<div class="fu-card">
+      <div class="fu-person">
+        <span class="fu-av">${initials(m.name)}</span>
+        <span class="fu-name">${esc(m.name)}</span>
+      </div>`;
+
+    if (inprog.length) {
+      html += `<div style="font-size:8px;color:var(--amber);letter-spacing:.09em;margin-bottom:4px">● WORKING ON</div>`;
+      inprog.forEach(t => {
+        const role = (t.members||[]).find(mm=>mm.id===m.id)?.role || '';
+        html += `<div class="fu-task">${esc(t.label)}</div>${role ? `<div class="fu-role">Role: ${esc(role)}</div>` : ''}`;
+      });
+    }
+
+    if (next.length) {
+      html += `<div style="font-size:8px;color:var(--text2);letter-spacing:.09em;margin:6px 0 3px">NEXT UP</div>`;
+      next.forEach(t => {
+        html += `<div class="fu-task" style="border-left-color:var(--text2);opacity:.7">${esc(t.label)}</div>`;
+      });
+    }
+
+    html += `</div>`;
+  });
+
+  el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
+}
+
+// ── CYCLE STATUS ──────────────────────────────────────────────────────────
+window.cycleStatus = async (id) => {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  const next = { todo:'inprog', inprog:'done', done:'todo' }[t.status||'todo'];
+  t.status = next;
+  await updateTask(id, { status: next });
+  renderStats(); renderMyTasks(); renderByMember(); renderFollowup();
+  toast(next === 'done' ? 'Marked done ✓' : 'Status updated');
+};
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+window.switchTab = (id, btn) => {
+  ['mytasks','bymember','followup'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === id ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+// ── TASK CARD ─────────────────────────────────────────────────────────────
+function taskCard(t, i, showRole) {
+  const pc = { critical:'pc', high:'ph', medium:'pm', low:'pl' }[t.priority||'medium'];
+  const stTag = { todo:'t-todo', inprog:'t-ip', done:'t-done' }[t.status||'todo'];
+  const stLbl = { todo:'TODO', inprog:'IN PROG', done:'DONE' }[t.status||'todo'];
+  const pTag  = { critical:'t-crit', high:'t-high', medium:'t-med', low:'t-low' }[t.priority||'medium'];
+  const myRole = MY_NAME
+    ? (t.members||[]).find(m => m.name.toLowerCase() === MY_NAME.toLowerCase())?.role || ''
+    : '';
+  const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
+  return `
+    <div class="task-card ${pc} fi" style="animation-delay:${i*.04}s">
+      <div class="tc-title">${esc(t.label)}</div>
+      <div class="tc-meta">
+        <span class="tag ${pTag}">${t.priority||'medium'}</span>
+        <span class="tag ${stTag}">${stLbl}</span>
+        ${myRole ? `<span class="tag t-person">you: ${esc(myRole)}</span>` : ''}
+        ${others.map(m=>`<span class="tag t-person">@${esc(m.name)}</span>`).join('')}
+      </div>
+      <div class="tc-actions">
+        <button class="sc-btn tag ${stTag}" onclick="cycleStatus('${t.id}')" style="cursor:pointer">${stLbl} →</button>
+      </div>
+    </div>`;
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+let tTotal = 25*60, tLeft = 25*60, tRunning = false, tInterval = null;
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtTime(s) { return pad(Math.floor(s/60))+':'+pad(s%60); }
+
+function updateTimerUI() {
+  const d = document.getElementById('t-disp');
+  const s = document.getElementById('t-st');
+  d.textContent = fmtTime(tLeft);
+  if (!tRunning) { d.className='timer-digits'; s.textContent='READY'; }
+  else if (tLeft<=60) { d.className='timer-digits end'; s.textContent='ENDING'; }
+  else { d.className='timer-digits run'; s.textContent='RUNNING'; }
+}
+
+window.setPreset = (mins, btn) => {
+  resetTimer();
+  tTotal = mins*60; tLeft = tTotal;
+  document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));
+  btn.classList.add('ap');
+  document.getElementById('t-custom').value = '';
+  updateTimerUI();
+};
+
+window.setCustom = () => {
+  const v = parseInt(document.getElementById('t-custom').value);
+  if (!v||v<1) return;
+  resetTimer();
+  tTotal = v*60; tLeft = tTotal;
+  document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));
+  updateTimerUI();
+};
+
+window.toggleTimer = () => {
+  if (tRunning) {
+    clearInterval(tInterval); tRunning = false;
+    document.getElementById('t-toggle').className = 't-btn t-go';
+    document.getElementById('t-toggle').textContent = '▶ RESUME';
+    updateTimerUI(); return;
+  }
+  if (tLeft === 0) tLeft = tTotal;
+  tRunning = true;
+  document.getElementById('t-toggle').className = 't-btn t-pa';
+  document.getElementById('t-toggle').textContent = '⏸ PAUSE';
+  tInterval = setInterval(() => {
+    if (tLeft <= 0) {
+      clearInterval(tInterval); tRunning = false;
+      document.getElementById('t-toggle').className = 't-btn t-go';
+      document.getElementById('t-toggle').textContent = '▶ START';
+      document.getElementById('t-st').textContent = 'DONE ✓';
+      return;
+    }
+    tLeft--; updateTimerUI();
+  }, 1000);
+};
+
+window.resetTimer = () => {
+  clearInterval(tInterval); tRunning = false; tLeft = tTotal;
+  document.getElementById('t-toggle').className = 't-btn t-go';
+  document.getElementById('t-toggle').textContent = '▶ START';
+  updateTimerUI();
+};
+
+// ── NOTES ─────────────────────────────────────────────────────────────────
+const nta = document.getElementById('notes-ta');
+nta.value = localStorage.getItem('wd_notes') || '';
+document.getElementById('notes-cnt').textContent = nta.value.length + ' chars';
+nta.addEventListener('input', () => {
+  localStorage.setItem('wd_notes', nta.value);
+  document.getElementById('notes-cnt').textContent = nta.value.length + ' chars';
+});
+window.clearNotes = () => {
+  if (!confirm('Clear notes?')) return;
+  nta.value = ''; localStorage.removeItem('wd_notes');
+  document.getElementById('notes-cnt').textContent = '0 chars';
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function set(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+let _tt;
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type;
+  void el.offsetWidth; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+updateTimerUI();
+</script>
+</body>
+</html>
