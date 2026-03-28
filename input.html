@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>WorkDesk — Input</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07090f">
   <style>
@@ -65,7 +66,7 @@
       <a href="input.html" class="nav-link active">Input</a>
       <a href="report.html" class="nav-link">Report</a>
     </div>
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀ Light</button>
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
   </div>
 </nav>
 
@@ -207,6 +208,7 @@ import {
   getTasks, addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
   DELETE_PASSWORD
 } from './js/firebase.js';
+import { initTheme, toggleThemePanel } from './js/theme.js';
 
 let members = [], tasks = [];
 // selectedMembers stores: { memberId: { name, role } }
@@ -216,17 +218,9 @@ let selectedPriority = 'medium';
 let editingId = null;
 let pendingDeleteId = null;
 
-// ── THEME ──────────────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('wd_theme') || 'dark';
-if (savedTheme === 'light') {
-  document.body.classList.add('light');
-  document.getElementById('theme-btn').textContent = '☽ Dark';
-}
-window.toggleTheme = () => {
-  const isLight = document.body.classList.toggle('light');
-  localStorage.setItem('wd_theme', isLight ? 'light' : 'dark');
-  document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
-};
+// Theme handled by theme.js
+initTheme();
+window.toggleThemePanel = toggleThemePanel;
 
 // ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 onUserReady(async () => {

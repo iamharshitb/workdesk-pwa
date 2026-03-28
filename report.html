@@ -380,6 +380,9 @@ body{
 
 <script type="module">
 import { onUserReady, getTasks, getMembers } from './js/firebase.js';
+import { initTheme, toggleThemePanel } from './js/theme.js';
+initTheme();
+window.toggleThemePanel = toggleThemePanel;
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 let allTasks=[], allMembers=[], selMonth='';
