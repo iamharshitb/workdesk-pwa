@@ -32,10 +32,13 @@
 <body>
 <nav class="nav">
   <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
-  <div class="nav-links">
-    <a href="index.html" class="nav-link">Dashboard</a>
-    <a href="input.html" class="nav-link active">Input</a>
-    <a href="report.html" class="nav-link">Report</a>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="input.html" class="nav-link active">Input</a>
+      <a href="report.html" class="nav-link">Report</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀ Light</button>
   </div>
 </nav>
 
@@ -212,11 +215,11 @@ function renderRoleSection() {
   sec.style.display = '';
   sec.innerHTML = `
     <div class="role-section">
-      <div class="sect-label" style="margin-top:0">Role in this task</div>
+      <div class="sect-label" style="margin-top:0">Respective Task</div>
       ${sel.map(([id, m]) => `
         <div class="role-row">
           <span class="role-name">${esc(m.name.split(' ')[0])}</span>
-          <input class="role-input" placeholder="e.g. Lead, Reviewer, Support..."
+          <input class="role-input" placeholder="What's their task in this?"
             value="${esc(m.role)}"
             oninput="selectedMembers['${id}'].role=this.value"
             maxlength="60">
@@ -406,6 +409,15 @@ function toast(msg, type = '') {
   el.textContent = msg; el.className = 'toast ' + type;
   void el.offsetWidth; el.classList.add('show');
   clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// ── THEME TOGGLE ──────────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('wd_theme') || 'dark';
+if (savedTheme === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☽ Dark'; }
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('wd_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
 }
 </script>
 </body>
