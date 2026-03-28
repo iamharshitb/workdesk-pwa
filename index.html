@@ -7,142 +7,17 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#04070f">
-  <style>
-    /* ── BIGGER BASE TEXT ── */
-    body { font-size: 15px; }
-    .page { padding: 14px 14px 60px; }
-
-    /* ── PROGRESS BAR ── */
-    .prog-wrap { background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:10px }
-    .prog-top { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px }
-    .prog-label { font-size:11px;color:var(--text2);letter-spacing:.09em;text-transform:uppercase }
-    .prog-pct { font-family:var(--display);font-size:20px;font-weight:700;color:var(--neon);text-shadow:0 0 10px rgba(0,245,200,.4) }
-    .prog-track { height:5px;background:var(--bg3);border-radius:3px;overflow:hidden }
-    .prog-fill { height:100%;background:var(--neon);border-radius:3px;box-shadow:0 0 8px rgba(0,245,200,.4);transition:width .6s cubic-bezier(.4,0,.2,1) }
-
-    /* ── STATS ── */
-    .stats-row { display:flex;gap:6px;margin-bottom:10px }
-    .stat-pill { flex:1;text-align:center;padding:10px 4px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r) }
-    .stat-n { font-family:var(--display);font-size:22px;font-weight:700;line-height:1;margin-bottom:3px }
-    .sn-g { color:var(--neon);text-shadow:0 0 10px rgba(0,245,200,.45) }
-    .sn-a { color:var(--amber);text-shadow:0 0 10px rgba(255,183,0,.35) }
-    .sn-r { color:var(--red);text-shadow:0 0 10px rgba(255,62,108,.35) }
-    .sn-b { color:var(--neon2);text-shadow:0 0 10px rgba(0,196,255,.35) }
-    .stat-l { font-size:10px;color:var(--text3);letter-spacing:.09em;text-transform:uppercase }
-
-    /* ── TABS ── */
-    .tabs { display:flex;border-bottom:1px solid var(--border2);margin-bottom:12px }
-    .tab { flex:1;padding:10px 4px;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s }
-    .tab:hover { color:var(--text) }
-    .tab.active { color:var(--neon);border-bottom-color:var(--neon);text-shadow:0 0 8px rgba(0,245,200,.35) }
-
-    /* ── TASK CARD ── */
-    .task-card { background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 13px;margin-bottom:9px;position:relative;overflow:hidden;transition:border-color .15s }
-    .task-card::before { content:'';position:absolute;left:0;top:0;bottom:0;width:3px }
-    .task-card.pc::before { background:var(--red);box-shadow:0 0 6px var(--red) }
-    .task-card.ph::before { background:var(--amber);box-shadow:0 0 5px var(--amber) }
-    .task-card.pm::before { background:var(--neon2) }
-    .task-card.pl::before { background:var(--neon) }
-    .task-card:hover { border-color:rgba(0,245,200,.2) }
-    .task-card.is-done { opacity:.55 }
-
-    /* ── TASK CARD INNER ── */
-    .tc-title { font-size:14px;color:var(--text);letter-spacing:.02em;margin-bottom:7px;padding-left:10px;line-height:1.45;font-weight:500 }
-    .task-card.is-done .tc-title { text-decoration:line-through;color:var(--text2) }
-    .tc-meta { display:flex;flex-wrap:wrap;gap:5px;padding-left:10px;align-items:center;margin-bottom:8px }
-    .tc-members { display:flex;flex-wrap:wrap;gap:5px;padding-left:10px;margin-bottom:8px }
-    .tc-actions { display:flex;gap:6px;padding-left:10px;align-items:center }
-
-    /* ── TAGS ── */
-    .tag { font-size:10px;padding:3px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase }
-    .t-crit { background:rgba(255,62,108,.09);color:var(--red);border:1px solid rgba(255,62,108,.2) }
-    .t-high { background:rgba(255,183,0,.09);color:var(--amber);border:1px solid rgba(255,183,0,.2) }
-    .t-med  { background:rgba(0,196,255,.09);color:var(--neon2);border:1px solid rgba(0,196,255,.2) }
-    .t-low  { background:rgba(0,245,200,.07);color:var(--neon);border:1px solid rgba(0,245,200,.18) }
-    .t-todo { background:var(--bg3);color:var(--text2);border:1px solid var(--border2) }
-    .t-ip   { background:rgba(255,183,0,.07);color:var(--amber);border:1px solid rgba(255,183,0,.15) }
-    .t-done { background:rgba(0,245,200,.06);color:var(--neon);border:1px solid rgba(0,245,200,.15) }
-
-    /* ── MEMBER PILL inside task ── */
-    .m-pill { display:inline-flex;flex-direction:column;gap:1px;padding:4px 9px;border-radius:8px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18) }
-    .m-pill-name { font-size:11px;color:var(--purple);letter-spacing:.04em }
-    .m-pill-role { font-size:10px;color:var(--text2);letter-spacing:.03em }
-
-    /* ── DONE BUTTON ── */
-    .done-btn { padding:5px 12px;border-radius:20px;border:1px solid rgba(0,245,200,.3);background:rgba(0,245,200,.06);color:var(--neon);font-family:var(--mono);font-size:10px;letter-spacing:.06em;cursor:pointer;transition:all .15s }
-    .done-btn:hover { background:rgba(0,245,200,.14);border-color:rgba(0,245,200,.6) }
-    .done-btn.undone { border-color:rgba(255,183,0,.3);background:rgba(255,183,0,.06);color:var(--amber) }
-    .done-btn.undone:hover { background:rgba(255,183,0,.12) }
-
-    /* ── STATUS CYCLE ── */
-    .sc-btn { padding:5px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:.05em;cursor:pointer;transition:all .15s }
-    .sc-btn:hover { border-color:rgba(0,245,200,.3);color:var(--neon) }
-
-    /* ── MEMBER SECTION (By Member tab) ── */
-    .member-section { margin-bottom:16px }
-    .member-hd { display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 11px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18);border-radius:8px }
-    .member-av { width:30px;height:30px;border-radius:50%;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--purple);flex-shrink:0 }
-    .member-name { font-size:13px;color:var(--purple);letter-spacing:.05em;flex:1 }
-    .member-cnt { font-size:10px;color:var(--text3);letter-spacing:.04em }
-
-    /* member progress bar */
-    .member-prog { height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px }
-    .member-prog-fill { height:100%;background:var(--neon);border-radius:2px;transition:width .5s ease }
-
-    /* ── FOLLOW-UP CARD ── */
-    .fu-card { background:var(--bg2);border:1px solid rgba(0,196,255,.13);border-radius:var(--r);padding:11px 13px;margin-bottom:9px }
-    .fu-person { display:flex;align-items:center;gap:8px;margin-bottom:8px }
-    .fu-av { width:26px;height:26px;border-radius:50%;background:rgba(0,196,255,.09);border:1px solid rgba(0,196,255,.22);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--neon2);flex-shrink:0 }
-    .fu-name { font-size:13px;color:var(--neon2);letter-spacing:.05em }
-    .fu-section-label { font-size:10px;letter-spacing:.09em;margin-bottom:5px;text-transform:uppercase }
-    .fu-task-row { padding:7px 10px;background:var(--bg3);border-radius:6px;border-left:2px solid var(--neon2);margin-bottom:5px }
-    .fu-task-name { font-size:13px;color:var(--text);letter-spacing:.02em;margin-bottom:3px;line-height:1.4 }
-    .fu-task-role { font-size:10px;color:var(--text2);letter-spacing:.04em }
-    .fu-task-status { font-size:9px;padding:2px 7px;border-radius:20px;letter-spacing:.05em;display:inline-block;margin-top:4px }
-
-    /* ── TIMER ── */
-    .timer-wrap { text-align:center;padding:12px 0 8px }
-    .timer-digits { font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:.07em;color:var(--text);line-height:1 }
-    .timer-digits.run { color:var(--neon);text-shadow:0 0 20px rgba(0,245,200,.45) }
-    .timer-digits.end { color:var(--red);animation:blink .7s infinite alternate }
-    @keyframes blink { to { opacity:.25 } }
-    .timer-st { font-size:10px;color:var(--text3);letter-spacing:.16em;margin-top:4px }
-    .t-presets { display:flex;gap:5px;margin:8px 0 6px }
-    .t-pre { flex:1;padding:7px 0;border-radius:6px;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;text-align:center;transition:all .15s;letter-spacing:.04em }
-    .t-pre:hover { border-color:rgba(0,245,200,.3);color:var(--text) }
-    .t-pre.ap { background:rgba(0,245,200,.07);border-color:rgba(0,245,200,.38);color:var(--neon) }
-    .t-cr { display:flex;align-items:center;gap:7px;margin-bottom:8px }
-    .t-ci { width:56px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;outline:none }
-    .t-ci:focus { border-color:rgba(0,245,200,.35) }
-    .t-cl { font-size:11px;color:var(--text2);letter-spacing:.04em }
-    .t-btns { display:flex;gap:7px }
-    .t-btn { flex:1;padding:10px;border-radius:var(--r);font-family:var(--mono);font-size:11px;letter-spacing:.07em;cursor:pointer;transition:all .15s;border:1px solid }
-    .t-go { background:rgba(0,245,200,.08);border-color:rgba(0,245,200,.38);color:var(--neon) }
-    .t-go:hover { background:rgba(0,245,200,.14) }
-    .t-pa { background:rgba(255,183,0,.08);border-color:rgba(255,183,0,.38);color:var(--amber) }
-    .t-rst { background:var(--bg2);border-color:var(--border2);color:var(--text2) }
-    .t-rst:hover { border-color:rgba(255,62,108,.35);color:var(--red) }
-
-    /* ── NOTES ── */
-    .notes-ta { width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;resize:none;outline:none;min-height:80px;letter-spacing:.03em;transition:border-color .15s }
-    .notes-ta:focus { border-color:rgba(0,245,200,.32) }
-    .notes-ta::placeholder { color:var(--text3) }
-    .notes-foot { display:flex;justify-content:space-between;align-items:center;margin-top:5px }
-    .notes-cnt { font-size:10px;color:var(--text3);letter-spacing:.06em }
-    .notes-clr { background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;font-family:var(--mono);letter-spacing:.05em }
-    .notes-clr:hover { color:var(--red) }
-
-    .empty { text-align:center;padding:28px 12px;color:var(--text3);font-size:11px;letter-spacing:.08em }
-    .ei { font-size:22px;margin-bottom:8px;opacity:.25 }
-  </style>
 </head>
 <body>
 <nav class="nav">
   <div class="nav-brand"><span class="brand-dot"></span>WORKDESK</div>
-  <div class="nav-links">
-    <a href="index.html" class="nav-link active">Dashboard</a>
-    <a href="input.html" class="nav-link">Input</a>
-    <a href="report.html" class="nav-link">Report</a>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Dashboard</a>
+      <a href="input.html" class="nav-link">Input</a>
+      <a href="report.html" class="nav-link">Report</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀ Light</button>
   </div>
 </nav>
 
@@ -158,7 +33,7 @@
     <div class="stat-pill"><div class="stat-n sn-r" id="s-crit">0</div><div class="stat-l">Critical</div></div>
   </div>
 
-  <!-- OVERALL PROGRESS -->
+  <!-- PROGRESS -->
   <div class="prog-wrap fi" style="animation-delay:.05s">
     <div class="prog-top">
       <span class="prog-label">Overall Progress</span>
@@ -228,6 +103,16 @@ import { onUserReady, getTasks, getMembers, updateTask } from './js/firebase.js'
 let tasks = [], members = [];
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 
+// ── THEME ─────────────────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('wd_theme') || 'dark';
+if (savedTheme === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☽ Dark'; }
+window.toggleTheme = () => {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('wd_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isLight ? '☽ Dark' : '☀ Light';
+};
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 onUserReady(async () => {
   [tasks, members] = await Promise.all([getTasks(), getMembers()]);
   if (!MY_NAME) {
@@ -239,179 +124,38 @@ onUserReady(async () => {
   document.getElementById('main').style.display = '';
 });
 
-function renderAll() {
-  renderStats();
-  renderMyTasks();
-  renderByMember();
-  renderFollowup();
-}
+function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); }
 
-// ── STATS ────────────────────────────────────────────────────────────────
+// ── STATS ──────────────────────────────────────────────────────────────────
 function renderStats() {
-  const total  = tasks.length;
-  const inprog = tasks.filter(t => t.status === 'inprog').length;
-  const done   = tasks.filter(t => t.status === 'done').length;
-  const crit   = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
-  const pct    = total ? Math.round(done / total * 100) : 0;
-  set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
-  set('prog-pct', pct + '%');
-  document.getElementById('prog-fill').style.width = pct + '%';
+  const total=tasks.length, done=tasks.filter(t=>t.status==='done').length;
+  const inprog=tasks.filter(t=>t.status==='inprog').length;
+  const crit=tasks.filter(t=>t.priority==='critical'&&t.status!=='done').length;
+  const pct=total?Math.round(done/total*100):0;
+  set('s-total',total);set('s-inprog',inprog);set('s-done',done);set('s-crit',crit);
+  set('prog-pct',pct+'%');
+  document.getElementById('prog-fill').style.width=pct+'%';
 }
 
-// ── MY TASKS ─────────────────────────────────────────────────────────────
+// ── MY TASKS ───────────────────────────────────────────────────────────────
 function renderMyTasks() {
-  const el = document.getElementById('my-tasks-list');
-  const mine = MY_NAME
-    ? tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
-    : tasks;
-  if (!mine.length) {
-    el.innerHTML = `<div class="empty"><div class="ei">◈</div>${MY_NAME?'No tasks assigned to you':'No tasks yet'}</div>`;
-    return;
-  }
-  const po = {critical:0,high:1,medium:2,low:3};
-  const so = {inprog:0,todo:1,done:2};
-  const sorted = [...mine].sort((a,b)=>(so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2));
-  el.innerHTML = sorted.map((t,i) => taskCard(t, i)).join('');
+  const el=document.getElementById('my-tasks-list');
+  const mine=MY_NAME?tasks.filter(t=>(t.members||[]).some(m=>m.name.toLowerCase()===MY_NAME.toLowerCase())):tasks;
+  if(!mine.length){el.innerHTML=`<div class="empty"><div class="ei">◈</div>${MY_NAME?'No tasks assigned to you':'No tasks yet'}</div>`;return}
+  const po={critical:0,high:1,medium:2,low:3},so={inprog:0,todo:1,done:2};
+  const sorted=[...mine].sort((a,b)=>(so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2));
+  el.innerHTML=sorted.map((t,i)=>myTaskCard(t,i)).join('');
 }
 
-// ── BY MEMBER ─────────────────────────────────────────────────────────────
-function renderByMember() {
-  const el = document.getElementById('by-member-list');
-  if (!members.length) { el.innerHTML='<div class="empty"><div class="ei">◈</div>No members yet.</div>'; return; }
-  let html = '';
-  members.forEach(m => {
-    const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
-    const done   = mTasks.filter(t => t.status === 'done').length;
-    const total  = mTasks.length;
-    const pct    = total ? Math.round(done / total * 100) : 0;
-    html += `
-      <div class="member-section">
-        <div class="member-hd">
-          <span class="member-av">${initials(m.name)}</span>
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span class="member-name">${esc(m.name)}</span>
-              <span class="member-cnt">${done}/${total} done · ${pct}%</span>
-            </div>
-            <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
-          </div>
-        </div>
-        ${mTasks.length ? mTasks.map((t,i) => memberTaskCard(t, m, i)).join('') : '<div class="empty" style="padding:10px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
-      </div>`;
-  });
-  el.innerHTML = html;
-}
-
-function memberTaskCard(t, member, i) {
-  const mData  = (t.members||[]).find(mm => mm.id === member.id);
-  const role   = mData?.role || '';
-  const pc     = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const stTag  = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl  = {todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
-  const isDone = t.status === 'done';
-  return `
-    <div class="task-card ${pc}${isDone?' is-done':''}" style="margin-left:8px">
-      <div class="tc-title">${esc(t.label)}</div>
-      <div class="tc-meta">
-        <span class="tag ${stTag}">${stLbl}</span>
-        ${role ? `<span class="tag" style="background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.2)">Role: ${esc(role)}</span>` : ''}
-      </div>
-      <div class="tc-actions">
-        <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
-          ${isDone ? '↩ Undo' : '✓ Mark Done'}
-        </button>
-      </div>
-    </div>`;
-}
-
-// ── FOLLOW-UP ─────────────────────────────────────────────────────────────
-function renderFollowup() {
-  const el = document.getElementById('followup-list');
-  const others = MY_NAME
-    ? members.filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
-    : members;
-  if (!others.length) { el.innerHTML='<div class="empty"><div class="ei">◈</div>No other members</div>'; return; }
-
-  let html = '';
-  others.forEach(m => {
-    const allTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
-    const inprog   = allTasks.filter(t => t.status === 'inprog');
-    const todo     = allTasks.filter(t => t.status === 'todo').slice(0, 2);
-    if (!inprog.length && !todo.length) return;
-
-    const done  = allTasks.filter(t => t.status === 'done').length;
-    const total = allTasks.length;
-    const pct   = total ? Math.round(done / total * 100) : 0;
-
-    html += `<div class="fu-card">
-      <div class="fu-person">
-        <span class="fu-av">${initials(m.name)}</span>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="fu-name">${esc(m.name)}</span>
-            <span style="font-size:10px;color:var(--text3)">${done}/${total} done</span>
-          </div>
-          <div class="member-prog" style="margin-top:4px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
-        </div>
-      </div>`;
-
-    if (inprog.length) {
-      html += `<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
-      inprog.forEach(t => {
-        const role = (t.members||[]).find(mm=>mm.id===m.id)?.role || '';
-        html += `<div class="fu-task-row">
-          <div class="fu-task-name">${esc(t.label)}</div>
-          ${role ? `<div class="fu-task-role">Role: ${esc(role)}</div>` : ''}
-          <button class="done-btn" onclick="markDone('${t.id}')" style="margin-top:6px;font-size:10px">✓ Mark Done</button>
-        </div>`;
-      });
-    }
-    if (todo.length) {
-      html += `<div class="fu-section-label" style="color:var(--text2);margin-top:8px">Next up</div>`;
-      todo.forEach(t => {
-        const role = (t.members||[]).find(mm=>mm.id===m.id)?.role || '';
-        html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.75">
-          <div class="fu-task-name">${esc(t.label)}</div>
-          ${role ? `<div class="fu-task-role">Role: ${esc(role)}</div>` : ''}
-        </div>`;
-      });
-    }
-    html += `</div>`;
-  });
-  el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
-}
-
-// ── CYCLE STATUS ──────────────────────────────────────────────────────────
-window.cycleStatus = async (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
-  const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
-  t.status = next;
-  await updateTask(id, {status: next});
-  renderAll();
-  toast(next==='done'?'Marked done ✓':'Status updated');
-};
-
-window.markDone = async (id) => {
-  const t = tasks.find(t => t.id === id);
-  if (!t) return;
-  const next = t.status === 'done' ? 'todo' : 'done';
-  t.status = next;
-  await updateTask(id, {status: next});
-  renderAll();
-  toast(next==='done'?'✓ Task complete!':'Reopened');
-};
-
-// ── TASK CARD (My Tasks) ──────────────────────────────────────────────────
-function taskCard(t, i) {
-  const pc     = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const pTag   = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-  const stTag  = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl  = {todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
-  const isDone = t.status === 'done';
-  const myRole = MY_NAME ? (t.members||[]).find(m=>m.name.toLowerCase()===MY_NAME.toLowerCase())?.role||'' : '';
-  const others = (t.members||[]).filter(m=>m.name.toLowerCase()!==(MY_NAME||'').toLowerCase());
+function myTaskCard(t,i) {
+  const pc={critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+  const pTag={critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
+  const stTag={todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+  const stLbl={todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
+  const isDone=t.status==='done';
+  const myData=(t.members||[]).find(m=>m.name.toLowerCase()===(MY_NAME||'').toLowerCase());
+  const myTask=myData?.role||'—';
+  const others=(t.members||[]).filter(m=>m.name.toLowerCase()!==(MY_NAME||'').toLowerCase());
   return `
     <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
       <div class="tc-title">${esc(t.label)}</div>
@@ -420,28 +164,148 @@ function taskCard(t, i) {
         <span class="tag ${stTag}">${stLbl}</span>
       </div>
       <div class="tc-members">
-        ${myRole?`<span class="m-pill"><span class="m-pill-name">You</span><span class="m-pill-role">${esc(myRole)}</span></span>`:''}
+        <span class="m-pill"><span class="m-pill-name">You</span><span class="m-pill-role">${esc(myTask)}</span></span>
         ${others.map(m=>`<span class="m-pill"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${esc(m.role||'—')}</span></span>`).join('')}
       </div>
       <div class="tc-actions">
         <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-        <button class="done-btn${isDone?' undone':''}" onclick="markDone('${t.id}')">
-          ${isDone?'↩ Undo':'✓ Done'}
+        <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="${isDone?'Undo':'Mark as done'}">
+          ${isDone?'✓':'○'}
         </button>
       </div>
     </div>`;
 }
 
-// ── TABS ──────────────────────────────────────────────────────────────────
-window.switchTab = (id, btn) => {
-  ['mytasks','bymember','followup'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===id?'':'none';
+// ── BY MEMBER ──────────────────────────────────────────────────────────────
+function renderByMember() {
+  const el=document.getElementById('by-member-list');
+  if(!members.length){el.innerHTML='<div class="empty"><div class="ei">◈</div>No members yet.</div>';return}
+  let html='';
+  members.forEach(m=>{
+    const mTasks=tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
+    const done=mTasks.filter(t=>t.status==='done').length;
+    const total=mTasks.length;
+    const pct=total?Math.round(done/total*100):0;
+    html+=`<div class="member-section">
+      <div class="member-hd">
+        <span class="member-av">${initials(m.name)}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="member-name">${esc(m.name)}</span>
+            <span class="member-cnt">${done}/${total} · ${pct}%</span>
+          </div>
+          <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      ${mTasks.length?mTasks.map((t,i)=>memberTaskCard(t,m,i)).join(''):'<div class="empty" style="padding:10px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
+    </div>`;
   });
+  el.innerHTML=html;
+}
+
+function memberTaskCard(t,member,i) {
+  const mData=(t.members||[]).find(mm=>mm.id===member.id);
+  const respTask=mData?.role||'—';
+  const pc={critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
+  const stTag={todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
+  const stLbl={todo:'TODO',inprog:'IN PROG',done:'DONE'}[t.status||'todo'];
+  const isDone=t.status==='done';
+  return `
+    <div class="task-card ${pc}${isDone?' is-done':''}" style="margin-left:10px">
+      <div class="tc-title">${esc(t.label)}</div>
+      <div class="tc-meta">
+        <span class="tag ${stTag}">${stLbl}</span>
+        <span class="tag" style="background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.2)">
+          Resp. Task: ${esc(respTask)}
+        </span>
+      </div>
+      <div class="tc-actions">
+        <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
+        <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="${isDone?'Undo':'Mark done'}">
+          ${isDone?'✓':'○'}
+        </button>
+      </div>
+    </div>`;
+}
+
+// ── FOLLOW-UP ──────────────────────────────────────────────────────────────
+function renderFollowup() {
+  const el=document.getElementById('followup-list');
+  const others=MY_NAME?members.filter(m=>m.name.toLowerCase()!==MY_NAME.toLowerCase()):members;
+  if(!others.length){el.innerHTML='<div class="empty"><div class="ei">◈</div>No other members</div>';return}
+  let html='';
+  others.forEach(m=>{
+    const allT=tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
+    const inprog=allT.filter(t=>t.status==='inprog');
+    const todo=allT.filter(t=>t.status==='todo').slice(0,2);
+    if(!inprog.length&&!todo.length)return;
+    const done=allT.filter(t=>t.status==='done').length;
+    const pct=allT.length?Math.round(done/allT.length*100):0;
+    html+=`<div class="fu-card">
+      <div class="fu-person">
+        <span class="fu-av">${initials(m.name)}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="fu-name">${esc(m.name)}</span>
+            <span style="font-size:11px;color:var(--text3)">${done}/${allT.length} done</span>
+          </div>
+          <div class="member-prog" style="margin-top:4px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+    if(inprog.length){
+      html+=`<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
+      inprog.forEach(t=>{
+        const mData=(t.members||[]).find(mm=>mm.id===m.id);
+        const respTask=mData?.role||'—';
+        const isDone=t.status==='done';
+        html+=`<div class="fu-task-row">
+          <div class="fu-task-name">${esc(t.label)}</div>
+          <div class="fu-task-role">Resp. Task: ${esc(respTask)}</div>
+          <div class="fu-task-actions">
+            <span class="tag t-ip">IN PROG</span>
+            <button class="tick-btn${isDone?' ticked':''}" onclick="markDone('${t.id}')" title="Mark done" style="width:30px;height:30px;font-size:14px">${isDone?'✓':'○'}</button>
+          </div>
+        </div>`;
+      });
+    }
+    if(todo.length){
+      html+=`<div class="fu-section-label" style="color:var(--text2);margin-top:9px">Next up</div>`;
+      todo.forEach(t=>{
+        const mData=(t.members||[]).find(mm=>mm.id===m.id);
+        const respTask=mData?.role||'—';
+        html+=`<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.75">
+          <div class="fu-task-name">${esc(t.label)}</div>
+          <div class="fu-task-role">Resp. Task: ${esc(respTask)}</div>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html||'<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
+}
+
+// ── STATUS ACTIONS ─────────────────────────────────────────────────────────
+window.cycleStatus=async(id)=>{
+  const t=tasks.find(t=>t.id===id);if(!t)return;
+  const next={todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
+  t.status=next;await updateTask(id,{status:next});
+  renderAll();toast(next==='done'?'✓ Done!':'Status updated');
+};
+window.markDone=async(id)=>{
+  const t=tasks.find(t=>t.id===id);if(!t)return;
+  const next=t.status==='done'?'todo':'done';
+  t.status=next;await updateTask(id,{status:next});
+  renderAll();toast(next==='done'?'✓ Task complete!':'Reopened');
+};
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+window.switchTab=(id,btn)=>{
+  ['mytasks','bymember','followup'].forEach(t=>document.getElementById('tab-'+t).style.display=t===id?'':'none');
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 };
 
-// ── TIMER ─────────────────────────────────────────────────────────────────
+// ── TIMER ──────────────────────────────────────────────────────────────────
 let tTotal=25*60,tLeft=25*60,tRunning=false,tInterval=null;
 function pad(n){return String(n).padStart(2,'0')}
 function fmtTime(s){return pad(Math.floor(s/60))+':'+pad(s%60)}
@@ -456,20 +320,20 @@ window.setPreset=(mins,btn)=>{resetTimer();tTotal=mins*60;tLeft=tTotal;document.
 window.setCustom=()=>{const v=parseInt(document.getElementById('t-custom').value);if(!v||v<1)return;resetTimer();tTotal=v*60;tLeft=tTotal;document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));updateTimerUI()};
 window.toggleTimer=()=>{
   if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ RESUME';updateTimerUI();return}
-  if(tLeft===0)tLeft=tTotal;
-  tRunning=true;document.getElementById('t-toggle').className='t-btn t-pa';document.getElementById('t-toggle').textContent='⏸ PAUSE';
+  if(tLeft===0)tLeft=tTotal;tRunning=true;
+  document.getElementById('t-toggle').className='t-btn t-pa';document.getElementById('t-toggle').textContent='⏸ PAUSE';
   tInterval=setInterval(()=>{if(tLeft<=0){clearInterval(tInterval);tRunning=false;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ START';document.getElementById('t-st').textContent='DONE ✓';return}tLeft--;updateTimerUI()},1000)
 };
 window.resetTimer=()=>{clearInterval(tInterval);tRunning=false;tLeft=tTotal;document.getElementById('t-toggle').className='t-btn t-go';document.getElementById('t-toggle').textContent='▶ START';updateTimerUI()};
 
-// ── NOTES ─────────────────────────────────────────────────────────────────
+// ── NOTES ──────────────────────────────────────────────────────────────────
 const nta=document.getElementById('notes-ta');
 nta.value=localStorage.getItem('wd_notes')||'';
 document.getElementById('notes-cnt').textContent=nta.value.length+' chars';
 nta.addEventListener('input',()=>{localStorage.setItem('wd_notes',nta.value);document.getElementById('notes-cnt').textContent=nta.value.length+' chars'});
 window.clearNotes=()=>{if(!confirm('Clear notes?'))return;nta.value='';localStorage.removeItem('wd_notes');document.getElementById('notes-cnt').textContent='0 chars'};
 
-// ── UTILS ──────────────────────────────────────────────────────────────────
+// ── UTILS ───────────────────────────────────────────────────────────────────
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
