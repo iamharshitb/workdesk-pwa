@@ -2,7 +2,7 @@
   "name": "WorkDesk",
   "short_name": "WorkDesk",
   "description": "Work command center — tasks, deps, timer",
-  "start_url": "/index.html",
+  "start_url": "/workdesk-pwa/index.html",
   "display": "standalone",
   "background_color": "#04070f",
   "theme_color": "#04070f",
