@@ -340,7 +340,7 @@ window.submitTask = async () => {
   const label = document.getElementById('f-task').value.trim();
   if (!label) { shake('f-task'); return; }
 
-  const dueDate = document.getElementById('f-start').value || null;
+  const startDate = document.getElementById('f-start').value || null;
 
   // Collect members with their respective tasks (role field)
   const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({
