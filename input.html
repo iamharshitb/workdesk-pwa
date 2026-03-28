@@ -73,6 +73,38 @@
     </div>
   </div>
 
+  <!-- TEAM SUMMARY -->
+  <div class="panel fi" id="summary-panel" style="animation-delay:.11s">
+    <div class="panel-hd"><span class="panel-title">Team Summary</span></div>
+    <div class="panel-body" id="summary-body">
+      <div style="display:flex;gap:7px">
+        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--neon2)" id="sum-total">0</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Total</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--amber)" id="sum-inprog">0</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">In Prog</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--neon)" id="sum-done">0</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Done</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--red)" id="sum-crit">0</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Critical</div>
+        </div>
+      </div>
+      <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:10px">
+        <div id="sum-bar" style="height:100%;background:var(--neon);border-radius:3px;box-shadow:0 0 8px rgba(0,229,184,.4);transition:width .6s ease;width:0%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px">
+        <span style="font-size:11px;font-weight:700;color:var(--text2)">Overall completion</span>
+        <span style="font-size:13px;font-weight:800;color:var(--neon)" id="sum-pct">0%</span>
+      </div>
+    </div>
+  </div>
+
   <!-- TASK LIST -->
   <div class="panel fi" style="animation-delay:.13s">
     <div class="panel-hd">
@@ -137,6 +169,7 @@ onUserReady(async () => {
   renderMemberList();
   renderChips();
   renderTaskList();
+  updateSummary();
   document.getElementById('page-loader').remove();
 });
 
@@ -264,6 +297,7 @@ window.submitTask = async () => {
       toast('Task registered ✓'); resetForm();
     }
     renderTaskList();
+    updateSummary();
   } catch(e) { toast('Error: ' + e.message, 'err'); }
 
   btn.disabled = false;
@@ -338,7 +372,7 @@ window.confirmDelete = async () => {
   try {
     await fbDeleteTask(pendingDeleteId, pw);
     tasks = tasks.filter(t => t.id !== pendingDeleteId);
-    closeDeleteModal(); renderTaskList(); toast('Task deleted');
+    closeDeleteModal(); renderTaskList(); updateSummary(); toast('Task deleted');
   } catch(e) {
     inp.classList.add('wrong'); errEl.style.display = 'block'; inp.value = '';
     inp.focus(); setTimeout(() => inp.classList.remove('wrong'), 600);
@@ -381,6 +415,22 @@ function renderTaskList() {
         </div>
       </div>`;
   }).join('');
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────
+function updateSummary() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === 'done').length;
+  const inprog = tasks.filter(t => t.status === 'inprog').length;
+  const crit = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const s = id => document.getElementById(id);
+  if(s('sum-total')) s('sum-total').textContent = total;
+  if(s('sum-inprog')) s('sum-inprog').textContent = inprog;
+  if(s('sum-done')) s('sum-done').textContent = done;
+  if(s('sum-crit')) s('sum-crit').textContent = crit;
+  if(s('sum-pct')) s('sum-pct').textContent = pct + '%';
+  if(s('sum-bar')) s('sum-bar').style.width = pct + '%';
 }
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
