@@ -138,21 +138,25 @@ async function setMemberStatus(taskId, memberId, newStatus) {
   if (!t.memberStatus) t.memberStatus = {};
   t.memberStatus[memberId] = newStatus;
 
-  // Update overall task status:
-  // If ALL members are done → overall done
-  // If ANY member is inprog → overall inprog
-  // Otherwise → todo
   const memberIds = (t.members||[]).map(m => m.id);
   const allDone = memberIds.length > 0 && memberIds.every(id => (t.memberStatus[id]||'todo') === 'done');
-  const anyInprog = memberIds.some(id => (t.memberStatus[id]||'todo') === 'inprog');
-  const overallStatus = allDone ? 'done' : anyInprog ? 'inprog' : 'todo';
+  let overallStatus;
+  if (allDone) {
+    overallStatus = 'done';
+  } else if (t.status === 'done') {
+    overallStatus = 'inprog';
+  } else {
+    overallStatus = t.status || 'todo';
+  }
   t.status = overallStatus;
 
   const updates = { status: overallStatus };
   updates[`memberStatus.${memberId}`] = newStatus;
   await updateTask(taskId, updates);
   renderAll();
-  toast(newStatus === 'done' ? '✓ Respective task done!' : 'Reopened');
+  if (allDone) toast('All done! Task complete!');
+  else if (newStatus === 'done') toast('Your part is done!');
+  else toast('Reopened');
 }
 
 // ── STATS ──────────────────────────────────────────────────────────────────
@@ -215,7 +219,9 @@ function renderMyTasks() {
           }).join('')}
         </div>
         <div class="tc-actions">
-          <button class="sc-btn" onclick="cycleOverall('${t.id}')">${stLbl} →</button>
+          ${!isDone ? `<button class="sc-btn" onclick="cycleOverall('${t.id}')">
+            ${t.status === 'todo' ? 'Start →' : 'Back to Todo ↩'}
+          </button>` : ''}
           ${myMemberId ? `
           <button class="mark-done-btn${myIsDone?' undone':''}"
             onclick="setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
@@ -278,7 +284,7 @@ function memberTaskCard(t, member, i) {
       <div class="tc-actions">
         <button class="mark-done-btn${isDone?' undone':''}"
           onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
-          ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+          ${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
         </button>
       </div>
     </div>`;
@@ -344,13 +350,17 @@ function renderFollowup() {
 }
 
 // ── ACTIONS ────────────────────────────────────────────────────────────────
-// Cycle overall task status (not per-member)
+// Cycle overall task status — only between Todo ↔ In Progress.
+// A task can ONLY reach Done automatically when all members mark their
+// respective tasks complete. Clicking this button never sets Done.
 window.cycleOverall = async (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
-  const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
+  // todo → inprog → todo (never → done via this button)
+  if (t.status === 'done') return; // already done, button shouldn't be visible but guard anyway
+  const next = t.status === 'todo' ? 'inprog' : 'todo';
   t.status = next;
   await updateTask(id, {status: next});
-  renderAll(); toast('Overall status updated');
+  renderAll(); toast(next === 'inprog' ? 'Marked in progress' : 'Moved back to Todo');
 };
 
 // Per-member done toggle — exposed as window function so HTML onclick can call it
