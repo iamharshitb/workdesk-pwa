@@ -134,7 +134,7 @@
         <div class="timer-slim-st" id="t-st">Ready</div>
       </div>
       <div class="timer-slim-controls" id="t-controls">
-        <div class="timer-slim-presets">
+        <div class="timer-slim-presets" id="t-presets-row">
           <button class="t-pre" onclick="setPreset(30,this)">30m</button>
           <button class="t-pre ap" onclick="setPreset(45,this)">45m</button>
           <input class="t-ci" type="number" id="t-custom" placeholder="mm" min="1" max="300" onchange="setCustom()" style="width:52px;flex-shrink:0">
@@ -528,26 +528,30 @@ let tTotal=45*60, tLeft=45*60, tRunning=false, tInterval=null;
 const pad = n => String(n).padStart(2,'0');
 const fmtTime = s => pad(Math.floor(s/60))+':'+pad(s%60);
 function updateTimerUI() {
-  const d   = document.getElementById('t-disp');
-  const s   = document.getElementById('t-st');
-  const clk = document.getElementById('t-clock');
-  const ctl = document.getElementById('t-controls');
+  const d      = document.getElementById('t-disp');
+  const s      = document.getElementById('t-st');
+  const clk    = document.getElementById('t-clock');
+  const ctl    = document.getElementById('t-controls');
+  const pre    = document.getElementById('t-presets-row');
   d.textContent = fmtTime(tLeft);
   if (!tRunning) {
     d.className = 'timer-slim-digits';
     s.textContent = 'Ready';
     clk.classList.remove('big');
     ctl.classList.remove('small');
+    pre.style.display = '';          // show presets
   } else if (tLeft <= 60) {
     d.className = 'timer-slim-digits end';
     s.textContent = 'Ending!';
     clk.classList.add('big');
     ctl.classList.add('small');
+    pre.style.display = 'none';      // hide presets
   } else {
     d.className = 'timer-slim-digits run';
     s.textContent = 'Running';
     clk.classList.add('big');
     ctl.classList.add('small');
+    pre.style.display = 'none';      // hide presets
   }
 }
 window.setPreset=(mins,btn)=>{
