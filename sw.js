@@ -1,4 +1,4 @@
-const CACHE = 'workdesk-v3';
+const CACHE = 'workdesk-v4';
 const STATIC = [
   '/workdesk-pwa/',
   '/workdesk-pwa/index.html',

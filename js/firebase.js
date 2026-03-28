@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:300966370113:web:c444bfaeaf4c28b2da5fc0"
 };
 const WORKSPACE_ID = "harshit-team-2026";
-export const DELETE_PASSWORD = "workdesk@delete";
+export const DELETE_PASSWORD = "abc@123";
 
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
