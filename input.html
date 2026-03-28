@@ -111,8 +111,8 @@
       </div>
 
       <div class="date-row">
-        <span class="date-label">📅 Due Date</span>
-        <input type="date" class="date-inp" id="f-due" min="">
+        <span class="date-label">📅 Start Date</span>
+        <input type="date" class="date-inp" id="f-start" min="">
       </div>
 
       <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ Register Task</button>
@@ -340,7 +340,7 @@ window.submitTask = async () => {
   const label = document.getElementById('f-task').value.trim();
   if (!label) { shake('f-task'); return; }
 
-  const dueDate = document.getElementById('f-due').value || null;
+  const dueDate = document.getElementById('f-start').value || null;
 
   // Collect members with their respective tasks (role field)
   const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({
@@ -354,13 +354,13 @@ window.submitTask = async () => {
 
   try {
     if (editingId) {
-      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate });
+      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate });
       const idx = tasks.findIndex(t => t.id === editingId);
-      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate };
+      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate: startDate };
       toast('Task updated ✓'); cancelEdit();
     } else {
-      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate, status: 'todo', memberStatus: {} });
+      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate });
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
     }
     renderTaskList();
@@ -376,7 +376,7 @@ window.editTask = (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
   editingId = id;
   document.getElementById('f-task').value = t.label;
-  document.getElementById('f-due').value = t.dueDate || '';
+  document.getElementById('f-start').value = t.dueDate || '';
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -493,7 +493,7 @@ function dueBadge(dueDate, status) {
   const isOverdue = dueDate < today;
   const isToday = dueDate === today;
   const cls = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const label = isOverdue ? '⚠ Overdue' : isToday ? '⚡ Due Today' : '📅 ' + formatDate(dueDate);
+  const label = isOverdue ? '📅 Started' : isToday ? '⚡ Starts Today' : '📅 ' + formatDate(dueDate);
   return `<span class="due-badge ${cls}">${label}</span>`;
 }
 
@@ -594,7 +594,7 @@ function updateSummary() {
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function resetForm() {
   document.getElementById('f-task').value = '';
-  document.getElementById('f-due').value = '';
+  document.getElementById('f-start').value = '';
   selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');

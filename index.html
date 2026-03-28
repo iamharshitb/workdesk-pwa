@@ -20,22 +20,20 @@
       opacity: .55;
     }
 
-    /* ── SLIM TIMER (20% bigger + grow animation) ── */
+    /* ── SLIM TIMER — clock expands to 2/3, controls shrink to 1/3 ── */
     .timer-slim {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 14px 18px;
+      gap: 14px;
+      padding: 14px 16px;
+      transition: all .35s ease;
     }
     .timer-slim-clock {
-      flex-shrink: 0;
+      flex: 1;
       text-align: center;
-      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+      transition: flex .35s ease;
     }
-    .timer-slim-clock.ticking {
-      transform: scale(1.22);
-      filter: drop-shadow(0 0 12px rgba(0,229,184,.35));
-    }
+    .timer-slim-clock.big { flex: 2; }
     .timer-slim-digits {
       font-family: var(--sans);
       font-size: 46px;
@@ -43,17 +41,11 @@
       letter-spacing: -.02em;
       color: var(--text);
       line-height: 1;
-      transition: color .3s, font-size .4s cubic-bezier(.34,1.56,.64,1);
+      transition: font-size .35s ease, color .25s;
     }
-    .timer-slim-digits.run {
-      color: var(--neon);
-      text-shadow: 0 0 22px rgba(0,229,184,.5);
-    }
-    .timer-slim-digits.end {
-      color: var(--red);
-      text-shadow: 0 0 22px rgba(255,58,94,.5);
-      animation: blink .7s infinite alternate;
-    }
+    .timer-slim-clock.big .timer-slim-digits { font-size: 58px; }
+    .timer-slim-digits.run { color: var(--neon); }
+    .timer-slim-digits.end { color: var(--red); animation: blink .7s infinite alternate; }
     @keyframes blink { to { opacity:.2 } }
     .timer-slim-st {
       font-size: 11px;
@@ -62,47 +54,22 @@
       letter-spacing: .12em;
       text-transform: uppercase;
       margin-top: 4px;
-      transition: color .3s;
+      transition: color .25s;
     }
-    .timer-slim-clock.ticking .timer-slim-st { color: var(--neon); }
-    /* Pulse ring around clock when running */
-    .timer-slim-clock.ticking::before {
-      content: '';
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      border: 2px solid rgba(0,229,184,.2);
-      animation: ring-pulse 1.5s ease-in-out infinite;
-    }
-    .timer-slim-clock { position: relative; }
-    @keyframes ring-pulse {
-      0%,100% { transform: scale(1); opacity:.5; }
-      50% { transform: scale(1.12); opacity:.15; }
-    }
+    .timer-slim-clock.big .timer-slim-st { color: var(--neon); }
     .timer-slim-controls {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-    .timer-slim-presets {
-      display: flex;
       gap: 7px;
+      transition: flex .35s ease;
+      overflow: hidden;
     }
-    .timer-slim-presets .t-pre {
-      flex: 1;
-      padding: 8px 4px;
-      font-size: 14px;
-    }
-    .timer-slim-btns {
-      display: flex;
-      gap: 7px;
-    }
-    .timer-slim-btns .t-btn {
-      flex: 1;
-      padding: 10px;
-      font-size: 14px;
-    }
+    .timer-slim-controls.small { flex: 0.5; }
+    .timer-slim-presets { display: flex; gap: 6px; }
+    .timer-slim-presets .t-pre { flex: 1; padding: 7px 2px; font-size: 13px; white-space: nowrap; overflow: hidden; }
+    .timer-slim-btns { display: flex; gap: 6px; }
+    .timer-slim-btns .t-btn { flex: 1; padding: 9px 4px; font-size: 13px; }
 
     /* ── STATS FILTER ── */
     .stat-pill {
@@ -166,7 +133,7 @@
         <div class="timer-slim-digits" id="t-disp">45:00</div>
         <div class="timer-slim-st" id="t-st">Ready</div>
       </div>
-      <div class="timer-slim-controls">
+      <div class="timer-slim-controls" id="t-controls">
         <div class="timer-slim-presets">
           <button class="t-pre" onclick="setPreset(30,this)">30m</button>
           <button class="t-pre ap" onclick="setPreset(45,this)">45m</button>
@@ -561,22 +528,26 @@ let tTotal=45*60, tLeft=45*60, tRunning=false, tInterval=null;
 const pad = n => String(n).padStart(2,'0');
 const fmtTime = s => pad(Math.floor(s/60))+':'+pad(s%60);
 function updateTimerUI() {
-  const d=document.getElementById('t-disp');
-  const s=document.getElementById('t-st');
-  const clk=document.getElementById('t-clock');
-  d.textContent=fmtTime(tLeft);
+  const d   = document.getElementById('t-disp');
+  const s   = document.getElementById('t-st');
+  const clk = document.getElementById('t-clock');
+  const ctl = document.getElementById('t-controls');
+  d.textContent = fmtTime(tLeft);
   if (!tRunning) {
-    d.className='timer-slim-digits';
-    s.textContent='Ready';
-    if(clk) clk.classList.remove('ticking');
-  } else if (tLeft<=60) {
-    d.className='timer-slim-digits end';
-    s.textContent='Ending!';
-    if(clk) clk.classList.add('ticking');
+    d.className = 'timer-slim-digits';
+    s.textContent = 'Ready';
+    clk.classList.remove('big');
+    ctl.classList.remove('small');
+  } else if (tLeft <= 60) {
+    d.className = 'timer-slim-digits end';
+    s.textContent = 'Ending!';
+    clk.classList.add('big');
+    ctl.classList.add('small');
   } else {
-    d.className='timer-slim-digits run';
-    s.textContent='Running';
-    if(clk) clk.classList.add('ticking');
+    d.className = 'timer-slim-digits run';
+    s.textContent = 'Running';
+    clk.classList.add('big');
+    ctl.classList.add('small');
   }
 }
 window.setPreset=(mins,btn)=>{
@@ -619,8 +590,8 @@ window.resetTimer=()=>{
   clearInterval(tInterval); tRunning=false; tLeft=tTotal;
   document.getElementById('t-toggle').className='t-btn t-go';
   document.getElementById('t-toggle').textContent='▶ Start';
-  const clk=document.getElementById('t-clock');
-  if(clk) clk.classList.remove('ticking');
+  document.getElementById('t-clock').classList.remove('big');
+  document.getElementById('t-controls').classList.remove('small');
   updateTimerUI();
 };
 
