@@ -568,81 +568,114 @@ window.switchTab = (id, btn) => {
 };
 
 // ── TIMER ──────────────────────────────────────────────────────────────────
+// Persists to localStorage so switching pages never resets the timer.
 let tTotal=45*60, tLeft=45*60, tRunning=false, tInterval=null;
 const pad = n => String(n).padStart(2,'0');
 const fmtTime = s => pad(Math.floor(s/60))+':'+pad(s%60);
+
+// Save full timer state + wall-clock timestamp
+function saveTimer() {
+  localStorage.setItem('wd_timer', JSON.stringify({
+    total: tTotal, left: tLeft, running: tRunning,
+    savedAt: tRunning ? Date.now() : null
+  }));
+}
+
+// Restore timer state on page load, correcting for time elapsed away
+function loadTimer() {
+  try {
+    const raw = localStorage.getItem('wd_timer');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    tTotal = s.total || 45*60;
+    tLeft  = s.left  || tTotal;
+    if (s.running && s.savedAt) {
+      const elapsed = Math.floor((Date.now() - s.savedAt) / 1000);
+      tLeft = Math.max(0, tLeft - elapsed);
+      tRunning = tLeft > 0;
+      if (tLeft === 0) { tRunning = false; playTimerDone(); }
+    }
+  } catch(e) {}
+}
+
+loadTimer(); // restore before first render
+
 function updateTimerUI() {
-  const d      = document.getElementById('t-disp');
-  const s      = document.getElementById('t-st');
-  const clk    = document.getElementById('t-clock');
-  const ctl    = document.getElementById('t-controls');
-  const pre    = document.getElementById('t-presets-row');
+  const d   = document.getElementById('t-disp');
+  const s   = document.getElementById('t-st');
+  const clk = document.getElementById('t-clock');
+  const ctl = document.getElementById('t-controls');
+  const pre = document.getElementById('t-presets-row');
+  const tog = document.getElementById('t-toggle');
   d.textContent = fmtTime(tLeft);
   if (!tRunning) {
     d.className = 'timer-slim-digits';
-    s.textContent = 'Ready';
-    clk.classList.remove('big');
-    ctl.classList.remove('small');
-    pre.style.display = '';          // show presets
+    s.textContent = tLeft === 0 ? 'Done! ✓' : 'Ready';
+    clk.classList.remove('big'); ctl.classList.remove('small');
+    pre.style.display = '';
+    if(tog){ tog.className='t-btn t-go';
+      tog.textContent = (tLeft>0 && tLeft<tTotal) ? '▶ Resume' : '▶ Start'; }
   } else if (tLeft <= 60) {
-    d.className = 'timer-slim-digits end';
-    s.textContent = 'Ending!';
-    clk.classList.add('big');
-    ctl.classList.add('small');
-    pre.style.display = 'none';      // hide presets
+    d.className = 'timer-slim-digits end'; s.textContent = 'Ending!';
+    clk.classList.add('big'); ctl.classList.add('small');
+    pre.style.display = 'none';
+    if(tog){ tog.className='t-btn t-pa'; tog.textContent='⏸ Pause'; }
   } else {
-    d.className = 'timer-slim-digits run';
-    s.textContent = 'Running';
-    clk.classList.add('big');
-    ctl.classList.add('small');
-    pre.style.display = 'none';      // hide presets
+    d.className = 'timer-slim-digits run'; s.textContent = 'Running';
+    clk.classList.add('big'); ctl.classList.add('small');
+    pre.style.display = 'none';
+    if(tog){ tog.className='t-btn t-pa'; tog.textContent='⏸ Pause'; }
   }
 }
-window.setPreset=(mins,btn)=>{
-  resetTimer(); tTotal=mins*60; tLeft=tTotal;
-  document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));
-  btn.classList.add('ap');
-  document.getElementById('t-custom').value='';
-  updateTimerUI();
-};
-window.setCustom=()=>{
-  const v=parseInt(document.getElementById('t-custom').value);
-  if(!v||v<1)return;
-  resetTimer(); tTotal=v*60; tLeft=tTotal;
-  document.querySelectorAll('.t-pre').forEach(b=>b.classList.remove('ap'));
-  updateTimerUI();
-};
-window.toggleTimer=()=>{
-  if(tRunning){
-    clearInterval(tInterval); tRunning=false;
-    document.getElementById('t-toggle').className='t-btn t-go';
-    document.getElementById('t-toggle').textContent='▶ Resume';
-    updateTimerUI(); return;
-  }
-  if(tLeft===0) tLeft=tTotal;
-  tRunning=true;
-  document.getElementById('t-toggle').className='t-btn t-pa';
-  document.getElementById('t-toggle').textContent='⏸ Pause';
-  tInterval=setInterval(()=>{
-    if(tLeft<=0){
-      clearInterval(tInterval); tRunning=false;
-      document.getElementById('t-toggle').className='t-btn t-go';
-      document.getElementById('t-toggle').textContent='▶ Start';
-      document.getElementById('t-st').textContent='Done! ✓';
-      playTimerDone();
-      return;
+
+function startTick() {
+  tInterval = setInterval(() => {
+    if (tLeft <= 0) {
+      clearInterval(tInterval); tRunning = false;
+      saveTimer(); updateTimerUI(); playTimerDone(); return;
     }
-    tLeft--; updateTimerUI();
-  },1000);
+    tLeft--; saveTimer(); updateTimerUI();
+  }, 1000);
+}
+
+// If timer was running when we left, resume the interval
+if (tRunning) startTick();
+
+window.setPreset = (mins, btn) => {
+  clearInterval(tInterval); tRunning = false;
+  tTotal = mins*60; tLeft = tTotal;
+  document.querySelectorAll('.t-pre').forEach(b => b.classList.remove('ap'));
+  btn.classList.add('ap');
+  document.getElementById('t-custom').value = '';
+  saveTimer(); updateTimerUI();
 };
-window.resetTimer=()=>{
-  clearInterval(tInterval); tRunning=false; tLeft=tTotal;
-  document.getElementById('t-toggle').className='t-btn t-go';
-  document.getElementById('t-toggle').textContent='▶ Start';
+window.setCustom = () => {
+  const v = parseInt(document.getElementById('t-custom').value);
+  if (!v || v < 1) return;
+  clearInterval(tInterval); tRunning = false;
+  tTotal = v*60; tLeft = tTotal;
+  document.querySelectorAll('.t-pre').forEach(b => b.classList.remove('ap'));
+  saveTimer(); updateTimerUI();
+};
+window.toggleTimer = () => {
+  if (tRunning) {
+    clearInterval(tInterval); tRunning = false;
+    saveTimer(); updateTimerUI(); return;
+  }
+  if (tLeft === 0) tLeft = tTotal;
+  tRunning = true;
+  saveTimer(); updateTimerUI(); startTick();
+};
+window.resetTimer = () => {
+  clearInterval(tInterval); tRunning = false; tLeft = tTotal;
   document.getElementById('t-clock').classList.remove('big');
   document.getElementById('t-controls').classList.remove('small');
-  updateTimerUI();
+  saveTimer(); updateTimerUI();
 };
+
+// Save on tab switch / page close
+window.addEventListener('visibilitychange', saveTimer);
+window.addEventListener('beforeunload', saveTimer);
 
 // ── NOTES ──────────────────────────────────────────────────────────────────
 const nta=document.getElementById('notes-ta');
