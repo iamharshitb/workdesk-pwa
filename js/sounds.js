@@ -14,7 +14,7 @@ export function toggleMute() { const m = !isMuted(); localStorage.setItem('wd_mu
 export function getMuted() { return isMuted(); }
 
 // Master volume multiplier — raise this to make everything louder
-const VOL = 2.2;
+const VOL = 5;
 
 function tone(freq, type, startTime, duration, gainVal, fadeOut = true) {
   const c = getCtx();
