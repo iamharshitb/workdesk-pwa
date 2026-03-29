@@ -1,4 +1,4 @@
-const CACHE = 'workdesk-v4';
+const CACHE = 'workdesk-v5';
 const STATIC = [
   '/workdesk-pwa/',
   '/workdesk-pwa/index.html',
@@ -24,7 +24,7 @@ self.addEventListener('install', e => {
   );
 });
 
-// Activate: clear old caches
+// Activate: clear old caches immediately
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
@@ -35,9 +35,14 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: network-first for Firebase/Google, cache-first for everything else
+// Fetch strategy:
+// - HTML pages: network-first (always get latest, fall back to cache offline)
+// - CSS/JS/images: cache-first (fast, update on next cache version bump)
+// - Firebase/external: network-only with cache fallback
 self.addEventListener('fetch', e => {
   const url = e.request.url;
+
+  // External APIs — always network, cache as fallback
   const isExternal =
     url.includes('firestore.googleapis.com') ||
     url.includes('firebase') ||
@@ -46,14 +51,30 @@ self.addEventListener('fetch', e => {
     url.includes('corsproxy.io');
 
   if (isExternal) {
-    // Always try network for external resources, fall back to cache
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-  } else {
-    // Cache-first for local assets
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request))
-    );
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
   }
+
+  // HTML pages — network-first so updates are always picked up
+  const isHTML = e.request.headers.get('accept')?.includes('text/html') ||
+                 url.endsWith('.html') || url.endsWith('/');
+
+  if (isHTML) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          // Update cache with fresh version
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request)) // offline fallback
+    );
+    return;
+  }
+
+  // CSS/JS/images — cache-first for speed
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
 });
