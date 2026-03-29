@@ -47,6 +47,11 @@ body{
 .brand-word{display:inline-flex;letter-spacing:-.02em;}
 .brand-work{font-weight:900;}
 .brand-desk{font-weight:300;opacity:.8;}
+.nav-logo{
+  height:28px;width:auto;display:block;
+  filter:brightness(0) invert(1); /* white on dark themes */
+  transition:filter .25s;
+}
 .brand-dot{
   width:7px;height:7px;border-radius:50%;
   background:var(--neon);box-shadow:0 0 10px var(--neon);

@@ -18,41 +18,41 @@ body.theme-ios {
   --nav-bg:rgba(28,28,30,.85); --grid:transparent;
   --shadow-card:0 4px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);
   --shadow-neon:0 4px 16px rgba(10,132,255,.3);
-  background-color:#1a0a2e;
+  background-color:#0d0520;
   background-image:
-    linear-gradient(160deg, #2d1b69 0%, #1a0a2e 35%, #0d0d2b 65%, #1a1035 100%),
-    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(120,80,220,.55) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 85% 85%, rgba(80,40,180,.45) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 50% 45%, rgba(160,100,255,.2) 0%, transparent 60%);
+    linear-gradient(160deg, #3d1f8a 0%, #1a0a2e 30%, #080514 60%, #12082a 100%),
+    radial-gradient(ellipse 90% 70% at 10% 0%, rgba(140,60,255,.7) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 90% 90%, rgba(90,40,200,.6) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(180,80,255,.25) 0%, transparent 55%);
 }
 body.theme-ios .panel {
-  background:rgba(44,44,46,.72);
-  backdrop-filter:blur(20px) saturate(180%);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
-  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(40px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter:blur(40px) saturate(180%) brightness(1.08);
+  border:1px solid rgba(255,255,255,.18);
   border-radius:18px !important;
-  box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);
+  box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(0,0,0,.08);
 }
 body.theme-ios .nav {
-  background:rgba(28,28,30,.85);
-  backdrop-filter:blur(24px) saturate(200%);
-  -webkit-backdrop-filter:blur(24px) saturate(200%);
-  border-bottom:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(40px) saturate(200%);
+  -webkit-backdrop-filter:blur(40px) saturate(200%);
+  border-bottom:1px solid rgba(255,255,255,.14);
 }
 body.theme-ios .stat-pill {
-  background:rgba(44,44,46,.6);backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);
-  border-radius:14px !important;box-shadow:0 2px 12px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
+  background:rgba(255,255,255,.07);backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.16);
+  border-radius:14px !important;box-shadow:0 4px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.18);
 }
 body.theme-ios .prog-wrap {
-  background:rgba(44,44,46,.6);backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:14px !important;
+  background:rgba(255,255,255,.07);backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.15);border-radius:14px !important;
 }
 body.theme-ios .prog-fill { background:var(--neon);box-shadow:0 0 12px rgba(10,132,255,.5);border-radius:3px }
 body.theme-ios .task-card {
-  background:rgba(58,58,60,.55);backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);
-  border-radius:14px !important;box-shadow:0 2px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08);
+  background:rgba(255,255,255,.07);backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.15);
+  border-radius:14px !important;box-shadow:0 4px 20px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.15);
 }
 body.theme-ios .task-card.status-inprog { background:rgba(255,159,10,.1);border-color:rgba(255,159,10,.25) }
 body.theme-ios .m-chip { background:rgba(58,58,60,.7);border-color:rgba(255,255,255,.1);border-radius:22px !important;backdrop-filter:blur(8px) }
@@ -745,3 +745,10 @@ body.theme-neon .add-member-btn { background:rgba(0,245,212,.1);border-color:rgb
 body.theme-frosted .bn-item.active { color:#a78bfa }
 body.theme-frosted .bn-item.active::before { background:#a78bfa;box-shadow:0 0 8px #a78bfa }
 body.theme-neon .bottom-nav { background:rgba(7,11,18,.97);border-top:1px solid rgba(0,245,212,.12) }
+
+/* ── NAV LOGO COLOUR PER THEME ── */
+/* Default: white invert already set in style.css */
+/* Light theme — show original logo colours */
+body.theme-health .nav-logo { filter:none; }
+/* iOS Fans (bigsur) — white works fine on dark */
+/* Standard, Frosted, Dark, Neon — white invert fine */
