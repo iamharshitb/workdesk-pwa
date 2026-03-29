@@ -1,10 +1,12 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
 
 export const THEMES = [
-  { id:'ios',        name:'iOS Glass',       sub:'Frosted · Liquid Glass',   dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'bigsur',     name:'Big Sur',         sub:'macOS · Warm Coral Glass', dot:'#5ac8fa', bg:'#1a0a0a' },
-  { id:'ios-system', name:'iOS System Dark', sub:'Control Centre · Clean',   dot:'#0a84ff', bg:'#1c1c1e' },
-  { id:'health',     name:'iOS Health',      sub:'Pastel · Airy · White',    dot:'#007aff', bg:'#f2f2f7' },
+  { id:'ios',        name:'Standard',      sub:'iOS Glass · Deep Purple',   dot:'#0a84ff', bg:'#1a0a2e' },
+  { id:'frosted',    name:'Frosted Glass', sub:'Heavy blur · Translucent',  dot:'#a78bfa', bg:'#0f0720' },
+  { id:'bigsur',     name:'iOS Fans',      sub:'macOS · Warm Coral Glass',  dot:'#5ac8fa', bg:'#1a0a0a' },
+  { id:'ios-system', name:'Dark',          sub:'iOS System · Clean',        dot:'#0a84ff', bg:'#1c1c1e' },
+  { id:'health',     name:'Light',         sub:'iOS Health · Pastel White', dot:'#007aff', bg:'#f2f2f7' },
+  { id:'neon',       name:'Neon',          sub:'Retro Neon · Modern Dark',  dot:'#00f5d4', bg:'#070b12' },
 ];
 
 // Default to ios if no saved theme, or if saved theme no longer exists

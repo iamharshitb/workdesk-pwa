@@ -44,8 +44,9 @@ body{
   color:var(--neon);display:flex;align-items:center;gap:8px;
   text-decoration:none;
 }
+.brand-word{display:inline-flex;letter-spacing:-.02em;}
 .brand-work{font-weight:900;}
-.brand-desk{font-weight:300;opacity:.85;}
+.brand-desk{font-weight:300;opacity:.8;}
 .brand-dot{
   width:7px;height:7px;border-radius:50%;
   background:var(--neon);box-shadow:0 0 10px var(--neon);

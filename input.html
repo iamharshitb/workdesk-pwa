@@ -14,6 +14,36 @@
   <meta name="theme-color" content="#07090f">
   <style>
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
+    /* Compact task rows for All Tasks */
+    .task-row-compact{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:12px;margin-bottom:6px;
+      border:1px solid var(--border2);background:var(--bg2);
+      cursor:pointer;transition:all .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .task-row-compact:hover{border-color:var(--neon2);background:var(--bg3)}
+    .task-row-compact.is-done{opacity:.5}
+    .task-row-compact.status-inprog{background:rgba(245,168,0,.06);border-color:rgba(245,168,0,.28)}
+    .trc-left{flex:1;min-width:0}
+    .trc-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+    .trc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .trc-members{font-size:11px;color:var(--text2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+    .trc-expand{
+      flex-shrink:0;width:28px;height:28px;border-radius:50%;
+      border:1px solid var(--border2);background:var(--bg3);
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:var(--text2);transition:transform .2s,border-color .15s,color .15s;
+    }
+    .trc-expand.open{transform:rotate(180deg);border-color:var(--neon);color:var(--neon)}
+    .task-detail-inp{
+      display:none;margin-bottom:8px;margin-top:-2px;
+      padding:12px 14px;border-radius:0 0 12px 12px;
+      border:1px solid var(--border2);border-top:none;
+      background:var(--bg3);animation:sld .18s ease;
+    }
+    .task-detail-inp.open{display:block}
+    @keyframes sld{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     /* Collapsible manage members */
     .manage-members-toggle{
       display:flex;align-items:center;gap:7px;
@@ -82,7 +112,7 @@
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-brand"><span class="brand-dot"></span><span class="brand-work">Work</span><span class="brand-desk">desk</span></div>
+  <div class="nav-brand"><span class="brand-dot"></span><span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span></div>
   <div class="nav-right">
     <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
     <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
@@ -516,6 +546,17 @@ window.confirmDelete = async () => {
 };
 
 // ── TASK LIST ──────────────────────────────────────────────────────────────
+// Track expanded tasks in input page
+const expandedInputTasks = new Set();
+window.toggleInputExpand = (id) => {
+  if (expandedInputTasks.has(id)) expandedInputTasks.delete(id);
+  else expandedInputTasks.add(id);
+  const detail = document.getElementById('tdi-' + id);
+  const btn    = document.getElementById('txi-' + id);
+  if (detail) detail.classList.toggle('open', expandedInputTasks.has(id));
+  if (btn)    btn.classList.toggle('open', expandedInputTasks.has(id));
+};
+
 function renderTaskList() {
   const el = document.getElementById('task-list');
   document.getElementById('task-count').textContent = tasks.length ? tasks.length + ' tasks' : '';
@@ -526,7 +567,11 @@ function renderTaskList() {
     const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
     const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
     const isDone = t.status === 'done';
-    // Show each member with their respective task
+    const isInprog = t.status === 'inprog';
+    const statusClass = isInprog ? 'status-inprog' : '';
+    const isExpanded = expandedInputTasks.has(t.id);
+    const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
+    const memberNames = (t.members||[]).map(m => esc(m.name)).join(', ');
     const memberPills = (t.members||[]).map(m =>
       `<span class="m-pill">
         <span class="m-pill-name">${esc(m.name)}</span>
@@ -534,21 +579,34 @@ function renderTaskList() {
       </span>`
     ).join('');
     return `
-      <div class="task-card ${pc}${isDone?' is-done':''} fi" style="animation-delay:${i*.04}s">
-        <div class="tc-title">${esc(t.label)}</div>
-        <div class="tc-meta">
-          <span class="tag ${pTag}">${t.priority||'medium'}</span>
-          <span class="tag ${stTag}">${stLbl}</span>
-          ${t.dueDate ? dueBadge(t.dueDate, t.status) : ''}
+      <div class="fi" style="animation-delay:${i*.03}s">
+        <!-- COMPACT ROW -->
+        <div class="task-row-compact ${statusClass}${isDone?' is-done':''}"
+          id="trc-i-${t.id}"
+          onclick="toggleInputExpand('${t.id}')"
+          style="border-left:3px solid ${accentColor}">
+          <div class="trc-left">
+            <div class="trc-name">${esc(t.label)}</div>
+            <div class="trc-meta">
+              <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
+              <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
+              ${t.dueDate ? `<span class="due-badge" style="font-size:9px;padding:2px 6px">${formatDate(t.dueDate)}</span>` : ''}
+              <span class="trc-members">· ${memberNames||'No members'}</span>
+            </div>
+          </div>
+          <div class="trc-expand${isExpanded?' open':''}" id="txi-${t.id}">▾</div>
         </div>
-        <div class="tc-members">${memberPills}</div>
-        <div class="tc-actions-input">
-          <button class="sc-btn" onclick="cycleStatus('${t.id}')">${stLbl} →</button>
-          <button class="mark-done-btn${isDone?' undone':''}" onclick="toggleDone('${t.id}')">
-            ${isDone ? '↩ Reopen' : '✓ Mark Done'}
-          </button>
-          <button class="del-btn" onclick="editTask('${t.id}')" title="Edit" style="font-size:17px">✎</button>
-          <button class="del-btn" onclick="deleteTask('${t.id}')" title="Delete" style="font-size:17px">✕</button>
+        <!-- EXPANDED DETAIL -->
+        <div class="task-detail-inp${isExpanded?' open':''}" id="tdi-${t.id}">
+          <div class="tc-members" style="margin-bottom:10px">${memberPills}</div>
+          <div class="tc-actions-input">
+            <button class="sc-btn" onclick="event.stopPropagation();cycleStatus('${t.id}')">${stLbl} →</button>
+            <button class="mark-done-btn${isDone?' undone':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">
+              ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+            </button>
+            <button class="del-btn" onclick="event.stopPropagation();editTask('${t.id}')" title="Edit" style="font-size:17px">✎</button>
+            <button class="del-btn" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete" style="font-size:17px">✕</button>
+          </div>
         </div>
       </div>`;
   }).join('');
