@@ -49,7 +49,6 @@ body{
 .brand-desk{font-weight:300;opacity:.8;}
 .nav-logo{
   height:28px;width:auto;display:block;
-  filter:brightness(0) invert(1); /* white on dark themes */
   transition:filter .25s;
 }
 .brand-dot{
