@@ -2,85 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WorkDesk — Monthly Report</title>
 <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,100..900;1,100..900&family=League+Spartan:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-/* ── SCREEN VARS (dark) ── */
-:root{
-  --bg:#07090f;--surface:#0d1018;--surface2:#131620;
-  --border:#1a1e2e;--border2:#222638;
-  --neon:#00e5b8;--neon2:#00b4e5;--purple:#9d7eff;
-  --amber:#f5a800;--red:#ff3a5e;
-  --text:#dde6f8;--text2:#6a7a99;--text3:#2e3a52;
-  --sans:'League Spartan',sans-serif;
-  --mono:'IBM Plex Mono',monospace;
-  --doto:'Doto',monospace;
-}
-
-body{
-  background:var(--bg);color:var(--text);
-  font-family:var(--sans);
-  -webkit-font-smoothing:antialiased;
-}
-
-
-.nav-brand{font-size:18px;font-weight:800;color:var(--neon);display:flex;align-items:center;gap:8px}
-.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:pdot 2.2s ease-in-out infinite}
-@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
-.nav-links{display:flex;gap:3px}
-.nav-link{padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;border:1px solid transparent;transition:all .15s}
-.nav-link:hover{color:var(--text);background:var(--surface2)}
-.nav-link.active{color:var(--neon);border-color:rgba(0,229,184,.25);background:rgba(0,229,184,.06)}
-.nav-right{display:flex;align-items:center;gap:10px}
-
-/* ── CONTROLS BAR ── */
-.controls-bar{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:12px 20px;
-  background:var(--surface);
-  border-bottom:1px solid var(--border2);
-}
-.ctrl-label{font-size:12px;font-weight:700;color:var(--text2)}
-.month-select{
-  background:var(--surface2);border:1.5px solid var(--border2);
-  border-radius:9px;padding:7px 13px;color:var(--text);
-  font-family:var(--sans);font-size:13px;font-weight:600;
-  outline:none;cursor:pointer;
-}
-.month-select:focus{border-color:var(--neon)}
-.sheet-input{
-  flex:1;min-width:180px;max-width:340px;
-  background:var(--surface2);border:1.5px solid var(--border2);
-  border-radius:9px;padding:7px 12px;color:var(--text);
-  font-family:var(--mono);font-size:11px;
-  outline:none;
-}
-.sheet-input::placeholder{color:var(--text3)}
-.sheet-input:focus{border-color:var(--neon2)}
-.btn-load{
-  padding:7px 14px;border-radius:9px;border:none;
-  background:var(--neon2);color:var(--bg);
-  font-family:var(--sans);font-size:12px;font-weight:800;
-  cursor:pointer;white-space:nowrap;
-}
-.btn-load:hover{filter:brightness(1.1)}
-.btn-export{
-  margin-left:auto;
-  padding:8px 20px;border-radius:9px;border:none;
-  background:var(--neon);color:var(--bg);
-  font-family:var(--sans);font-size:13px;font-weight:800;
-  cursor:pointer;
-  box-shadow:0 4px 0 rgba(0,0,0,.25),0 2px 12px rgba(0,229,184,.2);
-  transition:all .15s;
-}
-.btn-export:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn-export:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
-
+50%{opacity:.3}}
 /* ── SCREEN PREVIEW WRAPPER ── */
 .preview-wrap{
   display:flex;
@@ -276,7 +207,7 @@ body{
 @media print{
   @page{size:A4 portrait;margin:0}
   body{background:#fff !important}
-  .nav{display:none !important}
+  .nav,.controls-bar,[style*="display:flex"]{display:none !important}
   .preview-wrap{
     padding:0 !important;
     gap:0 !important;
@@ -296,17 +227,26 @@ body{
 </head>
 <body>
 
-<!-- NAV — contains all controls inline -->
-<nav class="nav" style="flex-wrap:wrap;gap:8px;padding:10px 14px">
+<!-- NAV -->
+<nav class="nav">
   <div class="nav-brand"><span class="brand-dot"></span><span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span></div>
-  <div class="nav-right" style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-    <select class="month-select" id="month-sel" onchange="loadReport()" style="font-size:13px;padding:6px 10px"></select>
-    <input class="sheet-input" id="sheet-url" placeholder="Paste CSV link..." style="max-width:200px;font-size:11px;padding:6px 10px">
-    <button class="btn-load" onclick="loadComms()" style="padding:7px 12px;font-size:12px">Load</button>
-    <button class="btn-export" onclick="window.print()" style="padding:7px 14px;font-size:12px">⬇ PDF</button>
-    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨</button>
+  <div class="nav-right">
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
   </div>
 </nav>
+
+<!-- REPORT CONTROLS -->
+<div id="report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border2)">
+  <select id="month-sel" onchange="loadReport()"
+    style="background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer"></select>
+  <input id="sheet-url" placeholder="Paste Google Sheet CSV link..."
+    style="flex:1;min-width:160px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none">
+  <button onclick="loadComms()"
+    style="padding:7px 14px;border-radius:9px;border:none;background:var(--neon2);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Load Comms</button>
+  <button onclick="window.print()"
+    style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
+</div>
 
 <!-- TWO A4 PAGES STACKED -->
 <div class="preview-wrap">
@@ -362,8 +302,14 @@ body{
 <script type="module">
 import { onUserReady, getTasks, getMembers } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
+import { initAudio, getMuted, toggleMute } from './js/sounds.js';
 initTheme();
 window.toggleThemePanel = toggleThemePanel;
+initAudio();
+
+function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.textContent=getMuted()?'🔇':'🔊';}
+window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
+updateMuteBtn();
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 let allTasks=[], allMembers=[], selMonth='';
