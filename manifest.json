@@ -1,7 +1,7 @@
 {
   "name": "WorkDesk",
   "short_name": "WorkDesk",
-  "description": "Team task tracker — tasks, timer, monthly report",
+  "description": "Team task tracker \u2014 tasks, timer, monthly report",
   "start_url": "/workdesk-pwa/index.html",
   "scope": "/workdesk-pwa/",
   "display": "standalone",

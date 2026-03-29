@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>WorkDesk — Input</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#07090f">
   <style>
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
@@ -79,13 +82,8 @@
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-brand"><span class="brand-dot"></span>WorkDesk</div>
+  <div class="nav-brand"><span class="brand-dot"></span><span class="brand-work">Work</span><span class="brand-desk">desk</span></div>
   <div class="nav-right">
-    <div class="nav-links">
-      <a href="index.html" class="nav-link">Dashboard</a>
-      <a href="input.html" class="nav-link active">Input</a>
-      <a href="report.html" class="nav-link">Report</a>
-    </div>
     <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
     <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
   </div>
@@ -694,5 +692,20 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="bn-item">
+    <span class="bn-icon">⊞</span>
+    <span class="bn-label">Dashboard</span>
+  </a>
+  <a href="input.html" class="bn-item active">
+    <span class="bn-icon">＋</span>
+    <span class="bn-label">Input</span>
+  </a>
+  <a href="report.html" class="bn-item">
+    <span class="bn-icon">▤</span>
+    <span class="bn-label">Report</span>
+  </a>
+</nav>
 </body>
 </html>
