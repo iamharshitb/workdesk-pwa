@@ -276,7 +276,7 @@ body{
 @media print{
   @page{size:A4 portrait;margin:0}
   body{background:#fff !important}
-  .nav,.controls-bar{display:none !important}
+  .nav{display:none !important}
   .preview-wrap{
     padding:0 !important;
     gap:0 !important;
@@ -296,24 +296,17 @@ body{
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="nav">
+<!-- NAV — contains all controls inline -->
+<nav class="nav" style="flex-wrap:wrap;gap:8px;padding:10px 14px">
   <div class="nav-brand"><span class="brand-dot"></span><span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span></div>
-  <div class="nav-right">
-    </div>
+  <div class="nav-right" style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+    <select class="month-select" id="month-sel" onchange="loadReport()" style="font-size:13px;padding:6px 10px"></select>
+    <input class="sheet-input" id="sheet-url" placeholder="Paste CSV link..." style="max-width:200px;font-size:11px;padding:6px 10px">
+    <button class="btn-load" onclick="loadComms()" style="padding:7px 12px;font-size:12px">Load</button>
+    <button class="btn-export" onclick="window.print()" style="padding:7px 14px;font-size:12px">⬇ PDF</button>
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨</button>
+  </div>
 </nav>
-
-<!-- CONTROLS -->
-<div class="controls-bar">
-  <span class="ctrl-label">Month</span>
-  <select class="month-select" id="month-sel" onchange="loadReport()"></select>
-
-  <span class="ctrl-label" style="margin-left:12px">Comms Sheet CSV</span>
-  <input class="sheet-input" id="sheet-url" placeholder="Paste Google Sheet CSV link...">
-  <button class="btn-load" onclick="loadComms()">Load Comms</button>
-
-  <button class="btn-export" onclick="window.print()">⬇ Export PDF</button>
-</div>
 
 <!-- TWO A4 PAGES STACKED -->
 <div class="preview-wrap">
