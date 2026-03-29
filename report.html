@@ -28,15 +28,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-/* ── SCREEN NAV ── */
-.screen-nav{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 20px;
-  background:rgba(7,9,15,.97);
-  border-bottom:1px solid var(--border2);
-  position:sticky;top:0;z-index:100;
-  backdrop-filter:blur(10px);
-}
+
 .nav-brand{font-size:18px;font-weight:800;color:var(--neon);display:flex;align-items:center;gap:8px}
 .brand-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:pdot 2.2s ease-in-out infinite}
 @keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
@@ -284,7 +276,7 @@ body{
 @media print{
   @page{size:A4 portrait;margin:0}
   body{background:#fff !important}
-  .screen-nav,.controls-bar{display:none !important}
+  .nav,.controls-bar{display:none !important}
   .preview-wrap{
     padding:0 !important;
     gap:0 !important;
@@ -305,7 +297,7 @@ body{
 <body>
 
 <!-- NAV -->
-<nav class="screen-nav">
+<nav class="nav">
   <div class="nav-brand"><span class="brand-dot"></span><span class="brand-work">Work</span><span class="brand-desk">desk</span></div>
   <div class="nav-right">
     </div>

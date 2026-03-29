@@ -85,6 +85,54 @@
     .stat-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
     .stat-pill.active-filter { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,229,184,.15); }
 
+    /* ── COMPACT TASK ROW ── */
+    .task-row-compact {
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;
+      border-radius:12px;margin-bottom:6px;
+      border:1px solid var(--border2);
+      background:var(--bg2);
+      cursor:pointer;
+      transition:all .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .task-row-compact:hover { border-color:var(--neon2);background:var(--bg3); }
+    .task-row-compact.status-inprog {
+      background:rgba(245,168,0,.06);border-color:rgba(245,168,0,.28);
+    }
+    .task-row-compact.status-done { opacity:.5; }
+    .trc-left { flex:1;min-width:0; }
+    .trc-name {
+      font-size:14px;font-weight:700;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      margin-bottom:4px;
+    }
+    .trc-meta { display:flex;align-items:center;gap:5px;flex-wrap:wrap; }
+    .trc-members {
+      font-size:11px;color:var(--text2);font-weight:600;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:160px;
+    }
+    .trc-expand {
+      flex-shrink:0;width:28px;height:28px;border-radius:50%;
+      border:1px solid var(--border2);background:var(--bg3);
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:var(--text2);transition:all .2s;
+      cursor:pointer;
+    }
+    .trc-expand.open { transform:rotate(180deg);border-color:var(--neon);color:var(--neon); }
+    /* Expanded detail panel */
+    .task-detail {
+      display:none;
+      margin-bottom:8px;margin-top:-2px;
+      padding:12px 14px;
+      border-radius:0 0 12px 12px;
+      border:1px solid var(--border2);border-top:none;
+      background:var(--bg3);
+      animation:sld .18s ease;
+    }
+    .task-detail.open { display:block; }
+
     /* ── FILTER BANNER ── */
     .filter-banner {
       display: flex;
@@ -348,6 +396,22 @@ function renderMyTasks() {
   el.innerHTML = banner + sorted.map((t,i) => myTaskCard(t, i)).join('');
 }
 
+// Track which task rows are expanded
+const expandedTasks = new Set();
+
+window.toggleTaskExpand = (id) => {
+  if (expandedTasks.has(id)) expandedTasks.delete(id);
+  else expandedTasks.add(id);
+  // Toggle classes without full re-render
+  const row = document.getElementById('trc-' + id);
+  const detail = document.getElementById('trd-' + id);
+  const btn = document.getElementById('trx-' + id);
+  if (!row || !detail || !btn) return;
+  const isOpen = expandedTasks.has(id);
+  detail.classList.toggle('open', isOpen);
+  btn.classList.toggle('open', isOpen);
+};
+
 function myTaskCard(t, i) {
   const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
   const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
@@ -355,9 +419,8 @@ function myTaskCard(t, i) {
   const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
   const isDone = t.status === 'done';
   const isInprog = t.status === 'inprog';
-
-  // Status-based card color class
   const statusClass = isDone ? 'status-done' : isInprog ? 'status-inprog' : '';
+  const isExpanded = expandedTasks.has(t.id);
 
   const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
   const myRespTask = myMemberData?.role || '';
@@ -365,37 +428,53 @@ function myTaskCard(t, i) {
   const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
   const myIsDone = myStatus === 'done';
   const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
+  const allNames = ['You', ...others.map(m => esc(m.name))].join(', ');
+  // Left accent color based on priority
+  const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
 
   return `
-    <div class="task-card ${pc} ${statusClass} fi" style="animation-delay:${i*.04}s">
-      <div class="tc-title">${esc(t.label)}</div>
-      <div class="tc-meta">
-        <span class="tag ${pTag}">${t.priority||'Medium'}</span>
-        <span class="tag ${stTag}">${stLbl}</span>
+    <div style="animation-delay:${i*.03}s" class="fi">
+      <!-- COMPACT ROW -->
+      <div class="task-row-compact ${statusClass}" id="trc-${t.id}"
+        onclick="toggleTaskExpand('${t.id}')"
+        style="border-left:3px solid ${accentColor}">
+        <div class="trc-left">
+          <div class="trc-name">${esc(t.label)}</div>
+          <div class="trc-meta">
+            <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
+            <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
+            <span class="trc-members">· ${allNames}</span>
+          </div>
+        </div>
+        <div class="trc-expand${isExpanded?' open':''}" id="trx-${t.id}">▾</div>
       </div>
-      <div class="tc-members">
-        <span class="m-pill">
-          <span class="m-pill-name">You</span>
-          <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
-        </span>
-        ${others.map(m => {
-          const otherId = members.find(mm => mm.name.toLowerCase() === m.name.toLowerCase())?.id;
-          const otherDone = otherId ? getMemberStatus(t, otherId) === 'done' : false;
-          return `<span class="m-pill" style="${otherDone?'opacity:.6':''}">
-            <span class="m-pill-name">${esc(m.name)}${otherDone?' ✓':''}</span>
-            <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
-          </span>`;
-        }).join('')}
-      </div>
-      <div class="tc-actions">
-        ${!isDone ? `<button class="sc-btn" onclick="cycleOverall('${t.id}')">
-          ${t.status === 'todo' ? 'Start →' : 'Back to Todo ↩'}
-        </button>` : ''}
-        ${myMemberId ? `
-        <button class="mark-done-btn${myIsDone?' undone':''}"
-          onclick="setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
-          ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
-        </button>` : ''}
+
+      <!-- EXPANDED DETAIL -->
+      <div class="task-detail${isExpanded?' open':''}" id="trd-${t.id}">
+        <div class="tc-members" style="margin-bottom:10px">
+          <span class="m-pill">
+            <span class="m-pill-name">You${myIsDone?' ✓':''}</span>
+            <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
+          </span>
+          ${others.map(m => {
+            const otherId = members.find(mm => mm.name.toLowerCase() === m.name.toLowerCase())?.id;
+            const otherDone = otherId ? getMemberStatus(t, otherId) === 'done' : false;
+            return `<span class="m-pill" style="${otherDone?'opacity:.6':''}">
+              <span class="m-pill-name">${esc(m.name)}${otherDone?' ✓':''}</span>
+              <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
+            </span>`;
+          }).join('')}
+        </div>
+        <div class="tc-actions">
+          ${!isDone ? `<button class="sc-btn" onclick="event.stopPropagation();cycleOverall('${t.id}')">
+            ${t.status === 'todo' ? 'Start →' : 'Back to Todo ↩'}
+          </button>` : ''}
+          ${myMemberId ? `
+          <button class="mark-done-btn${myIsDone?' undone':''}"
+            onclick="event.stopPropagation();setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
+            ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
+          </button>` : ''}
+        </div>
       </div>
     </div>`;
 }
