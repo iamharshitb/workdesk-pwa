@@ -491,3 +491,35 @@ body.theme-health .sect-label { color:rgba(60,60,67,.5) }
   border-color:var(--neon,#0a84ff);
   color:var(--text,#fff);
 }
+
+/* ── BOTTOM NAV THEME OVERRIDES ── */
+body.theme-ios .bottom-nav,
+body.theme-bigsur .bottom-nav {
+  background:rgba(28,28,30,.88);
+  backdrop-filter:blur(24px) saturate(200%);
+  -webkit-backdrop-filter:blur(24px) saturate(200%);
+  border-top:1px solid rgba(255,255,255,.1);
+}
+body.theme-ios .bn-item.active { color:#0a84ff }
+body.theme-ios .bn-item.active::before { background:#0a84ff;box-shadow:0 0 8px #0a84ff }
+body.theme-bigsur .bn-item.active { color:#5ac8fa }
+body.theme-bigsur .bn-item.active::before { background:#5ac8fa;box-shadow:0 0 8px #5ac8fa }
+
+body.theme-ios-system .bottom-nav {
+  background:#1c1c1e;
+  border-top:1px solid rgba(255,255,255,.08);
+  backdrop-filter:none;
+}
+body.theme-ios-system .bn-item.active { color:#0a84ff }
+body.theme-ios-system .bn-item.active::before { background:#0a84ff;box-shadow:none }
+
+body.theme-health .bottom-nav {
+  background:rgba(242,242,247,.95);
+  border-top:1px solid rgba(0,0,0,.1);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+body.theme-health .bn-item { color:rgba(60,60,67,.45) }
+body.theme-health .bn-item:hover { color:rgba(60,60,67,.8) }
+body.theme-health .bn-item.active { color:#007aff }
+body.theme-health .bn-item.active::before { background:#007aff;box-shadow:none }

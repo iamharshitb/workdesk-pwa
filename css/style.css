@@ -32,20 +32,77 @@ body{
 }
 
 /* ── NAV ── */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--nav-bg);border-bottom:1px solid var(--border2);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
-.nav-brand{font-family:var(--sans);font-size:18px;font-weight:800;color:var(--neon);letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:pdot 2.2s ease-in-out infinite}
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:var(--nav-bg);
+  border-bottom:1px solid var(--border2);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);
+}
+/* Brand: "Work" bold + "desk" light, same word */
+.nav-brand{
+  font-family:var(--sans);font-size:20px;letter-spacing:-.02em;
+  color:var(--neon);display:flex;align-items:center;gap:8px;
+  text-decoration:none;
+}
+.brand-work{font-weight:900;}
+.brand-desk{font-weight:300;opacity:.85;}
+.brand-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--neon);box-shadow:0 0 10px var(--neon);
+  animation:pdot 2.2s ease-in-out infinite;flex-shrink:0;
+}
 @keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
-.nav-right{display:flex;align-items:center;gap:8px}
-.nav-links{display:flex;gap:2px}
-.nav-link{padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;border:1px solid transparent;transition:all .15s;letter-spacing:-.01em}
-.nav-link:hover{color:var(--text);background:var(--bg3)}
-.nav-link.active{color:var(--neon);border-color:rgba(0,229,184,.25);background:rgba(0,229,184,.06)}
+.nav-right{display:flex;align-items:center;gap:6px}
+
+/* Top nav-links hidden — replaced by bottom bar */
+.nav-links{display:none}
+.nav-link{display:none}
+
 .theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:22px;padding:7px 14px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
 .theme-toggle:hover{border-color:var(--neon);color:var(--neon)}
 
+/* ── BOTTOM NAV BAR ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  z-index:100;
+  background:var(--nav-bg);
+  border-top:1px solid var(--border2);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:stretch;justify-content:space-around;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  height:62px;
+}
+.bn-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;flex:1;text-decoration:none;
+  color:var(--text2);transition:color .15s;
+  padding:8px 4px 6px;
+  -webkit-tap-highlight-color:transparent;
+  cursor:pointer;border:none;background:none;font-family:var(--sans);
+}
+.bn-item:hover{color:var(--text)}
+.bn-item.active{color:var(--neon)}
+.bn-icon{
+  font-size:22px;line-height:1;
+  transition:transform .15s;
+}
+.bn-item.active .bn-icon{transform:scale(1.12)}
+.bn-label{
+  font-size:10px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;line-height:1;
+}
+/* Active indicator dot above icon */
+.bn-item.active::before{
+  content:'';display:block;
+  width:20px;height:2.5px;border-radius:2px;
+  background:var(--neon);
+  position:absolute;top:0;
+  box-shadow:0 0 8px var(--neon);
+}
+.bn-item{position:relative;}
+
 /* ── PAGE ── */
-.page{padding:16px 16px 70px;max-width:500px;margin:0 auto}
+.page{padding:16px 16px 80px;max-width:500px;margin:0 auto}
 
 /* ── PANELS ── */
 .panel{background:var(--panel);border:1px solid var(--border2);border-radius:var(--rr);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow-card)}
