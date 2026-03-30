@@ -321,6 +321,7 @@ onUserReady(async () => {
     if (loader) {
       loader.style.display = 'none';
       document.getElementById('main').style.display = '';
+      initNotes(); // init notes after DOM is visible and MY_NAME is set
     }
   });
 });
@@ -766,34 +767,50 @@ window.resetTimer = () => {
 window.addEventListener('visibilitychange', saveTimer);
 window.addEventListener('beforeunload', saveTimer);
 
-// ── NOTES — synced to Firestore per user ─────────────────────────────────
+// ── NOTES — initialised inside onUserReady (needs MY_NAME + DOM ready) ────
 const MAX_NOTES = 500;
-const nta = document.getElementById('notes-ta');
-document.getElementById('notes-cnt').textContent = '0 / ' + MAX_NOTES;
-
-// Debounce saves so we don't write to Firestore on every keystroke
 let _notesSaveTimer = null;
-function scheduleNotesSave() {
-  clearTimeout(_notesSaveTimer);
-  _notesSaveTimer = setTimeout(() => {
-    if (MY_NAME) saveUserData(MY_NAME, { notes: nta.value });
-  }, 1000); // save 1 second after user stops typing
-}
 
-nta.setAttribute('maxlength', MAX_NOTES);
-nta.addEventListener('input', () => {
-  // Enforce 500 char limit
-  if (nta.value.length > MAX_NOTES) nta.value = nta.value.slice(0, MAX_NOTES);
-  document.getElementById('notes-cnt').textContent = nta.value.length + ' / ' + MAX_NOTES;
-  scheduleNotesSave();
-});
-
-window.clearNotes = () => {
-  if (!confirm('Clear notes?')) return;
-  nta.value = '';
+function initNotes() {
+  const nta = document.getElementById('notes-ta');
+  if (!nta) return;
   document.getElementById('notes-cnt').textContent = '0 / ' + MAX_NOTES;
-  if (MY_NAME) saveUserData(MY_NAME, { notes: '' });
-};
+  nta.setAttribute('maxlength', MAX_NOTES);
+
+  nta.addEventListener('input', () => {
+    if (nta.value.length > MAX_NOTES) nta.value = nta.value.slice(0, MAX_NOTES);
+    document.getElementById('notes-cnt').textContent = nta.value.length + ' / ' + MAX_NOTES;
+    clearTimeout(_notesSaveTimer);
+    _notesSaveTimer = setTimeout(() => {
+      if (MY_NAME) saveUserData(MY_NAME, { notes: nta.value });
+    }, 1000);
+  });
+
+  window.clearNotes = () => {
+    if (!confirm('Clear notes?')) return;
+    nta.value = '';
+    document.getElementById('notes-cnt').textContent = '0 / ' + MAX_NOTES;
+    if (MY_NAME) saveUserData(MY_NAME, { notes: '' });
+  };
+
+  // Load from Firestore and set up live sync
+  if (MY_NAME) {
+    getUserData(MY_NAME).then(data => {
+      if (data.notes !== undefined) {
+        nta.value = data.notes || '';
+        document.getElementById('notes-cnt').textContent = nta.value.length + ' / ' + MAX_NOTES;
+      }
+    });
+
+    // Live listener — updates from other devices
+    onUserDataChanged(MY_NAME, (data) => {
+      if (document.activeElement !== nta && data.notes !== undefined) {
+        nta.value = data.notes || '';
+        document.getElementById('notes-cnt').textContent = nta.value.length + ' / ' + MAX_NOTES;
+      }
+    });
+  }
+}
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val}
