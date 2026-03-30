@@ -258,7 +258,7 @@
 
 <script type="module">
 import {
-  onUserReady, getMembers, onTasksChanged,
+  onUserReady, getMembers, onTasksChanged, getTasks,
   addMember as fbAddMember, deleteMember as fbDeleteMember,
   addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
   DELETE_PASSWORD
@@ -267,6 +267,7 @@ import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let members = [], tasks = [];
+let allTasksHistory = []; // full history including archived — for date range filter
 // selectedMembers stores: { memberId: { name, role } }
 // role = the respective task text for that member
 let selectedMembers = {};
@@ -291,8 +292,20 @@ onUserReady(async () => {
   renderMemberList();
   renderChips();
 
-  // Real-time task listener
+  // Load full task history once for date range filter (includes archived)
+  allTasksHistory = await getTasks();
+
+  // Real-time task listener (active tasks only — 90-day archive filter applied)
   onTasksChanged(({ tasks: liveTasks, changes }) => {
+    // Keep allTasksHistory in sync with new additions
+    changes.forEach(({ type, task }) => {
+      if (type === 'added') allTasksHistory.unshift(task);
+      if (type === 'modified') {
+        const idx = allTasksHistory.findIndex(t => t.id === task.id);
+        if (idx > -1) allTasksHistory[idx] = task;
+      }
+      if (type === 'removed') allTasksHistory = allTasksHistory.filter(t => t.id !== task.id);
+    });
     tasks = liveTasks;
 
     // Play sound if a new task was added that includes this user
@@ -642,7 +655,8 @@ window.applyDateRange = () => {
 
   // Filter tasks by createdAt date (stored as month "YYYY-MM" + dueDate)
   // We match on dueDate if set, else on month
-  const filtered = tasks.filter(t => {
+  // Use full history so archived tasks show in date range filter
+  const filtered = allTasksHistory.filter(t => {
     const d = t.dueDate || (t.month ? t.month + '-01' : null);
     if (!d) return false;
     return d >= from && d <= to;

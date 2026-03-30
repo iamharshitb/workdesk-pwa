@@ -16,7 +16,10 @@ const firebaseConfig = {
   appId: "1:300966370113:web:c444bfaeaf4c28b2da5fc0"
 };
 const WORKSPACE_ID = "harshit-team-2026";
-export const DELETE_PASSWORD = "abc@123";
+export const DELETE_PASSWORD = "workdesk@delete";
+
+// How many days after completion a task stays visible in the active view
+const ARCHIVE_AFTER_DAYS = 90;
 
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
@@ -32,6 +35,25 @@ export function onUserReady(cb) {
 function wsCol(name) { return collection(db, "workspaces", WORKSPACE_ID, name); }
 function wsDoc(name, id) { return doc(db, "workspaces", WORKSPACE_ID, name, id); }
 
+// ── ACTIVE TASK FILTER ────────────────────────────────────────────────────
+// A task is "active" (shown in dashboard + all tasks) if:
+//   - It is not done, OR
+//   - It was completed within the last 90 days
+// This runs client-side after fetching, keeping the Firestore query simple.
+function isActiveTask(task) {
+  if (task.status !== 'done') return true; // todo / inprog always visible
+
+  // Done tasks: check completedAt
+  const completedAt = task.completedAt;
+  if (!completedAt) return true; // no completedAt recorded — keep visible
+
+  // Firestore Timestamp has .toDate(), plain JS Date otherwise
+  const completedDate = completedAt.toDate ? completedAt.toDate() : new Date(completedAt);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - ARCHIVE_AFTER_DAYS);
+  return completedDate >= cutoff;
+}
+
 // ── MEMBERS ───────────────────────────────────────────────────────────────
 export async function getMembers() {
   const snap = await getDocs(query(wsCol("members"), orderBy("createdAt")));
@@ -45,37 +67,33 @@ export async function deleteMember(id) {
   await deleteDoc(wsDoc("members", id));
 }
 
-// ── TASKS: one-time fetch (still used for report page) ────────────────────
+// ── TASKS: full history (report page + date range filter) ─────────────────
+// Returns ALL tasks ever — no archive filter applied.
+// Used by: report.html, date range filter in input.html
 export async function getTasks() {
   const snap = await getDocs(query(wsCol("tasks"), orderBy("createdAt", "desc")));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-// ── TASKS: real-time listener ─────────────────────────────────────────────
-// Returns an unsubscribe function. Call it to stop listening.
-//
-// onTasksChanged(callback) — fires immediately with full task list,
-// then fires again every time any task is added, modified or deleted.
-//
-// The callback receives:
-//   { tasks, changes }
-//   tasks   — full current array of all tasks (sorted newest first)
-//   changes — array of { type: 'added'|'modified'|'removed', task }
-//             so callers can react specifically to new tasks landing
-//
+// ── TASKS: active only (dashboard + all tasks list) ───────────────────────
+// Returns tasks that are not done, OR done within the last 90 days.
+// Used by: index.html real-time listener, input.html task list
 export function onTasksChanged(callback) {
   const q = query(wsCol("tasks"), orderBy("createdAt", "desc"));
   let isFirstSnapshot = true;
 
   const unsub = onSnapshot(q, (snap) => {
-    const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Full list from Firestore
+    const allTasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // On the very first snapshot, treat all docs as initial load — no sounds
-    // On subsequent snapshots, report what actually changed
+    // Apply active filter — archived done tasks are excluded
+    const tasks = allTasks.filter(isActiveTask);
+
+    // Changes for sound triggers — only from non-first snapshots
     const changes = isFirstSnapshot
       ? []
       : snap.docChanges().map(change => ({
-          type: change.type,          // 'added' | 'modified' | 'removed'
+          type: change.type,
           task: { id: change.doc.id, ...change.doc.data() }
         }));
 
@@ -83,10 +101,10 @@ export function onTasksChanged(callback) {
     callback({ tasks, changes });
   });
 
-  return unsub; // call this to detach the listener when page unloads
+  return unsub;
 }
 
-// ── WRITE OPERATIONS (unchanged) ──────────────────────────────────────────
+// ── WRITE OPERATIONS ──────────────────────────────────────────────────────
 export async function addTask(data) {
   const month = new Date().toISOString().slice(0, 7);
   const memberStatus = {};
