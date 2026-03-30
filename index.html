@@ -245,7 +245,7 @@
     <div class="panel-body">
       <textarea class="notes-ta" id="notes-ta" placeholder="Scratch pad — type anything..."></textarea>
       <div class="notes-foot">
-        <span class="notes-cnt" id="notes-cnt">0 chars</span>
+        <span class="notes-cnt" id="notes-cnt">0 / 500</span>
         <button class="notes-clr" onclick="clearNotes()">Clear</button>
       </div>
     </div>
@@ -255,12 +255,13 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
 let MY_NAME = localStorage.getItem('wd_myname') || '';
+const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|null
 
 // Theme handled by theme.js
@@ -520,23 +521,30 @@ function memberTaskCard(t, member, i) {
   const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[memberStatus];
   const isDone = memberStatus === 'done';
   const statusClass = isDone ? 'status-done' : t.status === 'inprog' ? 'status-inprog' : '';
-  return `
-    <div class="task-card ${pc} ${statusClass}" style="margin-left:12px">
-      <div class="tc-title">${esc(t.label)}</div>
+
+  // Show button if: this is your own card, OR you are the admin
+  const isMyCard = MY_NAME && member.name.toLowerCase() === MY_NAME.toLowerCase();
+  const isAdmin  = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
+  const canAct   = isMyCard || isAdmin;
+
+  return \`
+    <div class="task-card \${pc} \${statusClass}" style="margin-left:12px">
+      <div class="tc-title">\${esc(t.label)}</div>
       <div class="tc-meta">
-        <span class="tag ${stTag}">${stLbl}</span>
+        <span class="tag \${stTag}">\${stLbl}</span>
         <span class="m-pill" style="display:inline-flex">
           <span class="m-pill-name">Resp. Task</span>
-          <span class="m-pill-role">${respTask ? esc(respTask) : 'Not set'}</span>
+          <span class="m-pill-role">\${respTask ? esc(respTask) : 'Not set'}</span>
         </span>
       </div>
+      \${canAct ? \`
       <div class="tc-actions">
-        <button class="mark-done-btn${isDone?' undone':''}"
-          onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
-          ${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
+        <button class="mark-done-btn\${isDone?' undone':''}"
+          onclick="setMemberStatusWindow('\${t.id}','\${member.id}','\${isDone?'todo':'done'}')">
+          \${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
         </button>
-      </div>
-    </div>`;
+      </div>\` : ''}
+    </div>\`;
 }
 
 // ── FOLLOW-UP ──────────────────────────────────────────────────────────────
@@ -758,18 +766,33 @@ window.resetTimer = () => {
 window.addEventListener('visibilitychange', saveTimer);
 window.addEventListener('beforeunload', saveTimer);
 
-// ── NOTES ──────────────────────────────────────────────────────────────────
-const nta=document.getElementById('notes-ta');
-nta.value=localStorage.getItem('wd_notes')||'';
-document.getElementById('notes-cnt').textContent=nta.value.length+' chars';
-nta.addEventListener('input',()=>{
-  localStorage.setItem('wd_notes',nta.value);
-  document.getElementById('notes-cnt').textContent=nta.value.length+' chars';
+// ── NOTES — synced to Firestore per user ─────────────────────────────────
+const MAX_NOTES = 500;
+const nta = document.getElementById('notes-ta');
+document.getElementById('notes-cnt').textContent = '0 / ' + MAX_NOTES;
+
+// Debounce saves so we don't write to Firestore on every keystroke
+let _notesSaveTimer = null;
+function scheduleNotesSave() {
+  clearTimeout(_notesSaveTimer);
+  _notesSaveTimer = setTimeout(() => {
+    if (MY_NAME) saveUserData(MY_NAME, { notes: nta.value });
+  }, 1000); // save 1 second after user stops typing
+}
+
+nta.setAttribute('maxlength', MAX_NOTES);
+nta.addEventListener('input', () => {
+  // Enforce 500 char limit
+  if (nta.value.length > MAX_NOTES) nta.value = nta.value.slice(0, MAX_NOTES);
+  document.getElementById('notes-cnt').textContent = nta.value.length + ' / ' + MAX_NOTES;
+  scheduleNotesSave();
 });
-window.clearNotes=()=>{
-  if(!confirm('Clear notes?'))return;
-  nta.value=''; localStorage.removeItem('wd_notes');
-  document.getElementById('notes-cnt').textContent='0 chars';
+
+window.clearNotes = () => {
+  if (!confirm('Clear notes?')) return;
+  nta.value = '';
+  document.getElementById('notes-cnt').textContent = '0 / ' + MAX_NOTES;
+  if (MY_NAME) saveUserData(MY_NAME, { notes: '' });
 };
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
