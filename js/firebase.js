@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-  getDocs, onSnapshot, query, orderBy, serverTimestamp
+  getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -17,8 +17,6 @@ const firebaseConfig = {
 };
 const WORKSPACE_ID = "harshit-team-2026";
 export const DELETE_PASSWORD = "workdesk@delete";
-
-// How many days after completion a task stays visible in the active view
 const ARCHIVE_AFTER_DAYS = 90;
 
 const app  = initializeApp(firebaseConfig);
@@ -36,18 +34,10 @@ function wsCol(name) { return collection(db, "workspaces", WORKSPACE_ID, name); 
 function wsDoc(name, id) { return doc(db, "workspaces", WORKSPACE_ID, name, id); }
 
 // ── ACTIVE TASK FILTER ────────────────────────────────────────────────────
-// A task is "active" (shown in dashboard + all tasks) if:
-//   - It is not done, OR
-//   - It was completed within the last 90 days
-// This runs client-side after fetching, keeping the Firestore query simple.
 function isActiveTask(task) {
-  if (task.status !== 'done') return true; // todo / inprog always visible
-
-  // Done tasks: check completedAt
+  if (task.status !== 'done') return true;
   const completedAt = task.completedAt;
-  if (!completedAt) return true; // no completedAt recorded — keep visible
-
-  // Firestore Timestamp has .toDate(), plain JS Date otherwise
+  if (!completedAt) return true;
   const completedDate = completedAt.toDate ? completedAt.toDate() : new Date(completedAt);
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - ARCHIVE_AFTER_DAYS);
@@ -67,40 +57,28 @@ export async function deleteMember(id) {
   await deleteDoc(wsDoc("members", id));
 }
 
-// ── TASKS: full history (report page + date range filter) ─────────────────
-// Returns ALL tasks ever — no archive filter applied.
-// Used by: report.html, date range filter in input.html
+// ── TASKS: full history ───────────────────────────────────────────────────
 export async function getTasks() {
   const snap = await getDocs(query(wsCol("tasks"), orderBy("createdAt", "desc")));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-// ── TASKS: active only (dashboard + all tasks list) ───────────────────────
-// Returns tasks that are not done, OR done within the last 90 days.
-// Used by: index.html real-time listener, input.html task list
+// ── TASKS: real-time active listener ─────────────────────────────────────
 export function onTasksChanged(callback) {
   const q = query(wsCol("tasks"), orderBy("createdAt", "desc"));
   let isFirstSnapshot = true;
-
   const unsub = onSnapshot(q, (snap) => {
-    // Full list from Firestore
     const allTasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    // Apply active filter — archived done tasks are excluded
     const tasks = allTasks.filter(isActiveTask);
-
-    // Changes for sound triggers — only from non-first snapshots
     const changes = isFirstSnapshot
       ? []
       : snap.docChanges().map(change => ({
           type: change.type,
           task: { id: change.doc.id, ...change.doc.data() }
         }));
-
     isFirstSnapshot = false;
     callback({ tasks, changes });
   });
-
   return unsub;
 }
 
@@ -110,13 +88,9 @@ export async function addTask(data) {
   const memberStatus = {};
   (data.members || []).forEach(m => { memberStatus[m.id] = 'todo'; });
   const ref = await addDoc(wsCol("tasks"), {
-    ...data,
-    status: "todo",
-    memberStatus,
-    month,
+    ...data, status: "todo", memberStatus, month,
     dueDate: data.dueDate || null,
-    createdAt: serverTimestamp(),
-    completedAt: null,
+    createdAt: serverTimestamp(), completedAt: null,
   });
   return ref.id;
 }
@@ -130,4 +104,44 @@ export async function updateTask(id, data) {
 export async function deleteTask(id, password) {
   if (password !== DELETE_PASSWORD) throw new Error("Incorrect password");
   await deleteDoc(wsDoc("tasks", id));
+}
+
+// ── USER DATA: notes + timer (synced per user across devices) ─────────────
+// Stored at: /workspaces/{id}/users/{userName}
+// Contains: { notes: string, timer: { total, left, running, savedAt } }
+
+function userDoc(userName) {
+  // Use lowercase trimmed name as document ID
+  return doc(db, "workspaces", WORKSPACE_ID, "users", userName.toLowerCase().trim());
+}
+
+export async function getUserData(userName) {
+  if (!userName) return {};
+  try {
+    const snap = await getDoc(userDoc(userName));
+    return snap.exists() ? snap.data() : {};
+  } catch(e) {
+    console.warn('getUserData failed:', e);
+    return {};
+  }
+}
+
+export async function saveUserData(userName, data) {
+  if (!userName) return;
+  try {
+    // setDoc with merge:true creates the doc if it doesn't exist,
+    // or merges the fields if it does — no separate create/update needed
+    await setDoc(userDoc(userName), data, { merge: true });
+  } catch(e) {
+    console.warn('saveUserData failed:', e);
+  }
+}
+
+// Real-time listener for user data (notes update across devices instantly)
+export function onUserDataChanged(userName, callback) {
+  if (!userName) return () => {};
+  const unsub = onSnapshot(userDoc(userName), (snap) => {
+    callback(snap.exists() ? snap.data() : {});
+  });
+  return unsub;
 }
