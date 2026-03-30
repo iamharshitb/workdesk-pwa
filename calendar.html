@@ -319,9 +319,13 @@ function renderCalendar() {
   const now   = new Date();
   const label = MONTHS[viewMonth] + ' ' + viewYear;
   document.getElementById('cal-month-label').textContent = label;
-  const totalEvents = Object.values(events).reduce((s,arr)=>s+arr.length,0);
-  document.getElementById('cal-sub-label').textContent = totalEvents
-    ? totalEvents + ' communication' + (totalEvents>1?'s':'') + ' planned'
+  // Count only events in the currently viewed month
+  const monthPrefix = viewYear + '-' + String(viewMonth+1).padStart(2,'0');
+  const monthEvents = Object.entries(events)
+    .filter(([date]) => date.startsWith(monthPrefix))
+    .reduce((s,[,arr]) => s + arr.length, 0);
+  document.getElementById('cal-sub-label').textContent = monthEvents
+    ? monthEvents + ' communication' + (monthEvents>1?'s':'') + ' planned this month'
     : 'Click any date to add communications';
 
   // First day of month (0=Sun…6=Sat), convert to Mon=0 grid
