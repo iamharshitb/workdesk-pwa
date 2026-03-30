@@ -145,3 +145,74 @@ export function onUserDataChanged(userName, callback) {
   });
   return unsub;
 }
+
+// ── STREAK ────────────────────────────────────────────────────────────────
+// Stored at: /workspaces/{id}/streak
+// { currentStreak, lastCompletedDate (YYYY-MM-DD), longestStreak }
+function streakDoc() {
+  return doc(db, "workspaces", WORKSPACE_ID, "meta", "streak");
+}
+
+export async function getStreak() {
+  try {
+    const snap = await getDoc(streakDoc());
+    return snap.exists() ? snap.data() : { currentStreak: 0, lastCompletedDate: null, longestStreak: 0 };
+  } catch(e) { return { currentStreak: 0, lastCompletedDate: null, longestStreak: 0 }; }
+}
+
+export async function recordTaskCompletion() {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = await getStreak();
+  const last = data.lastCompletedDate;
+  if (last === today) return data; // already recorded today
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0, 10);
+  const newStreak = last === yStr ? (data.currentStreak || 0) + 1 : 1;
+  const longest = Math.max(newStreak, data.longestStreak || 0);
+  const updated = { currentStreak: newStreak, lastCompletedDate: today, longestStreak: longest };
+  await setDoc(streakDoc(), updated, { merge: true });
+  return updated;
+}
+
+// ── TASK COMMENTS ─────────────────────────────────────────────────────────
+// Stored at: /workspaces/{id}/tasks/{taskId}/comments
+function commentsCol(taskId) {
+  return collection(db, "workspaces", WORKSPACE_ID, "tasks", taskId, "comments");
+}
+
+export async function addComment(taskId, author, text) {
+  await addDoc(commentsCol(taskId), {
+    author, text: text.slice(0, 200),
+    createdAt: serverTimestamp()
+  });
+}
+
+export function onCommentsChanged(taskId, callback) {
+  const q = query(commentsCol(taskId), orderBy("createdAt", "asc"));
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
+// ── REMINDER ──────────────────────────────────────────────────────────────
+// Stored as a field on the task: reminder: { date, time, snoozedUntil, active }
+export async function setReminder(taskId, date, time) {
+  await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId), {
+    reminder: { date, time, active: true, snoozedUntil: null }
+  });
+}
+
+export async function snoozeReminder(taskId, newDate, newTime) {
+  await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId), {
+    'reminder.snoozedUntil': `${newDate}T${newTime}`,
+    'reminder.date': newDate,
+    'reminder.time': newTime,
+    'reminder.active': true
+  });
+}
+
+export async function dismissReminder(taskId) {
+  await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId), {
+    'reminder.active': false
+  });
+}

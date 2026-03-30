@@ -247,6 +247,8 @@
     style="flex:1;min-width:160px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none">
   <button onclick="loadComms()"
     style="padding:7px 14px;border-radius:9px;border:none;background:var(--neon2);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Load Comms</button>
+  <button onclick="toggleWeeklyDigest()"
+    style="padding:7px 14px;border-radius:9px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Weekly</button>
   <button onclick="window.print()"
     style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
 </div>
@@ -301,6 +303,18 @@
   </div>
 
 </div><!-- /preview-wrap -->
+
+<!-- WEEKLY DIGEST — quick summary card -->
+<div id="weekly-digest" style="display:none;max-width:500px;margin:0 auto 80px;padding:0 16px">
+  <div style="background:var(--bg2);border:1.5px solid var(--border2);border-radius:18px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.3)">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">📊 This Week's Digest</div>
+    <div id="digest-content" style="font-size:14px;color:var(--text);line-height:1.8"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button onclick="copyDigest()" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer">📋 Copy for WhatsApp</button>
+      <button onclick="document.getElementById('weekly-digest').style.display='none'" style="padding:9px 14px;border-radius:10px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { onUserReady, getTasks, getMembers } from './js/firebase.js';
@@ -597,6 +611,70 @@ function renderCommsPage(csv){
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${day} ${mo[parseInt(m)-1]}`}
+window.toggleWeeklyDigest = () => {
+  const el = document.getElementById('weekly-digest');
+  if (el.style.display !== 'none') { el.style.display='none'; return; }
+  // This week: Monday to today
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+  const mondayStr = monday.toISOString().slice(0,10);
+  const todayStr  = today.toISOString().slice(0,10);
+
+  const weekTasks = allTasks.filter(t => {
+    const d = t.dueDate || t.month+'-01';
+    return d >= mondayStr && d <= todayStr;
+  });
+  const opened   = weekTasks.length;
+  const completed= weekTasks.filter(t => t.status==='done').length;
+  const inprog   = weekTasks.filter(t => t.status==='inprog').length;
+
+  // Who did what
+  const memberStats = {};
+  weekTasks.forEach(t => {
+    (t.members||[]).forEach(m => {
+      if (!memberStats[m.name]) memberStats[m.name] = { done:0, total:0 };
+      memberStats[m.name].total++;
+      if ((t.memberStatus||{})[m.id||''] === 'done') memberStats[m.name].done++;
+    });
+  });
+
+  const memberLines = Object.entries(memberStats)
+    .sort((a,b) => b[1].done - a[1].done)
+    .map(([name,s]) => '• ' + name + ': ' + s.done + '/' + s.total + ' tasks done').join(String.fromCharCode(10));
+
+  const [y,m] = (selMonth||new Date().toISOString().slice(0,7)).split('-');
+  const weekLabel = `${monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${today.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}`;
+
+  const nl = String.fromCharCode(10);
+  const digestText = '📊 WorkDesk Weekly — ' + weekLabel + nl + nl +
+    '✅ Completed: ' + completed + nl +
+    '🔄 In Progress: ' + inprog + nl +
+    '📋 Total this week: ' + opened + nl + nl +
+    '👥 Team:' + nl + (memberLines||'No tasks this week');
+
+  el._text = digestText;
+  document.getElementById('digest-content').innerHTML = digestText.replace(/\n/g,'<br>');
+  el.style.display = '';
+  el.scrollIntoView({ behavior:'smooth' });
+};
+
+window.copyDigest = () => {
+  const el = document.getElementById('weekly-digest');
+  const text = el._text || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.querySelector('button');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy for WhatsApp', 2000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    ta.remove();
+  });
+};
+
 function fmt(v){const n=parseFloat(String(v).replace(/,/g,''));if(isNaN(n))return v;if(n>=1000)return(n/1000).toFixed(1).replace(/\.0$/,'')+'K';return String(Math.round(n))}
 </script>
 <script>

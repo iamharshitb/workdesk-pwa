@@ -136,6 +136,111 @@
     }
     .task-detail.open { display:block; }
 
+    /* ── GREETING BAR ── */
+    .greeting-bar {
+      padding:14px 16px;
+      background:var(--panel);
+      border:1px solid var(--border2);
+      border-radius:var(--rr);
+      margin-bottom:12px;
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:var(--shadow-card);
+    }
+    .greeting-text { font-size:15px;font-weight:700;color:var(--text);line-height:1.4 }
+    .greeting-sub  { font-size:12px;color:var(--text2);margin-top:2px }
+    .streak-badge  {
+      display:flex;align-items:center;gap:5px;
+      background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.25);
+      border-radius:20px;padding:5px 12px;
+      font-size:13px;font-weight:800;color:var(--amber);
+      white-space:nowrap;flex-shrink:0;
+    }
+
+    /* ── CONFETTI ── */
+    .confetti-wrap {
+      position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;
+    }
+    .confetti-piece {
+      position:absolute;width:8px;height:8px;border-radius:2px;
+      animation:confetti-fall 1s ease-in forwards;
+      top:-10px;
+    }
+    @keyframes confetti-fall {
+      0%   { transform:translateY(0) rotate(0deg);   opacity:1; }
+      100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+    }
+
+    /* ── COMMENTS ── */
+    .comment-section { margin-top:10px;border-top:1px solid var(--border);padding-top:10px }
+    .comment-list { max-height:150px;overflow-y:auto;margin-bottom:8px }
+    .comment-item {
+      padding:6px 9px;border-radius:8px;margin-bottom:5px;
+      background:var(--bg2);border:1px solid var(--border);
+    }
+    .comment-author { font-size:11px;font-weight:700;color:var(--neon);margin-bottom:2px }
+    .comment-text   { font-size:12px;color:var(--text);line-height:1.4 }
+    .comment-time   { font-size:9px;color:var(--text3);margin-top:2px }
+    .comment-input-row { display:flex;gap:7px }
+    .comment-inp {
+      flex:1;background:var(--bg2);border:1.5px solid var(--border2);
+      border-radius:9px;padding:7px 10px;color:var(--text);
+      font-family:var(--sans);font-size:13px;outline:none;
+    }
+    .comment-inp:focus { border-color:var(--neon) }
+    .comment-send {
+      padding:7px 12px;border-radius:9px;border:none;
+      background:var(--neon);color:var(--bg);
+      font-family:var(--sans);font-size:12px;font-weight:800;
+      cursor:pointer;white-space:nowrap;
+    }
+
+    /* ── REMINDER ── */
+    .reminder-row {
+      display:flex;align-items:center;gap:8px;
+      margin-top:8px;flex-wrap:wrap;
+    }
+    .reminder-badge {
+      display:inline-flex;align-items:center;gap:5px;
+      padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;
+      background:rgba(157,126,255,.1);color:var(--purple);
+      border:1px solid rgba(157,126,255,.25);cursor:pointer;
+    }
+    .reminder-badge:hover { background:rgba(157,126,255,.18) }
+    .reminder-modal {
+      position:fixed;inset:0;background:rgba(0,0,0,.6);
+      z-index:300;display:none;align-items:center;justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    .reminder-modal.open { display:flex }
+    .reminder-box {
+      background:var(--panel);border:1.5px solid var(--border2);
+      border-radius:18px;padding:20px;width:90%;max-width:340px;
+      box-shadow:0 8px 40px rgba(0,0,0,.5);
+    }
+    .reminder-title { font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px }
+    .reminder-fields { display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap }
+    .reminder-fields input {
+      flex:1;min-width:120px;background:var(--bg2);border:1.5px solid var(--border2);
+      border-radius:9px;padding:8px 11px;color:var(--text);
+      font-family:var(--sans);font-size:13px;outline:none;
+    }
+    .reminder-fields input:focus { border-color:var(--purple) }
+    .reminder-btns { display:flex;gap:8px;justify-content:flex-end }
+    .reminder-set { padding:8px 18px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer }
+    .reminder-cancel { padding:8px 14px;border-radius:9px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
+    .reminder-dismiss { padding:8px 14px;border-radius:9px;border:1.5px solid rgba(255,58,94,.3);background:none;color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
+
+    /* ── PULL TO REFRESH ── */
+    .ptr-indicator {
+      text-align:center;padding:14px;
+      font-size:13px;font-weight:700;color:var(--text2);
+      display:none;
+    }
+    .ptr-indicator.visible { display:block }
+
+    /* ── WEEKLY DIGEST ── */
+    .digest-panel { }
+
     /* ── FILTER BANNER ── */
     .filter-banner {
       display: flex;
@@ -176,6 +281,9 @@
 <div id="page-loader"><span class="loader"></span>Loading...</div>
 
 <div class="page" id="main" style="display:none">
+
+  <!-- GREETING + STREAK -->
+  <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
@@ -254,8 +362,28 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- PULL TO REFRESH indicator -->
+<div class="ptr-indicator" id="ptr-indicator">↓ Release to refresh</div>
+
+<!-- REMINDER MODAL -->
+<div class="reminder-modal" id="reminder-modal">
+  <div class="reminder-box">
+    <div class="reminder-title">🔔 Set Reminder</div>
+    <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600"></div>
+    <div class="reminder-fields">
+      <input type="date" id="reminder-date">
+      <input type="time" id="reminder-time" value="09:00">
+    </div>
+    <div class="reminder-btns">
+      <button class="reminder-cancel" onclick="closeReminderModal()">Cancel</button>
+      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">Remove</button>
+      <button class="reminder-set" onclick="confirmReminder()">Set Reminder</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
@@ -326,7 +454,7 @@ onUserReady(async () => {
   });
 });
 
-function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); }
+function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting(); }
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
 window.filterTasks = (type) => {
@@ -392,12 +520,19 @@ function renderMyTasks() {
     : '';
 
   if (!taskList.length) {
-    el.innerHTML = banner + `<div class="empty"><div class="ei">◈</div>${activeFilter ? 'No tasks in this category' : MY_NAME ? 'No tasks assigned to you yet' : 'No tasks yet'}</div>`;
+    el.innerHTML = banner + `<div class="empty"><div class="ei">◈</div>${activeFilter ? 'No tasks in this category' : MY_NAME ? `Nothing on your plate right now, ${esc(MY_NAME)} 🎉` : 'No tasks yet — add one in the Input tab'}</div>`;
     return;
   }
 
   const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
-  const sorted = [...taskList].sort((a,b) => (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2));
+  const now16 = new Date().toISOString().slice(0,16);
+  const sorted = [...taskList].sort((a,b) => {
+    // Pinned: tasks with active reminders due now or overdue come first
+    const aDue = a.reminder?.active && `${a.reminder.date}T${a.reminder.time}` <= now16 ? -1 : 0;
+    const bDue = b.reminder?.active && `${b.reminder.date}T${b.reminder.time}` <= now16 ? -1 : 0;
+    if (aDue !== bDue) return aDue - bDue;
+    return (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2);
+  });
   el.innerHTML = banner + sorted.map((t,i) => myTaskCard(t, i)).join('');
 }
 
@@ -407,14 +542,20 @@ const expandedTasks = new Set();
 window.toggleTaskExpand = (id) => {
   if (expandedTasks.has(id)) expandedTasks.delete(id);
   else expandedTasks.add(id);
-  // Toggle classes without full re-render
-  const row = document.getElementById('trc-' + id);
   const detail = document.getElementById('trd-' + id);
-  const btn = document.getElementById('trx-' + id);
-  if (!row || !detail || !btn) return;
+  const btn    = document.getElementById('trx-' + id);
+  if (!detail || !btn) return;
   const isOpen = expandedTasks.has(id);
   detail.classList.toggle('open', isOpen);
   btn.classList.toggle('open', isOpen);
+  // Load comments when expanded
+  if (isOpen) {
+    const commentContainer = document.getElementById('comments-' + id);
+    if (commentContainer && !commentContainer.dataset.loaded) {
+      commentContainer.dataset.loaded = '1';
+      renderCommentSection(id, commentContainer);
+    }
+  }
 };
 
 function myTaskCard(t, i) {
@@ -479,7 +620,12 @@ function myTaskCard(t, i) {
             onclick="event.stopPropagation();setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
             ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
           </button>` : ''}
+          <button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
+            title="Set reminder">
+            ${t.reminder?.active ? '🔔 Reminder set' : '🔔 Remind me'}
+          </button>
         </div>
+        <div id="comments-${t.id}"></div>
       </div>
     </div>`;
 }
@@ -489,7 +635,15 @@ function renderByMember() {
   const el = document.getElementById('by-member-list');
   if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet.</div>'; return; }
   let html = '';
-  members.forEach(m => {
+  // Sort members by completion % — highest first (leaderboard)
+  const sortedMembers = [...members].sort((a, b) => {
+    const aTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === a.id));
+    const bTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === b.id));
+    const aPct = aTasks.length ? aTasks.filter(t => getMemberStatus(t,a.id)==='done').length/aTasks.length : 0;
+    const bPct = bTasks.length ? bTasks.filter(t => getMemberStatus(t,b.id)==='done').length/bTasks.length : 0;
+    return bPct - aPct;
+  });
+  sortedMembers.forEach(m => {
     const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
     const memberDone = mTasks.filter(t => getMemberStatus(t, m.id) === 'done').length;
     const total = mTasks.length;
@@ -630,9 +784,15 @@ async function setMemberStatus(taskId, memberId, newStatus) {
   updates[`memberStatus.${memberId}`] = newStatus;
   await updateTask(taskId, updates);
   renderAll();
-  if (allDone) { playTimerDone(); toast('🎉 All done! Task complete!'); }
-  else if (newStatus === 'done') { playMarkDone(); toast('✓ Your part is done!'); }
-  else { playReopen(); toast('↩ Reopened'); }
+  if (allDone) {
+    playTimerDone(); launchConfetti();
+    toast('🎉 All done! Task complete!');
+    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+  } else if (newStatus === 'done') {
+    playMarkDone(); launchConfetti();
+    toast('✓ Your part is done!');
+    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+  } else { playReopen(); toast('↩ Reopened'); }
 }
 
 // ── CYCLE OVERALL (todo ↔ inprog only) ────────────────────────────────────
@@ -813,6 +973,210 @@ function initNotes() {
 }
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// FEATURE 1: GREETING + STREAK
+// ═══════════════════════════════════════════════════════
+let streakData = { currentStreak: 0 };
+
+async function renderGreeting() {
+  streakData = await getStreak();
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const name  = MY_NAME ? `, ${MY_NAME}` : '';
+  const myTasks  = tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase()));
+  const inprog   = myTasks.filter(t => t.status === 'inprog').length;
+  const dueToday = myTasks.filter(t => t.dueDate === new Date().toISOString().slice(0,10) && t.status !== 'done').length;
+  let sub = '';
+  if (inprog > 0) sub += `${inprog} task${inprog>1?'s':''} in progress`;
+  if (dueToday > 0) sub += `${sub?' · ':''}${dueToday} due today`;
+  if (!sub) sub = myTasks.length === 0 ? 'No tasks assigned yet' : 'All caught up! 🎉';
+  const s = streakData.currentStreak || 0;
+  const streakHTML = s > 0
+    ? `<div class="streak-badge">🔥 ${s} day streak</div>`
+    : `<div class="streak-badge" style="opacity:.4">🔥 0</div>`;
+  const el = document.getElementById('greeting-bar');
+  if (el) el.innerHTML = `
+    <div>
+      <div class="greeting-text">${greet}${esc(name)} 👋</div>
+      <div class="greeting-sub">${sub}</div>
+    </div>
+    ${streakHTML}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 2: CONFETTI CELEBRATION
+// ═══════════════════════════════════════════════════════
+function launchConfetti() {
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  document.body.appendChild(wrap);
+  const colors = ['#00e5b8','#f5a800','#ff3a5e','#9d7eff','#00b4e5','#ffffff'];
+  for (let i = 0; i < 48; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-delay:${Math.random()*0.4}s;
+      animation-duration:${0.7+Math.random()*0.6}s;
+      width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+    `;
+    wrap.appendChild(p);
+  }
+  setTimeout(() => wrap.remove(), 1400);
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 3: COMMENTS
+// ═══════════════════════════════════════════════════════
+const commentUnsubs = {}; // track active listeners
+
+function renderCommentSection(taskId, container) {
+  container.innerHTML = `
+    <div class="comment-section">
+      <div class="comment-list" id="clist-${taskId}">
+        <div style="font-size:11px;color:var(--text3);padding:4px 0">Loading comments...</div>
+      </div>
+      <div class="comment-input-row">
+        <input class="comment-inp" id="cinp-${taskId}" placeholder="Add a note..." maxlength="200"
+          onkeydown="if(event.key==='Enter')submitComment('${taskId}')">
+        <button class="comment-send" onclick="submitComment('${taskId}')">Send</button>
+      </div>
+    </div>`;
+
+  // Unsubscribe previous listener if any
+  if (commentUnsubs[taskId]) { commentUnsubs[taskId](); }
+  commentUnsubs[taskId] = onCommentsChanged(taskId, (comments) => {
+    const list = document.getElementById('clist-' + taskId);
+    if (!list) return;
+    if (!comments.length) {
+      list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:4px 0">No comments yet</div>';
+      return;
+    }
+    list.innerHTML = comments.map(cm => {
+      const ts = cm.createdAt?.toDate ? cm.createdAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="comment-item">
+        <div class="comment-author">${esc(cm.author||'Unknown')}</div>
+        <div class="comment-text">${esc(cm.text)}</div>
+        <div class="comment-time">${ts}</div>
+      </div>`;
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  });
+}
+
+window.submitComment = async (taskId) => {
+  const inp = document.getElementById('cinp-' + taskId);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  await addComment(taskId, MY_NAME || 'Anonymous', text);
+};
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 4: REMINDER
+// ═══════════════════════════════════════════════════════
+let _reminderTaskId = null;
+
+window.openReminderModal = (taskId) => {
+  _reminderTaskId = taskId;
+  const t = tasks.find(t => t.id === taskId);
+  document.getElementById('reminder-task-name').textContent = t ? t.label : '';
+  // Set default date to tomorrow
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  document.getElementById('reminder-date').value = tomorrow.toISOString().slice(0,10);
+  document.getElementById('reminder-time').value = '09:00';
+  // Show dismiss button if reminder already set
+  const hasReminder = t?.reminder?.active;
+  document.getElementById('reminder-dismiss-btn').style.display = hasReminder ? '' : 'none';
+  document.getElementById('reminder-modal').classList.add('open');
+};
+window.closeReminderModal = () => {
+  document.getElementById('reminder-modal').classList.remove('open');
+  _reminderTaskId = null;
+};
+window.confirmReminder = async () => {
+  if (!_reminderTaskId) return;
+  const date = document.getElementById('reminder-date').value;
+  const time = document.getElementById('reminder-time').value;
+  if (!date || !time) { toast('Pick a date and time', 'err'); return; }
+  await setReminder(_reminderTaskId, date, time);
+  closeReminderModal();
+  toast('🔔 Reminder set!');
+  scheduleReminderCheck();
+};
+window.dismissReminderNow = async () => {
+  if (!_reminderTaskId) return;
+  await dismissReminder(_reminderTaskId);
+  closeReminderModal();
+  toast('Reminder removed');
+};
+window.snoozeReminder = async (taskId, newDate, newTime) => {
+  await snoozeReminder(taskId, newDate, newTime);
+  toast('⏰ Snoozed!');
+};
+
+// Check reminders every minute
+function scheduleReminderCheck() {
+  setInterval(checkReminders, 60000);
+}
+scheduleReminderCheck();
+
+function checkReminders() {
+  const now = new Date();
+  const nowStr = now.toISOString().slice(0,16); // YYYY-MM-DDTHH:MM
+  tasks.forEach(t => {
+    if (!t.reminder?.active) return;
+    const reminderDT = `${t.reminder.date}T${t.reminder.time}`;
+    if (reminderDT <= nowStr) {
+      showReminderAlert(t);
+    }
+  });
+}
+
+function showReminderAlert(t) {
+  // Play sound
+  playTaskAssigned();
+  // Show toast with snooze option
+  const el = document.getElementById('toast');
+  el.innerHTML = `🔔 Reminder: <strong>${esc(t.label)}</strong>
+    <button onclick="openReminderModal('${t.id}')" style="margin-left:8px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Snooze</button>
+    <button onclick="dismissReminder('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
+  el.className = 'toast show';
+  el.style.maxWidth = '320px';
+  // Don't auto-hide reminder toasts
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 5: PULL TO REFRESH
+// ═══════════════════════════════════════════════════════
+(function initPullToRefresh() {
+  let startY = 0, pulling = false;
+  const indicator = document.getElementById('ptr-indicator');
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0) { startY = e.touches[0].clientY; pulling = true; }
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 60) { if (indicator) indicator.classList.add('visible'); }
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (indicator) indicator.classList.remove('visible');
+    if (dy > 80) {
+      toast('Refreshing...');
+      // The real-time listener already keeps tasks live,
+      // but we reload members and re-render for a clean refresh feel
+      getMembers().then(m => { members = m; renderAll(); renderGreeting(); toast('✓ Refreshed'); });
+    }
+  });
+})();
+
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
