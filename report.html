@@ -614,6 +614,7 @@ function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','
 window.toggleWeeklyDigest = () => {
   const el = document.getElementById('weekly-digest');
   if (el.style.display !== 'none') { el.style.display='none'; return; }
+
   // This week: Monday to today
   const today = new Date();
   const monday = new Date(today);
@@ -622,43 +623,96 @@ window.toggleWeeklyDigest = () => {
   const todayStr  = today.toISOString().slice(0,10);
 
   const weekTasks = allTasks.filter(t => {
-    const d = t.dueDate || t.month+'-01';
-    return d >= mondayStr && d <= todayStr;
+    const d = t.dueDate || (t.month ? t.month + '-01' : null);
+    return d && d >= mondayStr && d <= todayStr;
   });
-  const opened   = weekTasks.length;
-  const completed= weekTasks.filter(t => t.status==='done').length;
-  const inprog   = weekTasks.filter(t => t.status==='inprog').length;
 
-  // Who did what
+  const done    = weekTasks.filter(t => t.status === 'done');
+  const inprogL = weekTasks.filter(t => t.status === 'inprog');
+  const todo    = weekTasks.filter(t => t.status === 'todo');
+
+  const weekLabel = monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
+    + ' – ' + today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  // Member stats
   const memberStats = {};
   weekTasks.forEach(t => {
     (t.members||[]).forEach(m => {
       if (!memberStats[m.name]) memberStats[m.name] = { done:0, total:0 };
       memberStats[m.name].total++;
-      if ((t.memberStatus||{})[m.id||''] === 'done') memberStats[m.name].done++;
+      const ms = t.memberStatus || {};
+      const memberId = allMembers.find(mm => mm.name === m.name)?.id;
+      if (memberId && ms[memberId] === 'done') memberStats[m.name].done++;
     });
   });
 
-  const memberLines = Object.entries(memberStats)
+  // Build rich HTML for screen display
+  const doneHTML = done.length ? done.map(t => {
+    const members = (t.members||[]).map(m=>m.name).join(', ');
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="color:#34c759;font-size:14px;flex-shrink:0">✅</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(t.label)}</div>
+        ${members ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">👥 ${esc(members)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text3);padding:6px 0">None this week</div>';
+
+  const inprogHTML = inprogL.length ? inprogL.map(t => {
+    const members = (t.members||[]).map(m=>m.name).join(', ');
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="color:#f59e0b;font-size:14px;flex-shrink:0">🔄</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(t.label)}</div>
+        ${members ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">👥 ${esc(members)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text3);padding:6px 0">None</div>';
+
+  const memberHTML = Object.entries(memberStats)
     .sort((a,b) => b[1].done - a[1].done)
-    .map(([name,s]) => '• ' + name + ': ' + s.done + '/' + s.total + ' tasks done').join(String.fromCharCode(10));
+    .map(([name,s]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(name)}</span>
+      <span style="font-size:12px;color:var(--text2)">${s.done}/${s.total} done</span>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--text3)">No assignments this week</div>';
 
-  const [y,m] = (selMonth||new Date().toISOString().slice(0,7)).split('-');
-  const weekLabel = `${monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${today.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}`;
+  document.getElementById('digest-content').innerHTML = `
+    <div style="margin-bottom:6px;font-size:12px;color:var(--text2);font-weight:600">${weekLabel}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.2);border-radius:10px">
+        <div style="font-size:22px;font-weight:800;color:#34c759">${done.length}</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">Done</div>
+      </div>
+      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px">
+        <div style="font-size:22px;font-weight:800;color:#f59e0b">${inprogL.length}</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">In Prog</div>
+      </div>
+      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);border-radius:10px">
+        <div style="font-size:22px;font-weight:800;color:var(--text2)">${todo.length}</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">Todo</div>
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">✅ Completed This Week</div>
+    <div style="margin-bottom:14px">${doneHTML}</div>
+    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">🔄 In Progress</div>
+    <div style="margin-bottom:14px">${inprogHTML}</div>
+    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">👥 Team This Week</div>
+    <div>${memberHTML}</div>
+  `;
 
+  // Plain text for WhatsApp copy
   const nl = String.fromCharCode(10);
-  const digestText = '📊 WorkDesk Weekly — ' + weekLabel + nl + nl +
-    '✅ Completed: ' + completed + nl +
-    '🔄 In Progress: ' + inprog + nl +
-    '📋 Total this week: ' + opened + nl + nl +
-    '👥 Team:' + nl + (memberLines||'No tasks this week');
+  const doneTxt = done.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
+  const inpTxt  = inprogL.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
+  const memTxt  = Object.entries(memberStats).sort((a,b)=>b[1].done-a[1].done).map(([n,s])=>'  ' + n + ': ' + s.done + '/' + s.total).join(nl) || '  None';
+  el._text = '📊 WorkDesk Weekly Digest' + nl + weekLabel + nl + nl
+    + '✅ Completed (' + done.length + '):' + nl + doneTxt + nl + nl
+    + '🔄 In Progress (' + inprogL.length + '):' + nl + inpTxt + nl + nl
+    + '👥 Team:' + nl + memTxt;
 
-  el._text = digestText;
-  document.getElementById('digest-content').innerHTML = digestText.replace(/\n/g,'<br>');
   el.style.display = '';
-  el.scrollIntoView({ behavior:'smooth' });
+  el.scrollIntoView({ behavior: 'smooth' });
 };
-
 window.copyDigest = () => {
   const el = document.getElementById('weekly-digest');
   const text = el._text || '';
@@ -697,6 +751,10 @@ if ('serviceWorker' in navigator) {
   <a href="report.html" class="bn-item active">
     <span class="bn-icon">▤</span>
     <span class="bn-label">Report</span>
+  </a>
+  <a href="calendar.html" class="bn-item">
+    <span class="bn-icon">📅</span>
+    <span class="bn-label">Calendar</span>
   </a>
 </nav>
 </body>
