@@ -136,6 +136,32 @@
     }
     .task-detail.open { display:block; }
 
+    /* ── DUE TODAY HIGHLIGHT ── */
+    .task-row-compact.due-today {
+      border-left:3px solid var(--red) !important;
+      background:rgba(255,58,94,.07) !important;
+      border-color:rgba(255,58,94,.35) !important;
+      box-shadow:0 0 0 1px rgba(255,58,94,.1);
+    }
+    .due-today-badge {
+      display:inline-flex;align-items:center;gap:3px;
+      padding:2px 7px;border-radius:20px;
+      font-size:9px;font-weight:800;
+      background:rgba(255,58,94,.15);color:var(--red);
+      border:1px solid rgba(255,58,94,.3);
+      animation:pulse-badge 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-badge {
+      0%,100%{opacity:1} 50%{opacity:.6}
+    }
+    .due-soon-badge {
+      display:inline-flex;align-items:center;gap:3px;
+      padding:2px 7px;border-radius:20px;
+      font-size:9px;font-weight:800;
+      background:rgba(245,168,0,.12);color:var(--amber);
+      border:1px solid rgba(245,168,0,.3);
+    }
+
     /* ── GREETING BAR ── */
     .greeting-bar {
       padding:14px 16px;
@@ -525,12 +551,18 @@ function renderMyTasks() {
   }
 
   const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
-  const now16 = new Date().toISOString().slice(0,16);
+  const now16   = new Date().toISOString().slice(0,16);
+  const todayStr = new Date().toISOString().slice(0,10);
   const sorted = [...taskList].sort((a,b) => {
-    // Pinned: tasks with active reminders due now or overdue come first
-    const aDue = a.reminder?.active && `${a.reminder.date}T${a.reminder.time}` <= now16 ? -1 : 0;
-    const bDue = b.reminder?.active && `${b.reminder.date}T${b.reminder.time}` <= now16 ? -1 : 0;
-    if (aDue !== bDue) return aDue - bDue;
+    // 1st: tasks due today (taskDueDate === today) that aren't done
+    const aDueToday = a.taskDueDate === todayStr && a.status !== 'done' ? -1 : 0;
+    const bDueToday = b.taskDueDate === todayStr && b.status !== 'done' ? -1 : 0;
+    if (aDueToday !== bDueToday) return aDueToday - bDueToday;
+    // 2nd: tasks with active reminders due now
+    const aRem = a.reminder?.active && `${a.reminder.date}T${a.reminder.time}` <= now16 ? -1 : 0;
+    const bRem = b.reminder?.active && `${b.reminder.date}T${b.reminder.time}` <= now16 ? -1 : 0;
+    if (aRem !== bRem) return aRem - bRem;
+    // 3rd: status + priority
     return (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2);
   });
   el.innerHTML = banner + sorted.map((t,i) => myTaskCard(t, i)).join('');
@@ -581,14 +613,21 @@ function myTaskCard(t, i) {
   return `
     <div style="animation-delay:${i*.03}s" class="fi">
       <!-- COMPACT ROW -->
-      <div class="task-row-compact ${statusClass}" id="trc-${t.id}"
+      <div class="task-row-compact ${statusClass}${t.taskDueDate === todayStr && t.status !== 'done' ? ' due-today' : ''}" id="trc-${t.id}"
         onclick="toggleTaskExpand('${t.id}')"
-        style="border-left:3px solid ${accentColor}">
+        style="border-left:3px solid ${t.taskDueDate === todayStr && t.status !== 'done' ? 'var(--red)' : accentColor}">
         <div class="trc-left">
           <div class="trc-name">${esc(t.label)}</div>
           <div class="trc-meta">
             <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
             <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
+            ${t.taskDueDate && t.status !== 'done' ? (() => {
+              const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(todayStr)) / 86400000);
+              if (daysLeft < 0)  return '<span class="due-today-badge">⚠ Overdue</span>';
+              if (daysLeft === 0) return '<span class="due-today-badge">🔴 Due Today</span>';
+              if (daysLeft <= 3) return `<span class="due-soon-badge">⏰ ${daysLeft}d left</span>`;
+              return '';
+            })() : ''}
             <span class="trc-members">· ${allNames}</span>
           </div>
         </div>
@@ -597,6 +636,14 @@ function myTaskCard(t, i) {
 
       <!-- EXPANDED DETAIL -->
       <div class="task-detail${isExpanded?' open':''}" id="trd-${t.id}">
+        ${t.taskDueDate && t.status !== 'done' ? (() => {
+          const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(todayStr)) / 86400000);
+          const label = daysLeft < 0 ? '⚠ Overdue by ' + Math.abs(daysLeft) + ' day' + (Math.abs(daysLeft)>1?'s':'')
+                      : daysLeft === 0 ? '🔴 Due Today'
+                      : '📅 Due in ' + daysLeft + ' day' + (daysLeft>1?'s':'');
+          const col = daysLeft <= 0 ? 'var(--red)' : daysLeft <= 3 ? 'var(--amber)' : 'var(--text2)';
+          return `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:8px">${label} — ${t.taskDueDate}</div>`;
+        })() : ''}
         <div class="tc-members" style="margin-bottom:10px">
           <span class="m-pill">
             <span class="m-pill-name">You${myIsDone?' ✓':''}</span>

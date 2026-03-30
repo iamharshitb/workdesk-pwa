@@ -155,6 +155,16 @@
         <input type="date" class="date-inp" id="f-start" min="">
       </div>
 
+      <div class="date-row" style="margin-top:8px">
+        <span class="date-label">🔔 Due Date</span>
+        <input type="date" class="date-inp" id="f-due" min=""
+          style="border-color:rgba(255,58,94,.3)"
+          title="Optional — task will be highlighted on due date">
+        <button onclick="document.getElementById('f-due').value=''"
+          style="flex-shrink:0;padding:6px 10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text3);font-family:var(--sans);font-size:12px;cursor:pointer"
+          title="Clear due date">✕</button>
+      </div>
+
       <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ Register Task</button>
       <button id="cancel-btn" onclick="cancelEdit()"
         style="display:none;width:100%;margin-top:8px;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">
@@ -445,13 +455,15 @@ window.submitTask = async () => {
 
   try {
     if (editingId) {
-      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate });
+      const dueDate = document.getElementById('f-due').value || null;
+      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate });
       const idx = tasks.findIndex(t => t.id === editingId);
       if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate: startDate };
       toast('Task updated ✓'); cancelEdit();
     } else {
-      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, status: 'todo', memberStatus: {} });
+      const dueDate = document.getElementById('f-due').value || null;
+      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate });
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
       // Play sound if you're assigned to this task
       const myName = localStorage.getItem('wd_myname') || '';
@@ -473,6 +485,7 @@ window.editTask = (id) => {
   editingId = id;
   document.getElementById('f-task').value = t.label;
   document.getElementById('f-start').value = t.dueDate || '';
+    document.getElementById('f-due').value = t.taskDueDate || '';
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -738,6 +751,7 @@ function updateSummary() {
 function resetForm() {
   document.getElementById('f-task').value = '';
   document.getElementById('f-start').value = '';
+  document.getElementById('f-due').value = '';
   selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');
