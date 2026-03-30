@@ -528,24 +528,24 @@ function memberTaskCard(t, member, i) {
   const isAdmin  = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
   const canAct   = isMyCard || isAdmin;
 
-  return \`
-    <div class="task-card \${pc} \${statusClass}" style="margin-left:12px">
-      <div class="tc-title">\${esc(t.label)}</div>
+  return `
+    <div class="task-card ${pc} ${statusClass}" style="margin-left:12px">
+      <div class="tc-title">${esc(t.label)}</div>
       <div class="tc-meta">
-        <span class="tag \${stTag}">\${stLbl}</span>
+        <span class="tag ${stTag}">${stLbl}</span>
         <span class="m-pill" style="display:inline-flex">
           <span class="m-pill-name">Resp. Task</span>
-          <span class="m-pill-role">\${respTask ? esc(respTask) : 'Not set'}</span>
+          <span class="m-pill-role">${respTask ? esc(respTask) : 'Not set'}</span>
         </span>
       </div>
-      \${canAct ? \`
+      ${canAct ? `
       <div class="tc-actions">
-        <button class="mark-done-btn\${isDone?' undone':''}"
-          onclick="setMemberStatusWindow('\${t.id}','\${member.id}','\${isDone?'todo':'done'}')">
-          \${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
+        <button class="mark-done-btn${isDone?' undone':''}"
+          onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
+          ${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
         </button>
-      </div>\` : ''}
-    </div>\`;
+      </div>` : ''}
+    </div>`;
 }
 
 // ── FOLLOW-UP ──────────────────────────────────────────────────────────────
