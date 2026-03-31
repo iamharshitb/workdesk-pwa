@@ -216,3 +216,26 @@ export async function dismissReminder(taskId) {
     'reminder.active': false
   });
 }
+
+// ── CALENDAR: read-only access for other pages ─────────────────────────────
+// Calendar is stored under users/__calendar__ as JSON string
+export async function getCalendarEvents() {
+  try {
+    const snap = await getDoc(userDoc('__calendar__'));
+    if (!snap.exists()) return {};
+    const data = snap.data();
+    return data.comms_calendar ? JSON.parse(data.comms_calendar) : {};
+  } catch(e) {
+    console.warn('getCalendarEvents failed:', e);
+    return {};
+  }
+}
+
+export function onCalendarChanged(callback) {
+  return onSnapshot(userDoc('__calendar__'), (snap) => {
+    if (!snap.exists()) { callback({}); return; }
+    const data = snap.data();
+    try { callback(data.comms_calendar ? JSON.parse(data.comms_calendar) : {}); }
+    catch(e) { callback({}); }
+  });
+}

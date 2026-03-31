@@ -317,7 +317,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, getTasks, getMembers } from './js/firebase.js';
+import { onUserReady, getTasks, getMembers, getCalendarEvents } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, getMuted, toggleMute } from './js/sounds.js';
 initTheme();
@@ -329,7 +329,7 @@ window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
 updateMuteBtn();
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-let allTasks=[], allMembers=[], selMonth='';
+let allTasks=[], allMembers=[], selMonth='', calendarEvents={};
 
 // ── MONTH SELECTOR ─────────────────────────────────────────────────────────
 (function initMonths(){
@@ -354,7 +354,7 @@ document.getElementById('p2-footer-date').textContent='Generated '+fd;
 
 // ── FIREBASE LOAD ──────────────────────────────────────────────────────────
 onUserReady(async()=>{
-  [allTasks,allMembers]=await Promise.all([getTasks(),getMembers()]);
+  [allTasks,allMembers,calendarEvents]=await Promise.all([getTasks(),getMembers(),getCalendarEvents()]);
   renderTaskPage();
 });
 
@@ -669,6 +669,40 @@ window.toggleWeeklyDigest = () => {
     </div>`;
   }).join('') : '<div style="font-size:12px;color:var(--text3);padding:6px 0">None</div>';
 
+  // Calendar comms this week
+  const weekComms = Object.entries(calendarEvents)
+    .filter(([d]) => d >= mondayStr && d <= todayStr)
+    .flatMap(([d, evts]) => evts.map(ev => ({...ev, date:d})));
+  const commsSent    = weekComms.filter(e => e.status === 'Sent');
+  const commsPlanned = weekComms.filter(e => e.status === 'Planned');
+  const commsDelayed = weekComms.filter(e => e.status === 'Delayed');
+
+  const commsHTML = weekComms.length ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">📡 Communications</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:8px">
+          <div style="font-size:18px;font-weight:800;color:#34d399">${commsSent.length}</div>
+          <div style="font-size:9px;color:var(--text2);font-weight:700">SENT</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:8px">
+          <div style="font-size:18px;font-weight:800;color:#60a5fa">${commsPlanned.length}</div>
+          <div style="font-size:9px;color:var(--text2);font-weight:700">PLANNED</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:8px">
+          <div style="font-size:18px;font-weight:800;color:#f87171">${commsDelayed.length}</div>
+          <div style="font-size:9px;color:var(--text2);font-weight:700">DELAYED</div>
+        </div>
+      </div>
+      ${commsSent.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+        <span style="color:#34d399;font-size:13px">✅</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${esc(e.subject)}</div>
+          <div style="font-size:10px;color:var(--text2)">${e.type} · ${e.date}</div>
+        </div>
+      </div>`).join('')}
+    </div>` : '';
+
   const memberHTML = Object.entries(memberStats)
     .sort((a,b) => b[1].done - a[1].done)
     .map(([name,s]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
@@ -676,7 +710,7 @@ window.toggleWeeklyDigest = () => {
       <span style="font-size:12px;color:var(--text2)">${s.done}/${s.total} done</span>
     </div>`).join('') || '<div style="font-size:12px;color:var(--text3)">No assignments this week</div>';
 
-  document.getElementById('digest-content').innerHTML = `
+  document.getElementById('digest-content').innerHTML = commsHTML + `
     <div style="margin-bottom:6px;font-size:12px;color:var(--text2);font-weight:600">${weekLabel}</div>
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
       <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.2);border-radius:10px">
@@ -705,10 +739,16 @@ window.toggleWeeklyDigest = () => {
   const doneTxt = done.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
   const inpTxt  = inprogL.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
   const memTxt  = Object.entries(memberStats).sort((a,b)=>b[1].done-a[1].done).map(([n,s])=>'  ' + n + ': ' + s.done + '/' + s.total).join(nl) || '  None';
+  const commsTxt = weekComms.length
+    ? String.fromCharCode(10) + '📡 Communications:' + String.fromCharCode(10)
+      + '  Sent: ' + commsSent.length + ', Planned: ' + commsPlanned.length + ', Delayed: ' + commsDelayed.length
+      + (commsSent.length ? String.fromCharCode(10) + commsSent.map(e => '  ✅ ' + e.subject + ' (' + e.type + ')').join(String.fromCharCode(10)) : '')
+    : '';
+
   el._text = '📊 WorkDesk Weekly Digest' + nl + weekLabel + nl + nl
     + '✅ Completed (' + done.length + '):' + nl + doneTxt + nl + nl
     + '🔄 In Progress (' + inprogL.length + '):' + nl + inpTxt + nl + nl
-    + '👥 Team:' + nl + memTxt;
+    + '👥 Team:' + nl + memTxt + commsTxt;
 
   el.style.display = '';
   el.scrollIntoView({ behavior: 'smooth' });

@@ -162,6 +162,20 @@
 .add-btn:hover { filter:brightness(1.08);transform:translateY(-1px) }
 .add-btn:active { transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2) }
 
+/* ── STATUS BADGES ── */
+.status-pill {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:800;cursor:pointer;
+  border:1.5px solid transparent;transition:all .15s;
+  user-select:none;
+}
+.status-planned  { background:rgba(96,165,250,.12);color:#60a5fa;border-color:rgba(96,165,250,.3) }
+.status-sent     { background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.3) }
+.status-delayed  { background:rgba(248,113,113,.12);color:#f87171;border-color:rgba(248,113,113,.3) }
+.status-pill:hover { filter:brightness(1.2) }
+.event-item-status { display:flex;align-items:center;gap:6px;margin-top:6px }
+
 /* ── LEGEND ── */
 .cal-legend {
   display:flex;flex-wrap:wrap;gap:6px;
@@ -369,9 +383,10 @@ function renderCalendar() {
     const dayEvents = events[dateStr] || [];
     if (dayEvents.length) cell.classList.add('has-events');
 
+    const STATUS_DOT = { Planned:'', Sent:' ✓', Delayed:' ⚠' };
     cell.innerHTML = `<div class="cal-day-num">${dayNum}</div>` +
       dayEvents.slice(0,3).map(ev =>
-        `<span class="cal-event-dot ${TYPE_COLORS[ev.type]||'dot-other'}">${ev.subject}</span>`
+        `<span class="cal-event-dot ${TYPE_COLORS[ev.type]||'dot-other'}">${ev.subject}${STATUS_DOT[ev.status||'Planned']}</span>`
       ).join('') +
       (dayEvents.length > 3 ? `<span style="font-size:9px;color:var(--text3);font-weight:700">+${dayEvents.length-3} more</span>` : '');
 
@@ -429,7 +444,12 @@ function renderEventList() {
     list.innerHTML = '<div style="font-size:12px;color:var(--text3);font-weight:600;padding:4px 0 8px">No communications planned</div>';
     return;
   }
-  list.innerHTML = dayEvents.map((ev, idx) => `
+  const STATUS_NEXT = { Planned:'Sent', Sent:'Delayed', Delayed:'Planned' };
+  const STATUS_ICON = { Planned:'🔵', Sent:'✅', Delayed:'⚠️' };
+  list.innerHTML = dayEvents.map((ev, idx) => {
+    const st = ev.status || 'Planned';
+    const stClass = 'status-' + st.toLowerCase();
+    return `
     <div class="event-item">
       <div class="event-item-color" style="background:${TYPE_HEX[ev.type]||'#9ca3af'}"></div>
       <div class="event-item-body">
@@ -438,9 +458,15 @@ function renderEventList() {
           ${ev.type ? `<span style="font-weight:700;color:${TYPE_HEX[ev.type]||'#9ca3af'}">${ev.type}</span>` : ''}
           ${ev.people ? ` · 👥 ${esc(ev.people)}` : ''}
         </div>
+        <div class="event-item-status">
+          <span class="status-pill ${stClass}" onclick="cycleStatus(${idx})" title="Click to change status">
+            ${STATUS_ICON[st]} ${st}
+          </span>
+        </div>
       </div>
       <button class="event-item-del" onclick="deleteEvent(${idx})" title="Delete">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 window.selectType = (el) => {
@@ -459,6 +485,7 @@ window.addEvent = async () => {
   events[selectedDate].push({
     id: Date.now(),
     subject, type: selectedType, people,
+    status: 'Planned',
   });
 
   await saveCalendar();
@@ -472,6 +499,17 @@ window.addEvent = async () => {
   renderEventList();
   renderCalendar();
   toast('Added ✓');
+};
+
+window.cycleStatus = async (idx) => {
+  if (!selectedDate || !events[selectedDate]) return;
+  const ev = events[selectedDate][idx];
+  const next = { Planned:'Sent', Sent:'Delayed', Delayed:'Planned' };
+  ev.status = next[ev.status || 'Planned'];
+  await saveCalendar();
+  renderEventList();
+  renderCalendar();
+  toast('Status: ' + ev.status);
 };
 
 window.deleteEvent = async (idx) => {
