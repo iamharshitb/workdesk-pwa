@@ -450,6 +450,7 @@ import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, t
 
 let tasks = [], members = [];
 let calendarEvents = {}; // comms calendar events
+let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed daily
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|null
@@ -602,7 +603,6 @@ function renderMyTasks() {
     return (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2);
   });
   // Build comms cards from calendar for this user
-  const todayStr2 = new Date().toISOString().slice(0,10);
   const myCommsCards = [];
   Object.entries(calendarEvents).forEach(([date, evts]) => {
     if (!Array.isArray(evts)) return;
@@ -613,7 +613,7 @@ function renderMyTasks() {
       if (!isMe) return;
       if (ev.status === 'Sent') return; // done — hide from My Tasks
       // Show if today or upcoming (within 7 days) or overdue
-      const daysFromToday = Math.ceil((new Date(date) - new Date(todayStr2)) / 86400000);
+      const daysFromToday = Math.ceil((new Date(date) - new Date(todayStr)) / 86400000);
       if (daysFromToday > 7) return; // too far in future
       myCommsCards.push({ date, daysFromToday, ev });
     });
