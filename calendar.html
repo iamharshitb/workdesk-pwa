@@ -176,6 +176,69 @@
 .status-pill:hover { filter:brightness(1.2) }
 .event-item-status { display:flex;align-items:center;gap:6px;margin-top:6px }
 
+/* ── YEAR HISTORY ── */
+.history-toggle {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-top:12px;
+  cursor:pointer;transition:all .15s;
+  box-shadow:var(--shadow-card);
+  user-select:none;-webkit-tap-highlight-color:transparent;
+}
+.history-toggle:hover { border-color:var(--neon2) }
+.history-toggle-label {
+  font-size:13px;font-weight:700;color:var(--text2);
+  display:flex;align-items:center;gap:8px;
+}
+.history-toggle-count {
+  font-size:11px;padding:2px 8px;border-radius:20px;
+  background:rgba(157,126,255,.12);color:var(--purple);
+  border:1px solid rgba(157,126,255,.25);font-weight:700;
+}
+.history-arrow { font-size:12px;color:var(--text3);transition:transform .2s }
+.history-arrow.open { transform:rotate(180deg) }
+.history-body {
+  display:none;
+  background:var(--panel);border:1px solid var(--border2);
+  border-top:none;border-radius:0 0 var(--rr) var(--rr);
+  overflow:hidden;margin-top:-4px;
+  box-shadow:var(--shadow-card);
+}
+.history-body.open { display:block }
+.history-month-group {
+  border-bottom:1px solid var(--border);
+}
+.history-month-label {
+  font-size:11px;font-weight:800;color:var(--text2);
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:8px 14px;background:var(--bg2);
+}
+.history-item {
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border-bottom:1px solid var(--border);
+}
+.history-item:last-child { border-bottom:none }
+.history-item-date {
+  font-size:11px;font-weight:700;color:var(--text3);
+  min-width:52px;flex-shrink:0;
+}
+.history-item-type {
+  font-size:10px;font-weight:800;padding:2px 7px;
+  border-radius:4px;flex-shrink:0;
+}
+.history-item-subject {
+  font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.history-item-status {
+  font-size:10px;font-weight:700;flex-shrink:0;
+}
+.history-empty {
+  padding:20px;text-align:center;
+  font-size:13px;color:var(--text3);font-weight:600;
+}
+
 /* ── LEGEND ── */
 .cal-legend {
   display:flex;flex-wrap:wrap;gap:6px;
@@ -232,6 +295,19 @@
     </div>
     <div class="cal-days" id="cal-days"></div>
   </div>
+
+</div>
+
+  <!-- YEAR HISTORY — collapsible -->
+  <div class="history-toggle fi" onclick="toggleHistory()" style="animation-delay:.08s">
+    <div class="history-toggle-label">
+      <span>📋</span>
+      <span id="history-label">Communications This Year</span>
+      <span class="history-toggle-count" id="history-count">0</span>
+    </div>
+    <span class="history-arrow" id="history-arrow">▼</span>
+  </div>
+  <div class="history-body" id="history-body"></div>
 
 </div>
 
@@ -317,18 +393,31 @@ onUserReady(async () => {
   // Then subscribe — will re-render when Firestore data arrives
   onUserDataChanged('__calendar__', (data) => {
     if (data && data[CAL_KEY]) {
-      try { events = JSON.parse(data[CAL_KEY]); } catch(e) { events = {}; }
-    } else {
-      events = {};
+      try {
+        const parsed = JSON.parse(data[CAL_KEY]);
+        // Only update if we got valid data (object with keys or empty object)
+        if (typeof parsed === 'object' && parsed !== null) {
+          events = parsed;
+        }
+      } catch(e) {
+        console.warn('Calendar parse error:', e);
+      }
     }
+    // Don't reset to {} if field missing — doc may just not have it yet
     renderCalendar();
   });
 });
 
 async function saveCalendar() {
-  const payload = {};
-  payload[CAL_KEY] = JSON.stringify(events);
-  await saveUserData('__calendar__', payload);
+  try {
+    const payload = {};
+    payload[CAL_KEY] = JSON.stringify(events);
+    await saveUserData('__calendar__', payload);
+    console.log('Calendar saved OK, events:', Object.keys(events).length, 'dates');
+  } catch(e) {
+    console.error('Calendar save failed:', e);
+    toast('Save failed — check console', 'err');
+  }
 }
 
 // ── RENDER CALENDAR ────────────────────────────────────────────────────────
@@ -402,6 +491,7 @@ function renderCalendar() {
     cell.onclick = () => openModal(dateStr);
     grid.appendChild(cell);
   }
+  updateHistoryCount();
 }
 
 // ── MONTH NAV ──────────────────────────────────────────────────────────────
@@ -530,6 +620,84 @@ window.deleteEvent = async (idx) => {
   renderCalendar();
   toast('Removed');
 };
+
+// ── YEAR HISTORY ──────────────────────────────────────────────────────────
+let historyOpen = false;
+
+window.toggleHistory = () => {
+  historyOpen = !historyOpen;
+  document.getElementById('history-body').classList.toggle('open', historyOpen);
+  document.getElementById('history-arrow').classList.toggle('open', historyOpen);
+  if (historyOpen) renderHistory();
+};
+
+function renderHistory() {
+  const currentYear = new Date().getFullYear();
+  const yearPrefix  = String(currentYear);
+
+  // Collect all events this year, sorted by date desc
+  const allEntries = [];
+  Object.entries(events)
+    .filter(([date]) => date.startsWith(yearPrefix))
+    .forEach(([date, evts]) => {
+      evts.forEach(ev => allEntries.push({ date, ...ev }));
+    });
+  allEntries.sort((a,b) => b.date.localeCompare(a.date));
+
+  // Update count badge
+  document.getElementById('history-count').textContent = allEntries.length;
+  document.getElementById('history-label').textContent = 'Communications ' + yearPrefix;
+
+  const body = document.getElementById('history-body');
+  if (!allEntries.length) {
+    body.innerHTML = '<div class="history-empty">No communications recorded this year yet</div>';
+    return;
+  }
+
+  // Group by month
+  const byMonth = {};
+  allEntries.forEach(e => {
+    const mKey = e.date.slice(0,7); // YYYY-MM
+    if (!byMonth[mKey]) byMonth[mKey] = [];
+    byMonth[mKey].push(e);
+  });
+
+  const STATUS_COLOR = { Sent:'#34d399', Planned:'#60a5fa', Delayed:'#f87171' };
+  const STATUS_ICON  = { Sent:'✅', Planned:'🔵', Delayed:'⚠️' };
+
+  body.innerHTML = Object.entries(byMonth)
+    .sort((a,b) => b[0].localeCompare(a[0]))
+    .map(([mKey, items]) => {
+      const [y,m] = mKey.split('-');
+      const monthName = MONTHS[parseInt(m)-1] + ' ' + y;
+      const rows = items.map(e => {
+        const dayLabel = e.date.slice(8); // DD
+        const typeColor = TYPE_HEX[e.type] || '#9ca3af';
+        const st = e.status || 'Planned';
+        return `<div class="history-item">
+          <div class="history-item-date">${dayLabel} ${MONTHS[parseInt(m)-1].slice(0,3)}</div>
+          <div class="history-item-type" style="background:${typeColor}22;color:${typeColor}">${e.type||'Other'}</div>
+          <div class="history-item-subject">${esc(e.subject)}</div>
+          <div class="history-item-status" style="color:${STATUS_COLOR[st]}">${STATUS_ICON[st]} ${st}</div>
+        </div>`;
+      }).join('');
+      return `<div class="history-month-group">
+        <div class="history-month-label">${monthName} · ${items.length} communication${items.length>1?'s':''}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+}
+
+// Update history count whenever calendar re-renders
+function updateHistoryCount() {
+  const currentYear = String(new Date().getFullYear());
+  const total = Object.entries(events)
+    .filter(([d]) => d.startsWith(currentYear))
+    .reduce((s,[,arr]) => s + arr.length, 0);
+  const badge = document.getElementById('history-count');
+  if (badge) badge.textContent = total;
+  if (historyOpen) renderHistory();
+}
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }

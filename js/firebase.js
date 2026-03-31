@@ -128,13 +128,9 @@ export async function getUserData(userName) {
 
 export async function saveUserData(userName, data) {
   if (!userName) return;
-  try {
-    // setDoc with merge:true creates the doc if it doesn't exist,
-    // or merges the fields if it does — no separate create/update needed
-    await setDoc(userDoc(userName), data, { merge: true });
-  } catch(e) {
-    console.warn('saveUserData failed:', e);
-  }
+  // setDoc with merge:true creates the doc if it doesn't exist,
+  // or merges the fields if it does — no separate create/update needed
+  await setDoc(userDoc(userName), data, { merge: true });
 }
 
 // Real-time listener for user data (notes update across devices instantly)
