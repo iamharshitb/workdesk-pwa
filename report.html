@@ -249,6 +249,7 @@
     style="padding:7px 14px;border-radius:9px;border:none;background:var(--neon2);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Load Comms</button>
   <button onclick="toggleWeeklyDigest()"
     style="padding:7px 14px;border-radius:9px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Weekly</button>
+  <button onclick="toggleMyReport()" id="my-report-btn" style="padding:7px 14px;border-radius:9px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">👤 My Report</button>
   <button onclick="window.print()"
     style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
 </div>
@@ -376,7 +377,7 @@ function renderTaskPage(){
   document.getElementById('p2-month').textContent=lbl;
   document.getElementById('p2-badge').textContent=lbl;
 
-  const mt=allTasks.filter(t=>t.month===selMonth);
+  const mt=allTasks.filter(t=>t.month===selMonth && (t.taskType||'mbc')==='mbc');
   const total=mt.length;
   const done=mt.filter(t=>t.status==='done').length;
   const inprog=mt.filter(t=>t.status==='inprog').length;
@@ -753,6 +754,97 @@ window.toggleWeeklyDigest = () => {
   el.style.display = '';
   el.scrollIntoView({ behavior: 'smooth' });
 };
+window.toggleMyReport = () => {
+  const panel = document.getElementById('my-report-panel');
+  if (panel.style.display !== 'none') { panel.style.display='none'; return; }
+
+  // Populate member selector
+  const sel = document.getElementById('my-report-member');
+  const ADMIN = 'Harshit';
+  const myName = localStorage.getItem('wd_myname') || '';
+  const isAdmin = myName.toLowerCase() === ADMIN.toLowerCase();
+
+  sel.innerHTML = '';
+  // Admin sees everyone; others see only themselves
+  const viewableMembers = isAdmin ? allMembers : allMembers.filter(m => m.name.toLowerCase() === myName.toLowerCase());
+  viewableMembers.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = m.name;
+    if (m.name.toLowerCase() === myName.toLowerCase()) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  sel.onchange = renderMyReport;
+  renderMyReport();
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior:'smooth' });
+};
+
+function renderMyReport() {
+  const sel = document.getElementById('my-report-member');
+  const memberId = sel.value;
+  const member = allMembers.find(m => m.id === memberId);
+  if (!member) return;
+
+  const mt = allTasks.filter(t =>
+    t.month === selMonth &&
+    (t.members||[]).some(m => m.id === memberId)
+  );
+
+  const mbcTasks = mt.filter(t => (t.taskType||'mbc') === 'mbc');
+  const indTasks = mt.filter(t => t.taskType === 'individual');
+
+  const done   = mt.filter(t => (t.memberStatus||{})[memberId] === 'done' || t.status === 'done').length;
+  const inprog = mt.filter(t => t.status === 'inprog').length;
+  const total  = mt.length;
+
+  function taskRow(t) {
+    const ms = (t.memberStatus||{})[memberId] || t.status || 'todo';
+    const stColor = ms==='done' ? '#34d399' : ms==='inprog' ? '#f59e0b' : '#9ca3af';
+    const stIcon  = ms==='done' ? '✅' : ms==='inprog' ? '🔄' : '📋';
+    const mData = (t.members||[]).find(m => m.id === memberId);
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="font-size:12px">${stIcon}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text);flex:1">${esc(t.label)}</span>
+        <span style="font-size:10px;font-weight:700;color:${stColor}">${ms}</span>
+      </div>
+      ${mData?.role ? `<div style="font-size:11px;color:var(--text2);padding-left:20px">Resp: ${esc(mData.role)}</div>` : ''}
+    </div>`;
+  }
+
+  const MONTHS_ARR = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const [y,m] = selMonth.split('-');
+  const monthLabel = MONTHS_ARR[parseInt(m)-1] + ' ' + y;
+
+  document.getElementById('my-report-content').innerHTML = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${monthLabel} · ${member.name}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:#34d399">${done}</div>
+        <div style="font-size:9px;color:var(--text2);font-weight:700">DONE</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:#f59e0b">${inprog}</div>
+        <div style="font-size:9px;color:var(--text2);font-weight:700">IN PROG</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:var(--text2)">${total}</div>
+        <div style="font-size:9px;color:var(--text2);font-weight:700">TOTAL</div>
+      </div>
+    </div>
+    ${mbcTasks.length ? `
+      <div style="font-size:10px;font-weight:800;color:var(--neon);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">🏢 MBC Tasks (${mbcTasks.length})</div>
+      ${mbcTasks.map(taskRow).join('')}
+    ` : ''}
+    ${indTasks.length ? `
+      <div style="font-size:10px;font-weight:800;color:var(--purple);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px">👤 Individual Tasks (${indTasks.length})</div>
+      ${indTasks.map(taskRow).join('')}
+    ` : ''}
+    ${!total ? '<div style="text-align:center;padding:20px;font-size:13px;color:var(--text3)">No tasks this month</div>' : ''}
+  `;
+}
+
 window.copyDigest = () => {
   const el = document.getElementById('weekly-digest');
   const text = el._text || '';

@@ -16,6 +16,22 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07090f">
   <style>
+    /* Task type toggle */
+    .task-type-row {
+      display:flex;gap:8px;margin-bottom:14px;
+    }
+    .task-type-btn {
+      flex:1;padding:9px 12px;border-radius:10px;
+      border:1.5px solid var(--border2);background:var(--bg2);
+      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;
+      cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .task-type-btn.active-mbc {
+      border-color:var(--neon);background:rgba(0,229,184,.08);color:var(--neon);
+    }
+    .task-type-btn.active-individual {
+      border-color:var(--purple);background:rgba(157,126,255,.08);color:var(--purple);
+    }
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
     /* Compact task rows for All Tasks */
     .task-row-compact{
@@ -131,6 +147,16 @@
       <span id="edit-badge" style="display:none;font-size:12px;color:var(--amber);font-weight:700">EDITING</span>
     </div>
     <div class="panel-body">
+
+      <!-- TASK TYPE TOGGLE -->
+      <div class="task-type-row">
+        <button class="task-type-btn active-mbc" id="type-mbc" onclick="setTaskType('mbc')">
+          🏢 MBC Task
+        </button>
+        <button class="task-type-btn" id="type-individual" onclick="setTaskType('individual')">
+          👤 Individual Task
+        </button>
+      </div>
 
       <input class="task-input" id="f-task" placeholder="What's the overall task?" maxlength="120"
         onkeydown="if(event.key==='Enter')this.blur()">
@@ -456,14 +482,14 @@ window.submitTask = async () => {
   try {
     if (editingId) {
       const dueDate = document.getElementById('f-due').value || null;
-      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate });
+      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
       const idx = tasks.findIndex(t => t.id === editingId);
       if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate: startDate };
       toast('Task updated ✓'); cancelEdit();
     } else {
       const dueDate = document.getElementById('f-due').value || null;
-      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, status: 'todo', memberStatus: {} });
+      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
       // Play sound if you're assigned to this task
       const myName = localStorage.getItem('wd_myname') || '';
@@ -486,6 +512,7 @@ window.editTask = (id) => {
   document.getElementById('f-task').value = t.label;
   document.getElementById('f-start').value = t.dueDate || '';
     document.getElementById('f-due').value = t.taskDueDate || '';
+    setTaskType(t.taskType || 'mbc');
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -517,6 +544,26 @@ function updateMemberToggleLabel() {
     ? `Manage Team Members (${members.length})`
     : 'Manage Team Members';
 }
+
+let selectedTaskType = 'mbc';
+window.setTaskType = (type) => {
+  selectedTaskType = type;
+  document.getElementById('type-mbc').className = 'task-type-btn' + (type==='mbc' ? ' active-mbc' : '');
+  document.getElementById('type-individual').className = 'task-type-btn' + (type==='individual' ? ' active-individual' : '');
+  // Hide member assignment for individual tasks
+  const chipArea  = document.getElementById('chip-area');
+  const roleSection = document.getElementById('role-section');
+  const memberLabel = chipArea?.previousElementSibling;
+  if (type === 'individual') {
+    if (chipArea) chipArea.style.display = 'none';
+    if (roleSection) roleSection.style.display = 'none';
+    if (memberLabel) memberLabel.style.display = 'none';
+  } else {
+    if (chipArea) chipArea.style.display = '';
+    if (roleSection) roleSection.style.display = '';
+    if (memberLabel) memberLabel.style.display = '';
+  }
+};
 
 window.cancelEdit = () => {
   editingId = null; resetForm();
@@ -752,6 +799,7 @@ function resetForm() {
   document.getElementById('f-task').value = '';
   document.getElementById('f-start').value = '';
   document.getElementById('f-due').value = '';
+  setTaskType('mbc');
   selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');

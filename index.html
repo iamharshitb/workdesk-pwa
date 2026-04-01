@@ -136,6 +136,14 @@
     }
     .task-detail.open { display:block; }
 
+    /* ── INDIVIDUAL TASK BADGE ── */
+    .individual-badge {
+      display:inline-flex;align-items:center;gap:3px;
+      padding:2px 7px;border-radius:20px;font-size:9px;font-weight:800;
+      background:rgba(157,126,255,.1);color:var(--purple);
+      border:1px solid rgba(157,126,255,.25);flex-shrink:0;
+    }
+
     /* ── COMMS CARD (calendar events in My Tasks) ── */
     .comms-card {
       display:flex;align-items:center;gap:10px;
@@ -698,6 +706,7 @@ function myTaskCard(t, i) {
         <div class="trc-left">
           <div class="trc-name">${esc(t.label)}</div>
           <div class="trc-meta">
+            ${t.taskType === 'individual' ? '<span class="individual-badge">👤 Individual</span>' : ''}
             <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
             <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
             ${t.taskDueDate && t.status !== 'done' ? (() => {
@@ -770,7 +779,14 @@ function renderByMember() {
     return bPct - aPct;
   });
   sortedMembers.forEach(m => {
-    const mTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
+    const mTasks = tasks.filter(t => {
+      if (!(t.members||[]).some(mm => mm.id === m.id)) return false;
+      if (t.taskType !== 'individual') return true;
+      // Individual tasks: only show in this member's section if viewing as admin or own section
+      const isAdminView = MY_NAME && MY_NAME.toLowerCase() === 'harshit';
+      const isOwnSection = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
+      return isAdminView || isOwnSection;
+    });
     const memberDone = mTasks.filter(t => getMemberStatus(t, m.id) === 'done').length;
     const total = mTasks.length;
     const pct = total ? Math.round(memberDone / total * 100) : 0;
@@ -1004,15 +1020,40 @@ function updateTimerUI() {
   }
 }
 
+let tStartedAt = null; // wall-clock time when timer was last started/resumed
+
 function startTick() {
+  tStartedAt = Date.now();
+  const leftAtStart = tLeft;
   tInterval = setInterval(() => {
+    // Use wall-clock elapsed time — survives phone lock / tab throttle
+    const elapsed = Math.floor((Date.now() - tStartedAt) / 1000);
+    tLeft = Math.max(0, leftAtStart - elapsed);
     if (tLeft <= 0) {
+      tLeft = 0;
       clearInterval(tInterval); tRunning = false;
       saveTimer(); updateTimerUI(); playTimerDone(); return;
     }
-    tLeft--; saveTimer(); updateTimerUI();
+    updateTimerUI();
+    // Save every 5s to avoid excessive localStorage writes
+    if (elapsed % 5 === 0) saveTimer();
   }, 1000);
 }
+
+// When app comes back from background/lock, resync the timer immediately
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && tRunning && tStartedAt) {
+    const elapsed = Math.floor((Date.now() - tStartedAt) / 1000);
+    const leftAtStart = parseInt(localStorage.getItem('wd_timer_left') || tLeft);
+    tLeft = Math.max(0, leftAtStart - elapsed);
+    if (tLeft <= 0) {
+      tLeft = 0;
+      clearInterval(tInterval); tRunning = false;
+      playTimerDone();
+    }
+    updateTimerUI();
+  }
+});
 
 // If timer was running when we left, resume the interval
 if (tRunning) startTick();
@@ -1040,6 +1081,7 @@ window.toggleTimer = () => {
   }
   if (tLeft === 0) tLeft = tTotal;
   tRunning = true;
+  localStorage.setItem('wd_timer_left', tLeft); // snapshot for lock recovery
   saveTimer(); updateTimerUI(); startTick();
 };
 window.resetTimer = () => {
