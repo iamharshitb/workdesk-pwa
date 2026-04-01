@@ -161,9 +161,27 @@ export async function recordTaskCompletion() {
   const data = await getStreak();
   const last = data.lastCompletedDate;
   if (last === today) return data; // already recorded today
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toISOString().slice(0, 10);
-  const newStreak = last === yStr ? (data.currentStreak || 0) + 1 : 1;
+
+  // Weekend-aware streak: find last expected workday before today
+  // Walk backwards from yesterday, skip Sat(6) and Sun(0)
+  function lastWorkday(fromDateStr) {
+    const d = new Date(fromDateStr);
+    d.setDate(d.getDate() - 1);
+    while (d.getDay() === 0 || d.getDay() === 6) {
+      d.setDate(d.getDate() - 1);
+    }
+    return d.toISOString().slice(0, 10);
+  }
+
+  const prevWorkday = lastWorkday(today);
+  // Streak continues if last completion was yesterday (any day)
+  // OR if today is Mon/Tue and last was Fri/Thu (weekend gap forgiven)
+  const streakContinues = last === prevWorkday ||
+    (last && last >= lastWorkday(prevWorkday + 'T00:00:00'));
+    // also forgive if last was within the skipped weekend window
+
+  // Simpler: streak continues if last was the most recent workday
+  const newStreak = (last === prevWorkday) ? (data.currentStreak || 0) + 1 : 1;
   const longest = Math.max(newStreak, data.longestStreak || 0);
   const updated = { currentStreak: newStreak, lastCompletedDate: today, longestStreak: longest };
   await setDoc(streakDoc(), updated, { merge: true });
