@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkDesk — Help</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
+<style>
+.help-hero {
+  text-align:center;padding:24px 16px 20px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:12px;
+  box-shadow:var(--shadow-card);
+}
+.help-hero-title {
+  font-size:22px;font-weight:900;color:var(--text);
+  margin-bottom:6px;letter-spacing:-.02em;
+}
+.help-hero-sub {
+  font-size:13px;color:var(--text2);font-weight:500;line-height:1.5;
+}
+.help-section {
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:10px;
+  box-shadow:var(--shadow-card);overflow:hidden;
+}
+.help-section-hd {
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px;cursor:pointer;
+  border-bottom:1px solid transparent;
+  transition:background .12s;
+  user-select:none;-webkit-tap-highlight-color:transparent;
+}
+.help-section-hd:hover { background:var(--bg3) }
+.help-section-hd.open { border-bottom-color:var(--border) }
+.help-section-icon {
+  font-size:20px;width:36px;height:36px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:10px;flex-shrink:0;
+}
+.help-section-label {
+  flex:1;font-size:14px;font-weight:800;color:var(--text);
+}
+.help-section-sub {
+  font-size:11px;color:var(--text2);margin-top:2px;font-weight:500;
+}
+.help-section-arrow {
+  font-size:11px;color:var(--text3);transition:transform .2s;
+}
+.help-section-arrow.open { transform:rotate(180deg) }
+.help-section-body {
+  display:none;padding:14px 16px;
+}
+.help-section-body.open { display:block }
+.help-item {
+  display:flex;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.help-item:last-child { border-bottom:none }
+.help-item-icon {
+  font-size:18px;flex-shrink:0;margin-top:1px;
+  width:28px;text-align:center;
+}
+.help-item-body {}
+.help-item-title {
+  font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;
+}
+.help-item-desc {
+  font-size:12px;color:var(--text2);line-height:1.5;
+}
+.help-tip {
+  display:flex;align-items:flex-start;gap:8px;
+  padding:10px 12px;border-radius:10px;margin-top:6px;
+  background:rgba(0,229,184,.06);border:1px solid rgba(0,229,184,.15);
+}
+.help-tip-icon { font-size:14px;flex-shrink:0;margin-top:1px }
+.help-tip-text { font-size:12px;color:var(--text2);line-height:1.5 }
+.version-badge {
+  text-align:center;padding:16px;
+  font-size:11px;color:var(--text3);font-weight:600;
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="36" style="display:block"></a>
+  <div class="nav-right">
+    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+  </div>
+</nav>
+
+<div class="page" style="padding-bottom:90px">
+
+  <!-- HERO -->
+  <div class="help-hero fi">
+    <div style="font-size:36px;margin-bottom:10px">📖</div>
+    <div class="help-hero-title">WorkDesk Guide</div>
+    <div class="help-hero-sub">BBM-IN · Internal Communications<br>Your team's all-in-one command centre</div>
+  </div>
+
+  <!-- NAVIGATION OVERVIEW -->
+  <div class="help-section fi" style="animation-delay:.03s">
+    <div class="help-section-hd" onclick="toggleHelp('nav')">
+      <div class="help-section-icon" style="background:rgba(0,229,184,.1)">🧭</div>
+      <div>
+        <div class="help-section-label">Navigating the App</div>
+        <div class="help-section-sub">4 tabs · what each one does</div>
+      </div>
+      <span class="help-section-arrow" id="arr-nav">▼</span>
+    </div>
+    <div class="help-section-body" id="body-nav">
+      <div class="help-item">
+        <div class="help-item-icon">⊞</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Dashboard</div>
+          <div class="help-item-desc">Your home screen. Shows your personal greeting, streak, focus timer, task stats, progress bar, and your tasks split across three tabs — My Tasks, By Member, and Follow-up.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">＋</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Input</div>
+          <div class="help-item-desc">Register new tasks for the team, assign members, set priority, start date, and due date. Also shows all active tasks with a date range filter for historical lookup.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">▤</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Report</div>
+          <div class="help-item-desc">Monthly A4 report (MBC tasks only), weekly digest with task and comms summary, your personal My Report, and the Comms Dashboard from your Google Sheet.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📅</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Calendar</div>
+          <div class="help-item-desc">Communications planning calendar. Add planned communications to any date with subject, type, and people involved. Track status as Planned → Sent → Delayed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD GUIDE -->
+  <div class="help-section fi" style="animation-delay:.05s">
+    <div class="help-section-hd" onclick="toggleHelp('dash')">
+      <div class="help-section-icon" style="background:rgba(157,126,255,.1)">⊞</div>
+      <div>
+        <div class="help-section-label">Dashboard Features</div>
+        <div class="help-section-sub">Greeting · Timer · Tasks · Streak</div>
+      </div>
+      <span class="help-section-arrow" id="arr-dash">▼</span>
+    </div>
+    <div class="help-section-body" id="body-dash">
+      <div class="help-item">
+        <div class="help-item-icon">👋</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Greeting Bar</div>
+          <div class="help-item-desc">Shows a personalised greeting with your name, how many tasks are in progress, and any critical tasks. Updates based on time of day.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔥</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Streak Counter</div>
+          <div class="help-item-desc">Tracks consecutive days where at least one task was completed. Weekends are forgiven automatically — only weekday gaps break the streak.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">⏱</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Focus Timer</div>
+          <div class="help-item-desc">A Pomodoro-style countdown timer. Choose 30m, 45m, or a custom duration. Uses wall-clock time so it stays accurate even when your phone is locked.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📊</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Stats &amp; Progress</div>
+          <div class="help-item-desc">Four pills — Total, In Prog, Done, Critical. Tap any pill to filter My Tasks to that category. The progress bar only counts MBC tasks, not individual ones.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📋</div>
+        <div class="help-item-body">
+          <div class="help-item-title">My Tasks Tab</div>
+          <div class="help-item-desc">Your assigned tasks in compact rows. Tap any row to expand — see member details, action buttons, a 🔔 reminder button, and a comment thread. Done tasks collapse into a monthly archive at the bottom.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">👥</div>
+        <div class="help-item-body">
+          <div class="help-item-title">By Member Tab</div>
+          <div class="help-item-desc">Every team member shown as a collapsible card, sorted by completion % (leaderboard). Tap a card to see their active tasks and done history. Harshit (admin) can mark anyone's tasks done.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔗</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Follow-up Tab</div>
+          <div class="help-item-desc">Shows tasks assigned to teammates that are still in progress — so you can follow up with them without having to ask around.</div>
+        </div>
+      </div>
+      <div class="help-tip">
+        <div class="help-tip-icon">💡</div>
+        <div class="help-tip-text">Pull down on the dashboard to refresh data. Calendar communications due within 7 days also appear at the top of My Tasks as purple comms cards.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS GUIDE -->
+  <div class="help-section fi" style="animation-delay:.07s">
+    <div class="help-section-hd" onclick="toggleHelp('tasks')">
+      <div class="help-section-icon" style="background:rgba(0,180,229,.1)">＋</div>
+      <div>
+        <div class="help-section-label">Registering Tasks</div>
+        <div class="help-section-sub">MBC vs Individual · Priority · Due dates</div>
+      </div>
+      <span class="help-section-arrow" id="arr-tasks">▼</span>
+    </div>
+    <div class="help-section-body" id="body-tasks">
+      <div class="help-item">
+        <div class="help-item-icon">🏢</div>
+        <div class="help-item-body">
+          <div class="help-item-title">MBC Task</div>
+          <div class="help-item-desc">Team task that contributes to department output. Shows in monthly reports, progress bar, and team stats. Default type when registering a task.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">👤</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Individual Task</div>
+          <div class="help-item-desc">Personal tasks like mandatory training, laptop upgrades, etc. Only visible to you and the admin. Does not affect team stats or appear in management reports. Still counts toward your streak.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔔</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Due Date</div>
+          <div class="help-item-desc">Optional deadline. Tasks due today are pinned to the top of My Tasks with a red highlight and pulsing 🔴 badge. Tasks due in 1–3 days show an amber ⏰ warning.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">⚡</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Priority Levels</div>
+          <div class="help-item-desc">Critical (red), High (amber), Medium (teal), Low (grey). Critical tasks show in the stats pill and are never hidden from view.</div>
+        </div>
+      </div>
+      <div class="help-tip">
+        <div class="help-tip-icon">💡</div>
+        <div class="help-tip-text">Each member gets their own "Respective Task" field — what their specific contribution to the overall task is. This shows in the expanded card and in their personal report.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR GUIDE -->
+  <div class="help-section fi" style="animation-delay:.09s">
+    <div class="help-section-hd" onclick="toggleHelp('cal')">
+      <div class="help-section-icon" style="background:rgba(52,211,153,.1)">📅</div>
+      <div>
+        <div class="help-section-label">Communications Calendar</div>
+        <div class="help-section-sub">Plan · Track · Report</div>
+      </div>
+      <span class="help-section-arrow" id="arr-cal">▼</span>
+    </div>
+    <div class="help-section-body" id="body-cal">
+      <div class="help-item">
+        <div class="help-item-icon">➕</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Adding a Communication</div>
+          <div class="help-item-desc">Tap any date on the calendar → a bottom sheet opens. Enter subject, pick the type (Video, Blog, Email, Event, Social, Livestream, Other), and list people involved.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔵</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Status Tracking</div>
+          <div class="help-item-desc">Each communication has a status — Planned 🔵, Sent ✅, or Delayed ⚠️. Tap the status badge in the modal to cycle through. Sent items disappear from My Tasks automatically.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📋</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Year History</div>
+          <div class="help-item-desc">A collapsible section at the bottom of the calendar page shows all communications for the current year, grouped by month with status indicators.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📊</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Appears in Reports</div>
+          <div class="help-item-desc">Calendar communications appear in the Weekly Digest (this week's sent/planned/delayed) and the Monthly A4 Report (all sent communications for the month).</div>
+        </div>
+      </div>
+      <div class="help-tip">
+        <div class="help-tip-icon">💡</div>
+        <div class="help-tip-text">The calendar is shared — all team members see the same data in real time. If you're listed as a person involved, the communication appears in your My Tasks within 7 days of its date.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT GUIDE -->
+  <div class="help-section fi" style="animation-delay:.11s">
+    <div class="help-section-hd" onclick="toggleHelp('report')">
+      <div class="help-section-icon" style="background:rgba(245,168,0,.1)">▤</div>
+      <div>
+        <div class="help-section-label">Reports</div>
+        <div class="help-section-sub">Monthly · Weekly · My Report</div>
+      </div>
+      <span class="help-section-arrow" id="arr-report">▼</span>
+    </div>
+    <div class="help-section-body" id="body-report">
+      <div class="help-item">
+        <div class="help-item-icon">📄</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Monthly A4 Report</div>
+          <div class="help-item-desc">Two-page formatted report for leadership. Page 1: MBC task summary with ring chart, member contributions, and communications sent. Page 2: Comms Dashboard from your Google Sheet CSV. Export as PDF with one tap.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📊</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Weekly Digest</div>
+          <div class="help-item-desc">Tap 📊 Weekly to generate a summary of this week — tasks done, in progress, team contributions, and communications sent. Copy with one tap for WhatsApp.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">👤</div>
+        <div class="help-item-body">
+          <div class="help-item-title">My Report</div>
+          <div class="help-item-desc">Personal monthly report showing all tasks (MBC + Individual) for any team member. Admin (Harshit) can switch between members using the selector. Non-admins see only their own report.</div>
+        </div>
+      </div>
+      <div class="help-tip">
+        <div class="help-tip-icon">💡</div>
+        <div class="help-tip-text">Individual tasks never appear in the main A4 report — only in My Report. This keeps the management report focused on team output.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS & TRICKS -->
+  <div class="help-section fi" style="animation-delay:.13s">
+    <div class="help-section-hd" onclick="toggleHelp('tips')">
+      <div class="help-section-icon" style="background:rgba(255,58,94,.1)">💡</div>
+      <div>
+        <div class="help-section-label">Tips &amp; Tricks</div>
+        <div class="help-section-sub">Quick notes · Reminders · Themes</div>
+      </div>
+      <span class="help-section-arrow" id="arr-tips">▼</span>
+    </div>
+    <div class="help-section-body" id="body-tips">
+      <div class="help-item">
+        <div class="help-item-icon">📝</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Quick Notes</div>
+          <div class="help-item-desc">A personal scratchpad (500 char limit) at the bottom of the Dashboard. Syncs across all your devices in real time — write on your PC, read on your phone.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔔</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Task Reminders</div>
+          <div class="help-item-desc">Expand any task in My Tasks and tap 🔔 Remind me. Set a date and time — when it fires you'll get a sound and a toast. Tap Snooze to reschedule, Dismiss to remove.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🎨</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Themes</div>
+          <div class="help-item-desc">6 themes available — Standard, Frosted Glass, iOS Fans, Dark, Light, and Neon. Tap 🎨 Theme in the top bar to switch. Your choice is saved per device.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">📲</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Install as App</div>
+          <div class="help-item-desc">On Android: open the site in Chrome, tap ⋮ menu → Add to Home Screen. The app will install with the Workdesk icon and open fullscreen like a native app.</div>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-item-icon">🔄</div>
+        <div class="help-item-body">
+          <div class="help-item-title">Pull to Refresh</div>
+          <div class="help-item-desc">On the Dashboard, swipe down from the top of the page to manually refresh members and tasks. The real-time listener keeps data live automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="version-badge">WorkDesk · BBM-IN Internal Communications · v2.0</div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="bn-item">
+    <span class="bn-icon">⊞</span>
+    <span class="bn-label">Dashboard</span>
+  </a>
+  <a href="input.html" class="bn-item">
+    <span class="bn-icon">＋</span>
+    <span class="bn-label">Input</span>
+  </a>
+  <a href="report.html" class="bn-item">
+    <span class="bn-icon">▤</span>
+    <span class="bn-label">Report</span>
+  </a>
+  <a href="help.html" class="bn-item active">
+    <span class="bn-icon">❓</span><span class="bn-label">Help</span>
+  </a>
+  <a href="calendar.html" class="bn-item">
+    <span class="bn-icon">📅</span>
+    <span class="bn-label">Calendar</span>
+  </a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initTheme, toggleThemePanel } from './js/theme.js';
+initTheme();
+window.toggleThemePanel = toggleThemePanel;
+
+const openSections = new Set();
+window.toggleHelp = (id) => {
+  openSections.has(id) ? openSections.delete(id) : openSections.add(id);
+  const body  = document.getElementById('body-' + id);
+  const arrow = document.getElementById('arr-' + id);
+  const hd    = body?.previousElementSibling;
+  body?.classList.toggle('open', openSections.has(id));
+  arrow?.classList.toggle('open', openSections.has(id));
+  if (hd) hd.classList.toggle('open', openSections.has(id));
+};
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
+  });
+}
+</script>
+</body>
+</html>
