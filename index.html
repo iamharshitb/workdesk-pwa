@@ -304,6 +304,28 @@
     .comment-author { font-size:11px;font-weight:700;color:var(--neon);margin-bottom:2px }
     .comment-text   { font-size:12px;color:var(--text);line-height:1.4 }
     .comment-time   { font-size:9px;color:var(--text3);margin-top:2px }
+    .comment-edit-inp {
+      flex:1;background:var(--bg2);border:1.5px solid var(--neon);
+      border-radius:7px;padding:5px 9px;color:var(--text);
+      font-family:var(--sans);font-size:12px;outline:none;
+    }
+    .comment-edit-row { display:flex;gap:6px;margin-top:5px }
+    .comment-edit-save {
+      padding:4px 10px;border-radius:7px;border:none;
+      background:var(--neon);color:var(--bg);
+      font-family:var(--sans);font-size:11px;font-weight:800;cursor:pointer;
+    }
+    .comment-edit-cancel {
+      padding:4px 10px;border-radius:7px;
+      border:1px solid var(--border2);background:none;color:var(--text2);
+      font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;
+    }
+    .comment-edit-btn {
+      background:none;border:none;cursor:pointer;
+      font-size:11px;color:var(--text3);padding:2px 5px;
+      border-radius:5px;transition:color .12s;
+    }
+    .comment-edit-btn:hover { color:var(--neon) }
     .comment-input-row { display:flex;gap:7px }
     .comment-inp {
       flex:1;background:var(--bg2);border:1.5px solid var(--border2);
@@ -508,7 +530,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
@@ -1406,15 +1428,58 @@ function renderCommentSection(taskId, container) {
     }
     list.innerHTML = comments.map(cm => {
       const ts = cm.createdAt?.toDate ? cm.createdAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="comment-item">
-        <div class="comment-author">${esc(cm.author||'Unknown')}</div>
-        <div class="comment-text">${esc(cm.text)}</div>
-        <div class="comment-time">${ts}</div>
+      const edited = cm.editedAt ? ' · edited' : '';
+      const canEdit = MY_NAME && cm.author && cm.author.toLowerCase() === MY_NAME.toLowerCase();
+      return `<div class="comment-item" id="ci-${cm.id}">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="comment-author">${esc(cm.author||'Unknown')}</div>
+          ${canEdit ? `<button class="comment-edit-btn" onclick="startEditComment('${taskId}','${cm.id}',this)" title="Edit">✎ Edit</button>` : ''}
+        </div>
+        <div class="comment-text" id="ct-${cm.id}">${esc(cm.text)}</div>
+        <div class="comment-time">${ts}${edited}</div>
       </div>`;
     }).join('');
     list.scrollTop = list.scrollHeight;
   });
 }
+
+window.startEditComment = (taskId, commentId, btn) => {
+  const textEl = document.getElementById('ct-' + commentId);
+  if (!textEl) return;
+  const currentText = textEl.textContent;
+  // Replace text div with inline input
+  textEl.style.display = 'none';
+  btn.style.display = 'none';
+  const editRow = document.createElement('div');
+  editRow.className = 'comment-edit-row';
+  editRow.id = 'ce-' + commentId;
+  editRow.innerHTML = `
+    <input class="comment-edit-inp" id="cei-${commentId}" value="${currentText.replace(/"/g,'&quot;')}" maxlength="200">
+    <button class="comment-edit-save" onclick="saveEditComment('${taskId}','${commentId}')">Save</button>
+    <button class="comment-edit-cancel" onclick="cancelEditComment('${commentId}')">Cancel</button>
+  `;
+  textEl.parentNode.insertBefore(editRow, textEl.nextSibling);
+  const inp = document.getElementById('cei-' + commentId);
+  if (inp) { inp.focus(); inp.select(); }
+};
+
+window.cancelEditComment = (commentId) => {
+  const textEl = document.getElementById('ct-' + commentId);
+  const editRow = document.getElementById('ce-' + commentId);
+  const btn = document.querySelector(`#ci-${commentId} .comment-edit-btn`);
+  if (textEl) textEl.style.display = '';
+  if (editRow) editRow.remove();
+  if (btn) btn.style.display = '';
+};
+
+window.saveEditComment = async (taskId, commentId) => {
+  const inp = document.getElementById('cei-' + commentId);
+  if (!inp) return;
+  const newText = inp.value.trim();
+  if (!newText) return;
+  await updateComment(taskId, commentId, newText);
+  // The onCommentsChanged listener will re-render automatically
+};
 
 window.submitComment = async (taskId) => {
   const inp = document.getElementById('cinp-' + taskId);

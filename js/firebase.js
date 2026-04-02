@@ -201,6 +201,13 @@ export async function addComment(taskId, author, text) {
   });
 }
 
+export async function updateComment(taskId, commentId, newText) {
+  await updateDoc(
+    doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId, "comments", commentId),
+    { text: newText.slice(0, 200), editedAt: serverTimestamp() }
+  );
+}
+
 export function onCommentsChanged(taskId, callback) {
   const q = query(commentsCol(taskId), orderBy("createdAt", "asc"));
   return onSnapshot(q, snap => {
