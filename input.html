@@ -136,10 +136,19 @@
     .done-section-arrow.open { transform:rotate(180deg) }
     .done-section-body { display:none;margin-top:4px }
     .done-section-body.open { display:block }
-    .done-month-label {
-      font-size:10px;font-weight:800;color:var(--text3);
-      letter-spacing:.08em;text-transform:uppercase;padding:6px 2px 4px;
+    .done-month-toggle {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:7px 10px;margin:4px 0 2px;
+      border-radius:8px;background:var(--bg3);
+      font-size:10px;font-weight:800;color:var(--text2);
+      letter-spacing:.06em;text-transform:uppercase;
+      cursor:pointer;user-select:none;transition:all .15s;
     }
+    .done-month-toggle:hover { background:var(--bg2);color:var(--text) }
+    .done-month-arrow { font-size:9px;transition:transform .18s }
+    .done-month-arrow.open { transform:rotate(180deg) }
+    .done-month-body { display:none }
+    .done-month-body.open { display:block }
     .range-banner{
       display:flex;align-items:center;justify-content:space-between;
       padding:8px 12px;background:rgba(0,229,184,.06);border:1px solid rgba(0,229,184,.2);
@@ -652,6 +661,14 @@ window.toggleInputExpand = (id) => {
 };
 
 let _inputDoneOpen = false;
+const _inputDoneMonthOpen = {};
+window.toggleInputDoneMonth = (id) => {
+  _inputDoneMonthOpen[id] = !_inputDoneMonthOpen[id];
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById('idm-arrow-' + id.replace('idm-',''));
+  if (body)  body.classList.toggle('open', _inputDoneMonthOpen[id]);
+  if (arrow) arrow.classList.toggle('open', _inputDoneMonthOpen[id]);
+};
 window.toggleInputDoneSection = () => {
   _inputDoneOpen = !_inputDoneOpen;
   const body  = document.getElementById('input-done-body');
@@ -734,9 +751,14 @@ function renderTaskList() {
       <span class="done-section-arrow" id="input-done-arrow">▼</span>
     </div>
     <div class="done-section-body" id="input-done-body">
-      ${doneMonthKeys.map(key => `
-        <div class="done-month-label">${fmtMK(key)}</div>
-        ${doneByMonth[key].map((t,i) => taskCard(t,i)).join('')}
+      ${doneMonthKeys.map((key, mi) => `
+        <div class="done-month-toggle" onclick="toggleInputDoneMonth('idm-${mi}')" id="idm-toggle-${mi}">
+          <span>${fmtMK(key)} · ${doneByMonth[key].length} task${doneByMonth[key].length>1?'s':''}</span>
+          <span class="done-month-arrow" id="idm-arrow-${mi}">▼</span>
+        </div>
+        <div class="done-month-body" id="idm-${mi}">
+          ${doneByMonth[key].map((t,i) => taskCard(t,i)).join('')}
+        </div>
       `).join('')}
     </div>
   ` : '';

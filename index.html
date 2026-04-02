@@ -151,11 +151,45 @@
     .done-section-arrow.open { transform:rotate(180deg) }
     .done-section-body { display:none;margin-top:4px }
     .done-section-body.open { display:block }
-    .done-month-label {
-      font-size:10px;font-weight:800;color:var(--text3);
-      letter-spacing:.08em;text-transform:uppercase;
-      padding:6px 2px 4px;
+    /* Collapsible month within done section */
+    .done-month-toggle {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:7px 10px;margin:4px 0 2px;
+      border-radius:8px;background:var(--bg3);
+      font-size:10px;font-weight:800;color:var(--text2);
+      letter-spacing:.06em;text-transform:uppercase;
+      cursor:pointer;user-select:none;transition:all .15s;
     }
+    .done-month-toggle:hover { background:var(--bg2);color:var(--text) }
+    .done-month-arrow { font-size:9px;transition:transform .18s }
+    .done-month-arrow.open { transform:rotate(180deg) }
+    .done-month-body { display:none }
+    .done-month-body.open { display:block }
+
+    /* Collapsible By Member card */
+    .member-card {
+      background:var(--panel);border:1px solid var(--border2);
+      border-radius:14px;margin-bottom:8px;overflow:hidden;
+      box-shadow:var(--shadow-card);
+    }
+    .member-card-hd {
+      display:flex;align-items:center;gap:10px;
+      padding:12px 14px;cursor:pointer;
+      transition:background .12s;
+      user-select:none;-webkit-tap-highlight-color:transparent;
+    }
+    .member-card-hd:hover { background:var(--bg3) }
+    .member-card-body { display:none;padding:0 14px 12px }
+    .member-card-body.open { display:block }
+    .member-card-arrow { font-size:11px;color:var(--text3);transition:transform .2s;flex-shrink:0 }
+    .member-card-arrow.open { transform:rotate(180deg) }
+    .member-card-rank {
+      font-size:10px;font-weight:800;color:var(--text3);
+      width:18px;text-align:center;flex-shrink:0;
+    }
+    .member-card-rank.gold   { color:#f5a800 }
+    .member-card-rank.silver { color:#94a3b8 }
+    .member-card-rank.bronze { color:#b87333 }
 
     /* ── INDIVIDUAL TASK BADGE ── */
     .individual-badge {
@@ -700,9 +734,14 @@ function renderMyTasks() {
       <span class="done-section-arrow" id="done-arrow">▼</span>
     </div>
     <div class="done-section-body" id="done-body">
-      ${doneMonthKeys.map(key => `
-        <div class="done-month-label">${fmtMonthKey(key)}</div>
-        ${doneByMonth[key].map((t,i) => myTaskCard(t, i)).join('')}
+      ${doneMonthKeys.map((key, mi) => `
+        <div class="done-month-toggle" onclick="toggleDoneMonth('dm-${mi}')" id="dm-toggle-${mi}">
+          <span>${fmtMonthKey(key)} · ${doneByMonth[key].length} task${doneByMonth[key].length>1?'s':''}</span>
+          <span class="done-month-arrow" id="dm-arrow-${mi}">▼</span>
+        </div>
+        <div class="done-month-body" id="dm-${mi}">
+          ${doneByMonth[key].map((t,i) => myTaskCard(t, i)).join('')}
+        </div>
       `).join('')}
     </div>
   ` : '';
@@ -720,6 +759,14 @@ window.toggleDoneSection = () => {
   const arrow = document.getElementById('done-arrow');
   if (body)  body.classList.toggle('open', _doneOpen);
   if (arrow) arrow.classList.toggle('open', _doneOpen);
+};
+const _doneMonthOpen = {};
+window.toggleDoneMonth = (id) => {
+  _doneMonthOpen[id] = !_doneMonthOpen[id];
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById('dm-arrow-' + id.replace('dm-',''));
+  if (body)  body.classList.toggle('open', _doneMonthOpen[id]);
+  if (arrow) arrow.classList.toggle('open', _doneMonthOpen[id]);
 };
 
 window.toggleTaskExpand = (id) => {
@@ -842,32 +889,99 @@ function renderByMember() {
     const bPct = bTasks.length ? bTasks.filter(t => getMemberStatus(t,b.id)==='done').length/bTasks.length : 0;
     return bPct - aPct;
   });
-  sortedMembers.forEach(m => {
+  const expandedMembers = new Set();
+  window.toggleMemberCard = (mid) => {
+    if (expandedMembers.has(mid)) expandedMembers.delete(mid);
+    else expandedMembers.add(mid);
+    const body  = document.getElementById('mc-body-' + mid);
+    const arrow = document.getElementById('mc-arrow-' + mid);
+    if (body)  body.classList.toggle('open', expandedMembers.has(mid));
+    if (arrow) arrow.classList.toggle('open', expandedMembers.has(mid));
+  };
+  const expandedMemberDone = {};
+  window.toggleMemberDone = (mid) => {
+    expandedMemberDone[mid] = !expandedMemberDone[mid];
+    const body  = document.getElementById('mc-done-' + mid);
+    const arrow = document.getElementById('mc-done-arrow-' + mid);
+    if (body)  body.classList.toggle('open', expandedMemberDone[mid]);
+    if (arrow) arrow.classList.toggle('open', expandedMemberDone[mid]);
+  };
+  const expandedMemberMonth = {};
+  window.toggleMemberMonth = (key) => {
+    expandedMemberMonth[key] = !expandedMemberMonth[key];
+    const body  = document.getElementById('mc-month-' + key);
+    const arrow = document.getElementById('mc-month-arrow-' + key);
+    if (body)  body.classList.toggle('open', expandedMemberMonth[key]);
+    if (arrow) arrow.classList.toggle('open', expandedMemberMonth[key]);
+  };
+
+  const MONTH_NAMES_BM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtBMKey = key => { const [y,m] = key.split('-'); return m ? MONTH_NAMES_BM[parseInt(m)-1]+' '+y : key; };
+  const rankClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+  const rankIcon  = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'';
+
+  sortedMembers.forEach((m, rank) => {
     const mTasks = tasks.filter(t => {
       if (!(t.members||[]).some(mm => mm.id === m.id)) return false;
       if (t.taskType !== 'individual') return true;
-      // Individual tasks: only show in this member's section if viewing as admin or own section
       const isAdminView = MY_NAME && MY_NAME.toLowerCase() === 'harshit';
       const isOwnSection = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
       return isAdminView || isOwnSection;
     });
-    const memberDone = mTasks.filter(t => getMemberStatus(t, m.id) === 'done').length;
+    const activeTasks = mTasks.filter(t => getMemberStatus(t, m.id) !== 'done');
+    const doneTasks   = mTasks.filter(t => getMemberStatus(t, m.id) === 'done');
+    const memberDone  = doneTasks.length;
     const total = mTasks.length;
-    const pct = total ? Math.round(memberDone / total * 100) : 0;
-    html += `<div class="member-section">
-      <div class="member-hd">
+    const pct   = total ? Math.round(memberDone / total * 100) : 0;
+    const isOpen = expandedMembers.has(m.id);
+
+    // Group done tasks by month
+    const doneByMonthBM = {};
+    doneTasks.forEach(t => {
+      const key = m.id + '-' + (t.month || 'Unknown');
+      if (!doneByMonthBM[key]) doneByMonthBM[key] = [];
+      doneByMonthBM[key].push(t);
+    });
+    const doneMonthKeysBM = Object.keys(doneByMonthBM).sort((a,b) => b.localeCompare(a));
+
+    const doneSection = doneTasks.length ? `
+      <div class="done-section-toggle" style="margin-top:8px"
+        onclick="event.stopPropagation();toggleMemberDone('${m.id}')">
+        <span>✅ Done (${doneTasks.length})</span>
+        <span class="done-section-arrow" id="mc-done-arrow-${m.id}">▼</span>
+      </div>
+      <div class="done-section-body" id="mc-done-${m.id}">
+        ${doneMonthKeysBM.map(key => `
+          <div class="done-month-toggle"
+            onclick="event.stopPropagation();toggleMemberMonth('${key}')">
+            <span>${fmtBMKey(key.split('-').slice(1).join('-'))} · ${doneByMonthBM[key].length}</span>
+            <span class="done-month-arrow" id="mc-month-arrow-${key}">▼</span>
+          </div>
+          <div class="done-month-body" id="mc-month-${key}">
+            ${doneByMonthBM[key].map((t,i) => memberTaskCard(t, m, i)).join('')}
+          </div>
+        `).join('')}
+      </div>` : '';
+
+    html += `<div class="member-card">
+      <div class="member-card-hd" onclick="toggleMemberCard('${m.id}')">
+        <div class="member-card-rank ${rankClass(rank)}">${rankIcon(rank)}</div>
         <span class="member-av">${initials(m.name)}</span>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <span class="member-name">${esc(m.name)}</span>
             <span class="member-cnt">${memberDone}/${total} · ${pct}%</span>
           </div>
           <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
+        <span class="member-card-arrow${isOpen?' open':''}" id="mc-arrow-${m.id}">▼</span>
       </div>
-      ${mTasks.length
-        ? mTasks.map((t,i) => memberTaskCard(t, m, i)).join('')
-        : '<div class="empty" style="padding:12px 0 4px"><div class="ei">·</div>No tasks assigned</div>'}
+      <div class="member-card-body${isOpen?' open':''}" id="mc-body-${m.id}">
+        ${activeTasks.length
+          ? activeTasks.map((t,i) => memberTaskCard(t, m, i)).join('')
+          : '<div class="empty" style="padding:8px 0 4px;font-size:12px">No active tasks</div>'}
+        ${doneSection}
+      </div>
     </div>`;
   });
   el.innerHTML = html;
