@@ -872,7 +872,7 @@ function myTaskCard(t, i) {
             ${t.reminder?.active ? '🔔 Reminder set' : '🔔 Remind me'}
           </button>
         </div>
-        <div id="comments-${t.id}"></div>
+        <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
       </div>
     </div>`;
 }
@@ -1387,10 +1387,11 @@ function renderCommentSection(taskId, container) {
       <div class="comment-list" id="clist-${taskId}">
         <div style="font-size:11px;color:var(--text3);padding:4px 0">Loading comments...</div>
       </div>
-      <div class="comment-input-row">
+      <div class="comment-input-row" onclick="event.stopPropagation()">
         <input class="comment-inp" id="cinp-${taskId}" placeholder="Add a note..." maxlength="200"
-          onkeydown="if(event.key==='Enter')submitComment('${taskId}')">
-        <button class="comment-send" onclick="submitComment('${taskId}')">Send</button>
+          onclick="event.stopPropagation()"
+          onkeydown="if(event.key==='Enter'){event.stopPropagation();submitComment('${taskId}')}">
+        <button class="comment-send" onclick="event.stopPropagation();submitComment('${taskId}')">Send</button>
       </div>
     </div>`;
 
