@@ -208,6 +208,10 @@ export async function updateComment(taskId, commentId, newText) {
   );
 }
 
+export async function deleteComment(taskId, commentId) {
+  await deleteDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId, "comments", commentId));
+}
+
 export function onCommentsChanged(taskId, callback) {
   const q = query(commentsCol(taskId), orderBy("createdAt", "asc"));
   return onSnapshot(q, snap => {

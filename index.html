@@ -530,7 +530,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
@@ -1433,7 +1433,7 @@ function renderCommentSection(taskId, container) {
       return `<div class="comment-item" id="ci-${cm.id}">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="comment-author">${esc(cm.author||'Unknown')}</div>
-          ${canEdit ? `<button class="comment-edit-btn" onclick="startEditComment('${taskId}','${cm.id}',this)" title="Edit">✎ Edit</button>` : ''}
+          ${canEdit ? `<button class="comment-edit-btn" onclick="startEditComment('${taskId}','${cm.id}',this)" title="Edit">✎</button><button class="comment-edit-btn" onclick="deleteCommentNow('${taskId}','${cm.id}')" title="Delete" style="color:var(--red)">✕</button>` : ''}
         </div>
         <div class="comment-text" id="ct-${cm.id}">${esc(cm.text)}</div>
         <div class="comment-time">${ts}${edited}</div>
@@ -1442,6 +1442,11 @@ function renderCommentSection(taskId, container) {
     list.scrollTop = list.scrollHeight;
   });
 }
+
+window.deleteCommentNow = async (taskId, commentId) => {
+  if (!confirm('Delete this comment?')) return;
+  await deleteComment(taskId, commentId);
+};
 
 window.startEditComment = (taskId, commentId, btn) => {
   const textEl = document.getElementById('ct-' + commentId);
