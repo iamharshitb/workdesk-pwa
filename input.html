@@ -122,6 +122,24 @@
     }
     .range-clear:hover{border-color:rgba(255,58,94,.35);color:var(--red)}
     .range-results{margin-top:10px}
+    /* ── DONE SECTION ── */
+    .done-section-toggle {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:9px 12px;margin-top:8px;
+      border-radius:10px;border:1px solid var(--border2);
+      background:var(--bg2);cursor:pointer;
+      font-size:12px;font-weight:700;color:var(--text2);
+      user-select:none;transition:all .15s;
+    }
+    .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
+    .done-section-arrow { transition:transform .2s;font-size:10px }
+    .done-section-arrow.open { transform:rotate(180deg) }
+    .done-section-body { display:none;margin-top:4px }
+    .done-section-body.open { display:block }
+    .done-month-label {
+      font-size:10px;font-weight:800;color:var(--text3);
+      letter-spacing:.08em;text-transform:uppercase;padding:6px 2px 4px;
+    }
     .range-banner{
       display:flex;align-items:center;justify-content:space-between;
       padding:8px 12px;background:rgba(0,229,184,.06);border:1px solid rgba(0,229,184,.2);
@@ -633,11 +651,34 @@ window.toggleInputExpand = (id) => {
   if (btn)    btn.classList.toggle('open', expandedInputTasks.has(id));
 };
 
+let _inputDoneOpen = false;
+window.toggleInputDoneSection = () => {
+  _inputDoneOpen = !_inputDoneOpen;
+  const body  = document.getElementById('input-done-body');
+  const arrow = document.getElementById('input-done-arrow');
+  if (body)  body.classList.toggle('open', _inputDoneOpen);
+  if (arrow) arrow.classList.toggle('open', _inputDoneOpen);
+};
+
 function renderTaskList() {
   const el = document.getElementById('task-list');
+  const activeTasks = tasks.filter(t => t.status !== 'done');
+  const doneTasks   = tasks.filter(t => t.status === 'done');
   document.getElementById('task-count').textContent = tasks.length ? tasks.length + ' tasks' : '';
   if (!tasks.length) { el.innerHTML = '<div class="empty"><div class="ei">◻</div>No tasks yet</div>'; return; }
-  el.innerHTML = tasks.map((t, i) => {
+
+  // Group done tasks by month
+  const doneByMonth = {};
+  doneTasks.forEach(t => {
+    const key = t.month || 'Unknown';
+    if (!doneByMonth[key]) doneByMonth[key] = [];
+    doneByMonth[key].push(t);
+  });
+  const doneMonthKeys = Object.keys(doneByMonth).sort((a,b) => b.localeCompare(a));
+  const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtMK = key => { const [y,m] = key.split('-'); return m ? MN[parseInt(m)-1]+' '+y : key; };
+
+  function taskCard(t, i) {
     const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
     const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
     const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
@@ -685,7 +726,22 @@ function renderTaskList() {
           </div>
         </div>
       </div>`;
-  }).join('');
+  }
+
+  const doneHTML = doneTasks.length ? `
+    <div class="done-section-toggle" onclick="toggleInputDoneSection()">
+      <span>✅ Done (${doneTasks.length})</span>
+      <span class="done-section-arrow" id="input-done-arrow">▼</span>
+    </div>
+    <div class="done-section-body" id="input-done-body">
+      ${doneMonthKeys.map(key => `
+        <div class="done-month-label">${fmtMK(key)}</div>
+        ${doneByMonth[key].map((t,i) => taskCard(t,i)).join('')}
+      `).join('')}
+    </div>
+  ` : '';
+
+  el.innerHTML = activeTasks.map((t,i) => taskCard(t,i)).join('') + doneHTML;
 }
 
 // ── DUE DATE BADGE ────────────────────────────────────────────────────────

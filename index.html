@@ -136,6 +136,27 @@
     }
     .task-detail.open { display:block; }
 
+    /* ── DONE SECTION ── */
+    .done-section-toggle {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:9px 12px;margin-top:8px;
+      border-radius:10px;border:1px solid var(--border2);
+      background:var(--bg2);cursor:pointer;
+      font-size:12px;font-weight:700;color:var(--text2);
+      user-select:none;-webkit-tap-highlight-color:transparent;
+      transition:all .15s;
+    }
+    .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
+    .done-section-arrow { transition:transform .2s;font-size:10px }
+    .done-section-arrow.open { transform:rotate(180deg) }
+    .done-section-body { display:none;margin-top:4px }
+    .done-section-body.open { display:block }
+    .done-month-label {
+      font-size:10px;font-weight:800;color:var(--text3);
+      letter-spacing:.08em;text-transform:uppercase;
+      padding:6px 2px 4px;
+    }
+
     /* ── INDIVIDUAL TASK BADGE ── */
     .individual-badge {
       display:inline-flex;align-items:center;gap:3px;
@@ -551,11 +572,13 @@ window.clearFilter = () => {
 
 // ── STATS ──────────────────────────────────────────────────────────────────
 function renderStats() {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.status === 'done').length;
-  const inprog = tasks.filter(t => t.status === 'inprog').length;
-  const crit = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
-  const pct = total ? Math.round(done / total * 100) : 0;
+  // Exclude individual tasks from all stats and progress bar
+  const mbcTasks = tasks.filter(t => (t.taskType||'mbc') === 'mbc');
+  const total = mbcTasks.length;
+  const done  = mbcTasks.filter(t => t.status === 'done').length;
+  const inprog = mbcTasks.filter(t => t.status === 'inprog').length;
+  const crit  = mbcTasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
   set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
   set('prog-pct', pct + '%');
   document.getElementById('prog-fill').style.width = pct + '%';
@@ -652,11 +675,52 @@ function renderMyTasks() {
     <div class="comms-section-label">📋 Tasks</div>
   ` : '';
 
-  el.innerHTML = banner + commsHTML + sorted.map((t,i) => myTaskCard(t, i)).join('');
+  // Separate active from done tasks
+  const activeTasks = sorted.filter(t => t.status !== 'done');
+  const doneTasks   = sorted.filter(t => t.status === 'done');
+
+  // Group done tasks by month
+  const doneByMonth = {};
+  doneTasks.forEach(t => {
+    const key = t.month || 'Unknown';
+    if (!doneByMonth[key]) doneByMonth[key] = [];
+    doneByMonth[key].push(t);
+  });
+
+  const doneMonthKeys = Object.keys(doneByMonth).sort((a,b) => b.localeCompare(a));
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtMonthKey(key) {
+    const [y,m] = key.split('-');
+    return m ? MONTH_NAMES[parseInt(m)-1] + ' ' + y : key;
+  }
+
+  const doneHTML = doneTasks.length ? `
+    <div class="done-section-toggle" onclick="toggleDoneSection()" id="done-toggle">
+      <span>✅ Done (${doneTasks.length})</span>
+      <span class="done-section-arrow" id="done-arrow">▼</span>
+    </div>
+    <div class="done-section-body" id="done-body">
+      ${doneMonthKeys.map(key => `
+        <div class="done-month-label">${fmtMonthKey(key)}</div>
+        ${doneByMonth[key].map((t,i) => myTaskCard(t, i)).join('')}
+      `).join('')}
+    </div>
+  ` : '';
+
+  el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + doneHTML;
 }
 
 // Track which task rows are expanded
 const expandedTasks = new Set();
+
+let _doneOpen = false;
+window.toggleDoneSection = () => {
+  _doneOpen = !_doneOpen;
+  const body  = document.getElementById('done-body');
+  const arrow = document.getElementById('done-arrow');
+  if (body)  body.classList.toggle('open', _doneOpen);
+  if (arrow) arrow.classList.toggle('open', _doneOpen);
+};
 
 window.toggleTaskExpand = (id) => {
   if (expandedTasks.has(id)) expandedTasks.delete(id);

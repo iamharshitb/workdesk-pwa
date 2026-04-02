@@ -359,7 +359,7 @@
 <script type="module">
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { getMuted, toggleMute, initAudio } from './js/sounds.js';
-import { onUserReady, saveUserData, onUserDataChanged } from './js/firebase.js';
+import { onUserReady, saveCalendarData, onCalendarDataChanged } from './js/firebase.js';
 
 initTheme(); window.toggleThemePanel = toggleThemePanel;
 initAudio();
@@ -385,39 +385,27 @@ const TYPE_HEX = {
 };
 
 // ── FIRESTORE SYNC ─────────────────────────────────────────────────────────
-const CAL_KEY = 'comms_calendar';
-
 onUserReady(async () => {
   // Render immediately with empty state so calendar grid shows on load
   renderCalendar();
 
   // Then subscribe — will re-render when Firestore data arrives
-  onUserDataChanged('__calendar__', (data) => {
-    if (data && data[CAL_KEY]) {
-      try {
-        const parsed = JSON.parse(data[CAL_KEY]);
-        // Only update if we got valid data (object with keys or empty object)
-        if (typeof parsed === 'object' && parsed !== null) {
-          events = parsed;
-        }
-      } catch(e) {
-        console.warn('Calendar parse error:', e);
-      }
+  onCalendarDataChanged((events_data) => {
+    // events_data is already parsed by onCalendarDataChanged
+    if (typeof events_data === 'object' && events_data !== null) {
+      events = events_data;
     }
-    // Don't reset to {} if field missing — doc may just not have it yet
     renderCalendar();
   });
 });
 
 async function saveCalendar() {
   try {
-    const payload = {};
-    payload[CAL_KEY] = JSON.stringify(events);
-    await saveUserData('__calendar__', payload);
-    console.log('Calendar saved OK, events:', Object.keys(events).length, 'dates');
+    await saveCalendarData(events);
+    console.log('Calendar saved OK:', Object.keys(events).length, 'dates');
   } catch(e) {
     console.error('Calendar save failed:', e);
-    toast('Save failed — check console', 'err');
+    toast('Save failed', 'err');
   }
 }
 

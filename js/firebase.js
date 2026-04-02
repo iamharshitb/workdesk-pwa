@@ -231,11 +231,33 @@ export async function dismissReminder(taskId) {
   });
 }
 
+// ── CALENDAR: dedicated collection ───────────────────────────────────────────
+// Stored at: /workspaces/{id}/calendar/shared
+// This avoids permission issues with the users subcollection
+
+function calendarDoc() {
+  return doc(db, "workspaces", WORKSPACE_ID, "calendar", "shared");
+}
+
+export async function saveCalendarData(events) {
+  await setDoc(calendarDoc(), { comms_calendar: JSON.stringify(events) }, { merge: true });
+}
+
+export function onCalendarDataChanged(callback) {
+  return onSnapshot(calendarDoc(), (snap) => {
+    if (!snap.exists()) { callback({}); return; }
+    try {
+      const data = snap.data();
+      callback(data.comms_calendar ? JSON.parse(data.comms_calendar) : {});
+    } catch(e) { callback({}); }
+  });
+}
+
 // ── CALENDAR: read-only access for other pages ─────────────────────────────
 // Calendar is stored under users/__calendar__ as JSON string
 export async function getCalendarEvents() {
   try {
-    const snap = await getDoc(userDoc('__calendar__'));
+    const snap = await getDoc(calendarDoc());
     if (!snap.exists()) return {};
     const data = snap.data();
     return data.comms_calendar ? JSON.parse(data.comms_calendar) : {};
@@ -246,10 +268,5 @@ export async function getCalendarEvents() {
 }
 
 export function onCalendarChanged(callback) {
-  return onSnapshot(userDoc('__calendar__'), (snap) => {
-    if (!snap.exists()) { callback({}); return; }
-    const data = snap.data();
-    try { callback(data.comms_calendar ? JSON.parse(data.comms_calendar) : {}); }
-    catch(e) { callback({}); }
-  });
+  return onCalendarDataChanged(callback);
 }
