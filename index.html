@@ -387,6 +387,51 @@
     /* ── WEEKLY DIGEST ── */
     .digest-panel { }
 
+    /* ── HALL OF FAME ── */
+    .hof-modal-overlay {
+      position:fixed;inset:0;background:rgba(0,0,0,.7);
+      z-index:400;display:none;align-items:center;justify-content:center;
+      backdrop-filter:blur(8px);
+    }
+    .hof-modal-overlay.open { display:flex }
+    .hof-modal {
+      background:var(--panel);border:1.5px solid rgba(245,168,0,.4);
+      border-radius:20px;padding:24px;width:88%;max-width:340px;
+      box-shadow:0 0 40px rgba(245,168,0,.2),0 8px 40px rgba(0,0,0,.5);
+      animation:panel-in .3s cubic-bezier(.34,1.56,.64,1);
+      text-align:center;
+    }
+    .hof-title {
+      font-size:22px;font-weight:900;color:var(--amber);
+      margin-bottom:4px;letter-spacing:-.01em;
+    }
+    .hof-sub {
+      font-size:11px;color:var(--text2);margin-bottom:20px;font-weight:600;
+    }
+    .hof-row {
+      display:flex;align-items:center;gap:12px;
+      padding:12px 14px;border-radius:12px;margin-bottom:8px;
+      background:var(--bg2);border:1px solid var(--border2);
+      text-align:left;
+    }
+    .hof-medal { font-size:24px;flex-shrink:0 }
+    .hof-streak-num {
+      font-size:28px;font-weight:900;color:var(--amber);line-height:1;
+    }
+    .hof-streak-label { font-size:10px;color:var(--text2);font-weight:700 }
+    .hof-streak-date { font-size:11px;color:var(--text3);margin-top:2px }
+    .hof-current {
+      margin-top:12px;padding:10px;border-radius:10px;
+      background:rgba(245,168,0,.07);border:1px solid rgba(245,168,0,.2);
+      font-size:13px;font-weight:700;color:var(--amber);
+    }
+    .hof-close {
+      margin-top:16px;padding:9px 24px;border-radius:10px;
+      border:1.5px solid var(--border2);background:none;
+      color:var(--text2);font-family:var(--sans);font-size:13px;
+      font-weight:700;cursor:pointer;
+    }
+
     /* ── FILTER BANNER ── */
     .filter-banner {
       display: flex;
@@ -511,6 +556,19 @@
 
 <!-- PULL TO REFRESH indicator -->
 <div class="ptr-indicator" id="ptr-indicator">↓ Release to refresh</div>
+
+<!-- HALL OF FAME MODAL (secret easter egg) -->
+<div class="hof-modal-overlay" id="hof-modal" onclick="if(event.target===this)closeHoF()">
+  <div class="hof-modal">
+    <div style="font-size:36px;margin-bottom:8px">🏆</div>
+    <div class="hof-title">Hall of Fame</div>
+    <div class="hof-sub">Top streaks ever achieved by the team</div>
+    <div id="hof-rows"></div>
+    <div class="hof-current" id="hof-current"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:10px">🤫 Secret — tap the streak badge 5× to open</div>
+    <button class="hof-close" onclick="closeHoF()">Close</button>
+  </div>
+</div>
 
 <!-- REMINDER MODAL -->
 <div class="reminder-modal" id="reminder-modal">
@@ -890,8 +948,14 @@ function myTaskCard(t, i) {
             ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
           </button>` : ''}
           <button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
-            title="Set reminder">
-            ${t.reminder?.active ? '🔔 Reminder set' : '🔔 Remind me'}
+            title="${t.reminder?.active ? 'Edit reminder' : 'Set reminder'}">
+            ${t.reminder?.active ? (() => {
+              const [y,mo,d] = t.reminder.date.split('-');
+              const dateLabel = new Date(parseInt(y),parseInt(mo)-1,parseInt(d))
+                .toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+              const timeLabel = t.reminder.time || '';
+              return '🔔 ' + dateLabel + (timeLabel ? ' · ' + timeLabel : '');
+            })() : '🔔 Remind me'}
           </button>
         </div>
         <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
@@ -1364,6 +1428,39 @@ function initNotes() {
 }
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
+// ── HALL OF FAME (secret easter egg) ─────────────────────────────────────
+let _hofTaps = 0, _hofTimer = null;
+window.handleStreakTap = () => {
+  _hofTaps++;
+  clearTimeout(_hofTimer);
+  if (_hofTaps >= 5) {
+    _hofTaps = 0;
+    openHoF();
+  } else {
+    _hofTimer = setTimeout(() => { _hofTaps = 0; }, 1500);
+  }
+};
+window.openHoF = () => {
+  const medals = ['🥇','🥈','🥉'];
+  const top = streakData.topStreaks || [];
+  const rows = top.length
+    ? top.map((s,i) => `
+      <div class="hof-row">
+        <div class="hof-medal">${medals[i]||'🏅'}</div>
+        <div>
+          <div class="hof-streak-num">${s.streak}</div>
+          <div class="hof-streak-label">day streak</div>
+          <div class="hof-streak-date">${s.date || ''}</div>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--text3);font-size:13px;padding:12px">No streaks recorded yet — start completing tasks!</div>';
+  document.getElementById('hof-rows').innerHTML = rows;
+  document.getElementById('hof-current').textContent =
+    '🔥 Current streak: ' + (streakData.currentStreak || 0) + ' days';
+  document.getElementById('hof-modal').classList.add('open');
+};
+window.closeHoF = () => document.getElementById('hof-modal').classList.remove('open');
+
 // ═══════════════════════════════════════════════════════
 // FEATURE 1: GREETING + STREAK
 // ═══════════════════════════════════════════════════════
@@ -1385,8 +1482,8 @@ async function renderGreeting() {
   if (!sub) sub = myTasks.length === 0 ? 'No tasks assigned yet' : 'All caught up! 🎉';
   const s = streakData.currentStreak || 0;
   const streakHTML = s > 0
-    ? `<div class="streak-badge">🔥 ${s} day streak</div>`
-    : `<div class="streak-badge" style="opacity:.4">🔥 0</div>`;
+    ? `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer" title="Tap 5× for secret">🔥 ${s} day streak</div>`
+    : `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer;opacity:.4">🔥 0</div>`;
   const el = document.getElementById('greeting-bar');
   if (el) el.innerHTML = `
     <div>

@@ -183,7 +183,22 @@ export async function recordTaskCompletion() {
   // Simpler: streak continues if last was the most recent workday
   const newStreak = (last === prevWorkday) ? (data.currentStreak || 0) + 1 : 1;
   const longest = Math.max(newStreak, data.longestStreak || 0);
-  const updated = { currentStreak: newStreak, lastCompletedDate: today, longestStreak: longest };
+  // Track top 3 all-time streaks with who achieved them
+  const topStreaks = data.topStreaks || [];
+  // Check if this streak should be in the hall of fame
+  if (newStreak > 1) {
+    const existing = topStreaks.findIndex(s => s.name === 'Team');
+    const entry = { streak: newStreak, date: today };
+    if (existing === -1) {
+      topStreaks.push(entry);
+    } else if (newStreak > topStreaks[existing].streak) {
+      topStreaks[existing] = entry;
+    }
+    topStreaks.sort((a,b) => b.streak - a.streak);
+    topStreaks.splice(3); // keep top 3
+  }
+
+  const updated = { currentStreak: newStreak, lastCompletedDate: today, longestStreak: longest, topStreaks };
   await setDoc(streakDoc(), updated, { merge: true });
   return updated;
 }
