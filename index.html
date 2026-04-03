@@ -387,6 +387,54 @@
     /* ── WEEKLY DIGEST ── */
     .digest-panel { }
 
+    /* ── BADGES ── */
+    .badge-row {
+      display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;
+    }
+    .badge {
+      font-size:14px;cursor:default;
+      filter:drop-shadow(0 0 4px rgba(245,168,0,.4));
+      transition:transform .15s;
+    }
+    .badge:hover { transform:scale(1.3) }
+    .badge-tooltip {
+      position:relative;display:inline-block;
+    }
+    .badge-tooltip .badge-tip {
+      visibility:hidden;
+      background:var(--bg2);color:var(--text);
+      border:1px solid var(--border2);border-radius:7px;
+      padding:4px 8px;font-size:10px;font-weight:700;
+      position:absolute;bottom:120%;left:50%;transform:translateX(-50%);
+      white-space:nowrap;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.3);
+    }
+    .badge-tooltip:hover .badge-tip { visibility:visible }
+
+    /* Neon scanline effect on timer */
+    @keyframes scanline {
+      0% { background-position: 0 0 }
+      100% { background-position: 0 100px }
+    }
+    .timer-scanline {
+      position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+      background:repeating-linear-gradient(
+        0deg,transparent,transparent 3px,rgba(0,245,212,.03) 3px,rgba(0,245,212,.03) 4px
+      );
+      animation:scanline 2s linear infinite;
+      opacity:0;transition:opacity .3s;
+    }
+    .timer-scanline.active { opacity:1 }
+
+    /* Party animation for Friday */
+    @keyframes party-float {
+      0%,100%{transform:translateY(0) rotate(-3deg)}
+      50%{transform:translateY(-8px) rotate(3deg)}
+    }
+    .party-emoji {
+      display:inline-block;
+      animation:party-float .8s ease-in-out infinite;
+    }
+
     /* ── HALL OF FAME ── */
     .hof-modal-overlay {
       position:fixed;inset:0;background:rgba(0,0,0,.7);
@@ -480,7 +528,7 @@
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
-    <div class="timer-slim">
+    <div class="timer-slim" style="position:relative"><div class="timer-scanline" id="timer-scanline"></div>
       <div class="timer-slim-clock" id="t-clock">
         <div class="timer-slim-digits" id="t-disp">45:00</div>
         <div class="timer-slim-st" id="t-st">Ready</div>
@@ -661,7 +709,10 @@ onUserReady(async () => {
   });
 });
 
-function renderAll() { renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting(); }
+function renderAll() {
+  computeBadges();
+  renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
+}
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
 window.filterTasks = (type) => {
@@ -1057,6 +1108,7 @@ function renderByMember() {
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
             <span class="member-name">${esc(m.name)}</span>
+            ${(cachedBadges[m.id]||[]).length ? `<span style="display:flex;gap:3px;margin-left:4px">${(cachedBadges[m.id]||[]).map(b=>`<span class="badge-tooltip"><span class="badge">${b.icon}</span><span class="badge-tip">${b.label}</span></span>`).join('')}</span>` : ''}
             <span class="member-cnt">${memberDone}/${total} · ${pct}%</span>
           </div>
           <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
@@ -1215,11 +1267,20 @@ async function setMemberStatus(taskId, memberId, newStatus) {
   renderAll();
   if (allDone) {
     playTimerDone(); launchConfetti();
-    toast('🎉 All done! Task complete!');
+    if (checkFirstTaskOfDay()) {
+      toast('⚡ First blood! First task of the day!');
+      setTimeout(() => toast('🎉 All done! Task complete!'), 1800);
+    } else {
+      toast('🎉 All done! Task complete!');
+    }
     recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
   } else if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
-    toast('✓ Your part is done!');
+    if (checkFirstTaskOfDay()) {
+      toast('⚡ First blood! First task of the day!');
+    } else {
+      toast('✓ Your part is done!');
+    }
     recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
   } else { playReopen(); toast('↩ Reopened'); }
 }
@@ -1428,6 +1489,39 @@ function initNotes() {
 }
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
+// ── KONAMI CODE ──────────────────────────────────────────────────────────
+(function() {
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let ki = 0;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === KONAMI[ki]) {
+      ki++;
+      if (ki === KONAMI.length) {
+        ki = 0;
+        // MASSIVE confetti
+        for (let i = 0; i < 5; i++) setTimeout(() => launchConfetti(), i * 200);
+        toast('🎮 Cheat code activated! +100 productivity!');
+        // Play a special sound
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const notes = [523,659,784,1047,1319,1568];
+          notes.forEach((f,i) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value = f; o.type = 'sine';
+            g.gain.setValueAtTime(0.3, ctx.currentTime + i*0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.1 + 0.3);
+            o.start(ctx.currentTime + i*0.1);
+            o.stop(ctx.currentTime + i*0.1 + 0.3);
+          });
+        } catch(e) {}
+      }
+    } else {
+      ki = e.key === KONAMI[0] ? 1 : 0;
+    }
+  });
+})();
+
 // ── HALL OF FAME (secret easter egg) ─────────────────────────────────────
 let _hofTaps = 0, _hofTimer = null;
 window.handleStreakTap = () => {
@@ -1465,6 +1559,104 @@ window.closeHoF = () => document.getElementById('hof-modal').classList.remove('o
 // FEATURE 1: GREETING + STREAK
 // ═══════════════════════════════════════════════════════
 let streakData = { currentStreak: 0 };
+let cachedBadges = {}; // { memberId: [badge objects] }
+
+// QUOTES — cycling motivational quotes for comms/creative teams
+const QUOTES = [
+  "Great communication is the bridge between confusion and clarity.",
+  "Content is king, but distribution is queen.",
+  "The best time to start was yesterday. The next best time is now.",
+  "Small consistent actions create extraordinary results.",
+  "Every piece of content you create is a seed you plant.",
+  "Creativity is intelligence having fun.",
+  "Done is better than perfect.",
+  "Your audience needs you to show up consistently.",
+  "Ideas are worthless without execution.",
+  "The team that communicates well, wins.",
+  "Progress, not perfection.",
+  "Strong teams are built on honest communication.",
+];
+let _quoteIndex = Math.floor(Math.random() * QUOTES.length);
+
+function getQuote() {
+  const q = QUOTES[_quoteIndex];
+  _quoteIndex = (_quoteIndex + 1) % QUOTES.length;
+  return q;
+}
+
+// FIRST TASK OF THE DAY tracking
+const FIRST_TASK_KEY = 'wd_first_task_' + new Date().toISOString().slice(0,10);
+let firstTaskToday = localStorage.getItem(FIRST_TASK_KEY) === '1';
+
+function checkFirstTaskOfDay() {
+  if (!firstTaskToday) {
+    firstTaskToday = true;
+    localStorage.setItem(FIRST_TASK_KEY, '1');
+    return true;
+  }
+  return false;
+}
+
+// BADGE COMPUTATION — runs once, cached in cachedBadges
+function computeBadges() {
+  const allTasksEver = tasks; // active window, enough for most badges
+  cachedBadges = {};
+  members.forEach(m => {
+    const badges = [];
+    const mDone = allTasksEver.filter(t => getMemberStatus(t, m.id) === 'done');
+
+    // Taskmaster: 10+ done tasks (use 10 since we have 90-day window)
+    if (mDone.length >= 10) badges.push({ icon:'🏆', label:'Taskmaster · 10+ tasks done' });
+
+    // On Fire: current streak >= 7 (only meaningful for current user)
+    if (m.name.toLowerCase() === (MY_NAME||'').toLowerCase()) {
+      if ((streakData.currentStreak||0) >= 7)
+        badges.push({ icon:'🔥', label:'On Fire · 7-day streak' });
+      if ((streakData.currentStreak||0) >= 3)
+        badges.push({ icon:'⚡', label:'Hot Streak · 3-day streak' });
+    }
+
+    // Early Bird / Night Owl tracked via completedAt hour
+    const completedHours = mDone
+      .filter(t => t.completedAt)
+      .map(t => {
+        const d = t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt);
+        return d.getHours();
+      });
+    if (completedHours.some(h => h < 9))
+      badges.push({ icon:'🌅', label:'Early Bird · completed a task before 9am' });
+    if (completedHours.some(h => h >= 20))
+      badges.push({ icon:'🦉', label:'Night Owl · completed a task after 8pm' });
+
+    cachedBadges[m.id] = badges;
+  });
+
+  // Weekly MVP: most tasks done this week
+  const monday = new Date();
+  monday.setDate(monday.getDate() - ((monday.getDay()+6)%7));
+  monday.setHours(0,0,0,0);
+  const mvpCounts = {};
+  members.forEach(m => {
+    mvpCounts[m.id] = tasks.filter(t => {
+      if (getMemberStatus(t, m.id) !== 'done') return false;
+      const ca = t.completedAt;
+      if (!ca) return false;
+      const d = ca.toDate ? ca.toDate() : new Date(ca);
+      return d >= monday;
+    }).length;
+  });
+  const maxMVP = Math.max(...Object.values(mvpCounts), 0);
+  if (maxMVP > 0) {
+    const mvpId = Object.keys(mvpCounts).find(id => mvpCounts[id] === maxMVP);
+    if (mvpId) {
+      if (!cachedBadges[mvpId]) cachedBadges[mvpId] = [];
+      // Only show crown on Friday-Sunday
+      const day = new Date().getDay();
+      if (day === 0 || day >= 5)
+        cachedBadges[mvpId].unshift({ icon:'👑', label:'Weekly MVP · most tasks done this week' });
+    }
+  }
+}
 
 async function renderGreeting() {
   streakData = await getStreak();
@@ -1480,6 +1672,24 @@ async function renderGreeting() {
   if (!sub && myTasks.filter(t=>t.status==='todo').length > 0)
     sub = `${myTasks.filter(t=>t.status==='todo').length} task${myTasks.filter(t=>t.status==='todo').length>1?'s':''} to start`;
   if (!sub) sub = myTasks.length === 0 ? 'No tasks assigned yet' : 'All caught up! 🎉';
+
+  // Friday 5pm special message
+  const day = new Date().getDay(); // 0=Sun,5=Fri
+  const isFridayEvening = day === 5 && hour >= 17;
+  let greetText = greet + (name ? `, ${esc(name)}` : '');
+  let greetEmoji = ' 👋';
+  if (isFridayEvening) {
+    greetText = 'Happy weekend' + (name ? `, ${esc(name)}` : '');
+    greetEmoji = ' <span class="party-emoji">🎉</span>';
+    sub = "You've earned it. See you Monday!";
+  }
+
+  // Quote — show on all-caught-up or randomly (1 in 4 chance)
+  const showQuote = sub.includes('All caught up') || Math.random() < 0.25;
+  const quoteHTML = showQuote
+    ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">"${getQuote()}"</div>`
+    : '';
+
   const s = streakData.currentStreak || 0;
   const streakHTML = s > 0
     ? `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer" title="Tap 5× for secret">🔥 ${s} day streak</div>`
@@ -1487,8 +1697,9 @@ async function renderGreeting() {
   const el = document.getElementById('greeting-bar');
   if (el) el.innerHTML = `
     <div>
-      <div class="greeting-text">${greet}${esc(name)} 👋</div>
+      <div class="greeting-text">${greetText}${greetEmoji}</div>
       <div class="greeting-sub">${sub}</div>
+      ${quoteHTML}
     </div>
     ${streakHTML}`;
 }
