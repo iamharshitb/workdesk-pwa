@@ -1056,7 +1056,7 @@ function renderFollowup() {
   others.forEach(m => {
     const allT = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
     const working = allT.filter(t => getMemberStatus(t,m.id) === 'inprog');
-    const todo = allT.filter(t => getMemberStatus(t,m.id) === 'todo').slice(0,2);
+    const todo = allT.filter(t => getMemberStatus(t,m.id) === 'todo');
     const memberDone = allT.filter(t => getMemberStatus(t,m.id) === 'done').length;
     const pct = allT.length ? Math.round(memberDone/allT.length*100) : 0;
     if (!allT.length) return;
@@ -1089,14 +1089,36 @@ function renderFollowup() {
       });
     }
     if (todo.length) {
+      const visible = todo.slice(0, 2);
+      const hidden  = todo.slice(2);
+      const fuId    = 'fu-more-' + m.id;
       html += `<div class="fu-section-label" style="color:var(--text2);margin-top:10px">Next up</div>`;
-      todo.forEach(t => {
+      visible.forEach(t => {
         const mData=(t.members||[]).find(mm=>mm.id===m.id);
         html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
           <div class="fu-task-name">${esc(t.label)}</div>
           <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
         </div>`;
       });
+      if (hidden.length) {
+        html += `<div id="${fuId}" style="display:none">`;
+        hidden.forEach(t => {
+          const mData=(t.members||[]).find(mm=>mm.id===m.id);
+          html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
+            <div class="fu-task-name">${esc(t.label)}</div>
+            <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
+          </div>`;
+        });
+        html += `</div>
+        <div style="text-align:center;padding:6px 0">
+          <button onclick="toggleFuMore('${fuId}',this)"
+            style="background:none;border:1px solid var(--border2);border-radius:20px;
+            padding:4px 14px;font-family:var(--sans);font-size:11px;font-weight:700;
+            color:var(--text2);cursor:pointer;transition:all .15s">
+            +${hidden.length} more
+          </button>
+        </div>`;
+      }
     }
     html += `</div>`;
   });
@@ -1484,6 +1506,15 @@ window.saveEditComment = async (taskId, commentId) => {
   if (!newText) return;
   await updateComment(taskId, commentId, newText);
   // The onCommentsChanged listener will re-render automatically
+};
+
+window.toggleFuMore = (id, btn) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  const count = btn.textContent.replace(/[^0-9]/g,'');
+  btn.textContent = isOpen ? `+${count} more` : 'Show less';
 };
 
 window.submitComment = async (taskId) => {
