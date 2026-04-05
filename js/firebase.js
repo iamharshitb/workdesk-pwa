@@ -296,3 +296,29 @@ export async function getCalendarEvents() {
 export function onCalendarChanged(callback) {
   return onCalendarDataChanged(callback);
 }
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────
+// Stored at: /workspaces/{id}/meta/announcement
+// { text, postedBy, postedAt, id }
+
+function announcementDoc() {
+  return doc(db, "workspaces", WORKSPACE_ID, "meta", "announcement");
+}
+
+export async function postAnnouncement(text, author) {
+  await setDoc(announcementDoc(), {
+    text, author,
+    postedAt: serverTimestamp(),
+    id: Date.now().toString()
+  });
+}
+
+export async function clearAnnouncement() {
+  await setDoc(announcementDoc(), { text: '', author: '', id: '' }, { merge: false });
+}
+
+export function onAnnouncementChanged(callback) {
+  return onSnapshot(announcementDoc(), snap => {
+    callback(snap.exists() ? snap.data() : null);
+  });
+}

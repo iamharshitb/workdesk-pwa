@@ -480,6 +480,147 @@
       font-weight:700;cursor:pointer;
     }
 
+    /* ── TASK SEARCH ── */
+    .search-bar {
+      display:flex;align-items:center;gap:8px;
+      margin-bottom:10px;
+      background:var(--bg2);border:1.5px solid var(--border2);
+      border-radius:10px;padding:8px 12px;
+      transition:border-color .15s;
+    }
+    .search-bar:focus-within { border-color:var(--neon) }
+    .search-icon { font-size:14px;color:var(--text3);flex-shrink:0 }
+    .search-inp {
+      flex:1;background:none;border:none;outline:none;
+      color:var(--text);font-family:var(--sans);font-size:14px;
+    }
+    .search-inp::placeholder { color:var(--text3) }
+    .search-clear {
+      background:none;border:none;cursor:pointer;
+      font-size:13px;color:var(--text3);padding:0 2px;
+      transition:color .12s;
+    }
+    .search-clear:hover { color:var(--red) }
+
+    /* ── ANNOUNCEMENT POPUP ── */
+    .announcement-popup {
+      position:fixed;top:72px;left:50%;transform:translateX(-50%);
+      width:calc(100% - 32px);max-width:460px;
+      z-index:250;
+      display:none;
+      animation:ann-drop .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .announcement-popup.show { display:block }
+    @keyframes ann-drop {
+      from{transform:translateX(-50%) translateY(-16px);opacity:0}
+      to{transform:translateX(-50%) translateY(0);opacity:1}
+    }
+    .announcement-inner {
+      display:flex;align-items:flex-start;gap:10px;
+      padding:14px 16px;
+      background:rgba(20,10,40,.8);
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      border:1.5px solid rgba(157,126,255,.5);
+      border-radius:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 0 1px rgba(157,126,255,.15);
+    }
+    .ann-icon { font-size:18px;flex-shrink:0;margin-top:1px }
+    .ann-body { flex:1;min-width:0 }
+    .ann-text { font-size:13px;font-weight:600;color:#fff;line-height:1.5 }
+    .ann-meta { font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;font-weight:600 }
+    .ann-dismiss {
+      flex-shrink:0;background:none;border:none;cursor:pointer;
+      color:rgba(255,255,255,.4);font-size:16px;padding:2px;transition:color .12s;
+    }
+    .ann-dismiss:hover { color:rgba(255,255,255,.8) }
+    /* Admin post button */
+    .ann-post-btn {
+      display:flex;align-items:center;gap:6px;
+      padding:5px 12px;border-radius:8px;
+      border:1.5px solid rgba(157,126,255,.3);
+      background:rgba(157,126,255,.06);
+      color:var(--purple);font-family:var(--sans);
+      font-size:12px;font-weight:700;cursor:pointer;
+      transition:all .15s;
+    }
+    .ann-post-btn:hover { background:rgba(157,126,255,.12) }
+    /* Announcement modal */
+    .ann-modal-overlay {
+      position:fixed;inset:0;background:rgba(0,0,0,.6);
+      z-index:200;display:none;align-items:center;justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    .ann-modal-overlay.open { display:flex }
+    .ann-modal {
+      background:var(--panel);border:1.5px solid var(--border2);
+      border-radius:18px;padding:20px;width:90%;max-width:360px;
+      box-shadow:0 8px 40px rgba(0,0,0,.5);
+      animation:panel-in .2s cubic-bezier(.34,1.56,.64,1);
+    }
+    .ann-modal-title { font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px }
+    .ann-inp {
+      width:100%;background:var(--bg2);border:1.5px solid var(--border2);
+      border-radius:10px;padding:10px 12px;color:var(--text);
+      font-family:var(--sans);font-size:14px;resize:none;outline:none;
+      min-height:80px;transition:border-color .15s;
+    }
+    .ann-inp:focus { border-color:var(--purple) }
+    .ann-modal-btns { display:flex;gap:8px;margin-top:12px;justify-content:flex-end }
+    .ann-modal-post {
+      padding:8px 18px;border-radius:9px;border:none;
+      background:var(--purple);color:#fff;
+      font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .ann-modal-cancel {
+      padding:8px 14px;border-radius:9px;
+      border:1.5px solid var(--border2);background:none;
+      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+    }
+    .ann-modal-clear {
+      padding:8px 14px;border-radius:9px;
+      border:1.5px solid rgba(255,58,94,.3);background:none;
+      color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+    }
+
+    /* ── AI BRIEF ── */
+    .ai-brief-panel {
+      background:var(--panel);border:1px solid var(--border2);
+      border-radius:var(--rr);margin-bottom:12px;
+      box-shadow:var(--shadow-card);overflow:hidden;
+    }
+    .ai-brief-hd {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:11px 16px;border-bottom:1px solid var(--border);
+    }
+    .ai-brief-body {
+      padding:12px 16px;font-size:13px;color:var(--text2);
+      line-height:1.6;
+    }
+    .ai-brief-refresh {
+      background:none;border:none;cursor:pointer;
+      color:var(--text3);font-size:13px;padding:4px;
+      transition:all .2s;
+    }
+    .ai-brief-refresh:hover { color:var(--neon);transform:rotate(180deg) }
+    .ai-brief-loading {
+      display:flex;align-items:center;gap:8px;
+      font-size:12px;color:var(--text3);
+    }
+    .ai-dot-pulse {
+      display:inline-flex;gap:3px;
+    }
+    .ai-dot-pulse span {
+      width:5px;height:5px;border-radius:50%;
+      background:var(--neon);
+      animation:ai-pulse 1.2s ease-in-out infinite;
+    }
+    .ai-dot-pulse span:nth-child(2) { animation-delay:.2s }
+    .ai-dot-pulse span:nth-child(3) { animation-delay:.4s }
+    @keyframes ai-pulse {
+      0%,80%,100%{transform:scale(.6);opacity:.4}
+      40%{transform:scale(1);opacity:1}
+    }
+
     /* ── FILTER BANNER ── */
     .filter-banner {
       display: flex;
@@ -572,10 +713,34 @@
     <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
   </div>
 
+
+
+  <!-- AI DAILY BRIEF -->
+  <div class="ai-brief-panel fi" id="ai-brief-panel" style="animation-delay:.09s;display:none">
+    <div class="ai-brief-hd">
+      <span class="panel-title">🤖 Daily Brief</span>
+      <button class="ai-brief-refresh" onclick="loadAIBrief(true)" title="Refresh">↻</button>
+    </div>
+    <div class="ai-brief-body" id="ai-brief-body">
+      <div class="ai-brief-loading">
+        <div class="ai-dot-pulse"><span></span><span></span><span></span></div>
+        Generating your brief...
+      </div>
+    </div>
+  </div>
+
   <!-- TASK TABS -->
   <div class="panel fi" style="animation-delay:.11s">
     <div class="panel-hd"><span class="panel-title">Task Tracker</span></div>
     <div class="panel-body">
+      <!-- SEARCH BAR -->
+      <div class="search-bar" id="search-bar" style="display:none">
+        <span class="search-icon">🔍</span>
+        <input class="search-inp" id="search-inp" placeholder="Search tasks..."
+          oninput="handleSearch(this.value)"
+          onclick="event.stopPropagation()">
+        <button class="search-clear" onclick="clearSearch()" id="search-clear" style="display:none">✕</button>
+      </div>
       <div class="tabs">
         <button class="tab active" onclick="switchTab('mytasks',this)">My Tasks</button>
         <button class="tab" onclick="switchTab('bymember',this)">By Member</button>
@@ -618,6 +783,42 @@
   </div>
 </div>
 
+<!-- ANNOUNCEMENT POPUP (fixed overlay, all pages) -->
+<div class="announcement-popup" id="announcement-popup">
+  <div class="announcement-inner">
+    <div class="ann-icon">📣</div>
+    <div class="ann-body">
+      <div class="ann-text" id="ann-popup-text"></div>
+      <div class="ann-meta" id="ann-popup-meta"></div>
+    </div>
+    <button class="ann-dismiss" id="ann-popup-dismiss" title="Dismiss">✕</button>
+  </div>
+</div>
+
+<!-- ANNOUNCEMENT ADMIN BUTTON (fixed, bottom-left, only for Harshit) -->
+<button id="ann-admin-btn" onclick="openAnnModal()"
+  style="display:none;position:fixed;bottom:72px;left:16px;z-index:200;
+  padding:8px 14px;border-radius:20px;border:1.5px solid rgba(157,126,255,.4);
+  background:rgba(20,10,40,.85);backdrop-filter:blur(12px);
+  color:#a78bfa;font-family:var(--sans);font-size:12px;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);">
+  📣
+</button>
+
+<!-- ANNOUNCEMENT MODAL (admin only) -->
+<div class="ann-modal-overlay" id="ann-modal" onclick="if(event.target===this)closeAnnModal()">
+  <div class="ann-modal">
+    <div class="ann-modal-title">📣 Post Announcement</div>
+    <textarea class="ann-inp" id="ann-inp" placeholder="Type a message for the whole team..." maxlength="200"></textarea>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right" id="ann-char">0/200</div>
+    <div class="ann-modal-btns">
+      <button class="ann-modal-clear" id="ann-clear-btn" onclick="clearAnnouncement_()" style="display:none">Remove</button>
+      <button class="ann-modal-cancel" onclick="closeAnnModal()">Cancel</button>
+      <button class="ann-modal-post" onclick="postAnnouncement_()">Post</button>
+    </div>
+  </div>
+</div>
+
 <!-- REMINDER MODAL -->
 <div class="reminder-modal" id="reminder-modal">
   <div class="reminder-box">
@@ -636,7 +837,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
@@ -705,6 +906,10 @@ onUserReady(async () => {
       loader.style.display = 'none';
       document.getElementById('main').style.display = '';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
+      loadAIBrief(false); // load today's AI brief (cached if already fetched today)
+      // Show search bar for My Tasks tab
+      const sb = document.getElementById('search-bar');
+      if (sb) sb.style.display = '';
     }
   });
 });
@@ -1241,6 +1446,193 @@ function renderFollowup() {
   el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// FEATURE: TASK SEARCH
+// ═══════════════════════════════════════════════════════════════════════
+let searchQuery = '';
+
+window.handleSearch = (val) => {
+  searchQuery = val.trim().toLowerCase();
+  const clearBtn = document.getElementById('search-clear');
+  if (clearBtn) clearBtn.style.display = searchQuery ? '' : 'none';
+  renderMyTasks();
+};
+
+window.clearSearch = () => {
+  searchQuery = '';
+  const inp = document.getElementById('search-inp');
+  const clearBtn = document.getElementById('search-clear');
+  if (inp) inp.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderMyTasks();
+};
+
+// Show search bar on load if on My Tasks tab
+document.addEventListener('DOMContentLoaded', () => {
+  const sb = document.getElementById('search-bar');
+  if (sb) sb.style.display = '';
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// FEATURE: TEAM ANNOUNCEMENTS
+// ═══════════════════════════════════════════════════════════════════════
+let currentAnnouncement = null;
+let dismissedAnnIds = JSON.parse(localStorage.getItem('wd_dismissed_ann') || '[]');
+
+function renderAnnouncement(ann) {
+  currentAnnouncement = ann;
+  const isAdmin = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
+
+  // Show/hide admin floating button
+  const adminBtn = document.getElementById('ann-admin-btn');
+  if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+
+  const popup  = document.getElementById('announcement-popup');
+  const textEl = document.getElementById('ann-popup-text');
+  const metaEl = document.getElementById('ann-popup-meta');
+  const dimBtn = document.getElementById('ann-popup-dismiss');
+  if (!popup) return;
+
+  const hasAnn = ann && ann.text && ann.id && !dismissedAnnIds.includes(ann.id);
+  if (!hasAnn) { popup.classList.remove('show'); return; }
+
+  const ts = ann.postedAt?.toDate
+    ? ann.postedAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+    : '';
+
+  if (textEl) textEl.textContent = ann.text;
+  if (metaEl) metaEl.textContent = 'Posted by ' + (ann.author||'Admin') + (ts ? ' · ' + ts : '');
+  if (dimBtn) dimBtn.onclick = () => dismissAnnouncement(ann.id);
+
+  popup.classList.add('show');
+}
+
+window.dismissAnnouncement = (id) => {
+  if (!dismissedAnnIds.includes(id)) {
+    dismissedAnnIds.push(id);
+    localStorage.setItem('wd_dismissed_ann', JSON.stringify(dismissedAnnIds));
+  }
+  renderAnnouncement(currentAnnouncement);
+};
+
+window.openAnnModal = () => {
+  const inp = document.getElementById('ann-inp');
+  const charEl = document.getElementById('ann-char');
+  const clearBtn = document.getElementById('ann-clear-btn');
+  const existing = currentAnnouncement?.text || '';
+  if (inp) {
+    inp.value = existing;
+    inp.oninput = () => { if(charEl) charEl.textContent = inp.value.length + '/200'; };
+    if(charEl) charEl.textContent = existing.length + '/200';
+  }
+  if (clearBtn) clearBtn.style.display = existing ? '' : 'none';
+  document.getElementById('ann-modal').classList.add('open');
+  setTimeout(() => inp?.focus(), 200);
+};
+
+window.closeAnnModal = () => document.getElementById('ann-modal').classList.remove('open');
+
+window.postAnnouncement_ = async () => {
+  const text = document.getElementById('ann-inp')?.value.trim();
+  if (!text) { toast('Enter a message first'); return; }
+  await postAnnouncement(text, MY_NAME);
+  closeAnnModal();
+  toast('📣 Announcement posted!');
+};
+
+window.clearAnnouncement_ = async () => {
+  if (!confirm('Remove the announcement for everyone?')) return;
+  await clearAnnouncement();
+  closeAnnModal();
+  toast('Announcement removed');
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// FEATURE: AI DAILY BRIEF
+// ═══════════════════════════════════════════════════════════════════════
+const AI_BRIEF_KEY = 'wd_ai_brief_' + new Date().toISOString().slice(0,10);
+
+async function loadAIBrief(force) {
+  if (!MY_NAME) return;
+  const panel = document.getElementById('ai-brief-panel');
+  const body  = document.getElementById('ai-brief-body');
+  if (!panel || !body) return;
+
+  panel.style.display = '';
+
+  // Use cached brief for today unless forced refresh
+  if (!force) {
+    const cached = localStorage.getItem(AI_BRIEF_KEY);
+    if (cached) { body.innerHTML = cached; return; }
+  }
+
+  // Show loading state
+  body.innerHTML = `<div class="ai-brief-loading">
+    <div class="ai-dot-pulse"><span></span><span></span><span></span></div>
+    Generating your brief...
+  </div>`;
+
+  // Gather context
+  const myTasks = tasks.filter(t =>
+    (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())
+  );
+  const inprog  = myTasks.filter(t => t.status === 'inprog');
+  const todo    = myTasks.filter(t => t.status === 'todo');
+  const dueTasksDays = myTasks
+    .filter(t => t.taskDueDate && t.status !== 'done')
+    .map(t => {
+      const days = Math.ceil((new Date(t.taskDueDate) - new Date(todayStr)) / 86400000);
+      return `"${t.label}" due in ${days} day${days===1?'':'s'}`;
+    });
+
+  const teamInprog = members
+    .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+    .map(m => {
+      const mt = tasks.filter(t => (t.members||[]).some(mm=>mm.id===m.id) && t.status==='inprog');
+      return mt.length ? `${m.name} is working on ${mt.length} task${mt.length>1?'s':''}` : null;
+    }).filter(Boolean);
+
+  const streak = streakData.currentStreak || 0;
+  const today  = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+
+  const prompt = `You are a smart daily assistant for ${MY_NAME}, who works in Internal Communications at Bosch India.
+
+Today is ${today}. Here is their WorkDesk status:
+- Tasks in progress: ${inprog.map(t=>'"'+t.label+'"').join(', ') || 'none'}
+- Tasks to start: ${todo.length} task${todo.length===1?'':'s'}
+- Due soon: ${dueTasksDays.join(', ') || 'nothing urgent'}
+- Team status: ${teamInprog.join('. ') || 'team data unavailable'}
+- Current streak: ${streak} day${streak===1?'':'s'}
+
+Write a concise, warm, motivating daily brief in exactly 3 sentences. 
+- Sentence 1: Acknowledge their current workload briefly.
+- Sentence 2: Highlight the most important thing to focus on today.
+- Sentence 3: An encouraging close relevant to their streak or team.
+Keep it professional but human. No bullet points. No headers. Plain sentences only.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || 'Could not generate brief.';
+    const html = `<span style="color:var(--text)">${esc(text)}</span>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;font-weight:600">
+        AI-generated · ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+      </div>`;
+    body.innerHTML = html;
+    localStorage.setItem(AI_BRIEF_KEY, html); // cache for today
+  } catch(e) {
+    body.innerHTML = '<span style="color:var(--text3);font-size:12px">Could not connect to AI. Check your connection.</span>';
+  }
+}
+
 // ── HELPER: get member's individual status ─────────────────────────────────
 function getMemberStatus(task, memberId) {
   if (task.memberStatus && task.memberStatus[memberId] !== undefined) {
@@ -1302,6 +1694,10 @@ window.setMemberStatusWindow = (taskId, memberId, newStatus) => {
 // ── TABS ───────────────────────────────────────────────────────────────────
 window.switchTab = (id, btn) => {
   ['mytasks','bymember','followup'].forEach(t => document.getElementById('tab-'+t).style.display = t===id?'':'none');
+  // Show search only on My Tasks
+  const sb = document.getElementById('search-bar');
+  if (sb) sb.style.display = id === 'mytasks' ? '' : 'none';
+  if (id !== 'mytasks') clearSearch();
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   else document.querySelectorAll('.tab')[0].classList.add('active');
