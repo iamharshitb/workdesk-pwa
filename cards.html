@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkDesk — Player Cards</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
+<style>
+
+/* ── PAGE ── */
+.cards-page {
+  min-height:100vh;padding:16px 16px 100px;
+  max-width:500px;margin:0 auto;
+}
+
+/* ── SECTION HEADER ── */
+.cards-hero {
+  text-align:center;padding:20px 16px 16px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:16px;
+  box-shadow:var(--shadow-card);
+}
+
+/* ── CARD GALLERY ── */
+.cards-gallery {
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-bottom:20px;
+}
+
+/* ── PLAYER CARD ── */
+.player-card {
+  position:relative;border-radius:16px;
+  aspect-ratio:3/4;cursor:pointer;
+  perspective:800px;
+  -webkit-tap-highlight-color:transparent;
+}
+.card-inner {
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+  border-radius:16px;
+}
+.player-card.flipped .card-inner {
+  transform:rotateY(180deg);
+}
+.card-front, .card-back {
+  position:absolute;inset:0;
+  border-radius:16px;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  overflow:hidden;
+}
+.card-back {
+  transform:rotateY(180deg);
+  display:flex;flex-direction:column;
+  padding:14px 12px;
+}
+
+/* Rarity tiers */
+.tier-rookie   { background:linear-gradient(160deg,#1a1a2e,#16213e);border:1.5px solid rgba(148,163,184,.4) }
+.tier-contributor { background:linear-gradient(160deg,#0f3460,#1a1a2e);border:1.5px solid rgba(96,165,250,.5) }
+.tier-pro      { background:linear-gradient(160deg,#4a2c0a,#1a0a00);border:1.5px solid rgba(245,158,11,.5) }
+.tier-elite    { background:linear-gradient(160deg,#1a0a2e,#0d1018);border:1.5px solid rgba(167,139,250,.6) }
+.tier-legend   { background:linear-gradient(160deg,#2d0a0a,#1a0a2e);border:2px solid rgba(239,68,68,.7) }
+
+/* Card glow by tier */
+.tier-rookie   { box-shadow:0 4px 20px rgba(0,0,0,.5) }
+.tier-contributor { box-shadow:0 4px 24px rgba(96,165,250,.15),0 0 0 1px rgba(96,165,250,.1) }
+.tier-pro      { box-shadow:0 4px 24px rgba(245,158,11,.2),0 0 0 1px rgba(245,158,11,.1) }
+.tier-elite    { box-shadow:0 4px 28px rgba(167,139,250,.25),0 0 0 1px rgba(167,139,250,.15) }
+.tier-legend   { box-shadow:0 4px 32px rgba(239,68,68,.3),0 0 0 1px rgba(239,68,68,.2) }
+
+/* Holographic shine overlay */
+.card-shine {
+  position:absolute;inset:0;border-radius:16px;
+  background:linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255,255,255,.06) 40%,
+    rgba(255,255,255,.1) 50%,
+    rgba(255,255,255,.06) 60%,
+    transparent 80%
+  );
+  pointer-events:none;
+  transition:background-position .1s;
+  mix-blend-mode:overlay;
+}
+
+/* Card front content */
+.card-tier-label {
+  position:absolute;top:10px;left:10px;
+  font-size:8px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;
+  backdrop-filter:blur(8px);
+}
+.card-tier-rookie     { background:rgba(148,163,184,.2);color:#94a3b8;border:1px solid rgba(148,163,184,.3) }
+.card-tier-contributor{ background:rgba(96,165,250,.2);color:#60a5fa;border:1px solid rgba(96,165,250,.3) }
+.card-tier-pro        { background:rgba(245,158,11,.2);color:#f59e0b;border:1px solid rgba(245,158,11,.3) }
+.card-tier-elite      { background:rgba(167,139,250,.2);color:#a78bfa;border:1px solid rgba(167,139,250,.3) }
+.card-tier-legend     { background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.3) }
+
+.card-flip-hint {
+  position:absolute;top:10px;right:10px;
+  font-size:9px;color:rgba(255,255,255,.3);font-weight:600;
+}
+
+.card-avatar {
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);
+  font-size:56px;line-height:1;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  transition:transform .2s;
+}
+.player-card:hover .card-avatar { transform:translate(-50%,-65%) scale(1.05) }
+
+.card-name-area {
+  position:absolute;bottom:0;left:0;right:0;
+  padding:10px 12px 12px;
+  background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%);
+}
+.card-name {
+  font-size:14px;font-weight:900;color:#fff;
+  letter-spacing:-.01em;margin-bottom:3px;
+  text-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+.card-role {
+  font-size:9px;font-weight:700;color:rgba(255,255,255,.6);
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.card-badges-preview {
+  display:flex;gap:3px;margin-top:5px;flex-wrap:wrap;
+}
+.card-badge-mini { font-size:13px }
+
+/* Stat bars on front */
+.card-stat-area {
+  position:absolute;left:10px;right:10px;bottom:72px;
+}
+.card-stat-row {
+  display:flex;align-items:center;gap:5px;margin-bottom:4px;
+}
+.card-stat-label {
+  font-size:8px;font-weight:800;color:rgba(255,255,255,.5);
+  letter-spacing:.06em;text-transform:uppercase;width:28px;flex-shrink:0;
+}
+.card-stat-bar {
+  flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;
+}
+.card-stat-fill { height:100%;border-radius:2px;transition:width .4s ease }
+.card-stat-val {
+  font-size:9px;font-weight:800;color:rgba(255,255,255,.7);
+  width:20px;text-align:right;flex-shrink:0;
+}
+
+/* Card BACK */
+.card-back-header {
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);
+}
+.card-back-avatar { font-size:28px }
+.card-back-name { font-size:13px;font-weight:900;color:#fff }
+.card-back-tier { font-size:9px;color:rgba(255,255,255,.5);font-weight:700;margin-top:2px }
+.card-back-stats {
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;
+}
+.card-stat-box {
+  background:rgba(255,255,255,.07);border-radius:8px;padding:7px;text-align:center;
+}
+.card-stat-box-num { font-size:18px;font-weight:900;color:#fff;line-height:1 }
+.card-stat-box-lbl { font-size:8px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;margin-top:2px }
+.card-back-badges-title {
+  font-size:9px;font-weight:800;color:rgba(255,255,255,.4);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;
+}
+.card-back-badges {
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.card-badge-full {
+  display:flex;align-items:center;gap:4px;
+  padding:4px 8px;border-radius:20px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  font-size:10px;color:rgba(255,255,255,.8);font-weight:600;
+}
+.card-back-flip {
+  margin-top:auto;text-align:center;
+  font-size:10px;color:rgba(255,255,255,.25);font-weight:600;padding-top:8px;
+}
+
+/* ── AVATAR PICKER ── */
+.avatar-picker-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:300;display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.avatar-picker-overlay.open { display:flex }
+.avatar-picker {
+  background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:20px 20px 0 0;padding:20px 16px 36px;
+  width:100%;max-width:500px;
+  box-shadow:0 -8px 40px rgba(0,0,0,.5);
+  animation:slide-up .25s cubic-bezier(.34,1.56,.64,1);
+}
+.avatar-grid {
+  display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0;
+}
+.av-opt {
+  font-size:28px;text-align:center;padding:8px;border-radius:10px;
+  cursor:pointer;border:2px solid transparent;transition:all .15s;
+  background:var(--bg2);
+}
+.av-opt:hover { background:var(--bg3);transform:scale(1.1) }
+.av-opt.selected { border-color:var(--neon);background:rgba(0,229,184,.08) }
+.av-save {
+  width:100%;padding:12px;border-radius:12px;border:none;
+  background:var(--neon);color:var(--bg);
+  font-family:var(--sans);font-size:14px;font-weight:800;
+  cursor:pointer;
+}
+
+/* MY CARD section */
+.my-card-section {
+  margin-bottom:20px;
+}
+.section-title {
+  font-size:11px;font-weight:800;color:var(--text2);
+  letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-title::after {
+  content:'';flex:1;height:1px;background:var(--border2);
+}
+
+.my-card-wrap {
+  display:flex;justify-content:center;
+}
+.my-card-wrap .player-card {
+  width:180px;
+}
+
+.change-avatar-btn {
+  display:block;text-align:center;margin:10px auto 0;
+  padding:7px 18px;border-radius:20px;
+  border:1.5px solid var(--border2);background:none;
+  color:var(--text2);font-family:var(--sans);font-size:12px;
+  font-weight:700;cursor:pointer;transition:all .15s;
+}
+.change-avatar-btn:hover { border-color:var(--neon);color:var(--neon) }
+
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIkAAAAkCAYAAAC9phn5AAABMmlDQ1BJQ0MgUHJvZmlsZQAAeJx9kD9Lw0AYxn+Wgv8H0dEhYxelKuigLlUsOkmNYHVK0zQVmhiSlCK4+QX8EIKzowi6CjoIgpvgRxAH1/qkQdIlvsd797vnHu7ufaEwhqJYBs+Pw1q1YhzVj43RT0Y0BmHZUUB+yPXznnrfFv7x5cV404lsrV/KZqjHdaUpnnNTbifcSPki4V4cxOKrhEOztiW+FpfcIW4MsR2Eif9FvOF1unb2b6Yc//BA645ynm1OiQjoYHGOwT4rmqvaeXSJxT05YtqiiJpOKiKTUA5fSgtHTNK/9InLD9h86Pf795m29wi3azBxl2mldZiZhKfnTMt6GlihNZCKykKrBd83MF2H2Vfdc/LXyJzajEFtVc40XNXmSNnVf20WRcuUWWL1Fx+iTfmvd1mpAAAY1ElEQVR4nO2ceZQd5XXgf/f7qt7rTa19a0loX5FAFkJIgMMixGrjMZhl4thxbE9yBjyeYGwPY0PwsY0Ndhgbn8BJQmAY8Bxj2cHG4ABhtcBISDLaEBISLSSEdrXU+9vq++78UVWvn1qvpZZITpI5uuf06ddVX917v/vduvtr4SRAVQWo/DkF//5BAS8ieqIP9vuAE8UwACLiTpTQKfj3AapqiM+93woT9BOxTRTDAaxdu7Z+5syZUzOZzGnOuYHEyiMApVIpAEJizXVhGJYAnHMK2ASlJLjUWusA45wTa60657DWVpIPnHNqrY0Ab60V55yz1uKc89Zan+At40x+AKxzzlTg1YQXm/Csyb0ywWSdSXD65G8HSELLO+escy7w3psEj6nkOaHpK/Ygzrl03z7BpRXXU15sch/nHN57jDHqvTfGmLJ8AE1oY4zxFXsOUrrGmG4gSvCVvPc78/l8s4gcqHKuJw+qKonmAdDR0XFRsVj8h1KptMU55/UU/IcC59zuKIqe6O7uvnHfvn0N6Rnfeeedpm8tOIa7UVVJzVEul1sShuE3rLUXVq7x3qdaXAZjjPZaI8aY8lvR+3ryOX22KiuAJM9T+Tt9Jr1WibsaL/2BClxKL/mkNCv32pt2NXwV6/u1rheNfj9TKRd68S4iVqTnkvd+cxRF38tms48BLF261F5//fVVrUpVJVFVIyL+5Zdfrjn//PO/FwTBLVB2GV5iaiKVVOPn6HWpGu7jrjkeqMZnfzJ4/iXo/2tDuj9I9niUuvbzuaPvq2rszqw1FsA593RbW9tNQ4cO3dmXohyFKbUgzc3NA8eNG/eLMAyXVFgM23t9JUO9mdQyekVQREFFyqZHNL6DeBBF1FQIJP6gCCIK6lCNQw8hfVvkmMI7ltB6eHAoBsQgVDc81RRLE/5BUAG8Q3B4E2C8IOJwIiCG/tizo2SniojG8lEDOLwIRgXQijVHy77afnvTUlUvImqMsVHkthUK+WsaGhrWVVOU3pZAANm4cWMwbdq0J8MwvNx7HwE2tRrVN9OLoVQRvEO9B/GIGIQABFQ0EbDinSb3QSRM+BCM0XgzXlBKqHqMCTDGxjT7PNK+BV9diL4sBlVHtfeg6kGIgvo4YhSLQRHVWOEAweMREOHEk84UYvxG4njW40Hth6o59FYmIDLGBFHkPujq6rxg0KBB21JPki7ond2IiPhCoXBPqiAi0mcGVIVg+bpHCYwF0yN0rxqfh8bBuGCwga14zpFk2YkieMQGQKZnDSVEguQNOznpp4eey5co+fhY62otJkF5rLe0fA0Ai3iHqNJpYqvXoKDWY9RgqO4q+pJbb1CxiCq5SCmiNAp4k7qgk9a8I0BEAudcFAR2bH19/SPvv//+ZUChMiYts69JOtTZmbusvr7mWeciZ4yt6l76Mm09glVU4fdvrOVASwfqHYsWnMnokUPw6mMnIoZC0bFsxZt0tOdpGjWMRWfPQr2iYoAIIwFvb9rG5ub3QT1zZ09h4oQxoALGnJSgUv68Crd+4we8sfYdJo4dxt/ceweDGutR36Mcx4xdPDgFa2FfocC3n3ySKUNHcMviC4l8ESuxYgsKvV3VMfg+MrhUjBHue+UVNuzZzV3XfJKR2dqy3vVb2Y4TqyRrImNMUCgUbq+pqblLK9LjIFkggFfVMIrct/tDuBqx9Jr3irWW3z67jEcefw4rjltv/hO+8t8+C97HNsQYtmzbxl/edjed7TB1wnCeWHofA+tqUfWICFHk+eF9D/Hc71bRWFvDo3//fSZNtHjvEVW8OiQ17yIVLigJbIktgqIVvMW4RWDfwS62f9BK1lpwHklinNSSeK+JGzxyrz726XgEg5D3Ec0dHWQbGmK6yaF4k9hF1fLBxrSPlp1PDzI2ZUeUsvflcrzfkaeoaWgoqcCTF7Nnr/09qypgvfdqbXDr7t27fyoiO1K3k+ZXRkQ0n89fZK1d4OPqTVUrcgJE+dhVlzBs6GDqG4by2htrKBQjjA1QH8dFz764nK4uYciIYezce4jfL98AAi7yiFh27NrHuo07qKkZzFnzT2fevFl49ag6BMGaAGMMxhhEhJKL4khApNwwEBMrpHogSVdFBK8QmJBsGBBmg9TL4Z2iPkJEMEaSALyIesV5RaMSRgRrDaGVOA5RCK0la1LPLKgH9S52mSIYiQNw5xzOKQ5F1aNO8aUSRlyyJqkKeo9P5BSYgCxhOWj16vDqcarxM8dQkP6BIiKiig8CO3jIkCGfLW+EsmhiCAJ7Q/rCfZiWTJy1eWbPmkzTyEF49Wzbvost776HJFYkcp6VqzdigxCvJfLFEq8vX5PwHG941ZvraO8s4FzEvDNmEBhBnccGIV35ImvfepeXXlvJmvWb6OwqEgYBRl0S20BbeyfN23fTvGM3ahSxlrc2v8e2HbsQVVxUiBVWLYJBVTEWIixbt+2hefsBNm/ZTjEfH441QjEI2drRydr9+2lua8OLkA0CNPJE3hFHVYqXiMBYur1lY+th1u0/yJ6uCLEWax3ik4zOCIQh+7od6w8cYn3LYfZ25lFjMEEa/yiKQyXujKgD4w04aG5rZWdreyL3kz2z1L3GXsxae4OqZowxDpAgCVDc6tWrQ1XmJ08dswJ3XJJi8FGRQQ21LJg/h3ffe57WjogXX36dObOmYmzI2g1b2bz1fcJsQKmYJ5utZcXqNznc1s7gxgF4VV585Q0i72hszHDxReclAjM8/NiveeKpF3jv/b10dnZRW1/DlPHjue4TF/GZ/3w1+AhjLc+/tJw777qfwUMH8aWbP8fKFRv41W+e4S8+9yluu/XzIA4UjJg4VhKhGHlu/85PePb5VRRzXXzqkxdy+9dvQoywqbWVh15dwYb3dxKhhFaYPWY0V8xbiDUG54txFw3B2IB/bt7Bz1ev5oPDewCoNY2cPeU0/uzcc2iqqcGjHIpKPLzydV7f+C5dvgQqZI1h9piR/PfzL2LUoAGxxUkKCqpx0azLKD954SVebd7MVy6+hHGDGmOX9eHqQAKIqk5paWmZrKqbVFWC5IZOmTJlPDAxXXy8glXV2kHFM2kqeOnF57L0ieco+ZA1b23DeY81hmWvr+VwaweTJ41l1ozxvPjyGt7buZfVa99myQUL2bO3hS3v7sL5iPlzz2D2jEl44Ns/fJCH/s+vCDN1WCsMHT6K9vZO1m3czroNf8c7zR/w7W/ehAG6C47OvGK7Au66+1EO7NtPd3cHRRcB4L2J3ZsvEmZDuvIFvn7H/+Kfnl1ByUVcddlCbvvaf6WmJsPGljZue/yXtBe6+OTChcwZ20RHrshv1qzi3qd+TcF4Au/jJpLN8MSmd/jBU7/h9AmTufnSKxlYk2HL7v089uorNO/ZxT3XXcfwTIala1bw5KqV3LjwImaPHU3k4K29H7BtezORSc26A+dQF8cfHSg/fP45Xlj7FjdfdhWLp05Hfepmj68gx3BN4pzzYRhm6+rqzgQ2AWUlQdWeFobhAPDHrO/1x/epkqS+jjmzJjO2aSTbd7WwZv0WNr3TzKzpk1m+fC3eO6ZNGMOX/+LTvPHGZva35fjd62+y5IKFLHttJTs/OIg1hnPnzya0hpdeXcVPl/4TdY1DGDeillu//GfMPWMGGzZu5a9/9Ag793bws398gQvPO4tLFy+MA2AjeFegWOzmhmsv5MzTJ3PWvFlxfIhBfUSQCdnf0sld37+f55etJjQZrr5sET/4zi00ZAMilP+7YjWHurq448b/xOWnjSeurxgWT5vEd596mpe3bkXGjkOAvV05HnrpZeZMHM9ff+oaBibSvKBpLJOGD+MbP32cpzds4HNnncWqrTuZOmYSX1o4vyy/S8aPoXvBOWQ0LlVYBy6KkMDS7hzff+F5Xtu8ha9+7GqunTkd7zxiDL06JCcMIoL3PkFipqWXy27FGMlCnJn0ffh6xOdqqXAaNBoE5zyDBzZwwflzcZHj4OFOtmzZztbmnaxev5FMGHLWmTOYNWUcs6aNRZ1h+fL15PIl/rB2E4VSxOBBNSxcMBeAZa/9gciFUOzipi/ewFWXns+YEQO5fPEibvnSZ3Auj8Py3AvLYn6SqmUu18lHF57Offd8lc9/9pOcOXt6Ygk91ho6ux23/I97+N3r68lk6rh08Tnc+72vUl9jUPXs6+5m3c53OWf6RJacNh6NSjjnKUURA0S4fuFCsoElOVPebtnHoVyeRTPOQFzEvu4cuwsFDuRzTBszhgkTxrNh1y4AJg4fxtvNzTy8eh1bDrWxL1cAoE5AXIzQIwSBcLDkuffFV1j29hZuvvxKrp05nZIroEkwcTxIz6xahtU77c9mszXpvXKhLIpcmlcd06dV3utrXbkYr3GCdMWSj/LzX71Ce5fh9yvW8dY775MrRowaMpgL/mgBqsqSxQt5deXb7D/QzvMvr2Trtl14YPaMycycPhmAA4cPo3jq6jLMnjWVKHLxptVx5pwZDBsygD0HOth3oBWISykihmIxYua0GEchVyTMxmV4j0NMSMvhHHv2HiTM1lEo5KipCclYQxSVCMMsB7vaaCt0M2bwAIwqzlhEwDqDAqPq62nI1uJdMeazpQNra/nHZa/z62UvglgwinGCqrC/u52hY5sA+PQ589nbcYhHlj3PY6/V0lCT4fTxo7h8zkf4o7GjE0kaCmK499mneG/vATKZkKiQTw+B/qhINQ9w7DJGVL5WVhLnXIf3XiUGTWonfRI7bnCURu7qmXP6DCaMG8GmrXt46bU1mDBDJswybeIoJp02ChHh7PlzaByQoRR5fvzAoxxuKxAaw7wzZxHYmFZdTQiidBcdLYdamTFtIsVSidBmaGltJ5/LY8WSzdbGPFgwprLiAEEQH7AXQCweQb2nLmMYNKievQeKPPHk84xrGsGtX/oT1Cu1NiCUDO3dDhHB+YhAAiJTItSA7iii4BUN4rZCXX0W53Ocf8YZnN00nGLJESI44kK7MYYRtXVE6pk0sJF7r72Ot/ftZePu/exsb2flO5t47e1fcOfVn2DJ1EkEVugsOA62HObLl13B6uat/O3zzzB5yHAWjR1F5OPCY1/epmrF+DgBbqFQai3LjAR1d3f7u4MGDTgQhsGItOB01Ln3O2pOZmDE4FxEbTbk/IVzeXvLToq+Di3EjbUlFy+ipiaDcwWmThzLR2ZP5bWVG9l9oAPBMmRwPZdcvIi0gDRr2hR88QXIDOaBB3/B+HFjaRo1hP0HD/PAgz8jF8W1kjmnx1YjiuJUONaTynI6iAp4i1UhNCVu//oX+MgZs/jMF77BYW+4/8HHmTBxNNdetZgRjQ1MH3Uaq7btYmtnN1Mb6sCXsEmguGxbMx3deayPlXPKsIEEGtDVleOSyVOqSkeAIhGRWmoE5o0cxbyRowDY+JG53PTww7z89gaWTJ2Eqicjwi2Xf5wl45uY3zSSrXv3cs/Tz3LPjdcyfVAd1c6sP+6lynoTxyV+XXrZiIhXVZkwYcJeEd5J9lB9uOEEQMtdrfj3xRcuoq42g4hFxNNQZzhnwRkAOO/IBJZFZ8/BRY5sXQPFUpHxY4czY+oEvDqcKtdcvYQFc6fQ0dnJirXbuPHz/5Mbv3A71/3p11n2+npy3TlmzxzHp2+4EgAjGcQEGGuqzGUImWyAijJy5HAuXXweUyc0ccdt/4XI5Qnrh3D3vf/AW5ubGRQEXHP2LFq6DvGdp37L8r372eMMOwueh1ev4ZcrV9PQUIfQjQLTh4zg42edxdN/WM2dz73AlrY2WnzEB4U8D65azZ8/+ii7OjopRI6/+tVTPLRqHTu7uzjkI1p9iY27dpEvesYMGwlA5C0DMobTRw/F+xIT6+u5dcmlHOo8zE9eeIlOtbHFPIaS9OvMFLXWive+rbu7e316OXU3FojAvAR8NC6LlycSTxKSQMgYUM+s6ZMYPXIwGzfvAO84f9HpTJ0yEVXF2piNcxfOI/s3P6Xl4AFyXW0sOPtSQmuIXAQoAxvr+dE93+SOux5g1Zubad6xn7fe2UVNFhobspwzbwrf+atbGD60Mdmep7uznXwuR7GQS/dMOmLQneugo6OFfK6BfKGErwu4asl5rP3TrTzw4C/oalW+9s17efj+b3HxxInsW3IJj722jK8t/TlDGgZSdAVcscDHz7+YZ37/Kq1dh3CA9Z4vfnQeBW3nuXXrWL7tXYY1DqSzkKPlcAcLJk8mFEPBeUqZgMeWL+OX61bQmB2KErFn/z7OmzaZ6+clL1EpojPfSa4UYTL1RKUi540ZzZ9fsYQfPfkE978wgK8svhArekR8cqyBpaonJuoBI2L+MHz48L1JDc0n6W9sUVpbW6cMGDBgDWi9qmKMrWwAnnSRJsZleHXFWjZt2YGIYc7MSSycfzrOe4zEWUjkDb95ZhmHWrux4rnkwgWMbRqBpmmDV4y1OKeseHMjK1dtoLW1nQGN9cw7cybnLjiDmmyIi0rYIOSd5h2sWPUWUckxb+405s6ZgfoonuBSwz+/tJw9+w4xZPBALr34HGpDwSPkip6nnnmFUiQ4V+Tc+TOZNnkiXmBLaxtvbH+f/QdbaGwcwHnTJjNt0CB+u349jTX1LJ4yGUcRawKKGNYdPMC65vfY397FwLpa5k08jblNTdQm+loQ2HighQ0f7GLX4RaymRpmjGli0bgmhgQCGvD6e9vZ0dnBFdNnMSgjOFGMM3Qb4aV33yHXUeDyWdNoqMkmFQzK5dMTOCW8997awORyxT+uq8v+LG3yVSqBERFfLJYeDMPgi727wCetJNrTBT2qURZ5JNVD9Xgc1mQqVxBPZsQt97jiGFsVY8IqtBzeKcYE8bzHUY05n3RlYyt5xF0l7kBrnIwczasiGiFhubRUBqcFbFxBwLu43J4OJVVtpHsllrxDIA46e2/Fe5wo1pseGXmPqoARvCgm8kgyahElQ13Sz8Si93mqqjPG2FIpWnvgwP7zmpqacgkePUJJAM235scHDZnVQWCGJNnOcW1WfxVIneJxqHiMWIwEqESIGkRN3KPQqBwQmaTJphpPf8V5iqKu54VB4qIWAkY0+WxihfI+nvlU4hTUxCmriE34idBkwN6YIB6KQvFEcXNNDYJFbFyo0jTs1XTKzvQoYtKLccYSRoI34I2nPDMvSvp1JSPJPtJusUhcblcSGh4kQCSu5TiNxyLEgNF48AgRPIqqwyNYMYnaJy6nj5JotdpWUkDz1lhbKBaurKmpeaZyVEB6ITAi4js78x+rq88+Jcms8/EUpd9WRnsaVuk+SFpioqbMjC9XbBI7ouDFJybU9oTWcb+rkkDl9suXJDngeIImHQGsZMmXhwvS5mI8diD0ZGoCKmlzIw7MEwUVL6hE4A1qLOI1Uepkv8mQlyQTe+k4g/iK8QaJ78QBv8f4hAeJszCSNc64+J5anBGMS/YniUyTQuaxhp2OLGMYVY2ctUGQz0ffra0N79BeX7U4ws4lmY4Vkae7uvJ/WVeX/bExBue8M0b6HB04+oD6AIkS8Zse95GiNa7MfDyDkdQ3hHL3M6YSjzqq0US8qSTi9bGsY4F7SYkk+CTVzNRv+2SuNtG0eOi2jFNwYHw8GKKSuBGPGocSYnys2F5AJUCMIkSIifmKJ1Sk/GZrorAk+1MT82g0no9BTZIwGFSSwr8qaiI8ilWDqC3vzQtY8TGOxJqmZyEceSI9FqQnHY7nXB3WBkEuV/jf99zz/TsTj3JEdttXwSydUvtCbU3mPmNNvYu/FSTxZH7vQtu/zCjdicIRs3Xlca2+c7K+agMnQ/fD5H3Hot/fuM8nsyQnij++hif+olsAkM9HP7777u/e+q1vfSsxtkdO5fZJJVWUrrauc7L12Z9YaxfEdxzeqztSVMFJSC5R1iM8RIXvUN/zd+XnymeBI/1N7/JOz71q2WDPV1Qqnuu9DzWJW0nx+YrfvaG//Poj15efqcZDb8ZTuaXWrzcPKX/JMk1dHYBRtGSNDQUgcn5XqRh9ta4u+3haYe+tIFVJVEKqKFu2bMmOHz/pj20gN6M619rqs6+n4D8GOOeai8Xokba20t+PHj1gf5q0VFMQ6Me7Xzlev3TpUnvllZ+Yk6mxF3ivc13kRosRk+SdcbuybPRjjbbW+ESbyzrtnTMiIMa6OEBSVdUgiVEBr4G1XrU8IupF1HiPiSMA460VHzdCYmVOrIKKiDNWIkCdc6GmXUbEGzGRMaj3WAWDauzKjfGJXRbvXBCn2mCt8SLiHIg6l+S+RsXgU5moaqDOGxGj4NUYq/HoqVrnfPJlHqNiUOIISJx3No6FjcegRsSj4LyzlbTjuAbUqwEvYoziwVpxybesTDwUY+KJW2PVgLp4fSxsjGJwYHYbw7ulglvZ3V3zxsiR0pnw/+G/D5wgkh5hn4L/H0BVbV9N3N5wQlGE9vxfknTC5UR7PL2D7t48VMlhj2ThJJ7TPq73da8/NCrv/dtE7dVleSxI+yzKSf6fklNwCk7BKTgFp+BfEf4ffC/eK38BNmYAAAAASUVORK5CYII=" alt="Workdesk" height="36" style="display:block"></a>
+  <div class="nav-right">
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+  </div>
+</nav>
+
+<div class="cards-page">
+
+  <!-- HERO -->
+  <div class="cards-hero fi">
+    <div style="font-size:32px;margin-bottom:8px">🃏</div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">Player Cards</div>
+    <div style="font-size:12px;color:var(--text2)">Tap a card to flip · Tap your avatar to change it</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:6px">🤫 Secret feature — keep it between us</div>
+  </div>
+
+  <!-- MY CARD -->
+  <div class="my-card-section fi" style="animation-delay:.04s">
+    <div class="section-title">Your Card</div>
+    <div class="my-card-wrap" id="my-card-wrap"></div>
+    <button class="change-avatar-btn" onclick="openAvatarPicker()">✏️ Change Avatar</button>
+  </div>
+
+  <!-- TEAM GALLERY -->
+  <div class="fi" style="animation-delay:.07s">
+    <div class="section-title">Team Collection</div>
+    <div class="cards-gallery" id="cards-gallery"></div>
+  </div>
+
+</div>
+
+<!-- AVATAR PICKER -->
+<div class="avatar-picker-overlay" id="avatar-overlay" onclick="if(event.target===this)closeAvatarPicker()">
+  <div class="avatar-picker">
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">Choose your avatar</div>
+    <div style="font-size:12px;color:var(--text2)">This shows on your player card</div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <button class="av-save" onclick="saveAvatar()">Save Avatar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="bn-item">
+    <span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span>
+  </a>
+  <a href="input.html" class="bn-item">
+    <span class="bn-icon">＋</span><span class="bn-label">Input</span>
+  </a>
+  <a href="report.html" class="bn-item">
+    <span class="bn-icon">▤</span><span class="bn-label">Report</span>
+  </a>
+  <a href="calendar.html" class="bn-item">
+    <span class="bn-icon">📅</span><span class="bn-label">Calendar</span>
+  </a>
+</nav>
+
+<script type="module">
+import { initTheme, toggleThemePanel } from './js/theme.js';
+import { onUserReady, getMembers, getTasks, getUserData, saveUserData } from './js/firebase.js';
+initTheme(); window.toggleThemePanel = toggleThemePanel;
+
+// ── AVATARS ────────────────────────────────────────────────────────────────
+const AVATARS = [
+  '🧑‍💻','👩‍💻','🧑‍🎨','👩‍🎨','🧑‍🚀','👩‍🚀',
+  '🦸','🦸‍♀️','🧙','🧙‍♀️','🥷','🦊',
+  '🐺','🐉','🦅','🤖','👾','🎭',
+  '🦁','🐯','🦋','🌟','⚡','🔥',
+  '💎','🎯','🚀','🎮','🏆','🎪',
+];
+
+// ── TIERS ──────────────────────────────────────────────────────────────────
+function getTier(tasksDone) {
+  if (tasksDone >= 100) return { id:'legend',   label:'LEGEND',      class:'tier-legend',   tagClass:'card-tier-legend',   color:'#ef4444' };
+  if (tasksDone >= 50)  return { id:'elite',    label:'ELITE',       class:'tier-elite',    tagClass:'card-tier-elite',    color:'#a78bfa' };
+  if (tasksDone >= 25)  return { id:'pro',      label:'PRO',         class:'tier-pro',      tagClass:'card-tier-pro',      color:'#f59e0b' };
+  if (tasksDone >= 10)  return { id:'contributor',label:'CONTRIBUTOR',class:'tier-contributor',tagClass:'card-tier-contributor',color:'#60a5fa' };
+  return                       { id:'rookie',   label:'ROOKIE',      class:'tier-rookie',   tagClass:'card-tier-rookie',   color:'#94a3b8' };
+}
+
+// ── BADGES ─────────────────────────────────────────────────────────────────
+function getBadges(m, allTasks, streakVal) {
+  const mDone = allTasks.filter(t => {
+    const ms = (t.memberStatus||{})[m.id];
+    return ms === 'done' || t.status === 'done';
+  });
+  const badges = [];
+  if (mDone.length >= 1)  badges.push({ icon:'🎯', label:'First Strike' });
+  if (mDone.length >= 10) badges.push({ icon:'🏆', label:'Taskmaster' });
+  if (mDone.length >= 25) badges.push({ icon:'💎', label:'Diamond' });
+  if (mDone.length >= 50) badges.push({ icon:'🌟', label:'All-Star' });
+
+  // Check completion hours
+  const hours = mDone.filter(t=>t.completedAt).map(t=>{
+    const d = t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt);
+    return d.getHours();
+  });
+  if (hours.filter(h=>h<9).length >= 1)  badges.push({ icon:'🌅', label:'Early Bird' });
+  if (hours.filter(h=>h>=20).length >= 1) badges.push({ icon:'🦉', label:'Night Owl' });
+
+  // Speed run — task done same day it was registered
+  const speedRuns = allTasks.filter(t => {
+    if (!t.completedAt || !t.createdAt) return false;
+    if (!((t.memberStatus||{})[m.id] === 'done' || t.status === 'done')) return false;
+    const created   = t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt);
+    const completed = t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt);
+    return created.toISOString().slice(0,10) === completed.toISOString().slice(0,10);
+  });
+  if (speedRuns.length >= 1) badges.push({ icon:'⚡', label:'Speed Run' });
+
+  return badges;
+}
+
+// ── STAT BARS ──────────────────────────────────────────────────────────────
+function statBar(label, value, max, color) {
+  const pct = Math.min(100, max > 0 ? Math.round(value/max*100) : 0);
+  return `<div class="card-stat-row">
+    <div class="card-stat-label">${label}</div>
+    <div class="card-stat-bar"><div class="card-stat-fill" style="width:${pct}%;background:${color}"></div></div>
+    <div class="card-stat-val">${value}</div>
+  </div>`;
+}
+
+// ── BUILD CARD HTML ────────────────────────────────────────────────────────
+function buildCard(m, allTasks, avatarMap, maxDone, isMyCard) {
+  const mTasks  = allTasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
+  const done    = mTasks.filter(t=>{const ms=(t.memberStatus||{})[m.id];return ms==='done'||t.status==='done';}).length;
+  const inprog  = mTasks.filter(t=>t.status==='inprog').length;
+  const tier    = getTier(done);
+  const badges  = getBadges(m, allTasks, 0);
+  const avatar  = avatarMap[m.name.toLowerCase()] || '🧑‍💻';
+  const pct     = mTasks.length ? Math.round(done/mTasks.length*100) : 0;
+
+  // Stat bars — normalised against team max
+  const statsHTML = statBar('DONE', done, Math.max(maxDone,1), tier.color)
+    + statBar('ACTV', inprog, 10, '#f59e0b')
+    + statBar('COMP', pct, 100, '#34d399');
+
+  const badgesPreview = badges.slice(0,4).map(b=>`<span class="card-badge-mini">${b.icon}</span>`).join('');
+  const badgesBack = badges.length
+    ? badges.map(b=>`<div class="card-badge-full">${b.icon} ${b.label}</div>`).join('')
+    : '<div style="font-size:11px;color:rgba(255,255,255,.3)">Complete tasks to earn badges</div>';
+
+  return `<div class="player-card" onclick="flipCard(this)">
+    <div class="card-inner">
+      <!-- FRONT -->
+      <div class="card-front ${tier.class}">
+        <div class="card-shine" id="shine-${m.id}"></div>
+        <span class="card-tier-label ${tier.tagClass}">${tier.label}</span>
+        <span class="card-flip-hint">tap to flip</span>
+        <div class="card-avatar">${avatar}</div>
+        <div class="card-stat-area">${statsHTML}</div>
+        <div class="card-name-area">
+          <div class="card-name">${esc(m.name)}</div>
+          <div class="card-role">Internal Comms</div>
+          <div class="card-badges-preview">${badgesPreview}</div>
+        </div>
+      </div>
+      <!-- BACK -->
+      <div class="card-back ${tier.class}" style="padding:12px">
+        <div class="card-back-header">
+          <span class="card-back-avatar">${avatar}</span>
+          <div>
+            <div class="card-back-name">${esc(m.name)}</div>
+            <div class="card-back-tier">${tier.label} · ${done} tasks done</div>
+          </div>
+        </div>
+        <div class="card-back-stats">
+          <div class="card-stat-box">
+            <div class="card-stat-box-num" style="color:${tier.color}">${done}</div>
+            <div class="card-stat-box-lbl">Done</div>
+          </div>
+          <div class="card-stat-box">
+            <div class="card-stat-box-num" style="color:#f59e0b">${inprog}</div>
+            <div class="card-stat-box-lbl">Active</div>
+          </div>
+          <div class="card-stat-box">
+            <div class="card-stat-box-num" style="color:#34d399">${pct}%</div>
+            <div class="card-stat-box-lbl">Rate</div>
+          </div>
+          <div class="card-stat-box">
+            <div class="card-stat-box-num" style="color:#a78bfa">${badges.length}</div>
+            <div class="card-stat-box-lbl">Badges</div>
+          </div>
+        </div>
+        <div class="card-back-badges-title">Badges Earned</div>
+        <div class="card-back-badges">${badgesBack}</div>
+        <div class="card-back-flip">tap to flip back</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── HOLOGRAPHIC MOUSE SHINE ────────────────────────────────────────────────
+document.addEventListener('mousemove', (e) => {
+  document.querySelectorAll('.card-front').forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const shine = card.querySelector('.card-shine');
+    if (shine) {
+      shine.style.background = `radial-gradient(circle at ${x}% ${y}%,rgba(255,255,255,.12) 0%,transparent 60%)`;
+    }
+  });
+});
+
+// Touch shine for mobile
+document.addEventListener('touchmove', (e) => {
+  const touch = e.touches[0];
+  document.querySelectorAll('.card-front').forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width) * 100;
+    const y = ((touch.clientY - rect.top) / rect.height) * 100;
+    const shine = card.querySelector('.card-shine');
+    if (shine) {
+      shine.style.background = `radial-gradient(circle at ${x}% ${y}%,rgba(255,255,255,.12) 0%,transparent 60%)`;
+    }
+  });
+}, { passive:true });
+
+// ── FLIP ──────────────────────────────────────────────────────────────────
+window.flipCard = (card) => card.classList.toggle('flipped');
+
+// ── AVATAR PICKER ──────────────────────────────────────────────────────────
+let selectedAvatar = null;
+let MY_NAME = localStorage.getItem('wd_myname') || '';
+
+window.openAvatarPicker = () => {
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = AVATARS.map(av => `
+    <div class="av-opt${av === selectedAvatar ? ' selected' : ''}"
+      onclick="selectAvatar('${av}',this)">${av}</div>
+  `).join('');
+  document.getElementById('avatar-overlay').classList.add('open');
+};
+
+window.selectAvatar = (av, el) => {
+  selectedAvatar = av;
+  document.querySelectorAll('.av-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+};
+
+window.closeAvatarPicker = () => {
+  document.getElementById('avatar-overlay').classList.remove('open');
+};
+
+window.saveAvatar = async () => {
+  if (!selectedAvatar || !MY_NAME) return;
+  await saveUserData(MY_NAME, { avatar: selectedAvatar });
+  closeAvatarPicker();
+  toast('Avatar saved! ✓');
+  loadCards(); // re-render
+};
+
+// ── LOAD EVERYTHING ────────────────────────────────────────────────────────
+async function loadCards() {
+  const [members, tasks] = await Promise.all([getMembers(), getTasks()]);
+
+  // Load avatars for all members
+  const avatarMap = {};
+  await Promise.all(members.map(async m => {
+    const data = await getUserData(m.name.toLowerCase());
+    avatarMap[m.name.toLowerCase()] = data?.avatar || '🧑‍💻';
+    if (m.name.toLowerCase() === MY_NAME.toLowerCase()) {
+      selectedAvatar = data?.avatar || '🧑‍💻';
+    }
+  }));
+
+  // Max done across team for normalisation
+  const maxDone = Math.max(...members.map(m =>
+    tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id)).filter(t=>{
+      const ms=(t.memberStatus||{})[m.id];return ms==='done'||t.status==='done';
+    }).length
+  ), 1);
+
+  // My card
+  const me = members.find(m => m.name.toLowerCase() === MY_NAME.toLowerCase());
+  if (me) {
+    document.getElementById('my-card-wrap').innerHTML =
+      buildCard(me, tasks, avatarMap, maxDone, true);
+  }
+
+  // Team gallery (others sorted by done desc)
+  const others = members
+    .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+    .sort((a,b) => {
+      const aDone = tasks.filter(t=>(t.members||[]).some(mm=>mm.id===a.id)&&((t.memberStatus||{})[a.id]==='done'||t.status==='done')).length;
+      const bDone = tasks.filter(t=>(t.members||[]).some(mm=>mm.id===b.id)&&((t.memberStatus||{})[b.id]==='done'||t.status==='done')).length;
+      return bDone - aDone;
+    });
+
+  document.getElementById('cards-gallery').innerHTML =
+    others.map(m => buildCard(m, tasks, avatarMap, maxDone, false)).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+let _tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show';
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+onUserReady(() => { loadCards(); });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
+  });
+}
+</script>
+</body>
+</html>

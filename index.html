@@ -1489,6 +1489,19 @@ function initNotes() {
 }
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
+// ── GREETING TAP — 3× opens player cards ────────────────────────────────
+let _greetTaps = 0, _greetTimer = null;
+window.handleGreetingTap = () => {
+  _greetTaps++;
+  clearTimeout(_greetTimer);
+  if (_greetTaps >= 3) {
+    _greetTaps = 0;
+    window.location.href = 'cards.html';
+  } else {
+    _greetTimer = setTimeout(() => { _greetTaps = 0; }, 1200);
+  }
+};
+
 // ── KONAMI CODE ──────────────────────────────────────────────────────────
 (function() {
   const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
@@ -1696,7 +1709,7 @@ async function renderGreeting() {
     : `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer;opacity:.4">🔥 0</div>`;
   const el = document.getElementById('greeting-bar');
   if (el) el.innerHTML = `
-    <div>
+    <div onclick="handleGreetingTap()" style="cursor:pointer;flex:1" title="Tap 3× for secret">
       <div class="greeting-text">${greetText}${greetEmoji}</div>
       <div class="greeting-sub">${sub}</div>
       ${quoteHTML}
