@@ -212,6 +212,93 @@
 }
 .av-opt:hover { background:var(--bg3);transform:scale(1.1) }
 .av-opt.selected { border-color:var(--neon);background:rgba(0,229,184,.08) }
+/* ── BADGE UNLOCK ANIMATION ── */
+@keyframes badge-unlock {
+  0%  { transform:scale(0) rotate(-20deg);opacity:0 }
+  60% { transform:scale(1.3) rotate(5deg);opacity:1 }
+  80% { transform:scale(0.9) rotate(-2deg) }
+  100%{ transform:scale(1) rotate(0deg);opacity:1 }
+}
+.badge-new {
+  animation:badge-unlock .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes badge-glow-pulse {
+  0%,100% { box-shadow:0 0 6px var(--neon),0 0 12px var(--neon) }
+  50%     { box-shadow:0 0 12px var(--neon),0 0 24px var(--neon),0 0 4px #fff }
+}
+.badge-newly-earned {
+  animation:badge-glow-pulse 1.5s ease-in-out 3;
+  border-color:var(--neon) !important;
+}
+
+/* ── LOCKED BADGE ── */
+.card-badge-locked {
+  display:flex;align-items:center;gap:4px;
+  padding:4px 8px;border-radius:20px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:10px;color:rgba(255,255,255,.2);
+  font-weight:600;filter:grayscale(1);
+}
+.card-badge-locked .bi { font-size:12px;opacity:.3 }
+
+/* Progress bar on locked badge */
+.badge-progress {
+  height:2px;background:rgba(255,255,255,.08);
+  border-radius:1px;margin-top:3px;overflow:hidden;
+  width:100%;
+}
+.badge-progress-fill {
+  height:100%;background:rgba(255,255,255,.25);border-radius:1px;
+  transition:width .4s ease;
+}
+
+/* ── CARD ZOOM OVERLAY ── */
+.card-zoom-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  z-index:500;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(12px);
+  animation:fade-in .2s ease;
+}
+.card-zoom-overlay.open { display:flex }
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+.card-zoom-inner {
+  width:min(75vw,280px);
+  animation:zoom-in .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes zoom-in {
+  from{transform:scale(.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.card-zoom-close {
+  position:absolute;top:20px;right:20px;
+  font-size:24px;color:rgba(255,255,255,.6);
+  cursor:pointer;background:none;border:none;
+  transition:color .15s;
+}
+.card-zoom-close:hover { color:#fff }
+
+/* ── UNLOCK TOAST ── */
+.unlock-toast {
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:linear-gradient(135deg,#1a1a2e,#0d1018);
+  border:1.5px solid var(--neon);border-radius:14px;
+  padding:12px 20px;z-index:600;
+  display:none;align-items:center;gap:10px;
+  box-shadow:0 4px 24px rgba(0,229,184,.3);
+  animation:unlock-drop .4s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;
+}
+.unlock-toast.show { display:flex }
+@keyframes unlock-drop {
+  from{transform:translateX(-50%) translateY(-40px);opacity:0}
+  to{transform:translateX(-50%) translateY(0);opacity:1}
+}
+.unlock-toast-icon { font-size:24px }
+.unlock-toast-text { }
+.unlock-toast-title { font-size:12px;font-weight:800;color:var(--neon) }
+.unlock-toast-sub { font-size:11px;color:rgba(255,255,255,.5) }
+
 .av-save {
   width:100%;padding:12px;border-radius:12px;border:none;
   background:var(--neon);color:var(--bg);
@@ -283,6 +370,21 @@
 
 </div>
 
+<!-- CARD ZOOM OVERLAY -->
+<div class="card-zoom-overlay" id="card-zoom" onclick="closeZoom()">
+  <button class="card-zoom-close" onclick="closeZoom()">✕</button>
+  <div class="card-zoom-inner" id="card-zoom-inner"></div>
+</div>
+
+<!-- BADGE UNLOCK TOAST -->
+<div class="unlock-toast" id="unlock-toast">
+  <div class="unlock-toast-icon" id="unlock-icon">🏆</div>
+  <div class="unlock-toast-text">
+    <div class="unlock-toast-title" id="unlock-title">Badge Unlocked!</div>
+    <div class="unlock-toast-sub" id="unlock-sub">Taskmaster</div>
+  </div>
+</div>
+
 <!-- AVATAR PICKER -->
 <div class="avatar-picker-overlay" id="avatar-overlay" onclick="if(event.target===this)closeAvatarPicker()">
   <div class="avatar-picker">
@@ -312,7 +414,7 @@
 
 <script type="module">
 import { initTheme, toggleThemePanel } from './js/theme.js';
-import { onUserReady, getMembers, getTasks, getUserData, saveUserData } from './js/firebase.js';
+import { onUserReady, getMembers, getTasks, getUserData, saveUserData, getCalendarEvents } from './js/firebase.js';
 initTheme(); window.toggleThemePanel = toggleThemePanel;
 
 // ── AVATARS ────────────────────────────────────────────────────────────────
@@ -333,37 +435,89 @@ function getTier(tasksDone) {
   return                       { id:'rookie',   label:'ROOKIE',      class:'tier-rookie',   tagClass:'card-tier-rookie',   color:'#94a3b8' };
 }
 
-// ── BADGES ─────────────────────────────────────────────────────────────────
-function getBadges(m, allTasks, streakVal) {
+// ── BADGE DEFINITIONS — all 13 badges ─────────────────────────────────────
+const BADGE_DEFS = [
+  { id:'first_strike', icon:'🎯', label:'First Strike',   desc:'Complete your first task' },
+  { id:'hat_trick',    icon:'🎩', label:'Hat Trick',      desc:'Complete 3 tasks' },
+  { id:'taskmaster',   icon:'🏆', label:'Taskmaster',     desc:'Complete 10 tasks' },
+  { id:'diamond',      icon:'💎', label:'Diamond',        desc:'Complete 25 tasks' },
+  { id:'allstar',      icon:'🌟', label:'All-Star',       desc:'Complete 50 tasks' },
+  { id:'legend_badge', icon:'👑', label:'Legend',         desc:'Complete 100 tasks' },
+  { id:'early_bird',   icon:'🌅', label:'Early Bird',     desc:'Complete a task before 9am' },
+  { id:'night_owl',    icon:'🦉', label:'Night Owl',      desc:'Complete a task after 8pm' },
+  { id:'speed_run',    icon:'⚡', label:'Speed Run',      desc:'Complete a task same day it was registered' },
+  { id:'on_fire',      icon:'🔥', label:'On Fire',        desc:'Maintain a 7-day streak' },
+  { id:'team_player',  icon:'🤝', label:'Team Player',    desc:'Work with all team members' },
+  { id:'creative',     icon:'🎨', label:'Creative',       desc:'Have 5 communications sent' },
+  { id:'mvp_badge',    icon:'🥇', label:'MVP',            desc:'Win Weekly MVP award' },
+];
+
+// Compute which badges a member has earned from task data
+function computeEarnedBadges(m, allTasks, allMembers, calendarEvents) {
   const mDone = allTasks.filter(t => {
     const ms = (t.memberStatus||{})[m.id];
-    return ms === 'done' || t.status === 'done';
+    return (ms === 'done') || (t.status === 'done' && (t.members||[]).some(mm=>mm.id===m.id));
   });
-  const badges = [];
-  if (mDone.length >= 1)  badges.push({ icon:'🎯', label:'First Strike' });
-  if (mDone.length >= 10) badges.push({ icon:'🏆', label:'Taskmaster' });
-  if (mDone.length >= 25) badges.push({ icon:'💎', label:'Diamond' });
-  if (mDone.length >= 50) badges.push({ icon:'🌟', label:'All-Star' });
+  const earned = new Set();
 
-  // Check completion hours
+  if (mDone.length >= 1)   earned.add('first_strike');
+  if (mDone.length >= 3)   earned.add('hat_trick');
+  if (mDone.length >= 10)  earned.add('taskmaster');
+  if (mDone.length >= 25)  earned.add('diamond');
+  if (mDone.length >= 50)  earned.add('allstar');
+  if (mDone.length >= 100) earned.add('legend_badge');
+
   const hours = mDone.filter(t=>t.completedAt).map(t=>{
     const d = t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt);
     return d.getHours();
   });
-  if (hours.filter(h=>h<9).length >= 1)  badges.push({ icon:'🌅', label:'Early Bird' });
-  if (hours.filter(h=>h>=20).length >= 1) badges.push({ icon:'🦉', label:'Night Owl' });
+  if (hours.some(h=>h<9))   earned.add('early_bird');
+  if (hours.some(h=>h>=20)) earned.add('night_owl');
 
-  // Speed run — task done same day it was registered
-  const speedRuns = allTasks.filter(t => {
+  // Speed run
+  const hasSpeedRun = allTasks.some(t => {
     if (!t.completedAt || !t.createdAt) return false;
-    if (!((t.memberStatus||{})[m.id] === 'done' || t.status === 'done')) return false;
-    const created   = t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt);
-    const completed = t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt);
-    return created.toISOString().slice(0,10) === completed.toISOString().slice(0,10);
+    const ms = (t.memberStatus||{})[m.id];
+    if (ms !== 'done' && !(t.status==='done'&&(t.members||[]).some(mm=>mm.id===m.id))) return false;
+    const cr = t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt);
+    const co = t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt);
+    return cr.toISOString().slice(0,10) === co.toISOString().slice(0,10);
   });
-  if (speedRuns.length >= 1) badges.push({ icon:'⚡', label:'Speed Run' });
+  if (hasSpeedRun) earned.add('speed_run');
 
-  return badges;
+  // Team player — worked with all members
+  const teammates = new Set();
+  allTasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id)).forEach(t=>{
+    (t.members||[]).forEach(mm=>{ if(mm.id!==m.id) teammates.add(mm.id); });
+  });
+  if (allMembers.length > 1 && teammates.size >= allMembers.length - 1) earned.add('team_player');
+
+  // Creative — 5+ comms sent where member is listed
+  if (calendarEvents) {
+    const sentComms = Object.values(calendarEvents).flat().filter(ev =>
+      ev.status === 'Sent' && ev.people &&
+      ev.people.split(',').map(p=>p.trim().toLowerCase()).includes(m.name.toLowerCase())
+    );
+    if (sentComms.length >= 5) earned.add('creative');
+  }
+
+  return earned;
+}
+
+// Get progress toward unearned badges (for locked slot hints)
+function getBadgeProgress(badgeId, m, allTasks, allMembers) {
+  const mDone = allTasks.filter(t => {
+    const ms = (t.memberStatus||{})[m.id];
+    return (ms==='done') || (t.status==='done'&&(t.members||[]).some(mm=>mm.id===m.id));
+  }).length;
+  switch(badgeId) {
+    case 'hat_trick':    return { current:mDone, target:3 };
+    case 'taskmaster':   return { current:mDone, target:10 };
+    case 'diamond':      return { current:mDone, target:25 };
+    case 'allstar':      return { current:mDone, target:50 };
+    case 'legend_badge': return { current:mDone, target:100 };
+    default: return null;
+  }
 }
 
 // ── STAT BARS ──────────────────────────────────────────────────────────────
@@ -377,26 +531,45 @@ function statBar(label, value, max, color) {
 }
 
 // ── BUILD CARD HTML ────────────────────────────────────────────────────────
-function buildCard(m, allTasks, avatarMap, maxDone, isMyCard) {
+function buildCard(m, allTasks, avatarMap, maxDone, allMembers, calendarEvents, newlyEarned) {
   const mTasks  = allTasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id));
   const done    = mTasks.filter(t=>{const ms=(t.memberStatus||{})[m.id];return ms==='done'||t.status==='done';}).length;
   const inprog  = mTasks.filter(t=>t.status==='inprog').length;
   const tier    = getTier(done);
-  const badges  = getBadges(m, allTasks, 0);
+  const earned  = computeEarnedBadges(m, allTasks, allMembers, calendarEvents);
   const avatar  = avatarMap[m.name.toLowerCase()] || '🧑‍💻';
   const pct     = mTasks.length ? Math.round(done/mTasks.length*100) : 0;
 
-  // Stat bars — normalised against team max
   const statsHTML = statBar('DONE', done, Math.max(maxDone,1), tier.color)
     + statBar('ACTV', inprog, 10, '#f59e0b')
     + statBar('COMP', pct, 100, '#34d399');
 
-  const badgesPreview = badges.slice(0,4).map(b=>`<span class="card-badge-mini">${b.icon}</span>`).join('');
-  const badgesBack = badges.length
-    ? badges.map(b=>`<div class="card-badge-full">${b.icon} ${b.label}</div>`).join('')
-    : '<div style="font-size:11px;color:rgba(255,255,255,.3)">Complete tasks to earn badges</div>';
+  const earnedDefs = BADGE_DEFS.filter(b => earned.has(b.id));
+  const badgesPreview = earnedDefs.slice(0,4).map(b =>
+    `<span class="card-badge-mini${newlyEarned?.has(b.id) ? ' badge-new' : ''}">${b.icon}</span>`
+  ).join('');
 
-  return `<div class="player-card" onclick="flipCard(this)">
+  // Back: earned badges + locked slots with progress
+  const badgesBack = BADGE_DEFS.map(b => {
+    if (earned.has(b.id)) {
+      const isNew = newlyEarned?.has(b.id);
+      return `<div class="card-badge-full${isNew ? ' badge-newly-earned' : ''}" title="${b.desc}">
+        ${b.icon} ${b.label}${isNew ? ' <span style="color:var(--neon);font-size:9px">NEW!</span>' : ''}
+      </div>`;
+    } else {
+      const prog = getBadgeProgress(b.id, m, allTasks, allMembers);
+      const pct2 = prog ? Math.round(prog.current/prog.target*100) : 0;
+      return `<div class="card-badge-locked" title="${b.desc}">
+        <span class="bi">${b.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div>${b.label}</div>
+          ${prog ? `<div class="badge-progress"><div class="badge-progress-fill" style="width:${pct2}%"></div></div>` : ''}
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  return `<div class="player-card" onclick="handleCardClick(this, '${m.id}')">
     <div class="card-inner">
       <!-- FRONT -->
       <div class="card-front ${tier.class}">
@@ -434,12 +607,12 @@ function buildCard(m, allTasks, avatarMap, maxDone, isMyCard) {
             <div class="card-stat-box-lbl">Rate</div>
           </div>
           <div class="card-stat-box">
-            <div class="card-stat-box-num" style="color:#a78bfa">${badges.length}</div>
+            <div class="card-stat-box-num" style="color:#a78bfa">${earnedDefs.length}</div>
             <div class="card-stat-box-lbl">Badges</div>
           </div>
         </div>
-        <div class="card-back-badges-title">Badges Earned</div>
-        <div class="card-back-badges">${badgesBack}</div>
+        <div class="card-back-badges-title">Badges (${earnedDefs.length}/${BADGE_DEFS.length} earned)</div>
+        <div class="card-back-badges" style="max-height:140px;overflow-y:auto">${badgesBack}</div>
         <div class="card-back-flip">tap to flip back</div>
       </div>
     </div>
@@ -476,6 +649,32 @@ document.addEventListener('touchmove', (e) => {
 // ── FLIP ──────────────────────────────────────────────────────────────────
 window.flipCard = (card) => card.classList.toggle('flipped');
 
+window.handleCardClick = (card, memberId) => {
+  // In gallery (2-col), tap opens zoom; in my-card section, tap flips
+  const inGallery = card.closest('#cards-gallery');
+  if (inGallery) {
+    openZoom(card);
+  } else {
+    card.classList.toggle('flipped');
+  }
+};
+
+window.openZoom = (sourceCard) => {
+  const overlay = document.getElementById('card-zoom');
+  const inner   = document.getElementById('card-zoom-inner');
+  // Clone the card into the zoom container
+  const clone = sourceCard.cloneNode(true);
+  clone.style.width = '100%';
+  clone.onclick = () => clone.classList.toggle('flipped');
+  inner.innerHTML = '';
+  inner.appendChild(clone);
+  overlay.classList.add('open');
+};
+
+window.closeZoom = () => {
+  document.getElementById('card-zoom').classList.remove('open');
+};
+
 // ── AVATAR PICKER ──────────────────────────────────────────────────────────
 let selectedAvatar = null;
 let MY_NAME = localStorage.getItem('wd_myname') || '';
@@ -508,34 +707,68 @@ window.saveAvatar = async () => {
 };
 
 // ── LOAD EVERYTHING ────────────────────────────────────────────────────────
-async function loadCards() {
-  const [members, tasks] = await Promise.all([getMembers(), getTasks()]);
+// ── UNLOCK TOAST ──────────────────────────────────────────────────────────
+let _unlockTimer = null;
+function showUnlockToast(badge) {
+  const el = document.getElementById('unlock-toast');
+  document.getElementById('unlock-icon').textContent = badge.icon;
+  document.getElementById('unlock-title').textContent = 'Badge Unlocked!';
+  document.getElementById('unlock-sub').textContent = badge.label + ' — ' + badge.desc;
+  el.classList.add('show');
+  clearTimeout(_unlockTimer);
+  _unlockTimer = setTimeout(() => el.classList.remove('show'), 4000);
+}
 
-  // Load avatars for all members
+async function loadCards() {
+  const [members, tasks, calendarEvents] = await Promise.all([
+    getMembers(), getTasks(), getCalendarEvents()
+  ]);
+
+  // Load avatars + previously stored badges for all members
   const avatarMap = {};
+  const storedBadgeMap = {};
   await Promise.all(members.map(async m => {
     const data = await getUserData(m.name.toLowerCase());
     avatarMap[m.name.toLowerCase()] = data?.avatar || '🧑‍💻';
+    storedBadgeMap[m.id] = new Set(data?.earnedBadges || []);
     if (m.name.toLowerCase() === MY_NAME.toLowerCase()) {
       selectedAvatar = data?.avatar || '🧑‍💻';
     }
   }));
 
-  // Max done across team for normalisation
+  // Detect newly earned badges for current user and save them
+  const me = members.find(m => m.name.toLowerCase() === MY_NAME.toLowerCase());
+  let newlyEarned = new Set();
+  if (me) {
+    const nowEarned = computeEarnedBadges(me, tasks, members, calendarEvents);
+    const prev = storedBadgeMap[me.id] || new Set();
+    newlyEarned = new Set([...nowEarned].filter(id => !prev.has(id)));
+    if (newlyEarned.size > 0) {
+      // Save new badges to Firestore
+      await saveUserData(MY_NAME, { earnedBadges: [...nowEarned] });
+      // Show unlock toasts sequentially
+      let delay = 0;
+      newlyEarned.forEach(badgeId => {
+        const badge = BADGE_DEFS.find(b => b.id === badgeId);
+        if (badge) {
+          setTimeout(() => showUnlockToast(badge), delay);
+          delay += 4500;
+        }
+      });
+    }
+  }
+
   const maxDone = Math.max(...members.map(m =>
     tasks.filter(t=>(t.members||[]).some(mm=>mm.id===m.id)).filter(t=>{
       const ms=(t.memberStatus||{})[m.id];return ms==='done'||t.status==='done';
     }).length
   ), 1);
 
-  // My card
-  const me = members.find(m => m.name.toLowerCase() === MY_NAME.toLowerCase());
   if (me) {
     document.getElementById('my-card-wrap').innerHTML =
-      buildCard(me, tasks, avatarMap, maxDone, true);
+      buildCard(me, tasks, avatarMap, maxDone, members, calendarEvents, newlyEarned);
   }
 
-  // Team gallery (others sorted by done desc)
   const others = members
     .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
     .sort((a,b) => {
@@ -545,7 +778,7 @@ async function loadCards() {
     });
 
   document.getElementById('cards-gallery').innerHTML =
-    others.map(m => buildCard(m, tasks, avatarMap, maxDone, false)).join('');
+    others.map(m => buildCard(m, tasks, avatarMap, maxDone, members, calendarEvents, null)).join('');
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
