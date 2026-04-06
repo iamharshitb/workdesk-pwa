@@ -672,12 +672,6 @@
     </div>
     <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
   </div>
-    <div class="ai-brief-body" id="ai-brief-body">
-      <div class="ai-brief-loading">
-        <div class="ai-dot-pulse"><span></span><span></span><span></span></div>
-        Generating your brief...
-      </div>
-    </div>
   </div>
 
   <!-- TASK TABS -->
@@ -857,6 +851,11 @@ onUserReady(async () => {
       loader.style.display = 'none';
       document.getElementById('main').style.display = '';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
+      // Show admin broadcast button immediately for Harshit
+      if (MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase()) {
+        const adminBtn = document.getElementById('ann-admin-btn');
+        if (adminBtn) adminBtn.style.display = '';
+      }
       // Show search bar for My Tasks tab
       const sb = document.getElementById('search-bar');
       if (sb) sb.style.display = '';
