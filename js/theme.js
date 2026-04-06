@@ -7,6 +7,8 @@ export const THEMES = [
   { id:'ios-system', name:'Dark',          sub:'iOS System · Clean',        dot:'#0a84ff', bg:'#1c1c1e' },
   { id:'health',     name:'Light',         sub:'iOS Health · Pastel White', dot:'#007aff', bg:'#f2f2f7' },
   { id:'neon',       name:'Neon',          sub:'Retro Neon · Modern Dark',  dot:'#00f5d4', bg:'#070b12' },
+  { id:'ember',      name:'Ember',         sub:'Orange · Black · Industrial', dot:'#f97316', bg:'#0a0a0a' },
+  { id:'matrix',     name:'Matrix',        sub:'Green · Black · Transparent', dot:'#22c55e', bg:'#000a00' },
 ];
 
 // Default to ios if no saved theme, or if saved theme no longer exists
