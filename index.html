@@ -558,6 +558,31 @@
       animation:panel-in .2s cubic-bezier(.34,1.56,.64,1);
     }
     .ann-modal-title { font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px }
+    .ann-perm-section {
+      margin-top:14px;padding-top:14px;border-top:1px solid var(--border);
+    }
+    .ann-perm-title {
+      font-size:10px;font-weight:800;color:var(--text2);
+      letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;
+    }
+    .ann-perm-row {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:7px 0;border-bottom:1px solid var(--border);
+    }
+    .ann-perm-row:last-child { border-bottom:none }
+    .ann-perm-name { font-size:13px;font-weight:600;color:var(--text) }
+    .ann-perm-toggle {
+      position:relative;width:36px;height:20px;cursor:pointer;
+      background:var(--bg3);border-radius:10px;border:none;
+      transition:background .2s;flex-shrink:0;
+    }
+    .ann-perm-toggle::after {
+      content:'';position:absolute;top:3px;left:3px;
+      width:14px;height:14px;border-radius:50%;
+      background:#fff;transition:transform .2s;
+    }
+    .ann-perm-toggle.on { background:var(--neon) }
+    .ann-perm-toggle.on::after { transform:translateX(16px) }
     .ann-inp {
       width:100%;background:var(--bg2);border:1.5px solid var(--border2);
       border-radius:10px;padding:10px 12px;color:var(--text);
@@ -760,6 +785,11 @@
       <button class="ann-modal-cancel" onclick="closeAnnModal()">Cancel</button>
       <button class="ann-modal-post" onclick="postAnnouncement_()">Post</button>
     </div>
+    <!-- Admin-only: manage who can broadcast -->
+    <div class="ann-perm-section" id="ann-perm-section" style="display:none">
+      <div class="ann-perm-title">📣 Broadcast Access</div>
+      <div id="ann-perm-list"></div>
+    </div>
   </div>
 </div>
 
@@ -844,16 +874,27 @@ onUserReady(async () => {
 
     renderAll();
 
+    // Wire live listeners (once, after auth ready)
+    onAnnouncementChanged((ann) => renderAnnouncement(ann));
+
     // Show main content on first load
     const loader = document.getElementById('page-loader');
     if (loader) {
       loader.style.display = 'none';
       document.getElementById('main').style.display = '';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
-      // Show admin broadcast button immediately for Harshit
-      if (MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase()) {
-        const adminBtn = document.getElementById('ann-admin-btn');
+      // Show broadcast button — check permission from Firestore
+      const adminBtn = document.getElementById('ann-admin-btn');
+      const isAdminUser = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
+      if (isAdminUser) {
+        // Admin always sees it
         if (adminBtn) adminBtn.style.display = '';
+      } else if (MY_NAME) {
+        // Others: check broadcastEnabled flag
+        getUserData(MY_NAME.toLowerCase()).then(data => {
+          const allowed = data?.broadcastEnabled !== false; // default true
+          if (adminBtn) adminBtn.style.display = allowed ? '' : 'none';
+        });
       }
       // Show search bar for My Tasks tab
       const sb = document.getElementById('search-bar');
@@ -1439,9 +1480,8 @@ function renderAnnouncement(ann) {
   currentAnnouncement = ann;
   const isAdmin = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
 
-  // Show/hide admin floating button
-  const adminBtn = document.getElementById('ann-admin-btn');
-  if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+  // Button visibility handled on load and after perm changes
+  // Admin always visible; others controlled by broadcastEnabled flag
 
   const popup  = document.getElementById('announcement-popup');
   const textEl = document.getElementById('ann-popup-text');
@@ -1472,18 +1512,69 @@ window.dismissAnnouncement = (id) => {
 };
 
 window.openAnnModal = () => {
-  const inp = document.getElementById('ann-inp');
-  const charEl = document.getElementById('ann-char');
+  const inp     = document.getElementById('ann-inp');
+  const charEl  = document.getElementById('ann-char');
   const clearBtn = document.getElementById('ann-clear-btn');
+  const permSection = document.getElementById('ann-perm-section');
   const existing = currentAnnouncement?.text || '';
   if (inp) {
     inp.value = existing;
     inp.oninput = () => { if(charEl) charEl.textContent = inp.value.length + '/200'; };
     if(charEl) charEl.textContent = existing.length + '/200';
   }
-  if (clearBtn) clearBtn.style.display = existing ? '' : 'none';
+  const isAdminModal = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
+  if (clearBtn) clearBtn.style.display = (existing && isAdminModal) ? '' : 'none';
+
+  // Admin: show broadcast permissions manager
+  if (permSection) permSection.style.display = isAdminModal ? '' : 'none';
+  if (isAdminModal) renderPermList();
+
   document.getElementById('ann-modal').classList.add('open');
   setTimeout(() => inp?.focus(), 200);
+};
+
+// Cache of broadcast permissions { memberId: true/false }
+let broadcastPerms = {};
+
+async function renderPermList() {
+  const list = document.getElementById('ann-perm-list');
+  if (!list) return;
+  list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:4px 0">Loading...</div>';
+
+  // Load current perms from Firestore for each member
+  const permsLoaded = {};
+  await Promise.all(members
+    .filter(m => m.name.toLowerCase() !== ADMIN_NAME.toLowerCase())
+    .map(async m => {
+      const data = await getUserData(m.name.toLowerCase());
+      // Default true (can broadcast) unless explicitly set to false
+      permsLoaded[m.id] = data?.broadcastEnabled !== false;
+    })
+  );
+  broadcastPerms = permsLoaded;
+
+  list.innerHTML = members
+    .filter(m => m.name.toLowerCase() !== ADMIN_NAME.toLowerCase())
+    .map(m => {
+      const enabled = broadcastPerms[m.id] !== false;
+      return `<div class="ann-perm-row">
+        <span class="ann-perm-name">${esc(m.name)}</span>
+        <button class="ann-perm-toggle${enabled ? ' on' : ''}"
+          id="perm-btn-${m.id}"
+          onclick="toggleBroadcastPerm('${m.id}','${m.name}',this)"
+          title="${enabled ? 'Revoke access' : 'Grant access'}">
+        </button>
+      </div>`;
+    }).join('');
+}
+
+window.toggleBroadcastPerm = async (memberId, memberName, btn) => {
+  const current = broadcastPerms[memberId] !== false;
+  const next    = !current;
+  broadcastPerms[memberId] = next;
+  btn.classList.toggle('on', next);
+  await saveUserData(memberName.toLowerCase(), { broadcastEnabled: next });
+  toast(next ? `📣 ${memberName} can now broadcast` : `🔇 ${memberName}'s broadcast access revoked`);
 };
 
 window.closeAnnModal = () => document.getElementById('ann-modal').classList.remove('open');
