@@ -987,7 +987,8 @@ function renderMyTasks() {
   }
 
   const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
-  const now16   = new Date().toISOString().slice(0,16);
+  const _n = new Date(), _p = n => String(n).padStart(2,'0');
+  const now16 = `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}`;
   const todayStr = new Date().toISOString().slice(0,10);
   const sorted = [...taskList].sort((a,b) => {
     // 1st: tasks due today (taskDueDate === today) that aren't done
@@ -2243,6 +2244,7 @@ window.dismissReminderNow = async () => {
   toast('Reminder removed');
 };
 window.snoozeReminder = async (taskId, newDate, newTime) => {
+  window._clearFiredReminder(taskId); // allow re-firing at new time
   await snoozeReminder(taskId, newDate, newTime);
   toast('⏰ Snoozed!');
 };
@@ -2253,17 +2255,31 @@ function scheduleReminderCheck() {
 }
 scheduleReminderCheck();
 
+// Track which reminders have already fired this session
+const _firedReminders = new Set();
+
 function checkReminders() {
   const now = new Date();
-  const nowStr = now.toISOString().slice(0,16); // YYYY-MM-DDTHH:MM
+  // Use LOCAL time for comparison — reminders are set in local time
+  const pad = n => String(n).padStart(2,'0');
+  const nowLocal = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
   tasks.forEach(t => {
     if (!t.reminder?.active) return;
     const reminderDT = `${t.reminder.date}T${t.reminder.time}`;
-    if (reminderDT <= nowStr) {
+    // Only fire if: time has passed AND not already fired this session
+    if (reminderDT <= nowLocal && !_firedReminders.has(t.id)) {
+      _firedReminders.add(t.id); // mark as fired so it doesn't repeat
       showReminderAlert(t);
     }
   });
 }
+
+// When a reminder is dismissed or snoozed, remove from fired set
+// so a snoozed reminder can fire again at the new time
+window._clearFiredReminder = (taskId) => {
+  _firedReminders.delete(taskId);
+};
 
 function showReminderAlert(t) {
   // Play sound
@@ -2272,7 +2288,7 @@ function showReminderAlert(t) {
   const el = document.getElementById('toast');
   el.innerHTML = `🔔 Reminder: <strong>${esc(t.label)}</strong>
     <button onclick="openReminderModal('${t.id}')" style="margin-left:8px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Snooze</button>
-    <button onclick="dismissReminder('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
+    <button onclick="window._clearFiredReminder('${t.id}');dismissReminder('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
   el.className = 'toast show';
   el.style.maxWidth = '320px';
   // Don't auto-hide reminder toasts
