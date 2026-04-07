@@ -236,9 +236,9 @@ export function onCommentsChanged(taskId, callback) {
 
 // ── REMINDER ──────────────────────────────────────────────────────────────
 // Stored as a field on the task: reminder: { date, time, snoozedUntil, active }
-export async function setReminder(taskId, date, time) {
+export async function setReminder(taskId, date, time, setBy) {
   await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", taskId), {
-    reminder: { date, time, active: true, snoozedUntil: null }
+    reminder: { date, time, active: true, snoozedUntil: null, setBy: setBy || '' }
   });
 }
 

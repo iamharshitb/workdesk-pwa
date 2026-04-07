@@ -806,14 +806,16 @@
 </div>
 
 <!-- ANNOUNCEMENT HISTORY SHEET -->
-<div class="ann-history-overlay" id="ann-history-overlay" onclick="if(event.target===this)closeAnnHistory()">
+<div class="ann-history-overlay" id="ann-history-overlay" style="display:none" onclick="if(event.target===this)closeAnnHistory()">
   <div class="ann-history-sheet">
-    <div class="ann-history-title">
-      <span>📣 Recent Announcements</span>
+    <div class="ann-history-header">
+      <div class="ann-history-header-title">
+        <span>📣</span><span>Recent Announcements</span>
+      </div>
       <button class="ann-history-close" onclick="closeAnnHistory()">Close</button>
     </div>
-    <div id="ann-history-list">
-      <div style="font-size:12px;color:var(--text3)">Loading...</div>
+    <div class="ann-history-scroll" id="ann-history-list">
+      <div class="ann-history-empty">Loading...</div>
     </div>
   </div>
 </div>
@@ -1226,16 +1228,21 @@ function myTaskCard(t, i) {
             onclick="event.stopPropagation();setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
             ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
           </button>` : ''}
-          <button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
-            title="${t.reminder?.active ? 'Edit reminder' : 'Set reminder'}">
-            ${t.reminder?.active ? (() => {
-              const [y,mo,d] = t.reminder.date.split('-');
-              const dateLabel = new Date(parseInt(y),parseInt(mo)-1,parseInt(d))
-                .toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-              const timeLabel = t.reminder.time || '';
-              return '🔔 ' + dateLabel + (timeLabel ? ' · ' + timeLabel : '');
-            })() : '🔔 Remind me'}
-          </button>
+          ${(() => {
+            // Only show active reminder badge to person who set it
+            const remActive = t.reminder?.active &&
+              (!t.reminder.setBy || t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase());
+            return `<button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
+              title="${remActive ? 'Edit reminder' : 'Set reminder'}">
+              ${remActive ? (() => {
+                const [y,mo,d] = t.reminder.date.split('-');
+                const dateLabel = new Date(parseInt(y),parseInt(mo)-1,parseInt(d))
+                  .toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+                const timeLabel = t.reminder.time || '';
+                return '🔔 ' + dateLabel + (timeLabel ? ' · ' + timeLabel : '');
+              })() : '🔔 Remind me'}
+            </button>`;
+          })()}
         </div>
         <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
       </div>
@@ -1560,27 +1567,37 @@ window.dismissAnnouncement = (id) => {
 window.openAnnHistory = async () => {
   const overlay = document.getElementById('ann-history-overlay');
   const list    = document.getElementById('ann-history-list');
+  // Show overlay properly
+  overlay.style.display = '';
   overlay.classList.add('open');
-  list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading...</div>';
+  list.innerHTML = '<div class="ann-history-empty">Loading...</div>';
 
   const history = await getAnnouncementHistory();
   if (!history.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No announcements yet</div>';
+    list.innerHTML = '<div class="ann-history-empty">No announcements yet</div>';
     return;
   }
   list.innerHTML = history.map(h => {
     const ts = h.postedAt?.toDate
-      ? h.postedAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      ? h.postedAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
       : '';
+    const initials = (h.author||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     return `<div class="ann-history-item">
-      <div class="ann-history-text">${esc(h.text)}</div>
-      <div class="ann-history-meta">📣 ${esc(h.author||'Unknown')}${ts ? ' · ' + ts : ''}</div>
+      <div class="ann-history-avatar">${initials}</div>
+      <div class="ann-history-body">
+        <div class="ann-history-author">${esc(h.author||'Unknown')}</div>
+        <div class="ann-history-text">${esc(h.text)}</div>
+        <div class="ann-history-time">${ts}</div>
+      </div>
     </div>`;
   }).join('');
 };
 
 window.closeAnnHistory = () => {
-  document.getElementById('ann-history-overlay').classList.remove('open');
+  const overlay = document.getElementById('ann-history-overlay');
+  overlay.classList.remove('open');
+  // Re-hide after animation
+  setTimeout(() => { if (!overlay.classList.contains('open')) overlay.style.display = 'none'; }, 300);
 };
 
 window.openAnnModal = () => {
@@ -2303,7 +2320,7 @@ window.confirmReminder = async () => {
   const date = document.getElementById('reminder-date').value;
   const time = document.getElementById('reminder-time').value;
   if (!date || !time) { toast('Pick a date and time', 'err'); return; }
-  await setReminder(_reminderTaskId, date, time);
+  await setReminder(_reminderTaskId, date, time, MY_NAME);
   closeReminderModal();
   toast('🔔 Reminder set!');
   scheduleReminderCheck();
@@ -2347,10 +2364,13 @@ function checkReminders() {
 
   tasks.forEach(t => {
     if (!t.reminder?.active) return;
+    // Only fire for the person who set the reminder
+    const isMyReminder = !t.reminder.setBy ||
+      t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase();
+    if (!isMyReminder) return;
     const reminderDT = `${t.reminder.date}T${t.reminder.time}`;
-    // Only fire if: time has passed AND not already fired this session
     if (reminderDT <= nowLocal && !_firedReminders.has(t.id)) {
-      _firedReminders.add(t.id); // mark as fired so it doesn't repeat
+      _firedReminders.add(t.id);
       showReminderAlert(t);
     }
   });
