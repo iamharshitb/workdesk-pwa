@@ -809,9 +809,7 @@
 <div class="ann-history-overlay" id="ann-history-overlay" style="display:none" onclick="if(event.target===this)closeAnnHistory()">
   <div class="ann-history-sheet">
     <div class="ann-history-header">
-      <div class="ann-history-header-title">
-        <span>📣</span><span>Recent Announcements</span>
-      </div>
+      <div class="ann-history-header-title">📣 Recent Announcements</div>
       <button class="ann-history-close" onclick="closeAnnHistory()">Close</button>
     </div>
     <div class="ann-history-scroll" id="ann-history-list">
@@ -985,7 +983,14 @@ function renderMyTasks() {
     taskList = [...tasks];
   } else {
     taskList = MY_NAME
-      ? tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase()))
+      ? tasks.filter(t => {
+          // Always include tasks where user is a member
+          if ((t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())) return true;
+          // Also include individual tasks with no members — they belong to whoever is viewing
+          // (happens when member lookup failed during registration)
+          if (t.taskType === 'individual' && (!t.members || t.members.length === 0)) return true;
+          return false;
+        })
       : tasks;
   }
 
@@ -1583,11 +1588,13 @@ window.openAnnHistory = async () => {
       : '';
     const initials = (h.author||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     return `<div class="ann-history-item">
-      <div class="ann-history-avatar">${initials}</div>
+      <div class="ann-history-av">${initials}</div>
       <div class="ann-history-body">
-        <div class="ann-history-author">${esc(h.author||'Unknown')}</div>
+        <div class="ann-history-row1">
+          <span class="ann-history-author">${esc(h.author||'Unknown')}</span>
+          <span class="ann-history-time">${ts}</span>
+        </div>
         <div class="ann-history-text">${esc(h.text)}</div>
-        <div class="ann-history-time">${ts}</div>
       </div>
     </div>`;
   }).join('');
