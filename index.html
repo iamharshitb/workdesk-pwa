@@ -516,17 +516,24 @@
       to{transform:translateX(-50%) translateY(0);opacity:1}
     }
     .announcement-inner {
-      display:flex;align-items:flex-start;gap:10px;
-      padding:14px 16px;
-      background:rgba(20,10,40,.8);
-      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-      border:1.5px solid rgba(157,126,255,.5);
-      border-radius:14px;
-      box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 0 1px rgba(157,126,255,.15);
+      display:flex;align-items:flex-start;gap:12px;
+      padding:16px 18px;
+      background:rgba(15,5,35,.88);
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border:2px solid rgba(167,139,250,.7);
+      border-radius:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.6),
+                 0 0 0 1px rgba(167,139,250,.2),
+                 0 0 24px rgba(157,126,255,.2);
     }
-    .ann-icon { font-size:18px;flex-shrink:0;margin-top:1px }
+    @keyframes ann-pulse {
+      0%,100%{box-shadow:0 8px 40px rgba(0,0,0,.6),0 0 0 1px rgba(167,139,250,.2),0 0 24px rgba(157,126,255,.2)}
+      50%{box-shadow:0 8px 40px rgba(0,0,0,.6),0 0 0 1px rgba(167,139,250,.4),0 0 40px rgba(157,126,255,.4)}
+    }
+    .announcement-inner { animation:ann-pulse 2.5s ease-in-out 3 }
+    .ann-icon { font-size:22px;flex-shrink:0;margin-top:1px }
     .ann-body { flex:1;min-width:0 }
-    .ann-text { font-size:13px;font-weight:600;color:#fff;line-height:1.5 }
+    .ann-text { font-size:14px;font-weight:700;color:#fff;line-height:1.5 }
     .ann-meta { font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;font-weight:600 }
     .ann-dismiss {
       flex-shrink:0;background:none;border:none;cursor:pointer;
@@ -1502,6 +1509,26 @@ function renderAnnouncement(ann) {
   if (dimBtn) dimBtn.onclick = () => dismissAnnouncement(ann.id);
 
   popup.classList.add('show');
+
+  // Play a soft chime sound
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playNote = (freq, startTime, duration, vol=0.15) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(vol, startTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.start(startTime); osc.stop(startTime + duration);
+    };
+    // Soft three-note ascending chime
+    playNote(523, ctx.currentTime,       0.5);  // C5
+    playNote(659, ctx.currentTime + 0.18, 0.5); // E5
+    playNote(784, ctx.currentTime + 0.36, 0.7); // G5
+  } catch(e) {}
 }
 
 window.dismissAnnouncement = (id) => {
