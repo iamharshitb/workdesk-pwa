@@ -1167,7 +1167,11 @@ function myTaskCard(t, i) {
 
   const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
   const myRespTask = myMemberData?.role || '';
-  const myMemberId = myMemberData ? members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id : null;
+  const myMemberId = myMemberData
+    ? members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id
+    : null;
+  // For individual tasks with no members, fall back to overall task status
+  const isIndividualNoMember = t.taskType === 'individual' && (!t.members || t.members.length === 0);
   const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
   const myIsDone = myStatus === 'done';
   const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
@@ -1735,6 +1739,20 @@ async function setMemberStatus(taskId, memberId, newStatus) {
 }
 
 // ── CYCLE OVERALL (todo ↔ inprog only) ────────────────────────────────────
+window.toggleIndividualDone = async (taskId, newStatus) => {
+  const t = tasks.find(t => t.id === taskId); if (!t) return;
+  t.status = newStatus;
+  await updateTask(taskId, { status: newStatus, completedAt: newStatus === 'done' ? new Date() : null });
+  renderAll();
+  if (newStatus === 'done') {
+    playMarkDone(); launchConfetti();
+    toast('✓ Task done!');
+    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+  } else {
+    playReopen(); toast('↩ Reopened');
+  }
+};
+
 window.cycleOverall = async (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
   if (t.status === 'done') return;
