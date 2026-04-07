@@ -526,8 +526,8 @@ window.submitTask = async () => {
       tasks.unshift({ id, label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
       // Play sound if you're assigned to this task
-      const myName = localStorage.getItem('wd_myname') || '';
-      if (myName && memberArr.some(m => m.name.toLowerCase() === myName.toLowerCase())) {
+      const _myNameCheck = localStorage.getItem('wd_myname') || '';
+      if (_myNameCheck && finalMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
         playTaskAssigned();
       }
     }

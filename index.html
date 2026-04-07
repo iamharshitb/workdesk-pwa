@@ -766,6 +766,11 @@
     <div class="ann-body">
       <div class="ann-text" id="ann-popup-text"></div>
       <div class="ann-meta" id="ann-popup-meta"></div>
+      <div style="margin-top:5px">
+        <button onclick="openAnnHistory()" style="background:none;border:none;cursor:pointer;
+          font-size:10px;font-weight:700;color:rgba(167,139,250,.7);padding:0;
+          text-decoration:underline">View recent announcements</button>
+      </div>
     </div>
     <button class="ann-dismiss" id="ann-popup-dismiss" title="Dismiss">✕</button>
   </div>
@@ -800,6 +805,19 @@
   </div>
 </div>
 
+<!-- ANNOUNCEMENT HISTORY SHEET -->
+<div class="ann-history-overlay" id="ann-history-overlay" onclick="if(event.target===this)closeAnnHistory()">
+  <div class="ann-history-sheet">
+    <div class="ann-history-title">
+      <span>📣 Recent Announcements</span>
+      <button class="ann-history-close" onclick="closeAnnHistory()">Close</button>
+    </div>
+    <div id="ann-history-list">
+      <div style="font-size:12px;color:var(--text3)">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <!-- REMINDER MODAL -->
 <div class="reminder-modal" id="reminder-modal">
   <div class="reminder-box">
@@ -818,7 +836,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
@@ -1537,6 +1555,32 @@ window.dismissAnnouncement = (id) => {
     localStorage.setItem('wd_dismissed_ann', JSON.stringify(dismissedAnnIds));
   }
   renderAnnouncement(currentAnnouncement);
+};
+
+window.openAnnHistory = async () => {
+  const overlay = document.getElementById('ann-history-overlay');
+  const list    = document.getElementById('ann-history-list');
+  overlay.classList.add('open');
+  list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading...</div>';
+
+  const history = await getAnnouncementHistory();
+  if (!history.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No announcements yet</div>';
+    return;
+  }
+  list.innerHTML = history.map(h => {
+    const ts = h.postedAt?.toDate
+      ? h.postedAt.toDate().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '';
+    return `<div class="ann-history-item">
+      <div class="ann-history-text">${esc(h.text)}</div>
+      <div class="ann-history-meta">📣 ${esc(h.author||'Unknown')}${ts ? ' · ' + ts : ''}</div>
+    </div>`;
+  }).join('');
+};
+
+window.closeAnnHistory = () => {
+  document.getElementById('ann-history-overlay').classList.remove('open');
 };
 
 window.openAnnModal = () => {
@@ -2264,6 +2308,16 @@ window.confirmReminder = async () => {
   toast('🔔 Reminder set!');
   scheduleReminderCheck();
 };
+// Expose firebase dismissReminder on window for inline onclick use
+window.dismissReminderFromToast = async (taskId) => {
+  window._clearFiredReminder(taskId);
+  await dismissReminder(taskId);
+  // Hide the toast
+  const el = document.getElementById('toast');
+  if (el) el.classList.remove('show');
+  toast('Reminder dismissed');
+};
+
 window.dismissReminderNow = async () => {
   if (!_reminderTaskId) return;
   await dismissReminder(_reminderTaskId);
@@ -2315,7 +2369,7 @@ function showReminderAlert(t) {
   const el = document.getElementById('toast');
   el.innerHTML = `🔔 Reminder: <strong>${esc(t.label)}</strong>
     <button onclick="openReminderModal('${t.id}')" style="margin-left:8px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Snooze</button>
-    <button onclick="window._clearFiredReminder('${t.id}');dismissReminder('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
+    <button onclick="window.dismissReminderFromToast('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
   el.className = 'toast show';
   el.style.maxWidth = '320px';
   // Don't auto-hide reminder toasts

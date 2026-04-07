@@ -306,11 +306,27 @@ function announcementDoc() {
 }
 
 export async function postAnnouncement(text, author) {
-  await setDoc(announcementDoc(), {
-    text, author,
-    postedAt: serverTimestamp(),
-    id: Date.now().toString()
-  });
+  const id = Date.now().toString();
+  const data = { text, author, postedAt: serverTimestamp(), id };
+  // Save as current announcement
+  await setDoc(announcementDoc(), data);
+  // Also save to history (keep last 5)
+  const histCol = collection(db, "workspaces", WORKSPACE_ID, "meta", "announcement", "history");
+  await setDoc(doc(histCol, id), data);
+  // Trim history to last 5
+  try {
+    const snap = await getDocs(query(histCol, orderBy("postedAt", "desc")));
+    const toDelete = snap.docs.slice(5);
+    for (const d of toDelete) await deleteDoc(d.ref);
+  } catch(e) {}
+}
+
+export async function getAnnouncementHistory() {
+  try {
+    const histCol = collection(db, "workspaces", WORKSPACE_ID, "meta", "announcement", "history");
+    const snap = await getDocs(query(histCol, orderBy("postedAt", "desc")));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { return []; }
 }
 
 export async function clearAnnouncement() {
