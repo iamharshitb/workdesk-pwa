@@ -322,3 +322,105 @@ export function onAnnouncementChanged(callback) {
     callback(snap.exists() ? snap.data() : null);
   });
 }
+
+// ── BACKUP & RESTORE ──────────────────────────────────────────────────────
+
+export async function exportBackup() {
+  // Fetch all tasks (no date filter — full history)
+  const tasksSnap = await getDocs(collection(db, "workspaces", WORKSPACE_ID, "tasks"));
+  const tasks = [];
+  for (const taskDoc of tasksSnap.docs) {
+    const task = { id: taskDoc.id, ...taskDoc.data() };
+    // Also fetch comments for each task
+    const commentsSnap = await getDocs(collection(db, "workspaces", WORKSPACE_ID, "tasks", taskDoc.id, "comments"));
+    task._comments = commentsSnap.docs.map(c => ({ id: c.id, ...c.data() }));
+    tasks.push(task);
+  }
+
+  // Fetch members
+  const membersSnap = await getDocs(collection(db, "workspaces", WORKSPACE_ID, "members"));
+  const members = membersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Fetch user data (avatars, badges, notes)
+  const usersSnap = await getDocs(collection(db, "workspaces", WORKSPACE_ID, "users"));
+  const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Fetch calendar
+  const calSnap = await getDoc(doc(db, "workspaces", WORKSPACE_ID, "calendar", "shared"));
+  const calendar = calSnap.exists() ? calSnap.data() : {};
+
+  // Fetch streak
+  const streakSnap = await getDoc(doc(db, "workspaces", WORKSPACE_ID, "meta", "streak"));
+  const streak = streakSnap.exists() ? streakSnap.data() : {};
+
+  // Fetch announcement
+  const annSnap = await getDoc(doc(db, "workspaces", WORKSPACE_ID, "meta", "announcement"));
+  const announcement = annSnap.exists() ? annSnap.data() : {};
+
+  return {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    workspaceId: WORKSPACE_ID,
+    tasks,
+    members,
+    users,
+    calendar,
+    streak,
+    announcement,
+  };
+}
+
+export async function restoreBackup(backup) {
+  if (!backup || backup.workspaceId !== WORKSPACE_ID) {
+    throw new Error('Invalid backup file or wrong workspace');
+  }
+
+  const results = { tasks: 0, members: 0, users: 0, calendar: false, errors: [] };
+
+  // Restore tasks (setDoc with merge to avoid overwriting newer data)
+  for (const task of (backup.tasks || [])) {
+    try {
+      const { id, _comments, ...taskData } = task;
+      // Convert any plain timestamp objects back (they serialize as {seconds, nanoseconds})
+      await setDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", id), taskData, { merge: true });
+      // Restore comments
+      for (const comment of (_comments || [])) {
+        const { id: cid, ...cData } = comment;
+        await setDoc(doc(db, "workspaces", WORKSPACE_ID, "tasks", id, "comments", cid), cData, { merge: true });
+      }
+      results.tasks++;
+    } catch(e) {
+      results.errors.push(`Task ${task.id}: ${e.message}`);
+    }
+  }
+
+  // Restore members
+  for (const member of (backup.members || [])) {
+    try {
+      const { id, ...mData } = member;
+      await setDoc(doc(db, "workspaces", WORKSPACE_ID, "members", id), mData, { merge: true });
+      results.members++;
+    } catch(e) {
+      results.errors.push(`Member ${member.id}: ${e.message}`);
+    }
+  }
+
+  // Restore user data
+  for (const user of (backup.users || [])) {
+    try {
+      const { id, ...uData } = user;
+      await setDoc(doc(db, "workspaces", WORKSPACE_ID, "users", id), uData, { merge: true });
+      results.users++;
+    } catch(e) {
+      results.errors.push(`User ${user.id}: ${e.message}`);
+    }
+  }
+
+  // Restore calendar
+  if (backup.calendar && Object.keys(backup.calendar).length) {
+    await setDoc(doc(db, "workspaces", WORKSPACE_ID, "calendar", "shared"), backup.calendar, { merge: true });
+    results.calendar = true;
+  }
+
+  return results;
+}
