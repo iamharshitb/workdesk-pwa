@@ -517,9 +517,10 @@ window.submitTask = async () => {
     } else {
       const dueDate = document.getElementById('f-due').value || null;
       // For individual tasks with no members, auto-assign the current user
+      const _registrant = localStorage.getItem('wd_myname') || '';
       let finalMembers = memberArr;
-      if (selectedTaskType === 'individual' && finalMembers.length === 0 && myName) {
-        const me = allMembers.find(m => m.name.toLowerCase() === myName.toLowerCase());
+      if (selectedTaskType === 'individual' && finalMembers.length === 0 && _registrant) {
+        const me = allMembers.find(m => m.name.toLowerCase() === _registrant.toLowerCase());
         if (me) finalMembers = [{ id: me.id, name: me.name, role: 'Personal task' }];
       }
       const id = await fbAddTask({ label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
