@@ -1236,7 +1236,11 @@ function myTaskCard(t, i) {
           <button class="mark-done-btn${myIsDone?' undone':''}"
             onclick="event.stopPropagation();setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
             ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
-          </button>` : ''}
+          </button>` : `
+          <button class="mark-done-btn${isDone?' undone':''}"
+            onclick="event.stopPropagation();toggleIndividualDone('${t.id}','${isDone?'todo':'done'}')">
+            ${isDone ? '↩ Reopen' : '✓ Mark Done'}
+          </button>`}
           ${(() => {
             // Only show active reminder badge to person who set it
             const remActive = t.reminder?.active &&
