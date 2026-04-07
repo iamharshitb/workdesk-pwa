@@ -516,8 +516,14 @@ window.submitTask = async () => {
       toast('Task updated ✓'); cancelEdit();
     } else {
       const dueDate = document.getElementById('f-due').value || null;
-      const id = await fbAddTask({ label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
-      tasks.unshift({ id, label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
+      // For individual tasks with no members, auto-assign the current user
+      let finalMembers = memberArr;
+      if (selectedTaskType === 'individual' && finalMembers.length === 0 && myName) {
+        const me = allMembers.find(m => m.name.toLowerCase() === myName.toLowerCase());
+        if (me) finalMembers = [{ id: me.id, name: me.name, role: 'Personal task' }];
+      }
+      const id = await fbAddTask({ label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      tasks.unshift({ id, label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
       // Play sound if you're assigned to this task
       const myName = localStorage.getItem('wd_myname') || '';
