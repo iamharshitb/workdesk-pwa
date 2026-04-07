@@ -153,10 +153,10 @@ input[type=file] { display:none }
         <div class="br-title" id="export-result-title"></div>
         <div id="export-result-body"></div>
       </div>
-      <button class="backup-btn backup-btn-export" id="export-btn" onclick="runExport()">
-        📤 Export Now
+      <button class="backup-btn backup-btn-export" id="export-btn" onclick="runExport()" disabled>
+        ⏳ Connecting...
       </button>
-      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">
+      <div id="export-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">
         Tip: Save the file to Google Drive or email it to yourself monthly
       </div>
     </div>
@@ -258,6 +258,8 @@ window.runExport = async () => {
   const res  = document.getElementById('export-result');
 
   btn.disabled = true;
+  const statusEl = document.getElementById('export-status');
+  if (statusEl) statusEl.textContent = 'Export in progress — please wait...';
   prog.classList.add('show');
   res.classList.remove('show');
 
@@ -296,6 +298,7 @@ window.runExport = async () => {
 
     // Save to history
     const sizeKB = Math.round(blob.size / 1024);
+    if (statusEl) statusEl.textContent = 'Tip: Save the file to Google Drive or email it to yourself monthly';
     saveHistory({ name:fname, date:new Date().toISOString(), size:sizeKB,
       tasks: data.tasks?.length||0, members: data.members?.length||0 });
     renderHistory();
@@ -467,7 +470,12 @@ function toast(msg) {
   clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'), 2800);
 }
 
-onUserReady(() => { renderHistory(); });
+onUserReady(() => {
+  renderHistory();
+  // Enable export button once auth is confirmed
+  const btn = document.getElementById('export-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '📤 Export Now'; }
+});
 </script>
 <script>
 if ('serviceWorker' in navigator) {
