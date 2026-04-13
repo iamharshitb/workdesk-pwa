@@ -1220,8 +1220,21 @@ function renderMyTasks() {
   ` : '';
 
   // Separate active from done tasks
-  const activeTasks = sorted.filter(t => t.status !== 'done');
-  const doneTasks   = sorted.filter(t => t.status === 'done');
+  // A task moves to done section when overall status is done OR
+  // when this user's member status is done (handles cases where Firestore
+  // hasn't propagated the overall status update yet)
+  const myId = members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id;
+  const activeTasks = sorted.filter(t => {
+    if (t.status === 'done') return false;
+    // If user has individually marked done, treat as done for display
+    if (myId && t.memberStatus && t.memberStatus[myId] === 'done') return false;
+    return true;
+  });
+  const doneTasks = sorted.filter(t => {
+    if (t.status === 'done') return true;
+    if (myId && t.memberStatus && t.memberStatus[myId] === 'done') return true;
+    return false;
+  });
 
   // Group done tasks by month
   const doneByMonth = {};
