@@ -1323,9 +1323,8 @@ function myTaskCard(t, i) {
 
   const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
   const myRespTask = myMemberData?.role || '';
-  const myMemberId = myMemberData
-    ? members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id
-    : null;
+  // Use the ID stored IN the task's members array — same source as memberStatus keys
+  const myMemberId = myMemberData?.id || null;
   // For individual tasks with no members, fall back to overall task status
   const isIndividualNoMember = t.taskType === 'individual' && (!t.members || t.members.length === 0);
   const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
@@ -1376,7 +1375,7 @@ function myTaskCard(t, i) {
             <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
           </span>
           ${others.map(m => {
-            const otherId = members.find(mm => mm.name.toLowerCase() === m.name.toLowerCase())?.id;
+            const otherId = m.id || members.find(mm => mm.name.toLowerCase() === m.name.toLowerCase())?.id;
             const otherDone = otherId ? getMemberStatus(t, otherId) === 'done' : false;
             return `<span class="m-pill" style="${otherDone?'opacity:.6':''}">
               <span class="m-pill-name">${esc(m.name)}${otherDone?' ✓':''}</span>
