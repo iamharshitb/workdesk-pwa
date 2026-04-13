@@ -280,6 +280,46 @@
       white-space:nowrap;flex-shrink:0;
     }
 
+    /* ── PRIORITY CARD ── */
+    .priority-card {
+      background:var(--panel);border:1px solid var(--border2);
+      border-radius:var(--rr);padding:0;
+      box-shadow:var(--shadow-card);overflow:hidden;
+    }
+    .priority-row {
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;cursor:pointer;
+      transition:background .12s;
+      border-bottom:1px solid var(--border);
+      -webkit-tap-highlight-color:transparent;
+    }
+    .priority-row:last-child { border-bottom:none }
+    .priority-row:hover { background:var(--bg3) }
+    .priority-row:active { background:var(--bg3) }
+    .priority-row-label {
+      font-size:9px;font-weight:800;color:var(--text3);
+      text-transform:uppercase;letter-spacing:.08em;
+      flex-shrink:0;width:44px;
+    }
+    .priority-row-content { flex:1;min-width:0 }
+    .priority-row-task {
+      font-size:13px;font-weight:700;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      margin-bottom:3px;
+    }
+    .priority-row-meta {
+      display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+    }
+    .priority-empty {
+      font-size:12px;color:var(--text3);font-style:italic;
+    }
+    .priority-arrow {
+      font-size:11px;color:var(--text3);flex-shrink:0;
+    }
+    .priority-dot {
+      width:7px;height:7px;border-radius:50%;flex-shrink:0;
+    }
+
     /* ── CONFETTI ── */
     .confetti-wrap {
       position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;
@@ -658,6 +698,9 @@
   <!-- GREETING + STREAK -->
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
+  <!-- PRIORITY SNAPSHOT -->
+  <div class="priority-card fi" id="priority-card" style="animation-delay:.015s;display:none"></div>
+
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
@@ -931,7 +974,103 @@ onUserReady(async () => {
 function renderAll() {
   computeBadges();
   renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
+  renderPriorityCard();
 }
+
+function renderPriorityCard() {
+  const el = document.getElementById('priority-card');
+  if (!el || !MY_NAME) return;
+
+  const po = { critical: 0, high: 1, medium: 2, low: 3 };
+  const pColor = { critical:'var(--red)', high:'var(--amber)', medium:'var(--neon)', low:'var(--text3)' };
+  const pLabel = { critical:'CRITICAL', high:'HIGH', medium:'MEDIUM', low:'LOW' };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // End of this week (Sunday)
+  const weekEnd = new Date();
+  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+  const weekEndStr = weekEnd.toISOString().slice(0, 10);
+
+  // My active tasks
+  const myActive = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())
+  );
+
+  // Today's top: overdue first, then due today, then by priority
+  const todayTop = [...myActive].sort((a, b) => {
+    const aOver = a.taskDueDate && a.taskDueDate < todayStr ? -1 : 0;
+    const bOver = b.taskDueDate && b.taskDueDate < todayStr ? -1 : 0;
+    if (aOver !== bOver) return aOver - bOver;
+    const aDue = a.taskDueDate === todayStr ? -1 : 0;
+    const bDue = b.taskDueDate === todayStr ? -1 : 0;
+    if (aDue !== bDue) return aDue - bDue;
+    return (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2);
+  })[0];
+
+  // This week's top: highest priority MBC task due this week (team-wide)
+  const weekActive = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.taskType||'mbc') === 'mbc' &&
+    t.taskDueDate && t.taskDueDate <= weekEndStr
+  ).sort((a, b) =>
+    (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2)
+  )[0];
+
+  // If nothing to show, hide the card
+  if (!todayTop && !weekActive) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  function taskRow(label, t) {
+    if (!t) return `
+      <div class="priority-row" style="cursor:default">
+        <div class="priority-row-label">${label}</div>
+        <div class="priority-row-content"><div class="priority-empty">All clear ✓</div></div>
+      </div>`;
+    const pri = t.priority || 'medium';
+    const others = (t.members||[])
+      .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+      .map(m => esc(m.name)).join(', ');
+    const membersStr = others ? '· ' + others : '';
+    return `
+      <div class="priority-row" onclick="jumpToTask('${t.id}')">
+        <div class="priority-row-label">${label}</div>
+        <div class="priority-row-content">
+          <div class="priority-row-task">${esc(t.label)}</div>
+          <div class="priority-row-meta">
+            <div class="priority-dot" style="background:${pColor[pri]}"></div>
+            <span style="font-size:10px;font-weight:700;color:${pColor[pri]}">${pLabel[pri]}</span>
+            ${membersStr ? `<span style="font-size:10px;color:var(--text3)">${membersStr}</span>` : ''}
+            ${t.taskDueDate && t.taskDueDate < todayStr
+              ? '<span style="font-size:10px;font-weight:700;color:var(--red)">⚠ Overdue</span>'
+              : t.taskDueDate === todayStr
+              ? '<span style="font-size:10px;font-weight:700;color:var(--amber)">Due Today</span>'
+              : ''}
+          </div>
+        </div>
+        <div class="priority-arrow">›</div>
+      </div>`;
+  }
+
+  el.innerHTML = taskRow('TODAY', todayTop) + taskRow('THIS WEEK', weekActive);
+}
+
+// Jump to task in My Tasks tab — switch tab and expand the task
+window.jumpToTask = (taskId) => {
+  // Switch to My Tasks tab
+  switchTab('mytasks', document.querySelector('.tab'));
+  // Scroll to task and expand it
+  setTimeout(() => {
+    const row = document.getElementById('trc-' + taskId);
+    if (row) {
+      row.scrollIntoView({ behavior:'smooth', block:'center' });
+      // Expand it if not already
+      if (!expandedTasks.has(taskId)) {
+        toggleTaskExpand(taskId);
+      }
+    }
+  }, 150);
+};
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
 window.filterTasks = (type) => {
@@ -1023,7 +1162,11 @@ function renderMyTasks() {
   const now16 = `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}`;
   const todayStr = new Date().toISOString().slice(0,10);
   const sorted = [...taskList].sort((a,b) => {
-    // 1st: tasks due today (taskDueDate === today) that aren't done
+    // 1st: overdue tasks that aren't done (pin to top)
+    const aOverdue = a.taskDueDate && a.taskDueDate < todayStr && a.status !== 'done' ? -1 : 0;
+    const bOverdue = b.taskDueDate && b.taskDueDate < todayStr && b.status !== 'done' ? -1 : 0;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    // 2nd: tasks due today that aren't done
     const aDueToday = a.taskDueDate === todayStr && a.status !== 'done' ? -1 : 0;
     const bDueToday = b.taskDueDate === todayStr && b.status !== 'done' ? -1 : 0;
     if (aDueToday !== bDueToday) return aDueToday - bDueToday;
@@ -1710,16 +1853,28 @@ function getMemberStatus(task, memberId) {
 async function setMemberStatus(taskId, memberId, newStatus) {
   const t = tasks.find(t => t.id === taskId); if (!t) return;
   if (!t.memberStatus) t.memberStatus = {};
+  // Update local copy
   t.memberStatus[memberId] = newStatus;
+
+  // Check allDone using merged state: Firestore memberStatus + this new update
+  // This handles overdue tasks where some members' statuses may be stale in memory
   const memberIds = (t.members||[]).map(m => m.id);
-  const allDone = memberIds.length > 0 && memberIds.every(id => (t.memberStatus[id]||'todo') === 'done');
+  // Build merged status: start from existing memberStatus, apply new value
+  const merged = Object.assign({}, t.memberStatus, { [memberId]: newStatus });
+  // A member is done if their status is 'done' — default to 'todo' if missing
+  const allDone = memberIds.length > 0 && memberIds.every(id => (merged[id]||'todo') === 'done');
+
   let overallStatus;
   if (allDone) { overallStatus = 'done'; }
   else if (t.status === 'done') { overallStatus = 'inprog'; }
   else { overallStatus = t.status || 'todo'; }
   t.status = overallStatus;
+
+  // Save: update this member's status + overall status in one write
   const updates = { status: overallStatus };
   updates[`memberStatus.${memberId}`] = newStatus;
+  // Also explicitly set completedAt if all done — overdue tasks may have missed this
+  if (allDone) updates.completedAt = new Date();
   await updateTask(taskId, updates);
   renderAll();
   if (allDone) {
