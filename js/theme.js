@@ -1,7 +1,7 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
 
 export const THEMES = [
-  { id:'ios',        name:'Standard',      sub:'iOS Glass · Deep Purple',   dot:'#0a84ff', bg:'#1a0a2e' },
+  { id:'',           name:'Standard',      sub:'Dark · Ambient Neon',       dot:'#00d2a8', bg:'#0c0c0f' },
   { id:'frosted',    name:'Frosted Glass', sub:'Heavy blur · Translucent',  dot:'#a78bfa', bg:'#0f0720' },
   { id:'bigsur',     name:'iOS Fans',      sub:'macOS · Warm Coral Glass',  dot:'#5ac8fa', bg:'#1a0a0a' },
   { id:'ios-system', name:'Dark',          sub:'iOS System · Clean',        dot:'#0a84ff', bg:'#1c1c1e' },
@@ -11,15 +11,22 @@ export const THEMES = [
 
 // Default to ios if no saved theme, or if saved theme no longer exists
 function getValidTheme() {
-  const saved = localStorage.getItem('wd_theme') || 'ios';
-  return THEMES.find(t => t.id === saved) ? saved : 'ios';
+  const saved = localStorage.getItem('wd_theme');
+  // 'ios' was the old default — migrate to Standard ('')
+  if (!saved || saved === 'ios') return '';
+  return THEMES.find(t => t.id === saved) ? saved : '';
 }
 
 let currentTheme = getValidTheme();
 
 export function applyTheme(themeId) {
+  // Remove all theme classes
   THEMES.forEach(t => document.body.classList.remove('theme-' + t.id));
-  document.body.classList.add('theme-' + themeId);
+  // Also remove the empty 'theme-' class from previous sessions
+  document.body.classList.remove('theme-');
+  if (themeId) {
+    document.body.classList.add('theme-' + themeId);
+  }
   currentTheme = themeId;
   localStorage.setItem('wd_theme', themeId);
   updateSwatchActive();

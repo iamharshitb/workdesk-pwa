@@ -1127,6 +1127,37 @@ window.exportMyReportPDF = () => {
 // ── FILTER POPULATION ON LOAD ─────────────────────────────────────────────
 const _origRenderTaskPage = renderTaskPage;
 
+window.toggleMyReport = () => {
+  const panel = document.getElementById('my-report-panel');
+  const isOpen = panel.style.display !== 'none';
+  if (isOpen) { panel.style.display = 'none'; return; }
+
+  // Populate member selector
+  const sel = document.getElementById('my-report-member');
+  const myName = localStorage.getItem('wd_myname') || '';
+  const isAdmin = myName.toLowerCase() === 'harshit';
+  sel.innerHTML = '';
+  const viewable = isAdmin ? allMembers : allMembers.filter(m => m.name.toLowerCase() === myName.toLowerCase());
+  viewable.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = m.name;
+    if (m.name.toLowerCase() === myName.toLowerCase()) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  // Set period buttons to default state
+  document.querySelectorAll('.mr-period-btn').forEach(b => {
+    const isActive = b.dataset.period === myReportPeriod;
+    b.style.background  = isActive ? 'var(--neon)' : 'var(--bg3)';
+    b.style.color       = isActive ? '#0c0c0f' : 'var(--text2)';
+    b.style.borderColor = isActive ? 'var(--neon)' : 'var(--border2)';
+  });
+
+  renderMyReport();
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior: 'smooth' });
+};
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${day} ${mo[parseInt(m)-1]}`}
 window.toggleWeeklyDigest = () => {
