@@ -393,6 +393,18 @@ function renderTaskPage(){
   document.getElementById('p2-badge').textContent=lbl;
 
   const mt=allTasks.filter(t=>t.month===selMonth && (t.taskType||'mbc')==='mbc');
+
+  // Group by project
+  const byProject={};
+  mt.forEach(t=>{
+    const proj=t.project||'';
+    if(!byProject[proj]) byProject[proj]=[];
+    byProject[proj].push(t);
+  });
+  const projectKeys=Object.keys(byProject).sort((a,b)=>{
+    if(!a) return 1; if(!b) return -1; return a.localeCompare(b);
+  });
+
   const total=mt.length;
   const done=mt.filter(t=>t.status==='done').length;
   const inprog=mt.filter(t=>t.status==='inprog').length;
@@ -443,6 +455,8 @@ function renderTaskPage(){
       </div>
     </div>
 
+    \${projectSection(byProject,projectKeys)}
+
     <!-- WHAT WE SHIPPED -->
     ${shipped.length?`
     <div class="sec">
@@ -482,6 +496,34 @@ function renderTaskPage(){
   `;
 }
 
+function projectSection(byProject, projectKeys){
+  const named = projectKeys.filter(k=>k);
+  if(!named.length) return '';
+  let h = '<div class="sec"><div class="sec-hd"><div class="sec-hd-bar" style="background:#7c3aed"></div><div class="sec-hd-text">By Project</div></div>';
+  named.forEach(proj=>{
+    const pt=byProject[proj];
+    const pd=pt.filter(t=>t.status==='done').length;
+    const pp=pt.length?Math.round(pd/pt.length*100):0;
+    const pc=pp>=80?'#059669':pp>=50?'#d97706':'#dc2626';
+    h+='<div style="margin-bottom:12px;padding:12px 14px;background:#f5f3ff;border-radius:8px;border-left:3px solid #7c3aed;page-break-inside:avoid">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    h+='<div style="font-weight:800;font-size:12px;color:#1e1b4b">&#128193; '+esc(proj)+'</div>';
+    h+='<div style="font-size:11px;font-weight:700;color:'+pc+'">'+pd+'/'+pt.length+' done &middot; '+pp+'%</div>';
+    h+='</div><div style="display:flex;flex-wrap:wrap;gap:5px">';
+    pt.forEach(t=>{
+      const sc=t.status==='done'?'#059669':t.status==='inprog'?'#d97706':'#6b7280';
+      const si=t.status==='done'?'&#10003;':t.status==='inprog'?'&#8635;':'&#9679;';
+      const mm=(t.members||[]).map(m=>m.name).join(', ');
+      h+='<div style="font-size:10px;padding:4px 8px;border-radius:4px;background:#fff;border:1px solid #e5e7eb;color:'+sc+';max-width:100%">';
+      h+=si+' <strong>'+esc(t.label)+'</strong>'+(mm?' &middot; '+esc(mm):'');
+      h+='</div>';
+    });
+    h+='</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
 function taskRow(t,cardCls,dotCol,tagCls,tagLbl){
   const pTag={critical:'tg-crit',high:'tg-high',medium:'tg-med',low:'tg-low'}[t.priority||'medium'];
   const members=(t.members||[]).map(m=>m.name).join(', ');
@@ -494,6 +536,7 @@ function taskRow(t,cardCls,dotCol,tagCls,tagLbl){
         <span class="t-tag ${pTag}">${t.priority||'medium'}</span>
         ${t.dueDate?`<span class="t-tag" style="background:#dbeafe;color:#1e40af">📅 ${fmtDate(t.dueDate)}</span>`:''}
       </div>
+      ${t.project?`<div class="t-members" style="color:#7c3aed">&#128193; ${esc(t.project)}</div>`:''}
       ${members?`<div class="t-members">👥 ${esc(members)}</div>`:''}
     </div>
   </div>`;

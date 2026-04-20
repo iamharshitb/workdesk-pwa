@@ -32,6 +32,23 @@
     .task-type-btn.active-individual {
       border-color:var(--purple);background:rgba(157,126,255,.08);color:var(--purple);
     }
+    /* Project field */
+    .project-row {
+      margin-bottom:12px;
+    }
+    .project-inp {
+      width:100%;background:var(--bg2);
+      border:1.5px solid var(--border2);border-radius:var(--r);
+      padding:9px 12px;color:var(--text);
+      font-family:var(--sans);font-size:14px;outline:none;
+      transition:border-color .15s;
+      list-style:none;
+    }
+    .project-inp:focus { border-color:var(--neon) }
+    .project-datalist-label {
+      font-size:11px;font-weight:700;color:var(--text3);
+      margin-bottom:5px;
+    }
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
     /* Compact task rows for All Tasks */
     .task-row-compact{
@@ -189,6 +206,14 @@
       <input class="task-input" id="f-task" placeholder="What's the overall task?" maxlength="120"
         onkeydown="if(event.key==='Enter')this.blur()">
 
+      <div class="sect-label">Project</div>
+      <div class="project-row">
+        <input class="project-inp" id="f-project" placeholder="e.g. SMF 2026, Brand Campaign, CIP..."
+          maxlength="80" list="project-suggestions"
+          onkeydown="if(event.key==='Enter')this.blur()">
+        <datalist id="project-suggestions"></datalist>
+      </div>
+
       <div class="sect-label">Assign team members</div>
       <div class="member-chips" id="chip-area">
         <span style="font-size:14px;color:var(--text3);font-weight:600">Add team members above first</span>
@@ -336,6 +361,7 @@ let allTasksHistory = []; // full history including archived — for date range 
 // role = the respective task text for that member
 let selectedMembers = {};
 let selectedPriority = 'medium';
+let selectedProject = '';
 let editingId = null;
 let pendingDeleteId = null;
 
@@ -492,7 +518,8 @@ window.selectPriority = (btn) => {
 
 // ── SUBMIT ─────────────────────────────────────────────────────────────────
 window.submitTask = async () => {
-  const label = document.getElementById('f-task').value.trim();
+  const label   = document.getElementById('f-task').value.trim();
+  const project = document.getElementById('f-project')?.value.trim() || '';
   if (!label) { shake('f-task'); return; }
 
   const startDate = document.getElementById('f-start').value || null;
@@ -510,9 +537,9 @@ window.submitTask = async () => {
   try {
     if (editingId) {
       const dueDate = document.getElementById('f-due').value || null;
-      await fbUpdateTask(editingId, { label, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      await fbUpdateTask(editingId, { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
       const idx = tasks.findIndex(t => t.id === editingId);
-      if (idx > -1) tasks[idx] = { ...tasks[idx], label, priority: selectedPriority, members: memberArr, dueDate: startDate };
+      if (idx > -1) tasks[idx] = { ...tasks[idx], label, project, priority: selectedPriority, members: memberArr, dueDate: startDate };
       toast('Task updated ✓'); cancelEdit();
     } else {
       const dueDate = document.getElementById('f-due').value || null;
@@ -523,8 +550,8 @@ window.submitTask = async () => {
         const me = members.find(m => m.name.toLowerCase() === _registrant.toLowerCase());
         if (me) finalMembers = [{ id: me.id, name: me.name, role: 'Personal task' }];
       }
-      const id = await fbAddTask({ label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
-      tasks.unshift({ id, label, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
+      const id = await fbAddTask({ label, project, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      tasks.unshift({ id, label, project, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
       toast('Task registered ✓'); resetForm();
       // Play sound if you're assigned to this task
       const _myNameCheck = localStorage.getItem('wd_myname') || '';
@@ -548,6 +575,7 @@ window.editTask = (id) => {
   document.getElementById('f-start').value = t.dueDate || '';
     document.getElementById('f-due').value = t.taskDueDate || '';
     setTaskType(t.taskType || 'mbc');
+    document.getElementById('f-project').value = t.project || '';
   selectedPriority = t.priority || 'medium';
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -685,6 +713,14 @@ window.toggleInputDoneSection = () => {
   if (arrow) arrow.classList.toggle('open', _inputDoneOpen);
 };
 
+function updateProjectSuggestions() {
+  const projects = [...new Set(
+    tasks.map(t => t.project).filter(Boolean)
+  )].sort();
+  const dl = document.getElementById('project-suggestions');
+  if (dl) dl.innerHTML = projects.map(p => `<option value="${esc(p)}">`).join('');
+}
+
 function renderTaskList() {
   const el = document.getElementById('task-list');
   const activeTasks = tasks.filter(t => t.status !== 'done');
@@ -732,6 +768,7 @@ function renderTaskList() {
             <div class="trc-meta">
               <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
               <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
+              ${t.project ? `<span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(157,126,255,.1);border:1px solid rgba(157,126,255,.2);padding:2px 6px;border-radius:4px">${esc(t.project)}</span>` : ''}
               ${t.dueDate ? `<span class="due-badge" style="font-size:9px;padding:2px 6px">${formatDate(t.dueDate)}</span>` : ''}
               <span class="trc-members">· ${memberNames||'No members'}</span>
             </div>
@@ -886,6 +923,7 @@ function resetForm() {
   document.getElementById('f-start').value = '';
   document.getElementById('f-due').value = '';
   setTaskType('mbc');
+  if (document.getElementById('f-project')) document.getElementById('f-project').value = '';
   selectedMembers = {}; selectedPriority = 'medium';
   document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
   document.querySelector('[data-p="medium"]').classList.add('pm');

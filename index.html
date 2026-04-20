@@ -87,6 +87,26 @@
     }
     .stat-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
     .stat-pill.active-filter { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,229,184,.15); }
+    /* Due date filter row */
+    .due-filter-row {
+      display:flex;gap:7px;margin-bottom:10px;
+    }
+    .due-filter-btn {
+      flex:1;padding:7px 10px;border-radius:10px;
+      border:1.5px solid var(--border2);background:var(--bg2);
+      color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
+      cursor:pointer;transition:all .15s;text-align:center;
+      display:flex;align-items:center;justify-content:center;gap:5px;
+    }
+    .due-filter-btn:hover { border-color:var(--neon2);color:var(--text) }
+    .due-filter-btn.active {
+      border-color:var(--amber);background:rgba(245,168,0,.08);color:var(--amber);
+    }
+    .due-filter-count {
+      font-size:11px;font-weight:900;
+      background:rgba(245,168,0,.15);color:var(--amber);
+      padding:1px 6px;border-radius:10px;
+    }
 
     /* ── COMPACT TASK ROW ── */
     .task-row-compact {
@@ -278,6 +298,46 @@
       border-radius:20px;padding:5px 12px;
       font-size:13px;font-weight:800;color:var(--amber);
       white-space:nowrap;flex-shrink:0;
+    }
+
+    /* ── PRIORITY CARD ── */
+    .priority-card {
+      background:var(--panel);border:1px solid var(--border2);
+      border-radius:var(--rr);padding:0;
+      box-shadow:var(--shadow-card);overflow:hidden;
+    }
+    .priority-row {
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;cursor:pointer;
+      transition:background .12s;
+      border-bottom:1px solid var(--border);
+      -webkit-tap-highlight-color:transparent;
+    }
+    .priority-row:last-child { border-bottom:none }
+    .priority-row:hover { background:var(--bg3) }
+    .priority-row:active { background:var(--bg3) }
+    .priority-row-label {
+      font-size:9px;font-weight:800;color:var(--text3);
+      text-transform:uppercase;letter-spacing:.08em;
+      flex-shrink:0;width:44px;
+    }
+    .priority-row-content { flex:1;min-width:0 }
+    .priority-row-task {
+      font-size:13px;font-weight:700;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      margin-bottom:3px;
+    }
+    .priority-row-meta {
+      display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+    }
+    .priority-empty {
+      font-size:12px;color:var(--text3);font-style:italic;
+    }
+    .priority-arrow {
+      font-size:11px;color:var(--text3);flex-shrink:0;
+    }
+    .priority-dot {
+      width:7px;height:7px;border-radius:50%;flex-shrink:0;
     }
 
     /* ── CONFETTI ── */
@@ -658,6 +718,9 @@
   <!-- GREETING + STREAK -->
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
+  <!-- PRIORITY SNAPSHOT -->
+  <div class="priority-card fi" id="priority-card" style="animation-delay:.015s;display:none"></div>
+
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
@@ -694,6 +757,16 @@
     <div class="stat-pill" id="sp-crit" onclick="filterTasks('critical')">
       <div class="stat-n sn-r" id="s-crit">0</div><div class="stat-l">Critical</div>
     </div>
+  </div>
+
+  <!-- DUE DATE FILTERS -->
+  <div class="due-filter-row fi" id="due-filter-row" style="animation-delay:.06s">
+    <button class="due-filter-btn" id="due-this-week-btn" onclick="filterByDue('this-week')">
+      📅 This Week <span class="due-filter-count" id="due-this-week-count">0</span>
+    </button>
+    <button class="due-filter-btn" id="due-two-weeks-btn" onclick="filterByDue('two-weeks')">
+      📅 Next 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
+    </button>
   </div>
 
   <!-- PROGRESS -->
@@ -845,7 +918,8 @@ let calendarEvents = {}; // comms calendar events
 let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed daily
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
-let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|null
+let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
+let activeDueFilter = null; // 'this-week'|'two-weeks'|null
 
 // Theme handled by theme.js
 initTheme();
@@ -931,9 +1005,123 @@ onUserReady(async () => {
 function renderAll() {
   computeBadges();
   renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
+  renderPriorityCard();
 }
 
+function renderPriorityCard() {
+  const el = document.getElementById('priority-card');
+  if (!el || !MY_NAME) return;
+
+  const po = { critical: 0, high: 1, medium: 2, low: 3 };
+  const pColor = { critical:'var(--red)', high:'var(--amber)', medium:'var(--neon)', low:'var(--text3)' };
+  const pLabel = { critical:'CRITICAL', high:'HIGH', medium:'MEDIUM', low:'LOW' };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // End of this week (Sunday)
+  const weekEnd = new Date();
+  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+  const weekEndStr = weekEnd.toISOString().slice(0, 10);
+
+  // My active tasks
+  const myActive = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())
+  );
+
+  // Today's top: overdue first, then due today, then by priority
+  const todayTop = [...myActive].sort((a, b) => {
+    const aOver = a.taskDueDate && a.taskDueDate < todayStr ? -1 : 0;
+    const bOver = b.taskDueDate && b.taskDueDate < todayStr ? -1 : 0;
+    if (aOver !== bOver) return aOver - bOver;
+    const aDue = a.taskDueDate === todayStr ? -1 : 0;
+    const bDue = b.taskDueDate === todayStr ? -1 : 0;
+    if (aDue !== bDue) return aDue - bDue;
+    return (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2);
+  })[0];
+
+  // This week's top: highest priority MBC task due this week (team-wide)
+  const weekActive = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.taskType||'mbc') === 'mbc' &&
+    t.taskDueDate && t.taskDueDate <= weekEndStr
+  ).sort((a, b) =>
+    (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2)
+  )[0];
+
+  // If nothing to show, hide the card
+  if (!todayTop && !weekActive) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  function taskRow(label, t) {
+    if (!t) return `
+      <div class="priority-row" style="cursor:default">
+        <div class="priority-row-label">${label}</div>
+        <div class="priority-row-content"><div class="priority-empty">All clear ✓</div></div>
+      </div>`;
+    const pri = t.priority || 'medium';
+    const others = (t.members||[])
+      .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
+      .map(m => esc(m.name)).join(', ');
+    const membersStr = others ? '· ' + others : '';
+    return `
+      <div class="priority-row" onclick="jumpToTask('${t.id}')">
+        <div class="priority-row-label">${label}</div>
+        <div class="priority-row-content">
+          <div class="priority-row-task">${esc(t.label)}</div>
+          <div class="priority-row-meta">
+            <div class="priority-dot" style="background:${pColor[pri]}"></div>
+            <span style="font-size:10px;font-weight:700;color:${pColor[pri]}">${pLabel[pri]}</span>
+            ${membersStr ? `<span style="font-size:10px;color:var(--text3)">${membersStr}</span>` : ''}
+            ${t.taskDueDate && t.taskDueDate < todayStr
+              ? '<span style="font-size:10px;font-weight:700;color:var(--red)">⚠ Overdue</span>'
+              : t.taskDueDate === todayStr
+              ? '<span style="font-size:10px;font-weight:700;color:var(--amber)">Due Today</span>'
+              : ''}
+          </div>
+        </div>
+        <div class="priority-arrow">›</div>
+      </div>`;
+  }
+
+  el.innerHTML = taskRow('TODAY', todayTop) + taskRow('THIS WEEK', weekActive);
+}
+
+// Jump to task in My Tasks tab — switch tab and expand the task
+window.jumpToTask = (taskId) => {
+  // Switch to My Tasks tab
+  switchTab('mytasks', document.querySelector('.tab'));
+  // Scroll to task and expand it
+  setTimeout(() => {
+    const row = document.getElementById('trc-' + taskId);
+    if (row) {
+      row.scrollIntoView({ behavior:'smooth', block:'center' });
+      // Expand it if not already
+      if (!expandedTasks.has(taskId)) {
+        toggleTaskExpand(taskId);
+      }
+    }
+  }, 150);
+};
+
 // ── STATS FILTER ───────────────────────────────────────────────────────────
+window.filterByDue = (range) => {
+  if (activeDueFilter === range) {
+    // toggle off
+    activeDueFilter = null;
+    document.getElementById('due-this-week-btn')?.classList.remove('active');
+    document.getElementById('due-two-weeks-btn')?.classList.remove('active');
+  } else {
+    activeDueFilter = range;
+    document.getElementById('due-this-week-btn')?.classList.toggle('active', range === 'this-week');
+    document.getElementById('due-two-weeks-btn')?.classList.toggle('active', range === 'two-weeks');
+    // Clear stat filter when using due filter
+    activeFilter = null;
+    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  }
+  switchTab('mytasks', document.querySelector('.tab'));
+  renderMyTasks();
+};
+
 window.filterTasks = (type) => {
   if (activeFilter === type) {
     // toggle off
@@ -943,6 +1131,10 @@ window.filterTasks = (type) => {
     activeFilter = type;
     document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
     document.getElementById('sp-' + (type === 'critical' ? 'crit' : type === 'total' ? 'total' : type)).classList.add('active-filter');
+    // Clear due filter
+    activeDueFilter = null;
+    document.getElementById('due-this-week-btn')?.classList.remove('active');
+    document.getElementById('due-two-weeks-btn')?.classList.remove('active');
   }
   // Switch to My Tasks tab to show filtered results
   switchTab('mytasks', document.querySelector('.tab'));
@@ -951,7 +1143,10 @@ window.filterTasks = (type) => {
 
 window.clearFilter = () => {
   activeFilter = null;
+  activeDueFilter = null;
   document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  document.getElementById('due-this-week-btn')?.classList.remove('active');
+  document.getElementById('due-two-weeks-btn')?.classList.remove('active');
   renderMyTasks();
 };
 
@@ -967,6 +1162,24 @@ function renderStats() {
   set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
   set('prog-pct', pct + '%');
   document.getElementById('prog-fill').style.width = pct + '%';
+
+  // Update due filter counts (my tasks only, not done)
+  const myActiveTasks = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.members||[]).some(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())
+  );
+  const _n2 = new Date(), _p2 = n => String(n).padStart(2,'0');
+  const _ts = `${_n2.getFullYear()}-${_p2(_n2.getMonth()+1)}-${_p2(_n2.getDate())}`;
+  const _w  = new Date(_n2); _w.setDate(_w.getDate()+7);
+  const _ws = `${_w.getFullYear()}-${_p2(_w.getMonth()+1)}-${_p2(_w.getDate())}`;
+  const _2w = new Date(_n2); _2w.setDate(_2w.getDate()+14);
+  const _2ws= `${_2w.getFullYear()}-${_p2(_2w.getMonth()+1)}-${_p2(_2w.getDate())}`;
+  const thisWeekCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_ws).length;
+  const twoWeeksCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_2ws).length;
+  const twc = document.getElementById('due-this-week-count');
+  const ttwc = document.getElementById('due-two-weeks-count');
+  if (twc)  twc.textContent  = thisWeekCount;
+  if (ttwc) ttwc.textContent = twoWeeksCount;
 }
 
 // ── MY TASKS ───────────────────────────────────────────────────────────────
@@ -992,6 +1205,22 @@ function renderMyTasks() {
           return false;
         })
       : tasks;
+  }
+
+  // Apply due date filter
+  if (activeDueFilter) {
+    const _today = new Date();
+    const _pad = n => String(n).padStart(2,'0');
+    const _todayStr = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
+    const _cutoff = new Date(_today);
+    _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
+    const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
+    taskList = taskList.filter(t =>
+      t.status !== 'done' &&
+      t.taskDueDate &&
+      t.taskDueDate >= _todayStr &&
+      t.taskDueDate <= _cutoffStr
+    );
   }
 
   // Apply search filter
@@ -1023,7 +1252,11 @@ function renderMyTasks() {
   const now16 = `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}`;
   const todayStr = new Date().toISOString().slice(0,10);
   const sorted = [...taskList].sort((a,b) => {
-    // 1st: tasks due today (taskDueDate === today) that aren't done
+    // 1st: overdue tasks that aren't done (pin to top)
+    const aOverdue = a.taskDueDate && a.taskDueDate < todayStr && a.status !== 'done' ? -1 : 0;
+    const bOverdue = b.taskDueDate && b.taskDueDate < todayStr && b.status !== 'done' ? -1 : 0;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    // 2nd: tasks due today that aren't done
     const aDueToday = a.taskDueDate === todayStr && a.status !== 'done' ? -1 : 0;
     const bDueToday = b.taskDueDate === todayStr && b.status !== 'done' ? -1 : 0;
     if (aDueToday !== bDueToday) return aDueToday - bDueToday;
@@ -1077,8 +1310,21 @@ function renderMyTasks() {
   ` : '';
 
   // Separate active from done tasks
-  const activeTasks = sorted.filter(t => t.status !== 'done');
-  const doneTasks   = sorted.filter(t => t.status === 'done');
+  // A task moves to done section when overall status is done OR
+  // when this user's member status is done (handles cases where Firestore
+  // hasn't propagated the overall status update yet)
+  const myId = members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id;
+  const activeTasks = sorted.filter(t => {
+    if (t.status === 'done') return false;
+    // If user has individually marked done, treat as done for display
+    if (myId && t.memberStatus && t.memberStatus[myId] === 'done') return false;
+    return true;
+  });
+  const doneTasks = sorted.filter(t => {
+    if (t.status === 'done') return true;
+    if (myId && t.memberStatus && t.memberStatus[myId] === 'done') return true;
+    return false;
+  });
 
   // Group done tasks by month
   const doneByMonth = {};
@@ -1167,9 +1413,8 @@ function myTaskCard(t, i) {
 
   const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
   const myRespTask = myMemberData?.role || '';
-  const myMemberId = myMemberData
-    ? members.find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())?.id
-    : null;
+  // Use ID from task's own members array — same source as memberStatus keys
+  const myMemberId = myMemberData?.id || null;
   // For individual tasks with no members, fall back to overall task status
   const isIndividualNoMember = t.taskType === 'individual' && (!t.members || t.members.length === 0);
   const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
@@ -1189,6 +1434,7 @@ function myTaskCard(t, i) {
           <div class="trc-name">${esc(t.label)}</div>
           <div class="trc-meta">
             ${t.taskType === 'individual' ? '<span class="individual-badge">👤 Individual</span>' : ''}
+            ${t.project ? `<span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(157,126,255,.1);border:1px solid rgba(157,126,255,.2);padding:2px 6px;border-radius:4px;flex-shrink:0">${esc(t.project)}</span>` : ''}
             <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
             <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
             ${t.taskDueDate && t.status !== 'done' ? (() => {
@@ -1269,10 +1515,14 @@ function renderByMember() {
   let html = '';
   // Sort members by completion % — highest first (leaderboard)
   const sortedMembers = [...members].sort((a, b) => {
-    const aTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === a.id));
-    const bTasks = tasks.filter(t => (t.members||[]).some(mm => mm.id === b.id));
-    const aPct = aTasks.length ? aTasks.filter(t => getMemberStatus(t,a.id)==='done').length/aTasks.length : 0;
-    const bPct = bTasks.length ? bTasks.filter(t => getMemberStatus(t,b.id)==='done').length/bTasks.length : 0;
+    const aTasks = tasks.filter(t => (t.members||[]).some(mm =>
+      mm.name && mm.name.toLowerCase() === a.name.toLowerCase()));
+    const bTasks = tasks.filter(t => (t.members||[]).some(mm =>
+      mm.name && mm.name.toLowerCase() === b.name.toLowerCase()));
+    const aId = (t) => (t.members||[]).find(mm => mm.name?.toLowerCase()===a.name.toLowerCase())?.id;
+    const bId = (t) => (t.members||[]).find(mm => mm.name?.toLowerCase()===b.name.toLowerCase())?.id;
+    const aPct = aTasks.length ? aTasks.filter(t => { const id=aId(t); return id ? getMemberStatus(t,id)==='done' : t.status==='done'; }).length/aTasks.length : 0;
+    const bPct = bTasks.length ? bTasks.filter(t => { const id=bId(t); return id ? getMemberStatus(t,id)==='done' : t.status==='done'; }).length/bTasks.length : 0;
     return bPct - aPct;
   });
   const expandedMembers = new Set();
@@ -1308,14 +1558,28 @@ function renderByMember() {
 
   sortedMembers.forEach((m, rank) => {
     const mTasks = tasks.filter(t => {
-      if (!(t.members||[]).some(mm => mm.id === m.id)) return false;
+      // Match by name (consistent with how tasks store members)
+      const inTask = (t.members||[]).some(mm =>
+        mm.name && mm.name.toLowerCase() === m.name.toLowerCase()
+      );
+      if (!inTask) return false;
       if (t.taskType !== 'individual') return true;
       const isAdminView = MY_NAME && MY_NAME.toLowerCase() === 'harshit';
       const isOwnSection = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
       return isAdminView || isOwnSection;
     });
-    const activeTasks = mTasks.filter(t => getMemberStatus(t, m.id) !== 'done');
-    const doneTasks   = mTasks.filter(t => getMemberStatus(t, m.id) === 'done');
+    // Get member ID from the task's own members array (same source as memberStatus)
+    const getMId = (t) => (t.members||[]).find(mm =>
+      mm.name && mm.name.toLowerCase() === m.name.toLowerCase()
+    )?.id;
+    const activeTasks = mTasks.filter(t => {
+      const mid = getMId(t);
+      return mid ? getMemberStatus(t, mid) !== 'done' : t.status !== 'done';
+    });
+    const doneTasks = mTasks.filter(t => {
+      const mid = getMId(t);
+      return mid ? getMemberStatus(t, mid) === 'done' : t.status === 'done';
+    });
     const memberDone  = doneTasks.length;
     const total = mTasks.length;
     const pct   = total ? Math.round(memberDone / total * 100) : 0;
@@ -1710,16 +1974,28 @@ function getMemberStatus(task, memberId) {
 async function setMemberStatus(taskId, memberId, newStatus) {
   const t = tasks.find(t => t.id === taskId); if (!t) return;
   if (!t.memberStatus) t.memberStatus = {};
+  // Update local copy
   t.memberStatus[memberId] = newStatus;
+
+  // Check allDone using merged state: Firestore memberStatus + this new update
+  // This handles overdue tasks where some members' statuses may be stale in memory
   const memberIds = (t.members||[]).map(m => m.id);
-  const allDone = memberIds.length > 0 && memberIds.every(id => (t.memberStatus[id]||'todo') === 'done');
+  // Build merged status: start from existing memberStatus, apply new value
+  const merged = Object.assign({}, t.memberStatus, { [memberId]: newStatus });
+  // A member is done if their status is 'done' — default to 'todo' if missing
+  const allDone = memberIds.length > 0 && memberIds.every(id => (merged[id]||'todo') === 'done');
+
   let overallStatus;
   if (allDone) { overallStatus = 'done'; }
   else if (t.status === 'done') { overallStatus = 'inprog'; }
   else { overallStatus = t.status || 'todo'; }
   t.status = overallStatus;
+
+  // Save: update this member's status + overall status in one write
   const updates = { status: overallStatus };
   updates[`memberStatus.${memberId}`] = newStatus;
+  // Also explicitly set completedAt if all done — overdue tasks may have missed this
+  if (allDone) updates.completedAt = new Date();
   await updateTask(taskId, updates);
   renderAll();
   if (allDone) {

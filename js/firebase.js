@@ -187,8 +187,30 @@ export async function recordTaskCompletion() {
   }
 
   const prevWorkday = lastWorkday(today);
-  // Streak continues if last completion was the most recent workday before today
-  const newStreak = (last === prevWorkday) ? (data.currentStreak || 0) + 1 : 1;
+
+  // Streak continues if:
+  // 1. last completion was exactly the previous workday, OR
+  // 2. last completion was on a weekend day that falls AFTER the previous workday
+  //    (e.g. someone completed on Saturday, now it's Monday — streak should continue)
+  let streakContinues = false;
+  if (last) {
+    if (last === prevWorkday) {
+      streakContinues = true;
+    } else {
+      // Check if last falls in the weekend gap between prevWorkday and today
+      const lastDate = localDateFromStr(last);
+      const prevDate = localDateFromStr(prevWorkday);
+      const todayDate = localDateFromStr(today);
+      // last must be after prevWorkday and before or equal to today
+      // AND last must be on a weekend (Sat=6 or Sun=0)
+      if (lastDate > prevDate && lastDate <= todayDate &&
+          (lastDate.getDay() === 0 || lastDate.getDay() === 6)) {
+        streakContinues = true;
+      }
+    }
+  }
+
+  const newStreak = streakContinues ? (data.currentStreak || 0) + 1 : 1;
   const longest = Math.max(newStreak, data.longestStreak || 0);
   // Track top 3 all-time streaks with who achieved them
   const topStreaks = data.topStreaks || [];
