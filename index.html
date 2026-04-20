@@ -2428,13 +2428,23 @@ async function renderGreeting() {
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const name  = MY_NAME ? `, ${MY_NAME}` : '';
   const myTasks  = tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase()));
-  const inprog   = myTasks.filter(t => t.status === 'inprog').length;
-  const critical = myTasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
+
+  // Due this week count
+  const _gn = new Date(), _gp = n => String(n).padStart(2,'0');
+  const _gts = `${_gn.getFullYear()}-${_gp(_gn.getMonth()+1)}-${_gp(_gn.getDate())}`;
+  const _gwe = new Date(_gn); _gwe.setDate(_gwe.getDate()+7);
+  const _gwes = `${_gwe.getFullYear()}-${_gp(_gwe.getMonth()+1)}-${_gp(_gwe.getDate())}`;
+  const dueThisWeek = myTasks.filter(t =>
+    t.status !== 'done' && t.taskDueDate && t.taskDueDate >= _gts && t.taskDueDate <= _gwes
+  ).length;
+
+  // Done this month count
+  const thisMonth = `${_gn.getFullYear()}-${_gp(_gn.getMonth()+1)}`;
+  const doneThisMonth = myTasks.filter(t => t.status === 'done' && t.month === thisMonth).length;
+
   let sub = '';
-  if (inprog > 0) sub += `${inprog} task${inprog>1?'s':''} in progress`;
-  if (critical > 0) sub += `${sub?' · ':''}${critical} critical`;
-  if (!sub && myTasks.filter(t=>t.status==='todo').length > 0)
-    sub = `${myTasks.filter(t=>t.status==='todo').length} task${myTasks.filter(t=>t.status==='todo').length>1?'s':''} to start`;
+  if (dueThisWeek > 0) sub += `${dueThisWeek} due this week`;
+  if (doneThisMonth > 0) sub += `${sub ? ' · ' : ''}${doneThisMonth} done this month`;
   if (!sub) sub = myTasks.length === 0 ? 'No tasks assigned yet' : 'All caught up! 🎉';
 
   // Friday 5pm special message
