@@ -958,15 +958,26 @@ window.setMyReportPeriod = (period, btn) => {
 function getMyReportTasks(memberId) {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
+  // Find member name from allMembers — match by name in task members array
+  const memberObj = allMembers.find(m => m.id === memberId);
+  const memberName = memberObj ? memberObj.name.toLowerCase() : '';
+
+  // Task is "mine" if member name matches (robust to ID mismatches)
+  const isMine = t => memberName
+    ? (t.members||[]).some(m => m.name && m.name.toLowerCase() === memberName)
+    : (t.members||[]).some(m => m.id === memberId);
 
   if (myReportPeriod === 'week') {
-    // Last 7 days
+    // Last 7 days — use createdAt OR include all tasks due/active this week
     const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
-    const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`;
-    return allTasks.filter(t =>
-      (t.members||[]).some(m => m.id === memberId) &&
-      t.createdAt && (t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt)) >= cutoff
-    );
+    return allTasks.filter(t => {
+      if (!isMine(t)) return false;
+      // Include if created in last 7 days OR still active
+      if (t.status !== 'done') return true;
+      const ca = t.completedAt ? (t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) : null;
+      const cr = t.createdAt  ? (t.createdAt.toDate  ? t.createdAt.toDate()  : new Date(t.createdAt))  : null;
+      return (ca && ca >= cutoff) || (cr && cr >= cutoff);
+    });
   } else if (myReportPeriod === 'quarter') {
     // Last 3 months
     const months = [];
@@ -974,14 +985,10 @@ function getMyReportTasks(memberId) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);
     }
-    return allTasks.filter(t =>
-      (t.members||[]).some(m => m.id === memberId) && months.includes(t.month)
-    );
+    return allTasks.filter(t => isMine(t) && months.includes(t.month));
   } else {
     // This month (default)
-    return allTasks.filter(t =>
-      t.month === selMonth && (t.members||[]).some(m => m.id === memberId)
-    );
+    return allTasks.filter(t => t.month === selMonth && isMine(t));
   }
 }
 
