@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 50%{opacity:.3}}
@@ -207,7 +208,17 @@
    Everything outside .a4 hides.
    Each .a4 becomes one A4 page.
 ══════════════════════════════════════════ */
-@media print{
+@media print {
+  body.printing-pdf nav,
+  body.printing-pdf #report-controls,
+  body.printing-pdf .no-print,
+  body.printing-pdf #weekly-digest,
+  body.printing-pdf #my-report-panel { display:none !important }
+  body.printing-pdf .preview-wrap { padding:0 !important; gap:0 !important }
+  body.printing-pdf .a4 { box-shadow:none !important; border-radius:0 !important; page-break-after:always }
+  body.printing-pdf #report-charts { display:block !important }
+}
+@media print {
   @page{size:A4 portrait;margin:0}
   body{background:#fff !important}
   .nav,.controls-bar,[style*="display:flex"]{display:none !important}
@@ -241,18 +252,48 @@
 </nav>
 
 <!-- REPORT CONTROLS -->
-<div id="report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border2)">
-  <select id="month-sel" onchange="loadReport()"
-    style="background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer"></select>
-  <input id="sheet-url" placeholder="Paste Google Sheet CSV link..."
-    style="flex:1;min-width:160px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none">
-  <button onclick="loadComms()"
-    style="padding:7px 14px;border-radius:9px;border:none;background:var(--neon2);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Load Comms</button>
-  <button onclick="toggleWeeklyDigest()"
-    style="padding:7px 14px;border-radius:9px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Weekly</button>
-  <button onclick="toggleMyReport()" id="my-report-btn" style="padding:7px 14px;border-radius:9px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">👤 My Report</button>
-  <button onclick="window.print()"
-    style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
+<div id="report-controls" style="padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border2)">
+  <!-- Row 1: month + action buttons -->
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+    <select id="month-sel" onchange="loadReport()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer"></select>
+    <button onclick="toggleWeeklyDigest()"
+      style="padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Weekly</button>
+    <button onclick="toggleMyReport()" id="my-report-btn"
+      style="padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">👤 My Report</button>
+    <button onclick="exportPDF()"
+      style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:#0c0c0f;font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
+  </div>
+  <!-- Row 2: filter slicers -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Filter:</span>
+    <select id="filter-project" onchange="applyFilters()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
+      <option value="">All Projects</option>
+    </select>
+    <select id="filter-member" onchange="applyFilters()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
+      <option value="">All Members</option>
+    </select>
+    <select id="filter-priority" onchange="applyFilters()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
+      <option value="">All Priorities</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <select id="filter-status" onchange="applyFilters()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
+      <option value="">All Statuses</option>
+      <option value="done">Done</option>
+      <option value="inprog">In Progress</option>
+      <option value="todo">Todo</option>
+    </select>
+    <button onclick="clearFilters()"
+      style="padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:none;color:var(--text3);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
+    <span id="filter-count" style="font-size:11px;color:var(--text3);margin-left:4px"></span>
+  </div>
 </div>
 
 <!-- TWO A4 PAGES STACKED -->
@@ -266,6 +307,27 @@
       <div class="a4-header-right">
         <div class="a4-month-pill" id="p1-badge">—</div>
         <div class="a4-page-num">PAGE 01 / 02</div>
+      </div>
+    </div>
+    <!-- Chart row — rendered above task list -->
+    <div id="report-charts" style="display:none;padding:16px 24px 0;border-bottom:1px solid #e5e7eb;margin-bottom:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div style="background:#f9fafb;border-radius:8px;padding:12px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">Task Status</div>
+          <div style="height:140px;position:relative"><canvas id="chart-status"></canvas></div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:12px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Priority</div>
+          <div style="height:140px;position:relative"><canvas id="chart-priority"></canvas></div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:12px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Member</div>
+          <div style="height:140px;position:relative"><canvas id="chart-member"></canvas></div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:12px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Project</div>
+          <div style="height:140px;position:relative"><canvas id="chart-project"></canvas></div>
+        </div>
       </div>
     </div>
     <div class="a4-body" id="tasks-body">
@@ -318,17 +380,32 @@
   </div>
 </div>
 
-<!-- MY REPORT PANEL -->
+<!-- MY REPORT PANEL — enhanced with period filter + PDF -->
 <div id="my-report-panel" style="display:none;max-width:500px;margin:0 auto 16px;padding:0 16px">
-  <div style="background:var(--bg2);border:1.5px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.3)">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-panel)">
+    <!-- Header -->
     <div style="padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <div style="font-size:13px;font-weight:800;color:var(--text)">👤 My Report</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <select id="my-report-member" style="background:var(--bg3);border:1.5px solid var(--border2);border-radius:8px;padding:5px 10px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none"></select>
-        <button onclick="document.getElementById('my-report-panel').style.display='none'" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Close</button>
+      <div style="font-size:13px;font-weight:700;color:var(--text)">👤 My Report</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <select id="my-report-member" onchange="renderMyReport()"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 9px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none"></select>
+        <button onclick="document.getElementById('my-report-panel').style.display='none'"
+          style="padding:5px 11px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Close</button>
       </div>
     </div>
-    <div id="my-report-content" style="padding:16px;max-height:70vh;overflow-y:auto"></div>
+    <!-- Period selector -->
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center">
+      <button class="mr-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)"
+        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">This Month</button>
+      <button class="mr-period-btn" data-period="week" onclick="setMyReportPeriod('week',this)"
+        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">Last Week</button>
+      <button class="mr-period-btn" data-period="quarter" onclick="setMyReportPeriod('quarter',this)"
+        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">Last Quarter</button>
+      <button onclick="exportMyReportPDF()"
+        style="margin-left:auto;padding:5px 12px;border-radius:20px;border:none;background:var(--neon);color:#0c0c0f;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">⬇ PDF</button>
+    </div>
+    <!-- Content -->
+    <div id="my-report-content" style="padding:16px;max-height:75vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -668,6 +745,388 @@ function renderCommsPage(csv){
 }
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
+
+// ── FILTER STATE ─────────────────────────────────────────────────────────
+let activeFilters = { project:'', member:'', priority:'', status:'' };
+let chartInstances = {};
+
+function applyFilters() {
+  activeFilters.project  = document.getElementById('filter-project')?.value  || '';
+  activeFilters.member   = document.getElementById('filter-member')?.value   || '';
+  activeFilters.priority = document.getElementById('filter-priority')?.value || '';
+  activeFilters.status   = document.getElementById('filter-status')?.value   || '';
+  renderTaskPage();
+}
+window.applyFilters = applyFilters;
+
+window.clearFilters = () => {
+  ['filter-project','filter-member','filter-priority','filter-status'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  activeFilters = { project:'', member:'', priority:'', status:'' };
+  renderTaskPage();
+};
+
+function filterTasks(tasks) {
+  let result = [...tasks];
+  if (activeFilters.project)  result = result.filter(t => (t.project||'') === activeFilters.project);
+  if (activeFilters.member)   result = result.filter(t => (t.members||[]).some(m => m.name === activeFilters.member));
+  if (activeFilters.priority) result = result.filter(t => t.priority === activeFilters.priority);
+  if (activeFilters.status)   result = result.filter(t => t.status === activeFilters.status);
+  return result;
+}
+
+function populateFilters(mt) {
+  // Projects
+  const pSel = document.getElementById('filter-project');
+  if (pSel) {
+    const projects = [...new Set(mt.map(t => t.project).filter(Boolean))].sort();
+    const cur = pSel.value;
+    pSel.innerHTML = '<option value="">All Projects</option>' +
+      projects.map(p => `<option value="${esc(p)}" ${cur===p?'selected':''}>${esc(p)}</option>`).join('');
+  }
+  // Members
+  const mSel = document.getElementById('filter-member');
+  if (mSel) {
+    const memberNames = [...new Set(mt.flatMap(t => (t.members||[]).map(m=>m.name)))].sort();
+    const cur = mSel.value;
+    mSel.innerHTML = '<option value="">All Members</option>' +
+      memberNames.map(n => `<option value="${esc(n)}" ${cur===n?'selected':''}>${esc(n)}</option>`).join('');
+  }
+  // Update count
+  const filtered = filterTasks(mt);
+  const countEl = document.getElementById('filter-count');
+  const hasFilter = Object.values(activeFilters).some(v => v);
+  if (countEl) countEl.textContent = hasFilter ? `${filtered.length} of ${mt.length} tasks` : '';
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────
+function destroyCharts() {
+  Object.values(chartInstances).forEach(ch => { try { ch.destroy() } catch(e){} });
+  chartInstances = {};
+}
+
+function renderCharts(mt) {
+  destroyCharts();
+  const chartsEl = document.getElementById('report-charts');
+  if (!chartsEl || !mt.length) { if(chartsEl) chartsEl.style.display='none'; return; }
+  chartsEl.style.display = '';
+
+  const chartDefaults = {
+    plugins: { legend: { display: false } },
+    animation: false,
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
+  // Chart 1: Status donut
+  const statusCounts = {
+    Done:       mt.filter(t=>t.status==='done').length,
+    'In Prog':  mt.filter(t=>t.status==='inprog').length,
+    Todo:       mt.filter(t=>t.status==='todo').length,
+  };
+  chartInstances.status = new Chart(document.getElementById('chart-status'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(statusCounts),
+      datasets: [{ data: Object.values(statusCounts),
+        backgroundColor: ['#059669','#d97706','#9ca3af'],
+        borderWidth: 0, borderRadius: 3,
+      }]
+    },
+    options: { ...chartDefaults,
+      plugins: { legend: { display: true, position:'bottom',
+        labels: { font:{size:9}, color:'#6b7280', boxWidth:10, padding:8 }
+      }}
+    }
+  });
+
+  // Chart 2: Priority bar
+  const prios = ['critical','high','medium','low'];
+  const prioCounts = prios.map(p => mt.filter(t=>t.priority===p).length);
+  chartInstances.priority = new Chart(document.getElementById('chart-priority'), {
+    type: 'bar',
+    data: {
+      labels: ['Critical','High','Medium','Low'],
+      datasets: [{ data: prioCounts,
+        backgroundColor: ['#dc2626','#d97706','#2563eb','#059669'],
+        borderRadius: 4, borderWidth: 0,
+      }]
+    },
+    options: { ...chartDefaults,
+      scales: {
+        x: { ticks:{font:{size:9},color:'#6b7280'}, grid:{display:false} },
+        y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
+      }
+    }
+  });
+
+  // Chart 3: By Member bar
+  const memberMap = {};
+  mt.forEach(t => {
+    (t.members||[]).forEach(m => {
+      if (!memberMap[m.name]) memberMap[m.name] = {done:0,total:0};
+      memberMap[m.name].total++;
+      const mid = m.id;
+      const ms = (t.memberStatus||{})[mid] || t.status;
+      if (ms === 'done') memberMap[m.name].done++;
+    });
+  });
+  const mNames = Object.keys(memberMap).sort();
+  const mColors = ['#6366f1','#8b5cf6','#ec4899','#06b6d4','#10b981','#f59e0b'];
+  chartInstances.member = new Chart(document.getElementById('chart-member'), {
+    type: 'bar',
+    data: {
+      labels: mNames.map(n => n.split(' ')[0]),
+      datasets: [
+        { label:'Done',  data: mNames.map(n=>memberMap[n].done),
+          backgroundColor: '#059669', borderRadius:3, borderWidth:0 },
+        { label:'Total', data: mNames.map(n=>memberMap[n].total),
+          backgroundColor: 'rgba(107,114,128,.25)', borderRadius:3, borderWidth:0 },
+      ]
+    },
+    options: { ...chartDefaults,
+      scales: {
+        x: { ticks:{font:{size:8},color:'#6b7280'}, grid:{display:false} },
+        y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
+      },
+      plugins: { legend:{ display:true, position:'bottom',
+        labels:{font:{size:9},color:'#6b7280',boxWidth:10,padding:8}
+      }}
+    }
+  });
+
+  // Chart 4: By Project bar
+  const projMap = {};
+  mt.forEach(t => {
+    const p = t.project || 'No Project';
+    if (!projMap[p]) projMap[p] = {done:0,total:0};
+    projMap[p].total++;
+    if (t.status==='done') projMap[p].done++;
+  });
+  const pNames = Object.keys(projMap).filter(p=>p!=='No Project').sort();
+  if (pNames.length === 0) {
+    document.getElementById('chart-project')?.closest('div[style]')?.remove();
+  } else {
+    chartInstances.project = new Chart(document.getElementById('chart-project'), {
+      type: 'bar',
+      data: {
+        labels: pNames.map(n => n.length > 14 ? n.slice(0,13)+'…' : n),
+        datasets: [
+          { label:'Done',  data: pNames.map(n=>projMap[n].done),
+            backgroundColor:'#7c3aed', borderRadius:3, borderWidth:0 },
+          { label:'Total', data: pNames.map(n=>projMap[n].total),
+            backgroundColor:'rgba(124,58,237,.2)', borderRadius:3, borderWidth:0 },
+        ]
+      },
+      options: { ...chartDefaults,
+        scales: {
+          x: { ticks:{font:{size:8},color:'#6b7280'}, grid:{display:false} },
+          y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
+        },
+        plugins: { legend:{ display:true, position:'bottom',
+          labels:{font:{size:9},color:'#6b7280',boxWidth:10,padding:8}
+        }}
+      }
+    });
+  }
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────────────────
+window.exportPDF = () => {
+  // Add PDF class to trigger print CSS
+  document.body.classList.add('printing-pdf');
+  window.print();
+  setTimeout(() => document.body.classList.remove('printing-pdf'), 1000);
+};
+
+// ── MY REPORT PERIOD ─────────────────────────────────────────────────────
+let myReportPeriod = 'month';
+
+window.setMyReportPeriod = (period, btn) => {
+  myReportPeriod = period;
+  document.querySelectorAll('.mr-period-btn').forEach(b => {
+    const isActive = b.dataset.period === period;
+    b.style.background    = isActive ? 'var(--neon)' : 'var(--bg3)';
+    b.style.color         = isActive ? '#0c0c0f' : 'var(--text2)';
+    b.style.borderColor   = isActive ? 'var(--neon)' : 'var(--border2)';
+  });
+  renderMyReport();
+};
+
+function getMyReportTasks(memberId) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+
+  if (myReportPeriod === 'week') {
+    // Last 7 days
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`;
+    return allTasks.filter(t =>
+      (t.members||[]).some(m => m.id === memberId) &&
+      t.createdAt && (t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt)) >= cutoff
+    );
+  } else if (myReportPeriod === 'quarter') {
+    // Last 3 months
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);
+    }
+    return allTasks.filter(t =>
+      (t.members||[]).some(m => m.id === memberId) && months.includes(t.month)
+    );
+  } else {
+    // This month (default)
+    return allTasks.filter(t =>
+      t.month === selMonth && (t.members||[]).some(m => m.id === memberId)
+    );
+  }
+}
+
+function getPeriodLabel() {
+  if (myReportPeriod === 'week') return 'Last 7 Days';
+  if (myReportPeriod === 'quarter') return 'Last Quarter (3 months)';
+  const [y,m] = selMonth.split('-');
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return MONTHS[parseInt(m)-1] + ' ' + y;
+}
+
+// ── MY REPORT RENDER ─────────────────────────────────────────────────────window.renderMyReport = renderMyReport;
+
+// ── MY REPORT PDF EXPORT ──────────────────────────────────────────────────
+window.exportMyReportPDF = () => {
+  const sel   = document.getElementById('my-report-member');
+  const member = allMembers.find(m => m.id === sel?.value);
+  if (!member) return;
+
+  const periodLabel = getPeriodLabel();
+  const mt = getMyReportTasks(sel.value);
+  const memberId = sel.value;
+
+  const totalDone = mt.filter(t => (t.memberStatus||{})[memberId]==='done'||t.status==='done').length;
+  const total = mt.length;
+  const pct   = total ? Math.round(totalDone/total*100) : 0;
+  const pColor = pct>=80?'#059669':pct>=50?'#d97706':'#dc2626';
+
+  // Group by project
+  const byProj = {};
+  mt.forEach(t => {
+    const p = t.project || '— No Project —';
+    if(!byProj[p]) byProj[p] = [];
+    byProj[p].push(t);
+  });
+  const projKeys = Object.keys(byProj).sort((a,b)=>{
+    if(a==='— No Project —') return 1;
+    if(b==='— No Project —') return -1;
+    return a.localeCompare(b);
+  });
+
+  function pdfTaskRow(t) {
+    const ms = (t.memberStatus||{})[memberId] || t.status || 'todo';
+    const sc = ms==='done'?'#059669':ms==='inprog'?'#d97706':'#6b7280';
+    const si = ms==='done'?'✓':ms==='inprog'?'↻':'○';
+    const pCol = {critical:'#dc2626',high:'#d97706',medium:'#2563eb',low:'#6b7280'}[t.priority||'medium'];
+    return `<tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:5px 8px;font-size:10px;color:${sc};font-weight:700">${si}</td>
+      <td style="padding:5px 8px;font-size:11px;color:#111827">${esc(t.label)}</td>
+      <td style="padding:5px 8px;font-size:9px;font-weight:700;color:${pCol};text-transform:uppercase">${t.priority||'medium'}</td>
+      <td style="padding:5px 8px;font-size:10px;color:#6b7280">${t.taskDueDate?fmtDate(t.taskDueDate):''}</td>
+    </tr>`;
+  }
+
+  const projectSections = projKeys.map(proj => {
+    const ptasks = byProj[proj];
+    const pdone  = ptasks.filter(t=>(t.memberStatus||{})[memberId]==='done'||t.status==='done').length;
+    const ppct   = ptasks.length?Math.round(pdone/ptasks.length*100):0;
+    const pbar   = ppct>=80?'#059669':ppct>=50?'#d97706':'#dc2626';
+    return `<div style="margin-bottom:16px;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:4px;margin-bottom:6px">
+        <span style="font-weight:800;font-size:11px;color:#1e1b4b">&#128193; ${esc(proj)}</span>
+        <span style="font-size:10px;font-weight:700;color:${pbar}">${pdone}/${ptasks.length} done &middot; ${ppct}%</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f9fafb">
+          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:28px"></th>
+          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280">Task</th>
+          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:70px">Priority</th>
+          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:70px">Due</th>
+        </tr></thead>
+        <tbody>${ptasks.map(pdfTaskRow).join('')}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>My Report — ${esc(member.name)} — ${periodLabel}</title>
+    <style>
+      * { box-sizing:border-box; margin:0; padding:0 }
+      body { font-family: 'DM Sans',system-ui,sans-serif; color:#111827; background:#fff; padding:0 }
+      @page { size:A4; margin:16mm 14mm }
+      @media print { body { padding:0 } .no-print { display:none } }
+    </style>
+  </head><body>
+    <!-- How to read this report -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px 16px;margin-bottom:20px;page-break-inside:avoid">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#059669;margin-bottom:6px">📖 How to Read This Report</div>
+      <div style="font-size:10px;color:#374151;line-height:1.6">
+        This is a personal task summary for <strong>${esc(member.name)}</strong> covering <strong>${periodLabel}</strong>.
+        Tasks are grouped by project. ✓ = Completed &nbsp;·&nbsp; ↻ = In Progress &nbsp;·&nbsp; ○ = Todo.
+        Completion % shown per project and overall. Use this to review workload distribution and track progress across initiatives.
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div style="background:#111827;color:#fff;padding:20px 24px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">BBM-IN · M/MBC-IN · Internal Communications</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">My Report<br><span style="color:#00d2a8">${esc(member.name)}</span></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:rgba(255,255,255,.6)">Period</div>
+        <div style="font-size:14px;font-weight:700;color:#fff">${periodLabel}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px">${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+    </div>
+
+    <!-- Summary stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div style="text-align:center;padding:10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">
+        <div style="font-size:22px;font-weight:800;color:#111827">${total}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Total</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0">
+        <div style="font-size:22px;font-weight:800;color:#059669">${totalDone}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Done</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a">
+        <div style="font-size:22px;font-weight:800;color:#d97706">${total-totalDone}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Pending</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:${pct>=80?'#f0fdf4':pct>=50?'#fffbeb':'#fef2f2'};border-radius:6px;border:1px solid ${pct>=80?'#bbf7d0':pct>=50?'#fde68a':'#fecaca'}">
+        <div style="font-size:22px;font-weight:800;color:${pColor}">${pct}%</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Complete</div>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    ${projectSections}
+
+    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between">
+      <span>WorkDesk · BBM-IN · MBC-IN Internal Communications</span>
+      <span>Generated ${new Date().toLocaleString('en-GB')}</span>
+    </div>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
+};
+
+// ── FILTER POPULATION ON LOAD ─────────────────────────────────────────────
+const _origRenderTaskPage = renderTaskPage;
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${day} ${mo[parseInt(m)-1]}`}
 window.toggleWeeklyDigest = () => {
@@ -812,31 +1271,7 @@ window.toggleWeeklyDigest = () => {
   el.style.display = '';
   el.scrollIntoView({ behavior: 'smooth' });
 };
-window.toggleMyReport = () => {
-  const panel = document.getElementById('my-report-panel');
-  if (panel.style.display !== 'none') { panel.style.display='none'; return; }
 
-  // Populate member selector
-  const sel = document.getElementById('my-report-member');
-  const ADMIN = 'Harshit';
-  const myName = localStorage.getItem('wd_myname') || '';
-  const isAdmin = myName.toLowerCase() === ADMIN.toLowerCase();
-
-  sel.innerHTML = '';
-  // Admin sees everyone; others see only themselves
-  const viewableMembers = isAdmin ? allMembers : allMembers.filter(m => m.name.toLowerCase() === myName.toLowerCase());
-  viewableMembers.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.id; opt.textContent = m.name;
-    if (m.name.toLowerCase() === myName.toLowerCase()) opt.selected = true;
-    sel.appendChild(opt);
-  });
-
-  sel.onchange = renderMyReport;
-  renderMyReport();
-  panel.style.display = '';
-  panel.scrollIntoView({ behavior:'smooth' });
-};
 
 function renderMyReport() {
   const sel = document.getElementById('my-report-member');
@@ -856,7 +1291,7 @@ function renderMyReport() {
   const inprog = mt.filter(t => t.status === 'inprog').length;
   const total  = mt.length;
 
-  function taskRow(t) {
+  function mrTaskRow(t) {
     const ms = (t.memberStatus||{})[memberId] || t.status || 'todo';
     const stColor = ms==='done' ? '#34d399' : ms==='inprog' ? '#f59e0b' : '#9ca3af';
     const stIcon  = ms==='done' ? '✅' : ms==='inprog' ? '🔄' : '📋';
