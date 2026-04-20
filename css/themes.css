@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════════════
    WORKDESK THEME SYSTEM
    Apply theme class to <body> e.g. body.theme-ios
-   League Spartan is the default font for all themes.
+   DM Sans + Syne is the default font system.
    @import url for fonts is in style.css
 ══════════════════════════════════════════════════════ */
 
@@ -483,7 +483,7 @@ body.theme-health .sect-label { color:rgba(60,60,67,.5) }
   border:1.5px solid var(--border2,rgba(255,255,255,.15));
   background:var(--bg2,rgba(44,44,46,.7));
   color:var(--text2,rgba(235,235,245,.6));
-  font-family:var(--sans,'League Spartan',sans-serif);
+  font-family:var(--sans,'DM Sans',sans-serif);
   font-size:12px;font-weight:700;
   cursor:pointer;transition:all .15s;white-space:nowrap;
 }
