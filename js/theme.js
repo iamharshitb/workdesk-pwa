@@ -13,7 +13,10 @@ export const THEMES = [
 function getValidTheme() {
   const saved = localStorage.getItem('wd_theme');
   // 'ios' was the old default — migrate to Standard ('')
-  if (!saved || saved === 'ios') return '';
+  if (!saved || saved === 'ios') {
+    localStorage.setItem('wd_theme', ''); // persist migration immediately
+    return '';
+  }
   return THEMES.find(t => t.id === saved) ? saved : '';
 }
 
