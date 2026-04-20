@@ -92,20 +92,24 @@
       display:flex;gap:7px;margin-bottom:10px;
     }
     .due-filter-btn {
-      flex:1;padding:7px 10px;border-radius:10px;
-      border:1.5px solid var(--border2);background:var(--bg2);
+      flex:1;padding:7px 10px;border-radius:8px;
+      border:1px solid var(--border);background:var(--bg2);
       color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all .15s;text-align:center;
+      cursor:pointer;transition:all .15s ease;text-align:center;
       display:flex;align-items:center;justify-content:center;gap:5px;
+      letter-spacing:.01em;
     }
-    .due-filter-btn:hover { border-color:var(--neon2);color:var(--text) }
+    .due-filter-btn:hover { border-color:var(--border2);color:var(--text) }
+    .due-filter-btn:active { transform:scale(.97) }
     .due-filter-btn.active {
-      border-color:var(--amber);background:rgba(245,168,0,.08);color:var(--amber);
+      border-color:rgba(240,165,0,.35);
+      background:rgba(240,165,0,.07);
+      color:var(--amber);
     }
     .due-filter-count {
-      font-size:11px;font-weight:900;
-      background:rgba(245,168,0,.15);color:var(--amber);
-      padding:1px 6px;border-radius:10px;
+      font-size:10px;font-weight:700;font-family:var(--mono);
+      background:rgba(240,165,0,.12);color:var(--amber);
+      padding:1px 5px;border-radius:8px;
     }
 
     /* ── COMPACT TASK ROW ── */
@@ -283,12 +287,14 @@
     /* ── GREETING BAR ── */
     .greeting-bar {
       padding:14px 16px;
-      background:var(--panel);
-      border:1px solid var(--border2);
+      background:var(--bg2);
+      border:1px solid var(--border);
       border-radius:var(--rr);
-      margin-bottom:12px;
+      margin-bottom:10px;
       display:flex;align-items:center;justify-content:space-between;
-      box-shadow:var(--shadow-card);
+      box-shadow:var(--shadow-elevated);
+      /* Moises-style: subtle teal glow on the card itself */
+      box-shadow:var(--shadow-elevated), 0 0 0 1px rgba(0,210,168,.04) inset;
     }
     .greeting-text { font-size:15px;font-weight:700;color:var(--text);line-height:1.4 }
     .greeting-sub  { font-size:12px;color:var(--text2);margin-top:2px }
@@ -302,20 +308,24 @@
 
     /* ── PRIORITY CARD ── */
     .priority-card {
-      background:var(--panel);border:1px solid var(--border2);
+      background:var(--bg2);
+      border:1px solid var(--border);
       border-radius:var(--rr);padding:0;
-      box-shadow:var(--shadow-card);overflow:hidden;
+      box-shadow:var(--shadow-elevated);
+      overflow:hidden;
+      /* Opal glass edge */
+      box-shadow:var(--shadow-elevated), 0 1px 0 rgba(255,255,255,.04) inset;
     }
     .priority-row {
       display:flex;align-items:center;gap:10px;
       padding:10px 14px;cursor:pointer;
-      transition:background .12s;
+      transition:all .15s ease;
       border-bottom:1px solid var(--border);
       -webkit-tap-highlight-color:transparent;
     }
     .priority-row:last-child { border-bottom:none }
-    .priority-row:hover { background:var(--bg3) }
-    .priority-row:active { background:var(--bg3) }
+    .priority-row:hover { background:var(--bg3); }
+    .priority-row:active { background:var(--bg3); }
     .priority-row-label {
       font-size:9px;font-weight:800;color:var(--text3);
       text-transform:uppercase;letter-spacing:.08em;
@@ -718,9 +728,6 @@
   <!-- GREETING + STREAK -->
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
-  <!-- PRIORITY SNAPSHOT -->
-  <div class="priority-card fi" id="priority-card" style="animation-delay:.015s;display:none"></div>
-
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
@@ -1005,103 +1012,8 @@ onUserReady(async () => {
 function renderAll() {
   computeBadges();
   renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
-  renderPriorityCard();
 }
 
-function renderPriorityCard() {
-  const el = document.getElementById('priority-card');
-  if (!el || !MY_NAME) return;
-
-  const po = { critical: 0, high: 1, medium: 2, low: 3 };
-  const pColor = { critical:'var(--red)', high:'var(--amber)', medium:'var(--neon)', low:'var(--text3)' };
-  const pLabel = { critical:'CRITICAL', high:'HIGH', medium:'MEDIUM', low:'LOW' };
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-  // End of this week (Sunday)
-  const weekEnd = new Date();
-  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
-  const weekEndStr = weekEnd.toISOString().slice(0, 10);
-
-  // My active tasks
-  const myActive = tasks.filter(t =>
-    t.status !== 'done' &&
-    (t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())
-  );
-
-  // Today's top: overdue first, then due today, then by priority
-  const todayTop = [...myActive].sort((a, b) => {
-    const aOver = a.taskDueDate && a.taskDueDate < todayStr ? -1 : 0;
-    const bOver = b.taskDueDate && b.taskDueDate < todayStr ? -1 : 0;
-    if (aOver !== bOver) return aOver - bOver;
-    const aDue = a.taskDueDate === todayStr ? -1 : 0;
-    const bDue = b.taskDueDate === todayStr ? -1 : 0;
-    if (aDue !== bDue) return aDue - bDue;
-    return (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2);
-  })[0];
-
-  // This week's top: highest priority MBC task due this week (team-wide)
-  const weekActive = tasks.filter(t =>
-    t.status !== 'done' &&
-    (t.taskType||'mbc') === 'mbc' &&
-    t.taskDueDate && t.taskDueDate <= weekEndStr
-  ).sort((a, b) =>
-    (po[a.priority||'medium']||2) - (po[b.priority||'medium']||2)
-  )[0];
-
-  // If nothing to show, hide the card
-  if (!todayTop && !weekActive) { el.style.display = 'none'; return; }
-  el.style.display = '';
-
-  function taskRow(label, t) {
-    if (!t) return `
-      <div class="priority-row" style="cursor:default">
-        <div class="priority-row-label">${label}</div>
-        <div class="priority-row-content"><div class="priority-empty">All clear ✓</div></div>
-      </div>`;
-    const pri = t.priority || 'medium';
-    const others = (t.members||[])
-      .filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
-      .map(m => esc(m.name)).join(', ');
-    const membersStr = others ? '· ' + others : '';
-    return `
-      <div class="priority-row" onclick="jumpToTask('${t.id}')">
-        <div class="priority-row-label">${label}</div>
-        <div class="priority-row-content">
-          <div class="priority-row-task">${esc(t.label)}</div>
-          <div class="priority-row-meta">
-            <div class="priority-dot" style="background:${pColor[pri]}"></div>
-            <span style="font-size:10px;font-weight:700;color:${pColor[pri]}">${pLabel[pri]}</span>
-            ${membersStr ? `<span style="font-size:10px;color:var(--text3)">${membersStr}</span>` : ''}
-            ${t.taskDueDate && t.taskDueDate < todayStr
-              ? '<span style="font-size:10px;font-weight:700;color:var(--red)">⚠ Overdue</span>'
-              : t.taskDueDate === todayStr
-              ? '<span style="font-size:10px;font-weight:700;color:var(--amber)">Due Today</span>'
-              : ''}
-          </div>
-        </div>
-        <div class="priority-arrow">›</div>
-      </div>`;
-  }
-
-  el.innerHTML = taskRow('TODAY', todayTop) + taskRow('THIS WEEK', weekActive);
-}
-
-// Jump to task in My Tasks tab — switch tab and expand the task
-window.jumpToTask = (taskId) => {
-  // Switch to My Tasks tab
-  switchTab('mytasks', document.querySelector('.tab'));
-  // Scroll to task and expand it
-  setTimeout(() => {
-    const row = document.getElementById('trc-' + taskId);
-    if (row) {
-      row.scrollIntoView({ behavior:'smooth', block:'center' });
-      // Expand it if not already
-      if (!expandedTasks.has(taskId)) {
-        toggleTaskExpand(taskId);
-      }
-    }
-  }, 150);
-};
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
 window.filterByDue = (range) => {
