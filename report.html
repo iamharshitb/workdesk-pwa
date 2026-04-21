@@ -126,8 +126,9 @@
   box-shadow:var(--shadow-card);
 }
 .rpt-chart-title { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px }
-.rpt-chart-wrap { position:relative; height:140px }
+.rpt-chart-wrap { position:relative; height:140px; max-width:100%; overflow:hidden }
 .rpt-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px }
+@media (max-width:380px) { .rpt-charts-grid { grid-template-columns:1fr } }
 
 /* ── MY REPORT PERIOD PILLS ── */
 .rpt-period-row { display:flex; gap:6px; padding:10px 0; flex-wrap:wrap }
@@ -225,8 +226,8 @@
 <!-- REPORT TABS -->
 <div class="rpt-tabs">
   <button class="rpt-tab active" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
-  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">My Report</button>
   <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
+  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">My Report</button>
 </div>
 
 <!-- FILTER ROW (monthly only) -->
@@ -425,8 +426,8 @@ function destroyCharts(){
   chartInstances={};
 }
 const chartBase={animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
-const chartFont={font:{size:9},color:'rgba(240,240,242,.4)'};
-const chartGrid={color:'rgba(255,255,255,.04)'};
+const chartFont={font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:'rgba(240,240,242,.55)'};
+const chartGrid={color:'rgba(255,255,255,.07)'};
 
 function renderCharts(mt){
   destroyCharts();

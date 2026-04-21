@@ -355,6 +355,10 @@
       </div>
       <div class="form-label">People Involved</div>
       <input class="form-input" id="ev-people" placeholder="e.g. Harshit, Amrutha, Sriram" maxlength="100">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <input type="checkbox" id="create-task-cb" style="width:16px;height:16px;accent-color:var(--neon);cursor:pointer">
+        <label for="create-task-cb" style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer">Also register as task (Harshit + Godly as responsible)</label>
+      </div>
       <button class="add-btn" onclick="addEvent()">Add to Calendar</button>
     </div>
   </div>
@@ -380,7 +384,7 @@
 <script type="module">
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { getMuted, toggleMute, initAudio } from './js/sounds.js';
-import { onUserReady, saveCalendarData, onCalendarDataChanged } from './js/firebase.js';
+import { onUserReady, saveCalendarData, onCalendarDataChanged, addTask, getMembers } from './js/firebase.js';
 
 initTheme(); window.toggleThemePanel = toggleThemePanel;
 initAudio();
@@ -653,6 +657,31 @@ window.addEvent = async () => {
 
   await saveCalendar();
 
+  // Auto-create task if checkbox ticked
+  const createTask = document.getElementById('create-task-cb')?.checked;
+  if (createTask && editingEventIdx === null) {
+    try {
+      // Find Harshit and Godly in members
+      const harshit = calMembers.find(m => m.name.toLowerCase().includes('harshit'));
+      const godly   = calMembers.find(m => m.name.toLowerCase().includes('godly'));
+      const taskMembers = [harshit, godly].filter(Boolean).map(m => ({
+        id: m.id, name: m.name, role: selectedType || 'Communication'
+      }));
+      await addTask({
+        label:     subject,
+        priority:  'high',
+        taskType:  'mbc',
+        taskDueDate: selectedDate,
+        dueDate:   selectedDate,
+        members:   taskMembers,
+        project:   selectedType ? selectedType + ' Communications' : 'Communications',
+      });
+      toast('Added to calendar + task registered ✓');
+    } catch(e) {
+      toast('Calendar saved, task failed: ' + e.message, 'err');
+    }
+  }
+
   // Reset form
   document.getElementById('ev-subject').value = '';
   document.getElementById('ev-people').value  = '';
@@ -660,6 +689,8 @@ window.addEvent = async () => {
   selectedType = null;
   const addBtn = document.getElementById('add-event-btn');
   if (addBtn) { addBtn.textContent = '+ Add'; addBtn.style.background = ''; }
+  const cb = document.getElementById('create-task-cb');
+  if (cb) cb.checked = false;
 
   renderEventList();
   renderCalendar();
