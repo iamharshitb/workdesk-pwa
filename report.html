@@ -2,412 +2,293 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkDesk — Report</title>
+<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WorkDesk — Monthly Report</title>
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-50%{opacity:.3}}
-/* ── SCREEN PREVIEW WRAPPER ── */
-.preview-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:24px;
-  padding:28px 20px 60px;
+/* ── REPORT PAGE STYLES ── */
+.rpt-tabs { display:flex; border-bottom:1px solid var(--border2); background:var(--bg2); }
+.rpt-tab {
+  flex:1; padding:12px 4px; text-align:center;
+  font-family:var(--sans); font-size:11px; font-weight:700;
+  color:var(--text3); cursor:pointer; border:none; background:none;
+  border-bottom:2px solid transparent; transition:all .15s;
+  margin-bottom:-1px; letter-spacing:.04em; text-transform:uppercase;
+  -webkit-tap-highlight-color:transparent;
 }
+.rpt-tab:hover { color:var(--text2) }
+.rpt-tab.active { color:var(--neon); border-bottom-color:var(--neon) }
 
-/* ══════════════════════════════════════════
-   A4 PAGE SHELL
-   On screen: white card with shadow on dark bg
-   On print: actual A4 page
-══════════════════════════════════════════ */
-.a4{
-  width:210mm;
-  min-height:297mm;
-  background:#ffffff;
-  color:#111827;
-  font-family:var(--sans);
-  position:relative;
-  box-shadow:0 8px 48px rgba(0,0,0,.55);
-  border-radius:4px;
-  overflow:hidden;
-  page-break-after:always;
-}
-.a4:last-child{page-break-after:avoid}
+.rpt-panel { display:none }
+.rpt-panel.active { display:block }
 
-/* ── A4 HEADER BAND ── */
-.a4-header{
-  background:#111827;
-  padding:28px 32px 22px;
-  position:relative;
-  overflow:hidden;
+/* ── STAT GRID ── */
+.rpt-stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px }
+.rpt-stat {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--rr); padding:14px 12px; text-align:center;
+  box-shadow:var(--shadow-card);
 }
-.a4-header::after{
-  content:'';
-  position:absolute;
-  bottom:0;left:0;right:0;
-  height:3px;
-  background:linear-gradient(90deg,#00e5b8,#00b4e5,#9d7eff);
+.rpt-stat-n { font-family:var(--mono); font-size:26px; font-weight:500; line-height:1; margin-bottom:4px }
+.rpt-stat-l { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.08em }
+
+/* ── SECTION HEADERS ── */
+.rpt-sec-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; margin-top:16px;
 }
-.a4-meta{font-size:9px;font-weight:700;color:#6b7280;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
-.a4-title{
-  font-size:30px;font-weight:900;color:#ffffff;
-  letter-spacing:-.02em;line-height:1.05;
+.rpt-sec-title {
+  font-size:11px; font-weight:700; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.1em;
+  display:flex; align-items:center; gap:7px;
 }
-.a4-title em{color:#00e5b8;font-style:normal}
-.a4-header-right{
-  position:absolute;right:32px;top:28px;
-  text-align:right;
+.rpt-sec-title::before {
+  content:''; width:3px; height:11px; border-radius:2px;
+  background:var(--neon); box-shadow:0 0 6px rgba(10,132,255,.4);
 }
-.a4-month-pill{
-  background:rgba(0,229,184,.15);
-  border:1px solid rgba(0,229,184,.3);
-  color:#00e5b8;
-  font-size:11px;font-weight:700;
-  padding:5px 14px;border-radius:20px;
-  letter-spacing:.06em;display:inline-block;
+.rpt-sec-count { font-size:11px; color:var(--text3); font-weight:600 }
+
+/* ── TASK ROWS ── */
+.rpt-task {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 13px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:var(--r);
+  margin-bottom:6px; border-left-width:3px;
+}
+.rpt-task-body { flex:1; min-width:0 }
+.rpt-task-name { font-size:13px; font-weight:500; color:var(--text); line-height:1.4; margin-bottom:5px }
+.rpt-task-meta { display:flex; flex-wrap:wrap; gap:4px; align-items:center }
+.rpt-task-members { font-size:10px; color:var(--text3); margin-top:3px }
+
+/* ── PROJECT BLOCK ── */
+.rpt-project {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--rr); margin-bottom:8px;
+  overflow:hidden; box-shadow:var(--shadow-card);
+}
+.rpt-project-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:background .12s;
+}
+.rpt-project-hd:hover { background:var(--bg3) }
+.rpt-project-name { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px }
+.rpt-project-meta { display:flex; align-items:center; gap:8px }
+.rpt-project-pct { font-family:var(--mono); font-size:12px; font-weight:500 }
+.rpt-project-bar-wrap {
+  width:60px; height:3px; background:var(--bg4); border-radius:2px; overflow:hidden;
+}
+.rpt-project-bar { height:100%; border-radius:2px; transition:width .4s }
+.rpt-project-body { padding:0 14px 12px; border-top:1px solid var(--border) }
+.rpt-project-arrow { font-size:10px; color:var(--text3); transition:transform .2s; flex-shrink:0 }
+.rpt-project-arrow.open { transform:rotate(180deg) }
+
+/* ── PROGRESS RING (compact) ── */
+.rpt-ring-wrap { display:flex; align-items:center; gap:14px; margin-bottom:14px }
+.rpt-ring-labels { flex:1 }
+.rpt-ring-pct { font-family:var(--mono); font-size:28px; font-weight:500; line-height:1; margin-bottom:2px }
+.rpt-ring-sub { font-size:11px; color:var(--text2) }
+
+/* ── FILTER ROW ── */
+.rpt-filter-row {
+  display:flex; gap:6px; padding:10px 16px;
+  background:var(--bg2); border-bottom:1px solid var(--border2);
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.rpt-filter-row::-webkit-scrollbar { display:none }
+.rpt-filter-sel {
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:8px; padding:6px 10px; color:var(--text2);
+  font-family:var(--sans); font-size:11px; font-weight:600;
+  outline:none; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  -webkit-appearance:none; appearance:none;
+}
+.rpt-filter-sel:focus { border-color:var(--neon) }
+.rpt-clear-btn {
+  background:none; border:1px solid var(--border2);
+  border-radius:8px; padding:6px 10px; color:var(--text3);
+  font-family:var(--sans); font-size:11px; font-weight:700;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.rpt-clear-btn:hover { border-color:var(--red); color:var(--red) }
+.rpt-filter-count { font-size:11px; color:var(--text3); padding:6px 4px; flex-shrink:0; white-space:nowrap }
+
+/* ── CHART CARD ── */
+.rpt-chart-card {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--rr); padding:14px; margin-bottom:8px;
+  box-shadow:var(--shadow-card);
+}
+.rpt-chart-title { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px }
+.rpt-chart-wrap { position:relative; height:140px }
+.rpt-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px }
+
+/* ── MY REPORT PERIOD PILLS ── */
+.rpt-period-row { display:flex; gap:6px; padding:10px 0; flex-wrap:wrap }
+.rpt-period-btn {
+  padding:6px 14px; border-radius:20px; border:1px solid var(--border2);
+  background:var(--bg3); color:var(--text2); font-family:var(--sans);
+  font-size:11px; font-weight:700; cursor:pointer; transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.rpt-period-btn.active {
+  background:var(--neon); color:#0c0c0f; border-color:var(--neon);
+}
+.rpt-period-btn:active { transform:scale(.96) }
+
+/* ── EXPORT BUTTON ── */
+.rpt-export-btn {
+  display:flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:10px; border:none;
+  background:var(--neon); color:#0c0c0f;
+  font-family:var(--sans); font-size:12px; font-weight:700;
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.rpt-export-btn:hover { filter:brightness(1.08) }
+.rpt-export-btn:active { transform:scale(.97) }
+
+/* ── MEMBER ROW ── */
+.rpt-member-row {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 13px; background:var(--bg2);
+  border:1px solid var(--border2); border-radius:var(--r);
   margin-bottom:6px;
 }
-.a4-page-num{font-size:9px;color:#6b7280;font-weight:600;letter-spacing:.06em}
-
-/* ── A4 BODY ── */
-.a4-body{padding:24px 32px 60px}
-
-/* ── SECTION TITLE ── */
-.sec{margin-bottom:18px}
-.sec-hd{
-  display:flex;align-items:center;gap:10px;
-  margin-bottom:12px;
+.rpt-member-av {
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  background:rgba(94,92,230,.08); border:1px solid rgba(94,92,230,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:var(--purple);
 }
-.sec-hd-bar{width:3px;height:14px;border-radius:2px;flex-shrink:0}
-.sec-hd-text{
-  font-size:9px;font-weight:700;color:#6b7280;
-  letter-spacing:.14em;text-transform:uppercase;flex:1;
-}
-.sec-hd::after{content:'';flex:1;height:1px;background:#e5e7eb;max-width:100%}
+.rpt-member-info { flex:1; min-width:0 }
+.rpt-member-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px }
+.rpt-member-bar-bg { height:3px; background:var(--bg4); border-radius:2px; overflow:hidden }
+.rpt-member-bar-fill { height:100%; background:var(--neon2); border-radius:2px; transition:width .4s }
+.rpt-member-pct { font-family:var(--mono); font-size:13px; font-weight:500; color:var(--neon2); flex-shrink:0 }
 
-/* ── TEAM SUMMARY ── */
-.summary-row{display:flex;align-items:center;gap:20px}
-.ring-wrap{position:relative;flex-shrink:0}
-.ring-center{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);text-align:center;
-}
-.ring-pct{font-family:var(--doto);font-size:24px;font-weight:700;line-height:1}
-.ring-lbl{font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
-.stat-boxes{display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:1}
-.stat-box{
-  background:#f9fafb;border:1px solid #e5e7eb;border-radius:9px;
-  padding:9px 11px;
-}
-.stat-box-n{font-family:var(--doto);font-size:24px;font-weight:700;line-height:1;margin-bottom:2px}
-.stat-box-l{font-size:9px;font-weight:700;color:#6b7280;letter-spacing:.07em;text-transform:uppercase}
-.c-blue{color:#2563eb}.c-green{color:#059669}.c-amber{color:#d97706}.c-red{color:#dc2626}
+/* ── EMPTY STATE ── */
+.rpt-empty { text-align:center; padding:32px 16px; color:var(--text3); font-size:13px }
+.rpt-empty-icon { font-size:28px; margin-bottom:8px; opacity:.3 }
 
-/* ── TASK CARDS ── */
-.task-row{
-  display:flex;align-items:flex-start;gap:9px;
-  padding:7px 10px;border-radius:8px;margin-bottom:5px;
-}
-.task-row.r-done{background:#f0fdf4;border:1px solid #bbf7d0}
-.task-row.r-pend{background:#fffbeb;border:1px solid #fde68a}
-.task-row.r-crit{background:#fff1f2;border:1px solid #fecaca}
-.t-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.t-body{flex:1;min-width:0}
-.t-name{font-size:12px;font-weight:700;color:#111827;margin-bottom:3px;line-height:1.3}
-.t-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.t-tag{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
-.tg-done{background:#dcfce7;color:#166534}
-.tg-ip{background:#fef3c7;color:#92400e}
-.tg-todo{background:#f3f4f6;color:#6b7280}
-.tg-crit{background:#fee2e2;color:#991b1b}
-.tg-high{background:#fef3c7;color:#92400e}
-.tg-med{background:#dbeafe;color:#1e40af}
-.tg-low{background:#d1fae5;color:#065f46}
-.t-members{font-size:9px;color:#9ca3af;margin-top:2px}
+/* ── WEEKLY DIGEST ── */
+.digest-stat { flex:1; text-align:center; padding:10px 6px; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--r) }
+.digest-stat-n { font-family:var(--mono); font-size:22px; font-weight:500; line-height:1; margin-bottom:3px }
+.digest-stat-l { font-size:9px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.08em }
 
-/* ── COMMS STAT CARDS ── */
-.comms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
-.c-card{
-  border-radius:9px;padding:12px 13px;
-  border-top:3px solid #e5e7eb;
-}
-.c-card-icon{font-size:18px;margin-bottom:5px}
-.c-card-lbl{font-size:8px;font-weight:700;color:#6b7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
-.c-card-val{font-family:var(--doto);font-size:22px;font-weight:700;color:#111827;line-height:1}
-.c-card-sub{font-size:9px;color:#9ca3af;margin-top:3px}
+/* ── TAGS ── (reuse from style.css pattern) */
+.rt { font-size:9px; font-weight:700; padding:2px 7px; border-radius:10px; border:1px solid; text-transform:uppercase; letter-spacing:.04em }
+.rt-done  { color:#34c759; background:rgba(52,199,89,.08);  border-color:rgba(52,199,89,.2) }
+.rt-ip    { color:var(--amber); background:rgba(255,159,10,.08); border-color:rgba(255,159,10,.2) }
+.rt-todo  { color:var(--text2); background:var(--bg3); border-color:var(--border2) }
+.rt-crit  { color:var(--red); background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.2) }
+.rt-high  { color:var(--amber); background:rgba(255,159,10,.08); border-color:rgba(255,159,10,.2) }
+.rt-med   { color:var(--neon); background:rgba(10,132,255,.08); border-color:rgba(10,132,255,.2) }
+.rt-low   { color:var(--text3); background:var(--bg3); border-color:var(--border) }
+.rt-proj  { color:var(--purple); background:rgba(94,92,230,.08); border-color:rgba(94,92,230,.2) }
 
-/* ── RANKED VIDEOS ── */
-.ranked-item{
-  display:flex;align-items:center;gap:9px;
-  padding:6px 0;border-bottom:1px solid #f3f4f6;
-}
-.ranked-item:last-child{border-bottom:none}
-.rank-n{font-family:var(--doto);font-size:15px;font-weight:700;color:#d1d5db;width:24px;flex-shrink:0;line-height:1}
-.rank-n.top{color:#111827}
-.rank-body{flex:1;min-width:0}
-.rank-name{font-size:11px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rank-bar-bg{background:#f3f4f6;border-radius:2px;height:3px;margin-top:4px}
-.rank-bar-fg{height:100%;border-radius:2px}
-.rank-views{font-family:var(--doto);font-size:13px;font-weight:700;color:#374151;flex-shrink:0}
-
-/* ── EVENTS ── */
-.event-row{
-  display:flex;align-items:center;gap:10px;
-  padding:7px 10px;border-radius:8px;margin-bottom:5px;
-  background:#f9fafb;border:1px solid #e5e7eb;
-}
-.ev-date{width:34px;text-align:center;flex-shrink:0}
-.ev-day{font-family:var(--doto);font-size:18px;font-weight:700;color:#2563eb;line-height:1}
-.ev-mon{font-size:7px;font-weight:700;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase}
-.ev-body{flex:1;min-width:0}
-.ev-name{font-size:11px;font-weight:700;color:#111827}
-.ev-sub{font-size:9px;color:#9ca3af;margin-top:1px}
-.ev-badge{font-size:8px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.05em;white-space:nowrap}
-.eb-done{background:#dcfce7;color:#166534}
-.eb-live{background:#fee2e2;color:#991b1b}
-.eb-up{background:#dbeafe;color:#1e40af}
-
-/* ── FOOTER ── */
-.a4-footer{
-  position:absolute;bottom:0;left:0;right:0;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 32px;
-  border-top:1px solid #e5e7eb;
-  background:#f9fafb;
-}
-.a4-footer span{font-size:8px;color:#9ca3af;font-weight:600;letter-spacing:.04em}
-
-/* ── CONFIG BANNER ── */
-.cfg-banner{
-  background:#fffbeb;border:1px solid #fde68a;border-radius:8px;
-  padding:12px 14px;margin-bottom:14px;
-  font-size:10px;color:#92400e;line-height:1.7;
-}
-.cfg-banner strong{color:#78350f;display:block;margin-bottom:4px;font-size:11px}
-
-/* ── LOADER ── */
-.loading{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:40px;color:#9ca3af;font-size:12px;font-weight:600;
-}
-.ld{display:inline-block;width:12px;height:12px;border:2px solid #e5e7eb;border-top-color:#00c4a7;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ══════════════════════════════════════════
-   PRINT STYLES
-   Everything outside .a4 hides.
-   Each .a4 becomes one A4 page.
-══════════════════════════════════════════ */
+/* ── PRINT / PDF ── */
 @media print {
-  body.printing-pdf nav,
-  body.printing-pdf #report-controls,
-  body.printing-pdf .no-print,
-  body.printing-pdf #weekly-digest,
-  body.printing-pdf #my-report-panel { display:none !important }
-  body.printing-pdf .preview-wrap { padding:0 !important; gap:0 !important }
-  body.printing-pdf .a4 { box-shadow:none !important; border-radius:0 !important; page-break-after:always }
-  body.printing-pdf #report-charts { display:block !important }
-}
-@media print {
-  @page{size:A4 portrait;margin:0}
-  body{background:#fff !important}
-  .nav,.controls-bar,[style*="display:flex"]{display:none !important}
-  .preview-wrap{
-    padding:0 !important;
-    gap:0 !important;
-    display:block !important;
-  }
-  .a4{
-    width:210mm !important;
-    min-height:297mm !important;
-    box-shadow:none !important;
-    border-radius:0 !important;
-    page-break-after:always;
-    margin:0 !important;
-  }
-  .a4:last-child{page-break-after:avoid}
+  nav, .rpt-tabs, .rpt-filter-row, .rpt-period-row,
+  .rpt-export-btn, .bottom-nav { display:none !important }
+  body { background:#fff !important; color:#111 !important }
+  .rpt-panel { display:block !important }
+  .rpt-chart-card, .rpt-project, .rpt-stat, .rpt-task { break-inside:avoid }
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
-  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="36" style="display:block"></a>
+  <a class="nav-brand" href="index.html">
+    <span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span>
+    <span class="brand-dot"></span>
+  </a>
   <div class="nav-right">
-    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
-    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
-    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
+    <button class="theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+    <button class="theme-toggle" id="mute-btn" onclick="handleMuteToggle()">🔊</button>
   </div>
 </nav>
 
-<!-- REPORT CONTROLS -->
-<div id="report-controls" style="padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border2)">
-  <!-- Row 1: month + action buttons -->
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-    <select id="month-sel" onchange="loadReport()"
-      style="background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer"></select>
-    <button onclick="toggleWeeklyDigest()"
-      style="padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Weekly</button>
-    <button onclick="toggleMyReport()" id="my-report-btn"
-      style="padding:7px 14px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">👤 My Report</button>
-    <button onclick="exportPDF()"
-      style="padding:7px 16px;border-radius:9px;border:none;background:var(--neon);color:#0c0c0f;font-family:var(--sans);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Export PDF</button>
-  </div>
-  <!-- Row 2: filter slicers -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-    <span style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Filter:</span>
-    <select id="filter-project" onchange="applyFilters()"
-      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
-      <option value="">All Projects</option>
-    </select>
-    <select id="filter-member" onchange="applyFilters()"
-      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
-      <option value="">All Members</option>
-    </select>
-    <select id="filter-priority" onchange="applyFilters()"
-      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
-      <option value="">All Priorities</option>
-      <option value="critical">Critical</option>
-      <option value="high">High</option>
-      <option value="medium">Medium</option>
-      <option value="low">Low</option>
-    </select>
-    <select id="filter-status" onchange="applyFilters()"
-      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text2);font-family:var(--sans);font-size:11px;outline:none;cursor:pointer">
-      <option value="">All Statuses</option>
-      <option value="done">Done</option>
-      <option value="inprog">In Progress</option>
-      <option value="todo">Todo</option>
-    </select>
-    <button onclick="clearFilters()"
-      style="padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:none;color:var(--text3);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
-    <span id="filter-count" style="font-size:11px;color:var(--text3);margin-left:4px"></span>
+<!-- TOP CONTROLS -->
+<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border2)">
+  <select id="month-sel" onchange="loadReport()"
+    style="background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer;flex:1;-webkit-appearance:none"></select>
+  <button onclick="exportPDF()" class="rpt-export-btn">⬇ PDF</button>
+</div>
+
+<!-- REPORT TABS -->
+<div class="rpt-tabs">
+  <button class="rpt-tab active" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
+  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">My Report</button>
+  <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
+</div>
+
+<!-- FILTER ROW (monthly only) -->
+<div class="rpt-filter-row" id="filter-row">
+  <select id="filter-project" class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Projects</option></select>
+  <select id="filter-member"  class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Members</option></select>
+  <select id="filter-priority" class="rpt-filter-sel" onchange="applyFilters()">
+    <option value="">All Priorities</option>
+    <option value="critical">Critical</option>
+    <option value="high">High</option>
+    <option value="medium">Medium</option>
+    <option value="low">Low</option>
+  </select>
+  <select id="filter-status" class="rpt-filter-sel" onchange="applyFilters()">
+    <option value="">All Status</option>
+    <option value="done">Done</option>
+    <option value="inprog">In Progress</option>
+    <option value="todo">Todo</option>
+  </select>
+  <button class="rpt-clear-btn" onclick="clearFilters()">✕</button>
+  <span class="rpt-filter-count" id="filter-count"></span>
+</div>
+
+<!-- ═══ MONTHLY PANEL ═══ -->
+<div class="rpt-panel active page" id="panel-monthly" style="padding-top:12px">
+  <div id="monthly-content">
+    <div class="rpt-empty"><div class="rpt-empty-icon">📊</div>Loading…</div>
   </div>
 </div>
 
-<!-- TWO A4 PAGES STACKED -->
-<div class="preview-wrap">
-
-  <!-- ═══ PAGE 1: TASK REPORT ═══ -->
-  <div class="a4" id="a4-tasks">
-    <div class="a4-header">
-      <div class="a4-meta">BBM-IN &nbsp;·&nbsp; M/MBC-IN &nbsp;·&nbsp; Internal Communications</div>
-      <div class="a4-title">Team Tasks<br><em id="p1-month">Report</em></div>
-      <div class="a4-header-right">
-        <div class="a4-month-pill" id="p1-badge">—</div>
-        <div class="a4-page-num">PAGE 01 / 02</div>
-      </div>
-    </div>
-    <!-- Chart row — rendered above task list -->
-    <div id="report-charts" style="display:none;padding:16px 24px 0;border-bottom:1px solid #e5e7eb;margin-bottom:0">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div style="background:#f9fafb;border-radius:8px;padding:12px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">Task Status</div>
-          <div style="height:140px;position:relative"><canvas id="chart-status"></canvas></div>
-        </div>
-        <div style="background:#f9fafb;border-radius:8px;padding:12px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Priority</div>
-          <div style="height:140px;position:relative"><canvas id="chart-priority"></canvas></div>
-        </div>
-        <div style="background:#f9fafb;border-radius:8px;padding:12px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Member</div>
-          <div style="height:140px;position:relative"><canvas id="chart-member"></canvas></div>
-        </div>
-        <div style="background:#f9fafb;border-radius:8px;padding:12px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">By Project</div>
-          <div style="height:140px;position:relative"><canvas id="chart-project"></canvas></div>
-        </div>
-      </div>
-    </div>
-    <div class="a4-body" id="tasks-body">
-      <div class="loading"><span class="ld"></span>Loading task data…</div>
-    </div>
-    <div class="a4-footer">
-      <span>BBM-IN · M/MBC-IN · Internal Communications</span>
-      <span id="p1-footer-date"></span>
-    </div>
+<!-- ═══ MY REPORT PANEL ═══ -->
+<div class="rpt-panel page" id="panel-myreport" style="padding-top:12px">
+  <!-- Member selector + period + export -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <select id="my-report-member" onchange="renderMyReport()"
+      style="background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;flex:1;-webkit-appearance:none"></select>
+    <button onclick="exportMyReportPDF()" class="rpt-export-btn" style="flex-shrink:0">⬇ PDF</button>
   </div>
-
-  <!-- ═══ PAGE 2: COMMS DASHBOARD ═══ -->
-  <div class="a4" id="a4-comms">
-    <div class="a4-header">
-      <div class="a4-meta">BBM-IN &nbsp;·&nbsp; M/MBC-IN &nbsp;·&nbsp; Internal Communications</div>
-      <div class="a4-title">Comms<br><em id="p2-month">Overview</em></div>
-      <div class="a4-header-right">
-        <div class="a4-month-pill" id="p2-badge">—</div>
-        <div class="a4-page-num">PAGE 02 / 02</div>
-      </div>
-    </div>
-    <div class="a4-body" id="comms-body">
-      <div class="cfg-banner">
-        <strong>Connect your Google Sheet to load this page</strong>
-        Paste your published CSV URL above and click "Load Comms".<br><br>
-        <strong>Sheet structure (Row 1 = headers, Row 2 = stats):</strong><br>
-        video_views, video_count, blog_views, article_count, livestream_views, livestream_count, subscribers, subscribers_new, events_held, event_attendees<br><br>
-        Then add sections below with header rows:<br>
-        <em>video_title, video_views</em> (one per row)<br>
-        <em>event_day, event_month, event_name, event_sub, event_status</em> (one per row)
-      </div>
-    </div>
-    <div class="a4-footer">
-      <span>Data: Video Platform · Blog CMS · Events System · Subscriber DB</span>
-      <span id="p2-footer-date"></span>
-    </div>
+  <div class="rpt-period-row">
+    <button class="rpt-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)">This Month</button>
+    <button class="rpt-period-btn" data-period="week" onclick="setMyReportPeriod('week',this)">Last Week</button>
+    <button class="rpt-period-btn" data-period="quarter" onclick="setMyReportPeriod('quarter',this)">Last Quarter</button>
   </div>
-
-</div><!-- /preview-wrap -->
-
-<!-- WEEKLY DIGEST — quick summary card -->
-<div id="weekly-digest" style="display:none;max-width:500px;margin:0 auto 80px;padding:0 16px">
-  <div style="background:var(--bg2);border:1.5px solid var(--border2);border-radius:18px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.3)">
-    <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">📊 This Week's Digest</div>
-    <div id="digest-content" style="font-size:14px;color:var(--text);line-height:1.8"></div>
-    <div style="margin-top:16px;display:flex;gap:8px">
-      <button onclick="copyDigest()" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer">📋 Copy for WhatsApp</button>
-      <button onclick="document.getElementById('weekly-digest').style.display='none'" style="padding:9px 14px;border-radius:10px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Close</button>
-    </div>
+  <div id="my-report-content" style="margin-top:4px">
+    <div class="rpt-empty"><div class="rpt-empty-icon">👤</div>Select a period above</div>
   </div>
 </div>
 
-<!-- MY REPORT PANEL — enhanced with period filter + PDF -->
-<div id="my-report-panel" style="display:none;max-width:500px;margin:0 auto 16px;padding:0 16px">
-  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-panel)">
-    <!-- Header -->
-    <div style="padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <div style="font-size:13px;font-weight:700;color:var(--text)">👤 My Report</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <select id="my-report-member" onchange="renderMyReport()"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 9px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none"></select>
-        <button onclick="document.getElementById('my-report-panel').style.display='none'"
-          style="padding:5px 11px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Close</button>
-      </div>
-    </div>
-    <!-- Period selector -->
-    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center">
-      <button class="mr-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)"
-        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">This Month</button>
-      <button class="mr-period-btn" data-period="week" onclick="setMyReportPeriod('week',this)"
-        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">Last Week</button>
-      <button class="mr-period-btn" data-period="quarter" onclick="setMyReportPeriod('quarter',this)"
-        style="padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">Last Quarter</button>
-      <button onclick="exportMyReportPDF()"
-        style="margin-left:auto;padding:5px 12px;border-radius:20px;border:none;background:var(--neon);color:#0c0c0f;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">⬇ PDF</button>
-    </div>
-    <!-- Content -->
-    <div id="my-report-content" style="padding:16px;max-height:75vh;overflow-y:auto"></div>
+<!-- ═══ WEEKLY DIGEST PANEL ═══ -->
+<div class="rpt-panel page" id="panel-weekly" style="padding-top:12px">
+  <div id="weekly-content">
+    <div class="rpt-empty"><div class="rpt-empty-icon">📅</div>Loading…</div>
   </div>
 </div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a href="index.html"    class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
+  <a href="input.html"    class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
+  <a href="report.html"   class="bn-item active"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+  <a href="calendar.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Calendar</span></a>
+</nav>
 
 <script type="module">
 import { onUserReady, getTasks, getMembers, getCalendarEvents } from './js/firebase.js';
@@ -416,1009 +297,671 @@ import { initAudio, getMuted, toggleMute } from './js/sounds.js';
 initTheme();
 window.toggleThemePanel = toggleThemePanel;
 initAudio();
-
 function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.textContent=getMuted()?'🔇':'🔊';}
 window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
 updateMuteBtn();
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-let allTasks=[], allMembers=[], selMonth='', calendarEvents={};
+// ── STATE ──────────────────────────────────────────────────────────────────
+let allTasks=[], allMembers=[], calendarEvents={};
+let selMonth='';
+let activeFilters={project:'',member:'',priority:'',status:''};
+let chartInstances={};
+let myReportPeriod='month';
+let activeRptTab='monthly';
 
-// ── MONTH SELECTOR ─────────────────────────────────────────────────────────
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+
+// ── INIT MONTH SELECTOR ────────────────────────────────────────────────────
 (function initMonths(){
   const sel=document.getElementById('month-sel');
   const now=new Date();
+  let opts='';
   for(let i=0;i<12;i++){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const val=d.toISOString().slice(0,7);
+    const val=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
     const lbl=MONTHS[d.getMonth()]+' '+d.getFullYear();
-    const o=document.createElement('option');
-    o.value=val;o.textContent=lbl;
-    if(i===0)o.selected=true;
-    sel.appendChild(o);
+    opts+=`<option value="${val}"${i===0?' selected':''}>${lbl}</option>`;
   }
+  sel.innerHTML=opts;
   selMonth=sel.value;
 })();
 
-// Footer dates
-const fd=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-document.getElementById('p1-footer-date').textContent='Generated '+fd;
-document.getElementById('p2-footer-date').textContent='Generated '+fd;
-
-// ── FIREBASE LOAD ──────────────────────────────────────────────────────────
-onUserReady(async()=>{
-  [allTasks,allMembers,calendarEvents]=await Promise.all([getTasks(),getMembers(),getCalendarEvents()]);
-  renderTaskPage();
-});
-
+// ── LOAD DATA ──────────────────────────────────────────────────────────────
 window.loadReport=()=>{
   selMonth=document.getElementById('month-sel').value;
-  renderTaskPage();
-  const [y,m]=selMonth.split('-');
-  const lbl=MONTHS[parseInt(m)-1]+' '+y;
-  document.getElementById('p2-month').textContent=lbl;
-  document.getElementById('p2-badge').textContent=lbl;
+  renderActiveTab();
 };
 
-// ── PAGE 1: TASK REPORT ────────────────────────────────────────────────────
-function renderTaskPage(){
-  const [y,m]=selMonth.split('-');
-  const lbl=MONTHS[parseInt(m)-1]+' '+y;
-  document.getElementById('p1-month').textContent=lbl;
-  document.getElementById('p1-badge').textContent=lbl;
-  document.getElementById('p2-month').textContent=lbl;
-  document.getElementById('p2-badge').textContent=lbl;
+onUserReady(async()=>{
+  [allTasks,allMembers,calendarEvents]=await Promise.all([getTasks(),getMembers(),getCalendarEvents()]);
+  populateMemberSelector();
+  renderActiveTab();
+});
 
-  const mt=allTasks.filter(t=>t.month===selMonth && (t.taskType||'mbc')==='mbc');
+function renderActiveTab(){
+  if(activeRptTab==='monthly')  renderMonthly();
+  if(activeRptTab==='myreport') renderMyReport();
+  if(activeRptTab==='weekly')   renderWeekly();
+}
+
+// ── TAB SWITCHING ──────────────────────────────────────────────────────────
+window.switchRptTab=(tab)=>{
+  activeRptTab=tab;
+  document.querySelectorAll('.rpt-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.rpt-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  // Show/hide filter row
+  document.getElementById('filter-row').style.display=tab==='monthly'?'flex':'none';
+  renderActiveTab();
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day} ${MONTHS[parseInt(m)-1]}`;}
+function monthLabel(m){const[y,mo]=m.split('-');return MONTHS[parseInt(mo)-1]+' '+y;}
+function pctColor(p){return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';}
+function priorityBorderColor(p){return{critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--text3)'}[p||'medium'];}
+
+// ── FILTERS ────────────────────────────────────────────────────────────────
+window.applyFilters=()=>{
+  activeFilters.project  = document.getElementById('filter-project')?.value||'';
+  activeFilters.member   = document.getElementById('filter-member')?.value||'';
+  activeFilters.priority = document.getElementById('filter-priority')?.value||'';
+  activeFilters.status   = document.getElementById('filter-status')?.value||'';
+  renderMonthly();
+};
+window.clearFilters=()=>{
+  ['filter-project','filter-member','filter-priority','filter-status'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  activeFilters={project:'',member:'',priority:'',status:''};
+  renderMonthly();
+};
+function applyActiveFilters(tasks){
+  let r=[...tasks];
+  if(activeFilters.project)  r=r.filter(t=>(t.project||'')===activeFilters.project);
+  if(activeFilters.member)   r=r.filter(t=>(t.members||[]).some(m=>m.name===activeFilters.member));
+  if(activeFilters.priority) r=r.filter(t=>t.priority===activeFilters.priority);
+  if(activeFilters.status)   r=r.filter(t=>t.status===activeFilters.status);
+  return r;
+}
+function populateFilterDropdowns(mt){
+  const pSel=document.getElementById('filter-project');
+  if(pSel){
+    const projects=[...new Set(mt.map(t=>t.project).filter(Boolean))].sort();
+    const cur=pSel.value;
+    pSel.innerHTML='<option value="">All Projects</option>'+projects.map(p=>`<option value="${esc(p)}"${cur===p?' selected':''}>${esc(p)}</option>`).join('');
+  }
+  const mSel=document.getElementById('filter-member');
+  if(mSel){
+    const names=[...new Set(mt.flatMap(t=>(t.members||[]).map(m=>m.name)))].sort();
+    const cur=mSel.value;
+    mSel.innerHTML='<option value="">All Members</option>'+names.map(n=>`<option value="${esc(n)}"${cur===n?' selected':''}>${esc(n)}</option>`).join('');
+  }
+  const filtered=applyActiveFilters(mt);
+  const hasF=Object.values(activeFilters).some(v=>v);
+  const countEl=document.getElementById('filter-count');
+  if(countEl) countEl.textContent=hasF?`${filtered.length}/${mt.length}`:'';
+}
+
+// ── CHARTS ─────────────────────────────────────────────────────────────────
+function destroyCharts(){
+  Object.values(chartInstances).forEach(ch=>{try{ch.destroy()}catch(e){}});
+  chartInstances={};
+}
+const chartBase={animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+const chartFont={font:{size:9},color:'rgba(240,240,242,.4)'};
+const chartGrid={color:'rgba(255,255,255,.04)'};
+
+function renderCharts(mt){
+  destroyCharts();
+  if(!mt.length) return;
+
+  // Status donut
+  try {
+    chartInstances.status=new Chart(document.getElementById('chart-status'),{
+      type:'doughnut',
+      data:{labels:['Done','In Prog','Todo'],datasets:[{
+        data:[mt.filter(t=>t.status==='done').length,mt.filter(t=>t.status==='inprog').length,mt.filter(t=>t.status==='todo').length],
+        backgroundColor:['#34c759','#ff9f0a','rgba(255,255,255,.15)'],
+        borderWidth:0,hoverOffset:3,
+      }]},
+      options:{...chartBase,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+    });
+  } catch(e){}
+
+  // Priority bar
+  try {
+    chartInstances.priority=new Chart(document.getElementById('chart-priority'),{
+      type:'bar',
+      data:{labels:['Crit','High','Med','Low'],datasets:[{
+        data:['critical','high','medium','low'].map(p=>mt.filter(t=>t.priority===p).length),
+        backgroundColor:['#ff453a','#ff9f0a','#0a84ff','#34c759'],
+        borderRadius:4,borderWidth:0,
+      }]},
+      options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false}},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true}}}
+    });
+  } catch(e){}
+
+  // Member bar
+  const memberMap={};
+  mt.forEach(t=>{(t.members||[]).forEach(m=>{
+    if(!memberMap[m.name]) memberMap[m.name]={done:0,total:0};
+    memberMap[m.name].total++;
+    const ms=(t.memberStatus||{})[m.id]||t.status;
+    if(ms==='done') memberMap[m.name].done++;
+  });});
+  const mNames=Object.keys(memberMap).sort();
+  try {
+    chartInstances.member=new Chart(document.getElementById('chart-member'),{
+      type:'bar',
+      data:{labels:mNames.map(n=>n.split(' ')[0]),datasets:[
+        {label:'Done',data:mNames.map(n=>memberMap[n].done),backgroundColor:'#34c759',borderRadius:3,borderWidth:0},
+        {label:'Open',data:mNames.map(n=>memberMap[n].total-memberMap[n].done),backgroundColor:'rgba(255,255,255,.1)',borderRadius:3,borderWidth:0},
+      ]},
+      options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
+        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+    });
+  } catch(e){}
+
+  // Project bar
+  const projMap={};
+  mt.forEach(t=>{const p=t.project||'(none)';if(!projMap[p]) projMap[p]={done:0,total:0};projMap[p].total++;if(t.status==='done')projMap[p].done++;});
+  const pNames=Object.keys(projMap).filter(p=>p!=='(none)').sort();
+  if(pNames.length>0){
+    try {
+      chartInstances.project=new Chart(document.getElementById('chart-project'),{
+        type:'bar',
+        data:{labels:pNames.map(n=>n.length>12?n.slice(0,11)+'…':n),datasets:[
+          {label:'Done',data:pNames.map(n=>projMap[n].done),backgroundColor:'#5e5ce6',borderRadius:3,borderWidth:0},
+          {label:'Open',data:pNames.map(n=>projMap[n].total-projMap[n].done),backgroundColor:'rgba(94,92,230,.2)',borderRadius:3,borderWidth:0},
+        ]},
+        options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
+          plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+      });
+    } catch(e){}
+  } else {
+    const el=document.getElementById('chart-project');
+    if(el) el.closest('.rpt-chart-card')?.remove();
+  }
+}
+
+// ── TASK ROW HTML ──────────────────────────────────────────────────────────
+function taskRowHTML(t){
+  const stClass={done:'rt-done',inprog:'rt-ip',todo:'rt-todo'}[t.status]||'rt-todo';
+  const stLabel={done:'Done',inprog:'In Progress',todo:'Todo'}[t.status]||'Todo';
+  const prioClass={critical:'rt-crit',high:'rt-high',medium:'rt-med',low:'rt-low'}[t.priority||'medium'];
+  const members=(t.members||[]).map(m=>m.name).join(', ');
+  return `<div class="rpt-task" style="border-left-color:${priorityBorderColor(t.priority)}">
+    <div class="rpt-task-body">
+      <div class="rpt-task-name">${esc(t.label)}</div>
+      <div class="rpt-task-meta">
+        <span class="rt ${stClass}">${stLabel}</span>
+        <span class="rt ${prioClass}">${t.priority||'medium'}</span>
+        ${t.project?`<span class="rt rt-proj">&#128193; ${esc(t.project)}</span>`:''}
+        ${t.taskDueDate&&t.status!=='done'?`<span class="rt rt-todo">📅 ${fmtDate(t.taskDueDate)}</span>`:''}
+      </div>
+      ${members?`<div class="rpt-task-members">👥 ${esc(members)}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// ── MONTHLY REPORT ─────────────────────────────────────────────────────────
+function renderMonthly(){
+  const allMt=allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
+  populateFilterDropdowns(allMt);
+  const mt=applyActiveFilters(allMt);
+  const el=document.getElementById('monthly-content');
+
+  if(!allMt.length){
+    el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📊</div>No tasks for ${monthLabel(selMonth)}</div>`;
+    return;
+  }
+
+  const total=mt.length, done=mt.filter(t=>t.status==='done').length;
+  const inprog=mt.filter(t=>t.status==='inprog').length;
+  const crit=mt.filter(t=>t.priority==='critical'&&t.status!=='done').length;
+  const pct=total?Math.round(done/total*100):0;
+  const pc=pctColor(pct);
+  const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
 
   // Group by project
-  const byProject={};
-  mt.forEach(t=>{
-    const proj=t.project||'';
-    if(!byProject[proj]) byProject[proj]=[];
-    byProject[proj].push(t);
-  });
-  const projectKeys=Object.keys(byProject).sort((a,b)=>{
-    if(!a) return 1; if(!b) return -1; return a.localeCompare(b);
-  });
-
-  const total=mt.length;
-  const done=mt.filter(t=>t.status==='done').length;
-  const inprog=mt.filter(t=>t.status==='inprog').length;
-  const todo=mt.filter(t=>t.status==='todo').length;
-  const critAll=mt.filter(t=>t.priority==='critical').length;
-  const pct=total?Math.round(done/total*100):0;
+  const byProj={};
+  mt.forEach(t=>{const p=t.project||'';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
+  const projKeys=Object.keys(byProj).sort((a,b)=>{if(!a)return 1;if(!b)return-1;return a.localeCompare(b);});
+  const namedProjs=projKeys.filter(k=>k);
 
   const shipped=mt.filter(t=>t.status==='done');
   const pending=mt.filter(t=>t.status!=='done');
   const critOpen=mt.filter(t=>t.priority==='critical'&&t.status!=='done');
 
-  const el=document.getElementById('tasks-body');
-  if(!total){
-    el.innerHTML=`<div style="text-align:center;padding:60px 0;color:#9ca3af;font-size:14px;font-weight:600">No tasks registered for ${lbl}</div>`;
-    return;
-  }
-
-  // Ring SVG
-  const R=42,C=2*Math.PI*R,off=C-(pct/100)*C;
-  const rc=pct>=80?'#059669':pct>=50?'#d97706':'#dc2626';
-
   el.innerHTML=`
-    <!-- TEAM SUMMARY -->
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#2563eb"></div>
-        <div class="sec-hd-text">Team Summary</div>
+    <!-- STATS -->
+    <div class="rpt-stat-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${done}</div><div class="rpt-stat-l">Done</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--amber)">${inprog}</div><div class="rpt-stat-l">In Prog</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--red)">${crit}</div><div class="rpt-stat-l">Critical</div></div>
+    </div>
+
+    <!-- PROGRESS RING + LABEL -->
+    <div class="panel" style="padding:14px 16px;margin-bottom:12px">
+      <div class="rpt-ring-wrap">
+        <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
+          <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
+          <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .6s"/>
+          <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
+        </svg>
+        <div class="rpt-ring-labels">
+          <div class="rpt-ring-pct" style="color:${pc}">${pct}% complete</div>
+          <div class="rpt-ring-sub">${done} of ${total} tasks done · ${monthLabel(selMonth)}</div>
+        </div>
       </div>
-      <div class="summary-row">
-        <div class="ring-wrap">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="${R}" fill="none" stroke="#e5e7eb" stroke-width="7"/>
-            <circle cx="50" cy="50" r="${R}" fill="none" stroke="${rc}" stroke-width="7"
-              stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-              stroke-linecap="round" transform="rotate(-90 50 50)"/>
-          </svg>
-          <div class="ring-center">
-            <div class="ring-pct" style="color:${rc}">${pct}%</div>
-            <div class="ring-lbl">done</div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="rpt-charts-grid">
+      <div class="rpt-chart-card"><div class="rpt-chart-title">Status</div><div class="rpt-chart-wrap"><canvas id="chart-status"></canvas></div></div>
+      <div class="rpt-chart-card"><div class="rpt-chart-title">Priority</div><div class="rpt-chart-wrap"><canvas id="chart-priority"></canvas></div></div>
+      <div class="rpt-chart-card"><div class="rpt-chart-title">By Member</div><div class="rpt-chart-wrap"><canvas id="chart-member"></canvas></div></div>
+      ${namedProjs.length?`<div class="rpt-chart-card"><div class="rpt-chart-title">By Project</div><div class="rpt-chart-wrap"><canvas id="chart-project"></canvas></div></div>`:''}
+    </div>
+
+    <!-- BY PROJECT -->
+    ${namedProjs.length?`
+    <div class="rpt-sec-hd"><div class="rpt-sec-title">By Project</div><div class="rpt-sec-count">${namedProjs.length} project${namedProjs.length>1?'s':''}</div></div>
+    ${namedProjs.map((proj,idx)=>{
+      const pt=byProj[proj];
+      const pd=pt.filter(t=>t.status==='done').length;
+      const pp=pt.length?Math.round(pd/pt.length*100):0;
+      const pc2=pctColor(pp);
+      return `<div class="rpt-project">
+        <div class="rpt-project-hd" onclick="toggleProject('rp-${idx}')">
+          <div class="rpt-project-name">&#128193; ${esc(proj)}</div>
+          <div class="rpt-project-meta">
+            <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
+            <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
+            <span class="rpt-project-arrow" id="rp-arr-${idx}">▾</span>
           </div>
         </div>
-        <div class="stat-boxes">
-          <div class="stat-box"><div class="stat-box-n c-blue">${total}</div><div class="stat-box-l">Total Tasks</div></div>
-          <div class="stat-box"><div class="stat-box-n c-green">${done}</div><div class="stat-box-l">Completed</div></div>
-          <div class="stat-box"><div class="stat-box-n c-amber">${inprog}</div><div class="stat-box-l">In Progress</div></div>
-          <div class="stat-box"><div class="stat-box-n c-red">${critAll}</div><div class="stat-box-l">Critical</div></div>
+        <div class="rpt-project-body" id="rp-${idx}" style="display:none">
+          ${pt.map(t=>taskRowHTML(t)).join('')}
         </div>
-      </div>
-    </div>
+      </div>`;
+    }).join('')}`:''}
 
-    ${projectSection(byProject,projectKeys)}
-
-    <!-- WHAT WE SHIPPED -->
+    <!-- SHIPPED -->
     ${shipped.length?`
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#059669"></div>
-        <div class="sec-hd-text">What We Shipped — ${shipped.length} task${shipped.length>1?'s':''} completed</div>
-      </div>
-      ${shipped.map(t=>taskRow(t,'r-done','#059669','tg-done','Done')).join('')}
-    </div>`:
-    `<div class="sec">
-      <div class="sec-hd"><div class="sec-hd-bar" style="background:#059669"></div><div class="sec-hd-text">What We Shipped</div></div>
-      <div style="color:#9ca3af;font-size:11px;font-weight:600;padding:8px 0">No completed tasks this month.</div>
-    </div>`}
+    <div class="rpt-sec-hd"><div class="rpt-sec-title">What We Shipped</div><div class="rpt-sec-count">${shipped.length}</div></div>
+    ${shipped.map(t=>taskRowHTML(t)).join('')}`:''}
 
-    <!-- CRITICAL HIGHLIGHTS -->
+    <!-- CRITICAL OPEN -->
     ${critOpen.length?`
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#dc2626"></div>
-        <div class="sec-hd-text">Critical — Open (${critOpen.length})</div>
-      </div>
-      ${critOpen.map(t=>taskRow(t,'r-crit','#dc2626','tg-crit','Critical')).join('')}
-    </div>`:''}
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title" style="color:var(--red)">Critical Open</div><div class="rpt-sec-count">${critOpen.length}</div></div>
+    ${critOpen.map(t=>taskRowHTML(t)).join('')}`:''}
 
-    <!-- PENDING / CARRY-FORWARD -->
+    <!-- PENDING -->
     ${pending.length?`
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#d97706"></div>
-        <div class="sec-hd-text">Pending / Carry-forward — ${pending.length} task${pending.length>1?'s':''}</div>
-      </div>
-      ${pending.map(t=>{
-        const ip=t.status==='inprog';
-        return taskRow(t,'r-pend',ip?'#d97706':'#6b7280',ip?'tg-ip':'tg-todo',ip?'In Progress':'Todo');
-      }).join('')}
-    </div>`:''}
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Pending / Carry-forward</div><div class="rpt-sec-count">${pending.length}</div></div>
+    ${pending.filter(t=>t.priority!=='critical').map(t=>taskRowHTML(t)).join('')}`:''}
+
+    <!-- MEMBER BREAKDOWN -->
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">By Member</div></div>
+    ${allMembers.map(m=>{
+      const mTasks=allMt.filter(t=>(t.members||[]).some(mm=>mm.name&&mm.name.toLowerCase()===m.name.toLowerCase()));
+      if(!mTasks.length) return '';
+      const mDone=mTasks.filter(t=>{const mid=(t.members||[]).find(mm=>mm.name&&mm.name.toLowerCase()===m.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+      const mp=mTasks.length?Math.round(mDone/mTasks.length*100):0;
+      const initials=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      return `<div class="rpt-member-row">
+        <div class="rpt-member-av">${initials}</div>
+        <div class="rpt-member-info">
+          <div class="rpt-member-name">${esc(m.name)}</div>
+          <div class="rpt-member-bar-bg"><div class="rpt-member-bar-fill" style="width:${mp}%"></div></div>
+        </div>
+        <div class="rpt-member-pct">${mp}%</div>
+      </div>`;
+    }).join('')}
   `;
-}
 
-function projectSection(byProject, projectKeys){
-  const named = projectKeys.filter(k=>k);
-  if(!named.length) return '';
-  let h = '<div class="sec"><div class="sec-hd"><div class="sec-hd-bar" style="background:#7c3aed"></div><div class="sec-hd-text">By Project</div></div>';
-  named.forEach(proj=>{
-    const pt=byProject[proj];
-    const pd=pt.filter(t=>t.status==='done').length;
-    const pp=pt.length?Math.round(pd/pt.length*100):0;
-    const pc=pp>=80?'#059669':pp>=50?'#d97706':'#dc2626';
-    h+='<div style="margin-bottom:12px;padding:12px 14px;background:#f5f3ff;border-radius:8px;border-left:3px solid #7c3aed;page-break-inside:avoid">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-    h+='<div style="font-weight:800;font-size:12px;color:#1e1b4b">&#128193; '+esc(proj)+'</div>';
-    h+='<div style="font-size:11px;font-weight:700;color:'+pc+'">'+pd+'/'+pt.length+' done &middot; '+pp+'%</div>';
-    h+='</div><div style="display:flex;flex-wrap:wrap;gap:5px">';
-    pt.forEach(t=>{
-      const sc=t.status==='done'?'#059669':t.status==='inprog'?'#d97706':'#6b7280';
-      const si=t.status==='done'?'&#10003;':t.status==='inprog'?'&#8635;':'&#9679;';
-      const mm=(t.members||[]).map(m=>m.name).join(', ');
-      h+='<div style="font-size:10px;padding:4px 8px;border-radius:4px;background:#fff;border:1px solid #e5e7eb;color:'+sc+';max-width:100%">';
-      h+=si+' <strong>'+esc(t.label)+'</strong>'+(mm?' &middot; '+esc(mm):'');
-      h+='</div>';
-    });
-    h+='</div></div>';
-  });
-  h+='</div>';
-  return h;
+  setTimeout(()=>renderCharts(mt),30);
 }
+window.renderMonthly=renderMonthly;
 
-function taskRow(t,cardCls,dotCol,tagCls,tagLbl){
-  const pTag={critical:'tg-crit',high:'tg-high',medium:'tg-med',low:'tg-low'}[t.priority||'medium'];
-  const members=(t.members||[]).map(m=>m.name).join(', ');
-  return `<div class="task-row ${cardCls}">
-    <div class="t-dot" style="background:${dotCol}"></div>
-    <div class="t-body">
-      <div class="t-name">${esc(t.label)}</div>
-      <div class="t-meta">
-        <span class="t-tag ${tagCls}">${tagLbl}</span>
-        <span class="t-tag ${pTag}">${t.priority||'medium'}</span>
-        ${t.dueDate?`<span class="t-tag" style="background:#dbeafe;color:#1e40af">📅 ${fmtDate(t.dueDate)}</span>`:''}
-      </div>
-      ${t.project?`<div class="t-members" style="color:#7c3aed">&#128193; ${esc(t.project)}</div>`:''}
-      ${members?`<div class="t-members">👥 ${esc(members)}</div>`:''}
-    </div>
-  </div>`;
-}
-
-// ── PAGE 2: COMMS DASHBOARD ────────────────────────────────────────────────
-window.loadComms=async()=>{
-  const url=document.getElementById('sheet-url').value.trim();
-  if(!url){alert('Paste a Google Sheet CSV URL first.');return}
-  const btn=document.querySelector('.btn-load');
-  btn.textContent='Loading…';btn.disabled=true;
-  try{
-    const proxy='https://corsproxy.io/?'+encodeURIComponent(url);
-    const res=await fetch(proxy);
-    if(!res.ok)throw new Error('Could not fetch. Make sure sheet is published as CSV.');
-    const csv=await res.text();
-    renderCommsPage(csv);
-  }catch(e){
-    document.getElementById('comms-body').innerHTML=`<div class="cfg-banner" style="background:#fff1f2;border-color:#fecaca"><strong>Error loading sheet</strong>${esc(e.message)}</div>`;
-  }
-  btn.textContent='Load Comms';btn.disabled=false;
+// ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
+window.toggleProject=(id)=>{
+  const body=document.getElementById(id);
+  const arr=document.getElementById(id.replace('rp-','rp-arr-'));
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(arr) arr.classList.toggle('open',!open);
 };
 
-function renderCommsPage(csv){
-  const rows=csv.trim().split('\n').map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
-  if(rows.length<2){document.getElementById('comms-body').innerHTML='<div class="cfg-banner">Sheet appears empty.</div>';return}
-
-  const s=rows[1]||[];
-  const videoViews=s[0]||'0', videoCount=s[1]||'0';
-  const blogViews=s[2]||'0', articleCount=s[3]||'0';
-  const lsViews=s[4]||'0', lsCount=s[5]||'0';
-  const subs=s[6]||'0', subsNew=s[7]||'0';
-  const eventsHeld=s[8]||'0', attendees=s[9]||'0';
-
-  let videos=[], eventsArr=[];
-  let sec='';
-  for(let i=2;i<rows.length;i++){
-    const r=rows[i];
-    if(!r[0])continue;
-    if(r[0]==='video_title'){sec='video';continue}
-    if(r[0]==='event_day'){sec='event';continue}
-    if(sec==='video')videos.push({title:r[0],views:r[1]||'0'});
-    if(sec==='event')eventsArr.push({day:r[0],mon:r[1],name:r[2],sub:r[3],status:r[4]||'upcoming'});
-  }
-
-  const maxV=videos.length?Math.max(...videos.map(v=>parseInt(v.views)||0),1):1;
-  const barColors=['#f59e0b','#f59e0b','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
-
-  document.getElementById('comms-body').innerHTML=`
-    <!-- CHANNEL STATS -->
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#2563eb"></div>
-        <div class="sec-hd-text">Channel Stats</div>
-      </div>
-      <div class="comms-grid">
-        <div class="c-card" style="background:#fff1f2;border-top-color:#f87171">
-          <div class="c-card-icon">🎬</div>
-          <div class="c-card-lbl">Video Views</div>
-          <div class="c-card-val">${fmt(videoViews)}</div>
-          <div class="c-card-sub">Across ${videoCount} videos</div>
-        </div>
-        <div class="c-card" style="background:#f0f9ff;border-top-color:#38bdf8">
-          <div class="c-card-icon">✍️</div>
-          <div class="c-card-lbl">Blog Views</div>
-          <div class="c-card-val">${fmt(blogViews)}</div>
-          <div class="c-card-sub">${articleCount} articles published</div>
-        </div>
-        <div class="c-card" style="background:#fffbeb;border-top-color:#fbbf24">
-          <div class="c-card-icon">📡</div>
-          <div class="c-card-lbl">Livestream Views</div>
-          <div class="c-card-val">${fmt(lsViews)}</div>
-          <div class="c-card-sub">${lsCount} forum(s)</div>
-        </div>
-        <div class="c-card" style="background:#f5f3ff;border-top-color:#a78bfa">
-          <div class="c-card-icon">👥</div>
-          <div class="c-card-lbl">Subscribers</div>
-          <div class="c-card-val">${fmt(subs)}</div>
-          <div class="c-card-sub">+${fmt(subsNew)} this month</div>
-        </div>
-        <div class="c-card" style="background:#f0fdf4;border-top-color:#34d399">
-          <div class="c-card-icon">📅</div>
-          <div class="c-card-lbl">Events Held</div>
-          <div class="c-card-val">${eventsHeld}</div>
-          <div class="c-card-sub">${fmt(attendees)}+ attendees</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOP VIDEOS -->
-    ${videos.length?`
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#f59e0b"></div>
-        <div class="sec-hd-text">Top Videos This Month</div>
-      </div>
-      <div>
-        ${videos.slice(0,6).map((v,i)=>{
-          const w=Math.round((parseInt(v.views)||0)/maxV*100);
-          return `<div class="ranked-item">
-            <div class="rank-n${i<2?' top':''}">${String(i+1).padStart(2,'0')}</div>
-            <div class="rank-body">
-              <div class="rank-name">${esc(v.title)}</div>
-              <div class="rank-bar-bg"><div class="rank-bar-fg" style="width:${w}%;background:${barColors[i]}"></div></div>
-            </div>
-            <div class="rank-views">${fmt(v.views)}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`:''}
-
-    <!-- EVENTS -->
-    ${eventsArr.length?`
-    <div class="sec">
-      <div class="sec-hd">
-        <div class="sec-hd-bar" style="background:#2563eb"></div>
-        <div class="sec-hd-text">Events This Month</div>
-      </div>
-      ${eventsArr.slice(0,6).map(e=>{
-        const sc={done:'eb-done',live:'eb-live',upcoming:'eb-up'}[e.status?.toLowerCase()]||'eb-up';
-        return `<div class="event-row">
-          <div class="ev-date"><div class="ev-day">${e.day||'—'}</div><div class="ev-mon">${e.mon||''}</div></div>
-          <div class="ev-body"><div class="ev-name">${esc(e.name)}</div><div class="ev-sub">${esc(e.sub||'')}</div></div>
-          <span class="ev-badge ${sc}">${(e.status||'Upcoming').toUpperCase()}</span>
-        </div>`;
-      }).join('')}
-    </div>`:''}
-  `;
+// ── MY REPORT ──────────────────────────────────────────────────────────────
+function populateMemberSelector(){
+  const sel=document.getElementById('my-report-member');
+  const myName=localStorage.getItem('wd_myname')||'';
+  const isAdmin=myName.toLowerCase()==='harshit';
+  const viewable=isAdmin?allMembers:allMembers.filter(m=>m.name.toLowerCase()===myName.toLowerCase());
+  sel.innerHTML=viewable.map(m=>`<option value="${m.id}"${m.name.toLowerCase()===myName.toLowerCase()?' selected':''}>${esc(m.name)}</option>`).join('');
 }
 
-// ── UTILS ──────────────────────────────────────────────────────────────────
-
-// ── FILTER STATE ─────────────────────────────────────────────────────────
-let activeFilters = { project:'', member:'', priority:'', status:'' };
-let chartInstances = {};
-
-function applyFilters() {
-  activeFilters.project  = document.getElementById('filter-project')?.value  || '';
-  activeFilters.member   = document.getElementById('filter-member')?.value   || '';
-  activeFilters.priority = document.getElementById('filter-priority')?.value || '';
-  activeFilters.status   = document.getElementById('filter-status')?.value   || '';
-  renderTaskPage();
-}
-window.applyFilters = applyFilters;
-
-window.clearFilters = () => {
-  ['filter-project','filter-member','filter-priority','filter-status'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  activeFilters = { project:'', member:'', priority:'', status:'' };
-  renderTaskPage();
-};
-
-function filterTasks(tasks) {
-  let result = [...tasks];
-  if (activeFilters.project)  result = result.filter(t => (t.project||'') === activeFilters.project);
-  if (activeFilters.member)   result = result.filter(t => (t.members||[]).some(m => m.name === activeFilters.member));
-  if (activeFilters.priority) result = result.filter(t => t.priority === activeFilters.priority);
-  if (activeFilters.status)   result = result.filter(t => t.status === activeFilters.status);
-  return result;
-}
-
-function populateFilters(mt) {
-  // Projects
-  const pSel = document.getElementById('filter-project');
-  if (pSel) {
-    const projects = [...new Set(mt.map(t => t.project).filter(Boolean))].sort();
-    const cur = pSel.value;
-    pSel.innerHTML = '<option value="">All Projects</option>' +
-      projects.map(p => `<option value="${esc(p)}" ${cur===p?'selected':''}>${esc(p)}</option>`).join('');
-  }
-  // Members
-  const mSel = document.getElementById('filter-member');
-  if (mSel) {
-    const memberNames = [...new Set(mt.flatMap(t => (t.members||[]).map(m=>m.name)))].sort();
-    const cur = mSel.value;
-    mSel.innerHTML = '<option value="">All Members</option>' +
-      memberNames.map(n => `<option value="${esc(n)}" ${cur===n?'selected':''}>${esc(n)}</option>`).join('');
-  }
-  // Update count
-  const filtered = filterTasks(mt);
-  const countEl = document.getElementById('filter-count');
-  const hasFilter = Object.values(activeFilters).some(v => v);
-  if (countEl) countEl.textContent = hasFilter ? `${filtered.length} of ${mt.length} tasks` : '';
-}
-
-// ── CHARTS ───────────────────────────────────────────────────────────────
-function destroyCharts() {
-  Object.values(chartInstances).forEach(ch => { try { ch.destroy() } catch(e){} });
-  chartInstances = {};
-}
-
-function renderCharts(mt) {
-  destroyCharts();
-  const chartsEl = document.getElementById('report-charts');
-  if (!chartsEl || !mt.length) { if(chartsEl) chartsEl.style.display='none'; return; }
-  chartsEl.style.display = '';
-
-  const chartDefaults = {
-    plugins: { legend: { display: false } },
-    animation: false,
-    responsive: true,
-    maintainAspectRatio: false,
-  };
-
-  // Chart 1: Status donut
-  const statusCounts = {
-    Done:       mt.filter(t=>t.status==='done').length,
-    'In Prog':  mt.filter(t=>t.status==='inprog').length,
-    Todo:       mt.filter(t=>t.status==='todo').length,
-  };
-  chartInstances.status = new Chart(document.getElementById('chart-status'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(statusCounts),
-      datasets: [{ data: Object.values(statusCounts),
-        backgroundColor: ['#059669','#d97706','#9ca3af'],
-        borderWidth: 0, borderRadius: 3,
-      }]
-    },
-    options: { ...chartDefaults,
-      plugins: { legend: { display: true, position:'bottom',
-        labels: { font:{size:9}, color:'#6b7280', boxWidth:10, padding:8 }
-      }}
-    }
-  });
-
-  // Chart 2: Priority bar
-  const prios = ['critical','high','medium','low'];
-  const prioCounts = prios.map(p => mt.filter(t=>t.priority===p).length);
-  chartInstances.priority = new Chart(document.getElementById('chart-priority'), {
-    type: 'bar',
-    data: {
-      labels: ['Critical','High','Medium','Low'],
-      datasets: [{ data: prioCounts,
-        backgroundColor: ['#dc2626','#d97706','#2563eb','#059669'],
-        borderRadius: 4, borderWidth: 0,
-      }]
-    },
-    options: { ...chartDefaults,
-      scales: {
-        x: { ticks:{font:{size:9},color:'#6b7280'}, grid:{display:false} },
-        y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
-      }
-    }
-  });
-
-  // Chart 3: By Member bar
-  const memberMap = {};
-  mt.forEach(t => {
-    (t.members||[]).forEach(m => {
-      if (!memberMap[m.name]) memberMap[m.name] = {done:0,total:0};
-      memberMap[m.name].total++;
-      const mid = m.id;
-      const ms = (t.memberStatus||{})[mid] || t.status;
-      if (ms === 'done') memberMap[m.name].done++;
-    });
-  });
-  const mNames = Object.keys(memberMap).sort();
-  const mColors = ['#6366f1','#8b5cf6','#ec4899','#06b6d4','#10b981','#f59e0b'];
-  chartInstances.member = new Chart(document.getElementById('chart-member'), {
-    type: 'bar',
-    data: {
-      labels: mNames.map(n => n.split(' ')[0]),
-      datasets: [
-        { label:'Done',  data: mNames.map(n=>memberMap[n].done),
-          backgroundColor: '#059669', borderRadius:3, borderWidth:0 },
-        { label:'Total', data: mNames.map(n=>memberMap[n].total),
-          backgroundColor: 'rgba(107,114,128,.25)', borderRadius:3, borderWidth:0 },
-      ]
-    },
-    options: { ...chartDefaults,
-      scales: {
-        x: { ticks:{font:{size:8},color:'#6b7280'}, grid:{display:false} },
-        y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
-      },
-      plugins: { legend:{ display:true, position:'bottom',
-        labels:{font:{size:9},color:'#6b7280',boxWidth:10,padding:8}
-      }}
-    }
-  });
-
-  // Chart 4: By Project bar
-  const projMap = {};
-  mt.forEach(t => {
-    const p = t.project || 'No Project';
-    if (!projMap[p]) projMap[p] = {done:0,total:0};
-    projMap[p].total++;
-    if (t.status==='done') projMap[p].done++;
-  });
-  const pNames = Object.keys(projMap).filter(p=>p!=='No Project').sort();
-  if (pNames.length === 0) {
-    document.getElementById('chart-project')?.closest('div[style]')?.remove();
-  } else {
-    chartInstances.project = new Chart(document.getElementById('chart-project'), {
-      type: 'bar',
-      data: {
-        labels: pNames.map(n => n.length > 14 ? n.slice(0,13)+'…' : n),
-        datasets: [
-          { label:'Done',  data: pNames.map(n=>projMap[n].done),
-            backgroundColor:'#7c3aed', borderRadius:3, borderWidth:0 },
-          { label:'Total', data: pNames.map(n=>projMap[n].total),
-            backgroundColor:'rgba(124,58,237,.2)', borderRadius:3, borderWidth:0 },
-        ]
-      },
-      options: { ...chartDefaults,
-        scales: {
-          x: { ticks:{font:{size:8},color:'#6b7280'}, grid:{display:false} },
-          y: { ticks:{font:{size:9},color:'#6b7280'}, grid:{color:'#f3f4f6'}, beginAtZero:true, stepSize:1 }
-        },
-        plugins: { legend:{ display:true, position:'bottom',
-          labels:{font:{size:9},color:'#6b7280',boxWidth:10,padding:8}
-        }}
-      }
-    });
-  }
-}
-
-// ── PDF EXPORT ────────────────────────────────────────────────────────────
-window.exportPDF = () => {
-  // Add PDF class to trigger print CSS
-  document.body.classList.add('printing-pdf');
-  window.print();
-  setTimeout(() => document.body.classList.remove('printing-pdf'), 1000);
-};
-
-// ── MY REPORT PERIOD ─────────────────────────────────────────────────────
-let myReportPeriod = 'month';
-
-window.setMyReportPeriod = (period, btn) => {
-  myReportPeriod = period;
-  document.querySelectorAll('.mr-period-btn').forEach(b => {
-    const isActive = b.dataset.period === period;
-    b.style.background    = isActive ? 'var(--neon)' : 'var(--bg3)';
-    b.style.color         = isActive ? '#0c0c0f' : 'var(--text2)';
-    b.style.borderColor   = isActive ? 'var(--neon)' : 'var(--border2)';
-  });
+window.setMyReportPeriod=(period,btn)=>{
+  myReportPeriod=period;
+  document.querySelectorAll('.rpt-period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===period));
   renderMyReport();
 };
 
-function getMyReportTasks(memberId) {
-  const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  // Find member name from allMembers — match by name in task members array
-  const memberObj = allMembers.find(m => m.id === memberId);
-  const memberName = memberObj ? memberObj.name.toLowerCase() : '';
+function getMyReportTasks(memberId){
+  const now=new Date();
+  const memberObj=allMembers.find(m=>m.id===memberId);
+  const memberName=memberObj?memberObj.name.toLowerCase():'';
+  const isMine=t=>memberName
+    ?(t.members||[]).some(m=>m.name&&m.name.toLowerCase()===memberName)
+    :(t.members||[]).some(m=>m.id===memberId);
 
-  // Task is "mine" if member name matches (robust to ID mismatches)
-  const isMine = t => memberName
-    ? (t.members||[]).some(m => m.name && m.name.toLowerCase() === memberName)
-    : (t.members||[]).some(m => m.id === memberId);
-
-  if (myReportPeriod === 'week') {
-    // Last 7 days — use createdAt OR include all tasks due/active this week
-    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
-    return allTasks.filter(t => {
-      if (!isMine(t)) return false;
-      // Include if created in last 7 days OR still active
-      if (t.status !== 'done') return true;
-      const ca = t.completedAt ? (t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) : null;
-      const cr = t.createdAt  ? (t.createdAt.toDate  ? t.createdAt.toDate()  : new Date(t.createdAt))  : null;
-      return (ca && ca >= cutoff) || (cr && cr >= cutoff);
+  if(myReportPeriod==='week'){
+    const cutoff=new Date(now); cutoff.setDate(cutoff.getDate()-7);
+    return allTasks.filter(t=>{
+      if(!isMine(t)) return false;
+      if(t.status!=='done') return true;
+      const ca=t.completedAt?(t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt)):null;
+      const cr=t.createdAt?(t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt)):null;
+      return (ca&&ca>=cutoff)||(cr&&cr>=cutoff);
     });
-  } else if (myReportPeriod === 'quarter') {
-    // Last 3 months
-    const months = [];
-    for (let i = 0; i < 3; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);
-    }
-    return allTasks.filter(t => isMine(t) && months.includes(t.month));
+  } else if(myReportPeriod==='quarter'){
+    const months=[];
+    for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);}
+    return allTasks.filter(t=>isMine(t)&&months.includes(t.month));
   } else {
-    // This month (default)
-    return allTasks.filter(t => t.month === selMonth && isMine(t));
+    return allTasks.filter(t=>t.month===selMonth&&isMine(t));
   }
 }
 
-function getPeriodLabel() {
-  if (myReportPeriod === 'week') return 'Last 7 Days';
-  if (myReportPeriod === 'quarter') return 'Last Quarter (3 months)';
-  const [y,m] = selMonth.split('-');
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return MONTHS[parseInt(m)-1] + ' ' + y;
+function getPeriodLabel(){
+  if(myReportPeriod==='week') return 'Last 7 Days';
+  if(myReportPeriod==='quarter') return 'Last Quarter (3 months)';
+  return monthLabel(selMonth);
 }
 
-// ── MY REPORT RENDER ─────────────────────────────────────────────────────window.renderMyReport = renderMyReport;
+window.renderMyReport=()=>{
+  const sel=document.getElementById('my-report-member');
+  const memberId=sel?.value;
+  const member=allMembers.find(m=>m.id===memberId);
+  const el=document.getElementById('my-report-content');
+  if(!member){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">👤</div>No member selected</div>`;return;}
 
-// ── MY REPORT PDF EXPORT ──────────────────────────────────────────────────
-window.exportMyReportPDF = () => {
-  const sel   = document.getElementById('my-report-member');
-  const member = allMembers.find(m => m.id === sel?.value);
-  if (!member) return;
+  const mt=getMyReportTasks(memberId);
+  if(!mt.length){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📋</div>No tasks found for ${getPeriodLabel()}</div>`;return;}
 
-  const periodLabel = getPeriodLabel();
-  const mt = getMyReportTasks(sel.value);
-  const memberId = sel.value;
-
-  const totalDone = mt.filter(t => (t.memberStatus||{})[memberId]==='done'||t.status==='done').length;
-  const total = mt.length;
-  const pct   = total ? Math.round(totalDone/total*100) : 0;
-  const pColor = pct>=80?'#059669':pct>=50?'#d97706':'#dc2626';
+  const totalDone=mt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+  const total=mt.length;
+  const pct=total?Math.round(totalDone/total*100):0;
+  const pc=pctColor(pct);
+  const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
 
   // Group by project
-  const byProj = {};
-  mt.forEach(t => {
-    const p = t.project || '— No Project —';
-    if(!byProj[p]) byProj[p] = [];
-    byProj[p].push(t);
-  });
-  const projKeys = Object.keys(byProj).sort((a,b)=>{
-    if(a==='— No Project —') return 1;
-    if(b==='— No Project —') return -1;
-    return a.localeCompare(b);
+  const byProj={};
+  mt.forEach(t=>{const p=t.project||'';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
+  const projKeys=Object.keys(byProj).sort((a,b)=>{if(!a)return 1;if(!b)return-1;return a.localeCompare(b);});
+
+  const mbcTasks=mt.filter(t=>(t.taskType||'mbc')==='mbc');
+  const indTasks=mt.filter(t=>t.taskType==='individual');
+
+  el.innerHTML=`
+    <!-- Ring summary -->
+    <div class="panel" style="padding:14px 16px;margin-bottom:12px">
+      <div class="rpt-ring-wrap">
+        <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
+          <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
+          <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 42 42)"/>
+          <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
+        </svg>
+        <div class="rpt-ring-labels">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px">${esc(member.name)}</div>
+          <div class="rpt-ring-pct" style="color:${pc};font-size:18px">${pct}% complete</div>
+          <div class="rpt-ring-sub">${totalDone}/${total} tasks · ${getPeriodLabel()}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="rpt-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${totalDone}</div><div class="rpt-stat-l">Done</div></div>
+      <div class="rpt-stat"><div class="rpt-stat-n" style="color:${pc}">${pct}%</div><div class="rpt-stat-l">Complete</div></div>
+    </div>
+
+    <!-- By project -->
+    ${projKeys.filter(k=>k).length?`
+    <div class="rpt-sec-hd"><div class="rpt-sec-title">By Project</div></div>
+    ${projKeys.filter(k=>k).map((proj,idx)=>{
+      const pt=byProj[proj];
+      const pd=pt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+      const pp=pt.length?Math.round(pd/pt.length*100):0;
+      const pc2=pctColor(pp);
+      return `<div class="rpt-project">
+        <div class="rpt-project-hd" onclick="toggleProject('mrp-${idx}')">
+          <div class="rpt-project-name">&#128193; ${esc(proj)}</div>
+          <div class="rpt-project-meta">
+            <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
+            <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
+            <span class="rpt-project-arrow" id="mrp-arr-${idx}">▾</span>
+          </div>
+        </div>
+        <div class="rpt-project-body" id="mrp-${idx}" style="display:none">
+          ${pt.map(t=>taskRowHTML(t)).join('')}
+        </div>
+      </div>`;
+    }).join('')}`:''}
+
+    <!-- MBC Tasks -->
+    ${mbcTasks.length?`
+    <div class="rpt-sec-hd"><div class="rpt-sec-title">MBC Tasks</div><div class="rpt-sec-count">${mbcTasks.length}</div></div>
+    ${mbcTasks.map(t=>taskRowHTML(t)).join('')}`:''}
+
+    <!-- Individual Tasks -->
+    ${indTasks.length?`
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Individual Tasks</div><div class="rpt-sec-count">${indTasks.length}</div></div>
+    ${indTasks.map(t=>taskRowHTML(t)).join('')}`:''}
+  `;
+};
+
+// ── WEEKLY DIGEST ──────────────────────────────────────────────────────────
+function renderWeekly(){
+  const now=new Date();
+  const monday=new Date(now); monday.setDate(now.getDate()-((now.getDay()+6)%7));
+  const toStr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const mondayStr=toStr(monday), todayStr=toStr(now);
+
+  const weekTasks=allTasks.filter(t=>{
+    if((t.taskType||'mbc')!=='mbc') return false;
+    const cr=t.createdAt?(t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt)):null;
+    const ca=t.completedAt?(t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt)):null;
+    if(t.status!=='done') return true;
+    return (ca&&toStr(ca)>=mondayStr)||(cr&&toStr(cr)>=mondayStr);
   });
 
-  function pdfTaskRow(t) {
-    const ms = (t.memberStatus||{})[memberId] || t.status || 'todo';
-    const sc = ms==='done'?'#059669':ms==='inprog'?'#d97706':'#6b7280';
-    const si = ms==='done'?'✓':ms==='inprog'?'↻':'○';
-    const pCol = {critical:'#dc2626',high:'#d97706',medium:'#2563eb',low:'#6b7280'}[t.priority||'medium'];
+  const done=weekTasks.filter(t=>t.status==='done');
+  const inprog=weekTasks.filter(t=>t.status==='inprog');
+  const todo=weekTasks.filter(t=>t.status==='todo');
+
+  // Member stats
+  const memberStats={};
+  weekTasks.forEach(t=>{(t.members||[]).forEach(m=>{
+    if(!memberStats[m.name]) memberStats[m.name]={done:0,total:0};
+    memberStats[m.name].total++;
+    const ms=(t.memberStatus||{})[m.id]||t.status;
+    if(ms==='done') memberStats[m.name].done++;
+  });});
+
+  const weekLabel=`Mon ${fmtDate(mondayStr)} — ${fmtDate(todayStr)}`;
+  const el=document.getElementById('weekly-content');
+
+  el.innerHTML=`
+    <div class="panel-hd" style="margin:-0px -0px 12px;padding:0 0 12px;border-bottom:1px solid var(--border)">
+      <div class="panel-title">Weekly Digest</div>
+      <div style="font-size:11px;color:var(--text3)">${weekLabel}</div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--green)">${done.length}</div><div class="digest-stat-l">Done</div></div>
+      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--amber)">${inprog.length}</div><div class="digest-stat-l">In Prog</div></div>
+      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--text2)">${todo.length}</div><div class="digest-stat-l">Todo</div></div>
+    </div>
+
+    <!-- Done this week -->
+    ${done.length?`
+    <div class="rpt-sec-hd"><div class="rpt-sec-title">Completed This Week</div><div class="rpt-sec-count">${done.length}</div></div>
+    ${done.map(t=>taskRowHTML(t)).join('')}`:`<div class="rpt-empty" style="padding:16px"><div class="rpt-empty-icon">✅</div>No tasks completed yet this week</div>`}
+
+    <!-- In progress -->
+    ${inprog.length?`
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">In Progress</div><div class="rpt-sec-count">${inprog.length}</div></div>
+    ${inprog.map(t=>taskRowHTML(t)).join('')}`:''}
+
+    <!-- Team -->
+    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Team This Week</div></div>
+    ${Object.entries(memberStats).sort((a,b)=>b[1].done-a[1].done).map(([name,s])=>{
+      const mp=s.total?Math.round(s.done/s.total*100):0;
+      const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      return `<div class="rpt-member-row">
+        <div class="rpt-member-av">${initials}</div>
+        <div class="rpt-member-info">
+          <div class="rpt-member-name">${esc(name)}</div>
+          <div class="rpt-member-bar-bg"><div class="rpt-member-bar-fill" style="width:${mp}%"></div></div>
+        </div>
+        <div class="rpt-member-pct">${s.done}/${s.total}</div>
+      </div>`;
+    }).join('') || '<div class="rpt-empty" style="padding:12px">No assignments this week</div>'}
+
+    <!-- Copy for WhatsApp -->
+    <button onclick="copyWeeklyDigest()" style="width:100%;margin-top:16px;padding:12px;border-radius:var(--r);border:none;background:var(--neon2);color:#0c0c0f;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">
+      📋 Copy for WhatsApp
+    </button>
+  `;
+
+  // Store for copy
+  window._weekDigestData={done,inprog,memberStats,weekLabel};
+}
+window.renderWeekly=renderWeekly;
+
+window.copyWeeklyDigest=()=>{
+  const d=window._weekDigestData; if(!d) return;
+  const nl='\n';
+  const doneTxt=d.done.map(t=>'  • '+t.label+(t.members?.length?' ('+t.members.map(m=>m.name).join(', ')+')':'')).join(nl)||'  None';
+  const inpTxt=d.inprog.map(t=>'  • '+t.label).join(nl)||'  None';
+  const memTxt=Object.entries(d.memberStats).sort((a,b)=>b[1].done-a[1].done).map(([n,s])=>'  '+n+': '+s.done+'/'+s.total).join(nl)||'  None';
+  const txt='📊 WorkDesk Weekly Digest'+nl+d.weekLabel+nl+nl+'✅ Completed ('+d.done.length+'):'+nl+doneTxt+nl+nl+'🔄 In Progress ('+d.inprog.length+'):'+nl+inpTxt+nl+nl+'👥 Team:'+nl+memTxt;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=event.target; b.textContent='✓ Copied!';
+    setTimeout(()=>b.textContent='📋 Copy for WhatsApp',2000);
+  });
+};
+
+// ── PDF EXPORTS ────────────────────────────────────────────────────────────
+window.exportPDF=()=>{
+  window.print();
+};
+
+window.exportMyReportPDF=()=>{
+  const sel=document.getElementById('my-report-member');
+  const member=allMembers.find(m=>m.id===sel?.value);
+  if(!member) return;
+  const mt=getMyReportTasks(sel.value);
+  const memberId=sel.value;
+  const periodLabel=getPeriodLabel();
+
+  const totalDone=mt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+  const total=mt.length;
+  const pct=total?Math.round(totalDone/total*100):0;
+  const pc=pct>=80?'#34c759':pct>=50?'#ff9f0a':'#ff453a';
+
+  const byProj={};
+  mt.forEach(t=>{const p=t.project||'— No Project —';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
+  const projKeys=Object.keys(byProj).sort((a,b)=>{if(a==='— No Project —')return 1;if(b==='— No Project —')return-1;return a.localeCompare(b);});
+
+  function pdfRow(t){
+    const ms=(t.memberStatus||{})[memberId]||t.status||'todo';
+    const sc=ms==='done'?'#34c759':ms==='inprog'?'#ff9f0a':'#6b7280';
+    const si=ms==='done'?'✓':ms==='inprog'?'↻':'○';
+    const pc2={critical:'#dc2626',high:'#d97706',medium:'#2563eb',low:'#6b7280'}[t.priority||'medium'];
     return `<tr style="border-bottom:1px solid #f3f4f6">
-      <td style="padding:5px 8px;font-size:10px;color:${sc};font-weight:700">${si}</td>
-      <td style="padding:5px 8px;font-size:11px;color:#111827">${esc(t.label)}</td>
-      <td style="padding:5px 8px;font-size:9px;font-weight:700;color:${pCol};text-transform:uppercase">${t.priority||'medium'}</td>
+      <td style="padding:5px 8px;font-size:11px;color:${sc};font-weight:700">${si}</td>
+      <td style="padding:5px 8px;font-size:11px;color:#111">${esc(t.label)}</td>
+      <td style="padding:5px 8px;font-size:9px;font-weight:700;color:${pc2};text-transform:uppercase">${t.priority||'med'}</td>
       <td style="padding:5px 8px;font-size:10px;color:#6b7280">${t.taskDueDate?fmtDate(t.taskDueDate):''}</td>
     </tr>`;
   }
 
-  const projectSections = projKeys.map(proj => {
-    const ptasks = byProj[proj];
-    const pdone  = ptasks.filter(t=>(t.memberStatus||{})[memberId]==='done'||t.status==='done').length;
-    const ppct   = ptasks.length?Math.round(pdone/ptasks.length*100):0;
-    const pbar   = ppct>=80?'#059669':ppct>=50?'#d97706':'#dc2626';
+  const sections=projKeys.map(proj=>{
+    const pt=byProj[proj];
+    const pd=pt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+    const pp=pt.length?Math.round(pd/pt.length*100):0;
+    const pbar=pp>=80?'#34c759':pp>=50?'#ff9f0a':'#dc2626';
     return `<div style="margin-bottom:16px;page-break-inside:avoid">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:4px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;background:#f5f3ff;border-left:3px solid #5e5ce6;border-radius:4px;margin-bottom:4px">
         <span style="font-weight:800;font-size:11px;color:#1e1b4b">&#128193; ${esc(proj)}</span>
-        <span style="font-size:10px;font-weight:700;color:${pbar}">${pdone}/${ptasks.length} done &middot; ${ppct}%</span>
+        <span style="font-size:10px;font-weight:700;color:${pbar}">${pd}/${pt.length} · ${pp}%</span>
       </div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="background:#f9fafb">
-          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:28px"></th>
-          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280">Task</th>
-          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:70px">Priority</th>
-          <th style="padding:5px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:70px">Due</th>
+          <th style="padding:4px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:24px"></th>
+          <th style="padding:4px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280">Task</th>
+          <th style="padding:4px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:64px">Priority</th>
+          <th style="padding:4px 8px;font-size:9px;font-weight:700;text-align:left;color:#6b7280;width:60px">Due</th>
         </tr></thead>
-        <tbody>${ptasks.map(pdfTaskRow).join('')}</tbody>
+        <tbody>${pt.map(pdfRow).join('')}</tbody>
       </table>
     </div>`;
   }).join('');
 
-  const win = window.open('', '_blank');
+  const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head>
     <title>My Report — ${esc(member.name)} — ${periodLabel}</title>
-    <style>
-      * { box-sizing:border-box; margin:0; padding:0 }
-      body { font-family: 'DM Sans',system-ui,sans-serif; color:#111827; background:#fff; padding:0 }
-      @page { size:A4; margin:16mm 14mm }
-      @media print { body { padding:0 } .no-print { display:none } }
-    </style>
+    <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;color:#111;padding:0}@page{size:A4;margin:16mm 14mm}@media print{.no-print{display:none}}</style>
   </head><body>
-    <!-- How to read this report -->
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px 16px;margin-bottom:20px;page-break-inside:avoid">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#059669;margin-bottom:6px">📖 How to Read This Report</div>
-      <div style="font-size:10px;color:#374151;line-height:1.6">
-        This is a personal task summary for <strong>${esc(member.name)}</strong> covering <strong>${periodLabel}</strong>.
-        Tasks are grouped by project. ✓ = Completed &nbsp;·&nbsp; ↻ = In Progress &nbsp;·&nbsp; ○ = Todo.
-        Completion % shown per project and overall. Use this to review workload distribution and track progress across initiatives.
-      </div>
+    <!-- How to read -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin-bottom:16px">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#059669;margin-bottom:4px">📖 How to Read This Report</div>
+      <div style="font-size:10px;color:#374151;line-height:1.6">Tasks for <strong>${esc(member.name)}</strong> · <strong>${periodLabel}</strong>. Grouped by project. ✓ Done &nbsp;·&nbsp; ↻ In Progress &nbsp;·&nbsp; ○ Todo. Percentage shows completion per project and overall.</div>
     </div>
-
     <!-- Header -->
-    <div style="background:#111827;color:#fff;padding:20px 24px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:#111827;color:#fff;padding:18px 22px;border-radius:6px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">BBM-IN · M/MBC-IN · Internal Communications</div>
-        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">My Report<br><span style="color:#00d2a8">${esc(member.name)}</span></div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">BBM-IN · M/MBC-IN · Internal Communications</div>
+        <div style="font-size:18px;font-weight:800">My Report · <span style="color:#0a84ff">${esc(member.name)}</span></div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:11px;color:rgba(255,255,255,.6)">Period</div>
-        <div style="font-size:14px;font-weight:700;color:#fff">${periodLabel}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:4px">${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">Period</div>
+        <div style="font-size:13px;font-weight:700">${periodLabel}</div>
+        <div style="font-size:22px;font-weight:800;color:${pc};margin-top:4px">${pct}%</div>
       </div>
     </div>
-
-    <!-- Summary stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-      <div style="text-align:center;padding:10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">
-        <div style="font-size:22px;font-weight:800;color:#111827">${total}</div>
-        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Total</div>
-      </div>
-      <div style="text-align:center;padding:10px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0">
-        <div style="font-size:22px;font-weight:800;color:#059669">${totalDone}</div>
-        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Done</div>
-      </div>
-      <div style="text-align:center;padding:10px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a">
-        <div style="font-size:22px;font-weight:800;color:#d97706">${total-totalDone}</div>
-        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Pending</div>
-      </div>
-      <div style="text-align:center;padding:10px;background:${pct>=80?'#f0fdf4':pct>=50?'#fffbeb':'#fef2f2'};border-radius:6px;border:1px solid ${pct>=80?'#bbf7d0':pct>=50?'#fde68a':'#fecaca'}">
-        <div style="font-size:22px;font-weight:800;color:${pColor}">${pct}%</div>
-        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Complete</div>
-      </div>
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div style="text-align:center;padding:10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb"><div style="font-size:20px;font-weight:800;color:#111">${total}</div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;font-weight:700">Total</div></div>
+      <div style="text-align:center;padding:10px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0"><div style="font-size:20px;font-weight:800;color:#059669">${totalDone}</div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;font-weight:700">Done</div></div>
+      <div style="text-align:center;padding:10px;background:${pct>=80?'#f0fdf4':pct>=50?'#fffbeb':'#fef2f2'};border-radius:6px;border:1px solid ${pct>=80?'#bbf7d0':pct>=50?'#fde68a':'#fecaca'}"><div style="font-size:20px;font-weight:800;color:${pc}">${pct}%</div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;font-weight:700">Complete</div></div>
     </div>
-
-    <!-- Projects -->
-    ${projectSections}
-
-    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between">
-      <span>WorkDesk · BBM-IN · MBC-IN Internal Communications</span>
+    ${sections}
+    <div style="margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between">
+      <span>WorkDesk · BBM-IN · MBC-IN</span>
       <span>Generated ${new Date().toLocaleString('en-GB')}</span>
     </div>
   </body></html>`);
   win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); }, 400);
+  setTimeout(()=>win.print(),400);
 };
 
-// ── FILTER POPULATION ON LOAD ─────────────────────────────────────────────
-const _origRenderTaskPage = renderTaskPage;
-
-window.toggleMyReport = () => {
-  const panel = document.getElementById('my-report-panel');
-  const isOpen = panel.style.display !== 'none';
-  if (isOpen) { panel.style.display = 'none'; return; }
-
-  // Populate member selector
-  const sel = document.getElementById('my-report-member');
-  const myName = localStorage.getItem('wd_myname') || '';
-  const isAdmin = myName.toLowerCase() === 'harshit';
-  sel.innerHTML = '';
-  const viewable = isAdmin ? allMembers : allMembers.filter(m => m.name.toLowerCase() === myName.toLowerCase());
-  viewable.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.id; opt.textContent = m.name;
-    if (m.name.toLowerCase() === myName.toLowerCase()) opt.selected = true;
-    sel.appendChild(opt);
-  });
-
-  // Set period buttons to default state
-  document.querySelectorAll('.mr-period-btn').forEach(b => {
-    const isActive = b.dataset.period === myReportPeriod;
-    b.style.background  = isActive ? 'var(--neon)' : 'var(--bg3)';
-    b.style.color       = isActive ? '#0c0c0f' : 'var(--text2)';
-    b.style.borderColor = isActive ? 'var(--neon)' : 'var(--border2)';
-  });
-
-  renderMyReport();
-  panel.style.display = '';
-  panel.scrollIntoView({ behavior: 'smooth' });
-};
-
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${day} ${mo[parseInt(m)-1]}`}
-window.toggleWeeklyDigest = () => {
-  const el = document.getElementById('weekly-digest');
-  if (el.style.display !== 'none') { el.style.display='none'; return; }
-
-  // This week: Monday to today
-  const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay()+6)%7));
-  const mondayStr = monday.toISOString().slice(0,10);
-  const todayStr  = today.toISOString().slice(0,10);
-
-  const weekTasks = allTasks.filter(t => {
-    const d = t.dueDate || (t.month ? t.month + '-01' : null);
-    return d && d >= mondayStr && d <= todayStr;
-  });
-
-  const done    = weekTasks.filter(t => t.status === 'done');
-  const inprogL = weekTasks.filter(t => t.status === 'inprog');
-  const todo    = weekTasks.filter(t => t.status === 'todo');
-
-  const weekLabel = monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
-    + ' – ' + today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-
-  // Member stats
-  const memberStats = {};
-  weekTasks.forEach(t => {
-    (t.members||[]).forEach(m => {
-      if (!memberStats[m.name]) memberStats[m.name] = { done:0, total:0 };
-      memberStats[m.name].total++;
-      const ms = t.memberStatus || {};
-      const memberId = allMembers.find(mm => mm.name === m.name)?.id;
-      if (memberId && ms[memberId] === 'done') memberStats[m.name].done++;
-    });
-  });
-
-  // Build rich HTML for screen display
-  const doneHTML = done.length ? done.map(t => {
-    const members = (t.members||[]).map(m=>m.name).join(', ');
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-      <span style="color:#34c759;font-size:14px;flex-shrink:0">✅</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(t.label)}</div>
-        ${members ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">👥 ${esc(members)}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('') : '<div style="font-size:12px;color:var(--text3);padding:6px 0">None this week</div>';
-
-  const inprogHTML = inprogL.length ? inprogL.map(t => {
-    const members = (t.members||[]).map(m=>m.name).join(', ');
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-      <span style="color:#f59e0b;font-size:14px;flex-shrink:0">🔄</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(t.label)}</div>
-        ${members ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">👥 ${esc(members)}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('') : '<div style="font-size:12px;color:var(--text3);padding:6px 0">None</div>';
-
-  // Calendar comms this week
-  const weekComms = Object.entries(calendarEvents)
-    .filter(([d]) => d >= mondayStr && d <= todayStr)
-    .flatMap(([d, evts]) => evts.map(ev => ({...ev, date:d})));
-  const commsSent    = weekComms.filter(e => e.status === 'Sent');
-  const commsPlanned = weekComms.filter(e => e.status === 'Planned');
-  const commsDelayed = weekComms.filter(e => e.status === 'Delayed');
-
-  const commsHTML = weekComms.length ? `
-    <div style="margin-bottom:14px">
-      <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">📡 Communications</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:8px">
-          <div style="font-size:18px;font-weight:800;color:#34d399">${commsSent.length}</div>
-          <div style="font-size:9px;color:var(--text2);font-weight:700">SENT</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:8px">
-          <div style="font-size:18px;font-weight:800;color:#60a5fa">${commsPlanned.length}</div>
-          <div style="font-size:9px;color:var(--text2);font-weight:700">PLANNED</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:8px">
-          <div style="font-size:18px;font-weight:800;color:#f87171">${commsDelayed.length}</div>
-          <div style="font-size:9px;color:var(--text2);font-weight:700">DELAYED</div>
-        </div>
-      </div>
-      ${commsSent.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-        <span style="color:#34d399;font-size:13px">✅</span>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${esc(e.subject)}</div>
-          <div style="font-size:10px;color:var(--text2)">${e.type} · ${e.date}</div>
-        </div>
-      </div>`).join('')}
-    </div>` : '';
-
-  const memberHTML = Object.entries(memberStats)
-    .sort((a,b) => b[1].done - a[1].done)
-    .map(([name,s]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-      <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(name)}</span>
-      <span style="font-size:12px;color:var(--text2)">${s.done}/${s.total} done</span>
-    </div>`).join('') || '<div style="font-size:12px;color:var(--text3)">No assignments this week</div>';
-
-  document.getElementById('digest-content').innerHTML = commsHTML + `
-    <div style="margin-bottom:6px;font-size:12px;color:var(--text2);font-weight:600">${weekLabel}</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.2);border-radius:10px">
-        <div style="font-size:22px;font-weight:800;color:#34c759">${done.length}</div>
-        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">Done</div>
-      </div>
-      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px">
-        <div style="font-size:22px;font-weight:800;color:#f59e0b">${inprogL.length}</div>
-        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">In Prog</div>
-      </div>
-      <div style="flex:1;min-width:80px;text-align:center;padding:10px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);border-radius:10px">
-        <div style="font-size:22px;font-weight:800;color:var(--text2)">${todo.length}</div>
-        <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase">Todo</div>
-      </div>
-    </div>
-    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">✅ Completed This Week</div>
-    <div style="margin-bottom:14px">${doneHTML}</div>
-    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">🔄 In Progress</div>
-    <div style="margin-bottom:14px">${inprogHTML}</div>
-    <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">👥 Team This Week</div>
-    <div>${memberHTML}</div>
-  `;
-
-  // Plain text for WhatsApp copy
-  const nl = String.fromCharCode(10);
-  const doneTxt = done.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
-  const inpTxt  = inprogL.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m=>m.name).join(', ') + ')' : '')).join(nl) || '  None';
-  const memTxt  = Object.entries(memberStats).sort((a,b)=>b[1].done-a[1].done).map(([n,s])=>'  ' + n + ': ' + s.done + '/' + s.total).join(nl) || '  None';
-  const commsTxt = weekComms.length
-    ? String.fromCharCode(10) + '📡 Communications:' + String.fromCharCode(10)
-      + '  Sent: ' + commsSent.length + ', Planned: ' + commsPlanned.length + ', Delayed: ' + commsDelayed.length
-      + (commsSent.length ? String.fromCharCode(10) + commsSent.map(e => '  ✅ ' + e.subject + ' (' + e.type + ')').join(String.fromCharCode(10)) : '')
-    : '';
-
-  el._text = '📊 WorkDesk Weekly Digest' + nl + weekLabel + nl + nl
-    + '✅ Completed (' + done.length + '):' + nl + doneTxt + nl + nl
-    + '🔄 In Progress (' + inprogL.length + '):' + nl + inpTxt + nl + nl
-    + '👥 Team:' + nl + memTxt + commsTxt;
-
-  el.style.display = '';
-  el.scrollIntoView({ behavior: 'smooth' });
-};
-
-
-function renderMyReport() {
-  const sel = document.getElementById('my-report-member');
-  const memberId = sel.value;
-  const member = allMembers.find(m => m.id === memberId);
-  if (!member) return;
-
-  const mt = allTasks.filter(t =>
-    t.month === selMonth &&
-    (t.members||[]).some(m => m.id === memberId)
-  );
-
-  const mbcTasks = mt.filter(t => (t.taskType||'mbc') === 'mbc');
-  const indTasks = mt.filter(t => t.taskType === 'individual');
-
-  const done   = mt.filter(t => (t.memberStatus||{})[memberId] === 'done' || t.status === 'done').length;
-  const inprog = mt.filter(t => t.status === 'inprog').length;
-  const total  = mt.length;
-
-  function mrTaskRow(t) {
-    const ms = (t.memberStatus||{})[memberId] || t.status || 'todo';
-    const stColor = ms==='done' ? '#34d399' : ms==='inprog' ? '#f59e0b' : '#9ca3af';
-    const stIcon  = ms==='done' ? '✅' : ms==='inprog' ? '🔄' : '📋';
-    const mData = (t.members||[]).find(m => m.id === memberId);
-    return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-        <span style="font-size:12px">${stIcon}</span>
-        <span style="font-size:13px;font-weight:700;color:var(--text);flex:1">${esc(t.label)}</span>
-        <span style="font-size:10px;font-weight:700;color:${stColor}">${ms}</span>
-      </div>
-      ${mData?.role ? `<div style="font-size:11px;color:var(--text2);padding-left:20px">Resp: ${esc(mData.role)}</div>` : ''}
-    </div>`;
-  }
-
-  const MONTHS_ARR = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const [y,m] = selMonth.split('-');
-  const monthLabel = MONTHS_ARR[parseInt(m)-1] + ' ' + y;
-
-  document.getElementById('my-report-content').innerHTML = `
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${monthLabel} · ${member.name}</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <div style="flex:1;text-align:center;padding:8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:10px">
-        <div style="font-size:20px;font-weight:800;color:#34d399">${done}</div>
-        <div style="font-size:9px;color:var(--text2);font-weight:700">DONE</div>
-      </div>
-      <div style="flex:1;text-align:center;padding:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px">
-        <div style="font-size:20px;font-weight:800;color:#f59e0b">${inprog}</div>
-        <div style="font-size:9px;color:var(--text2);font-weight:700">IN PROG</div>
-      </div>
-      <div style="flex:1;text-align:center;padding:8px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);border-radius:10px">
-        <div style="font-size:20px;font-weight:800;color:var(--text2)">${total}</div>
-        <div style="font-size:9px;color:var(--text2);font-weight:700">TOTAL</div>
-      </div>
-    </div>
-    ${mbcTasks.length ? `
-      <div style="font-size:10px;font-weight:800;color:var(--neon);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">🏢 MBC Tasks (${mbcTasks.length})</div>
-      ${mbcTasks.map(taskRow).join('')}
-    ` : ''}
-    ${indTasks.length ? `
-      <div style="font-size:10px;font-weight:800;color:var(--purple);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px">👤 Individual Tasks (${indTasks.length})</div>
-      ${indTasks.map(taskRow).join('')}
-    ` : ''}
-    ${!total ? '<div style="text-align:center;padding:20px;font-size:13px;color:var(--text3)">No tasks this month</div>' : ''}
-  `;
-}
-
-window.copyDigest = () => {
-  const el = document.getElementById('weekly-digest');
-  const text = el._text || '';
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = el.querySelector('button');
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => btn.textContent = '📋 Copy for WhatsApp', 2000);
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy');
-    ta.remove();
-  });
-};
-
-function fmt(v){const n=parseFloat(String(v).replace(/,/g,''));if(isNaN(n))return v;if(n>=1000)return(n/1000).toFixed(1).replace(/\.0$/,'')+'K';return String(Math.round(n))}
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
-  });
-}
-</script>
-
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item">
-    <span class="bn-icon">⊞</span>
-    <span class="bn-label">Dashboard</span>
-  </a>
-  <a href="input.html" class="bn-item">
-    <span class="bn-icon">＋</span>
-    <span class="bn-label">Input</span>
-  </a>
-  <a href="report.html" class="bn-item active">
-    <span class="bn-icon">▤</span>
-    <span class="bn-label">Report</span>
-  </a>
-  <a href="calendar.html" class="bn-item">
-    <span class="bn-icon">📅</span>
-    <span class="bn-label">Calendar</span>
-  </a>
-</nav>
 </body>
 </html>
