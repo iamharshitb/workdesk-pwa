@@ -469,3 +469,24 @@ export async function restoreBackup(backup) {
 
   return results;
 }
+
+// ── PROJECTS ──────────────────────────────────────────────────────────────
+export async function getProjects() {
+  try {
+    const snap = await getDocs(wsCol("projects"));
+    return snap.docs.reduce((acc, d) => { acc[d.id] = d.data(); return acc; }, {});
+  } catch(e) { return {}; }
+}
+
+export async function setProjectComplete(projectName, completedMonth) {
+  // completedMonth = 'YYYY-MM' — project hides from reports after this month
+  await setDoc(doc(db, "workspaces", WORKSPACE_ID, "projects", btoa(projectName)), {
+    name: projectName,
+    completedMonth,
+    completedAt: serverTimestamp(),
+  });
+}
+
+export async function reopenProject(projectName) {
+  await deleteDoc(doc(db, "workspaces", WORKSPACE_ID, "projects", btoa(projectName)));
+}

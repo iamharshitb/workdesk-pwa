@@ -291,7 +291,7 @@
 </nav>
 
 <script type="module">
-import { onUserReady, getTasks, getMembers, getCalendarEvents } from './js/firebase.js';
+import { onUserReady, getTasks, getMembers, getCalendarEvents, getProjects, setProjectComplete, reopenProject } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, getMuted, toggleMute } from './js/sounds.js';
 initTheme();
@@ -302,7 +302,7 @@ window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
 updateMuteBtn();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
-let allTasks=[], allMembers=[], calendarEvents={};
+let allTasks=[], allMembers=[], calendarEvents={}, projectsData={};
 let selMonth='';
 let activeFilters={project:'',member:'',priority:'',status:''};
 let chartInstances={};
@@ -334,7 +334,7 @@ window.loadReport=()=>{
 };
 
 onUserReady(async()=>{
-  [allTasks,allMembers,calendarEvents]=await Promise.all([getTasks(),getMembers(),getCalendarEvents()]);
+  [allTasks,allMembers,calendarEvents,projectsData]=await Promise.all([getTasks(),getMembers(),getCalendarEvents(),getProjects()]);
   populateMemberSelector();
   renderActiveTab();
 });
@@ -358,6 +358,19 @@ window.switchRptTab=(tab)=>{
 };
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
+function isProjectCompleted(projName, month) {
+  // A project is hidden if it was completed in a PREVIOUS month
+  const p = projectsData[btoa(projName)];
+  if (!p || !p.completedMonth) return false;
+  return p.completedMonth < month; // hide only from months AFTER completion
+}
+
+function isProjectCompletedForMonth(projName, month) {
+  const p = projectsData[btoa(projName)];
+  if (!p) return false;
+  return !!p.completedMonth;
+}
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day} ${MONTHS[parseInt(m)-1]}`;}
 function monthLabel(m){const[y,mo]=m.split('-');return MONTHS[parseInt(mo)-1]+' '+y;}
@@ -510,7 +523,13 @@ function taskRowHTML(t){
 
 // ── MONTHLY REPORT ─────────────────────────────────────────────────────────
 function renderMonthly(){
-  const allMt=allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
+  // Filter tasks: exclude projects completed in a prior month
+  const allMt=allTasks.filter(t=>{
+    if(t.month!==selMonth) return false;
+    if((t.taskType||'mbc')!=='mbc') return false;
+    if(t.project && isProjectCompleted(t.project, selMonth)) return false;
+    return true;
+  });
   populateFilterDropdowns(allMt);
   const mt=applyActiveFilters(allMt);
   const el=document.getElementById('monthly-content');
@@ -581,10 +600,16 @@ function renderMonthly(){
       const pc2=pctColor(pp);
       return `<div class="rpt-project">
         <div class="rpt-project-hd" onclick="toggleProject('rp-${idx}')">
-          <div class="rpt-project-name">&#128193; ${esc(proj)}</div>
-          <div class="rpt-project-meta">
+          <div class="rpt-project-name">
+            &#128193; ${esc(proj)}
+            ${isProjectCompletedForMonth(proj,selMonth)?'<span style="font-size:9px;font-weight:700;color:var(--green);background:rgba(52,199,89,.1);padding:2px 7px;border-radius:8px;margin-left:4px">✓ Done</span>':''}
+          </div>
+          <div class="rpt-project-meta" style="gap:6px">
             <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
             <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
+            <button onclick="event.stopPropagation();toggleProjectComplete('${proj.replace(/'/g,"\\'")}',${idx})"
+              style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--sans);flex-shrink:0"
+              id="proj-btn-${idx}">${isProjectCompletedForMonth(proj,selMonth)?'↺ Reopen':'✓ Mark Complete'}</button>
             <span class="rpt-project-arrow" id="rp-arr-${idx}">▾</span>
           </div>
         </div>
@@ -633,6 +658,19 @@ function renderMonthly(){
 window.renderMonthly=renderMonthly;
 
 // ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
+window.toggleProjectComplete=async(projName,idx)=>{
+  const isComp = isProjectCompletedForMonth(projName, selMonth);
+  if (isComp) {
+    await reopenProject(projName);
+    delete projectsData[btoa(projName)];
+  } else {
+    await setProjectComplete(projName, selMonth);
+    projectsData[btoa(projName)] = { name:projName, completedMonth:selMonth };
+  }
+  // Refresh render
+  renderMonthly();
+};
+
 window.toggleProject=(id)=>{
   const body=document.getElementById(id);
   const arr=document.getElementById(id.replace('rp-','rp-arr-'));
@@ -869,7 +907,188 @@ window.copyWeeklyDigest=()=>{
 
 // ── PDF EXPORTS ────────────────────────────────────────────────────────────
 window.exportPDF=()=>{
-  window.print();
+  const allMt = allTasks.filter(t => t.month===selMonth && (t.taskType||'mbc')==='mbc');
+  const mt = applyActiveFilters(allMt);
+  if (!mt.length) { alert('No tasks for this month.'); return; }
+
+  const lbl = monthLabel(selMonth);
+  const total = mt.length;
+  const done  = mt.filter(t=>t.status==='done').length;
+  const inprog = mt.filter(t=>t.status==='inprog').length;
+  const todoC  = mt.filter(t=>t.status==='todo').length;
+  const crit   = mt.filter(t=>t.priority==='critical'&&t.status!=='done').length;
+  const pct    = total ? Math.round(done/total*100) : 0;
+  const pc     = pct>=80?'#34c759':pct>=50?'#ff9f0a':'#dc2626';
+
+  // Group by project, sort: named projects first, then no-project
+  const byProj = {};
+  mt.forEach(t => {
+    const p = t.project || '— No Project —';
+    if (!byProj[p]) byProj[p] = [];
+    byProj[p].push(t);
+  });
+  const projKeys = Object.keys(byProj).sort((a,b) => {
+    if (a==='— No Project —') return 1;
+    if (b==='— No Project —') return -1;
+    return a.localeCompare(b);
+  });
+
+  // Sort tasks within each project: done first (by completedAt desc), then inprog, then todo
+  function sortTasks(tasks) {
+    return [...tasks].sort((a,b) => {
+      const order = {done:0, inprog:1, todo:2};
+      const ao = order[a.status]??2, bo = order[b.status]??2;
+      if (ao !== bo) return ao - bo;
+      if (a.status === 'done') {
+        const ca = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(a.completedAt||0);
+        const cb = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(b.completedAt||0);
+        return cb - ca; // most recently done first
+      }
+      return 0;
+    });
+  }
+
+  function statusBadge(s) {
+    if (s==='done')   return '<span style="display:inline-block;padding:2px 7px;background:#dcfce7;color:#16a34a;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase">✓ Done</span>';
+    if (s==='inprog') return '<span style="display:inline-block;padding:2px 7px;background:#fef3c7;color:#d97706;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase">↻ In Progress</span>';
+    return '<span style="display:inline-block;padding:2px 7px;background:#f3f4f6;color:#6b7280;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase">○ Todo</span>';
+  }
+
+  function prioBadge(p) {
+    const map = {critical:['#fee2e2','#dc2626'],high:['#fef3c7','#d97706'],medium:['#dbeafe','#2563eb'],low:['#f3f4f6','#6b7280']};
+    const [bg,col] = map[p||'medium']||map.medium;
+    return `<span style="display:inline-block;padding:2px 6px;background:${bg};color:${col};border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase">${p||'medium'}</span>`;
+  }
+
+  function pdfTaskRow(t) {
+    const members = (t.members||[]).map(m=>esc(m.name)).join(', ');
+    const ca = t.completedAt?.toDate ? t.completedAt.toDate() : (t.completedAt ? new Date(t.completedAt) : null);
+    const caStr = ca ? ca.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '';
+    return `<tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:7px 8px;vertical-align:top">
+        <div style="font-size:12px;font-weight:600;color:#111827;line-height:1.4;margin-bottom:4px">${esc(t.label)}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          ${statusBadge(t.status)}
+          ${prioBadge(t.priority)}
+          ${members ? `<span style="font-size:9px;color:#6b7280">👥 ${members}</span>` : ''}
+          ${caStr && t.status==='done' ? `<span style="font-size:9px;color:#16a34a">✓ ${caStr}</span>` : ''}
+          ${t.taskDueDate && t.status!=='done' ? `<span style="font-size:9px;color:#6b7280">📅 Due ${fmtDate(t.taskDueDate)}</span>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  const shipped = sortTasks(mt.filter(t=>t.status==='done'));
+
+  const projectSections = projKeys.map(proj => {
+    const pt = sortTasks(byProj[proj]);
+    const pd = pt.filter(t=>t.status==='done').length;
+    const pp = pt.length ? Math.round(pd/pt.length*100) : 0;
+    const pbar = pp>=80?'#16a34a':pp>=50?'#d97706':'#dc2626';
+    const isComp = isProjectCompletedForMonth(proj, selMonth);
+    return `<div style="margin-bottom:20px;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8faff;border-left:3px solid #2563eb;border-radius:4px;margin-bottom:0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:800;font-size:12px;color:#1e3a8a">&#128193; ${esc(proj)}</span>
+          ${isComp ? '<span style="font-size:9px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 6px;border-radius:4px">✓ COMPLETED</span>' : ''}
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${pbar}">${pd}/${pt.length} done &middot; ${pp}%</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #f3f4f6;border-top:none">
+        <tbody>${pt.map(pdfTaskRow).join('')}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>Monthly Report — ${lbl}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'DM Sans',system-ui,sans-serif;color:#111827;background:#fff}
+      @page{size:A4;margin:14mm 12mm}
+      @media print{body{padding:0}.no-print{display:none!important}}
+      table{width:100%;border-collapse:collapse}
+    </style>
+  </head><body>
+
+    <!-- HEADER -->
+    <div style="background:#111827;color:#fff;padding:20px 24px;margin-bottom:16px;border-radius:6px;display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">BBM-IN &middot; M/MBC-IN &middot; Internal Communications</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.02em">Monthly Report</div>
+        <div style="font-size:14px;font-weight:400;color:rgba(255,255,255,.6);margin-top:2px">${lbl}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:28px;font-weight:800;color:${pc}">${pct}%</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px">complete</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:2px">${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      ${[['Total',total,'#1d4ed8','#dbeafe'],['Done',done,'#16a34a','#dcfce7'],['In Progress',inprog,'#d97706','#fef3c7'],['Critical',crit,'#dc2626','#fee2e2']].map(([l,v,col,bg])=>`
+      <div style="text-align:center;padding:12px 8px;background:${bg};border-radius:8px;border:1px solid ${col}22">
+        <div style="font-size:26px;font-weight:800;color:${col};line-height:1">${v}</div>
+        <div style="font-size:9px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.08em;margin-top:3px;opacity:.8">${l}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- WHAT WE SHIPPED -->
+    ${shipped.length ? `
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #dcfce7">
+        <div style="width:4px;height:16px;background:#16a34a;border-radius:2px"></div>
+        <div style="font-size:13px;font-weight:800;color:#111827">What We Shipped</div>
+        <div style="font-size:11px;color:#6b7280;margin-left:auto">${shipped.length} task${shipped.length>1?'s':''} completed</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <tbody>
+          ${shipped.map(t => {
+            const members=(t.members||[]).map(m=>esc(m.name)).join(', ');
+            const ca=t.completedAt?.toDate?t.completedAt.toDate():(t.completedAt?new Date(t.completedAt):null);
+            const caStr=ca?ca.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'';
+            return `<tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:7px 8px;vertical-align:top">
+                <div style="display:flex;align-items:flex-start;gap:8px">
+                  <span style="color:#16a34a;font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+                  <div>
+                    <div style="font-size:12px;font-weight:600;color:#111827;line-height:1.4">${esc(t.label)}</div>
+                    <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center">
+                      ${prioBadge(t.priority)}
+                      ${t.project?`<span style="font-size:9px;color:#4f46e5;font-weight:600">&#128193; ${esc(t.project)}</span>`:''}
+                      ${members?`<span style="font-size:9px;color:#6b7280">👥 ${members}</span>`:''}
+                      ${caStr?`<span style="font-size:9px;color:#16a34a;font-weight:600">Done ${caStr}</span>`:''}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- TASKS BY PROJECT -->
+    <div style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #dbeafe">
+        <div style="width:4px;height:16px;background:#2563eb;border-radius:2px"></div>
+        <div style="font-size:13px;font-weight:800;color:#111827">All Tasks by Project</div>
+        <div style="font-size:11px;color:#6b7280;margin-left:auto">${projKeys.length} project${projKeys.length>1?'s':''}</div>
+      </div>
+      ${projectSections}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:24px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between">
+      <span style="font-size:8px;color:#9ca3af">WorkDesk &middot; BBM-IN &middot; MBC-IN Internal Communications</span>
+      <span style="font-size:8px;color:#9ca3af">Generated ${new Date().toLocaleString('en-GB')}</span>
+    </div>
+
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(), 500);
 };
 
 window.exportMyReportPDF=()=>{
