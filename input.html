@@ -747,12 +747,12 @@ function updateProjectSuggestions() {
 
 let _projHoverIdx = -1;
 
-function showProjectDrop() {
+window.showProjectDrop = function() {
   updateProjectSuggestions();
-  filterProjectDrop(document.getElementById('f-project').value || '');
+  filterProjectDrop(document.getElementById('f-project')?.value || '');
 }
 
-function hideProjectDrop() {
+window.hideProjectDrop = function() {
   // Delay so click on item registers first
   setTimeout(() => {
     const drop = document.getElementById('project-drop');
@@ -760,32 +760,37 @@ function hideProjectDrop() {
   }, 200);
 }
 
-function filterProjectDrop(val) {
+window.filterProjectDrop = function(val) {
+  updateProjectSuggestions(); // always refresh from latest tasks
   const drop = document.getElementById('project-drop');
   if (!drop) return;
-  const q = val.trim().toLowerCase();
+  const q = (val||'').trim().toLowerCase();
   const matches = _allProjects.filter(p => !q || p.toLowerCase().includes(q));
   _projHoverIdx = -1;
 
-  if (!matches.length && !q) {
-    drop.style.display = 'none';
-    return;
+  let html = '';
+
+  if (matches.length) {
+    matches.slice(0, 8).forEach(p => {
+      const safe = p.replace(/'/g, '&#39;');
+      html += '<div class="proj-drop-item" onmousedown="event.preventDefault();selectProject(\'' + safe + '\')">' +
+        '<span class="proj-icon">&#128193;</span>' + esc(p) + '</div>';
+    });
   }
 
-  let html = '';
-  matches.slice(0, 8).forEach((p, i) => {
-    html += `<div class="proj-drop-item" onmousedown="selectProject('${p.replace(/'/g,"\'")}')">
-      <span class="proj-icon">&#128193;</span>${esc(p)}
-    </div>`;
-  });
-  // Option to create new if typed value doesn't exactly match
+  // Always show "Create new" option when user has typed something new
   const exactMatch = _allProjects.some(p => p.toLowerCase() === q);
   if (q && !exactMatch) {
-    html += `<div class="proj-drop-item proj-drop-new" onmousedown="selectProject('${val.trim().replace(/'/g,"\'")}')">
-      <span class="proj-icon">＋</span>Create "${esc(val.trim())}"
-    </div>`;
+    const safe2 = val.trim().replace(/'/g, '&#39;');
+    html += '<div class="proj-drop-item proj-drop-new" onmousedown="event.preventDefault();selectProject(\'' + safe2 + '\')">' +
+      '<span class="proj-icon">＋</span>Create &ldquo;' + esc(val.trim()) + '&rdquo;</div>';
   }
-  if (!html) { drop.style.display = 'none'; return; }
+
+  // If no projects exist and no typed value — show hint
+  if (!html) {
+    html = '<div class="proj-drop-empty">No projects yet — type to create one</div>';
+  }
+
   drop.innerHTML = html;
   drop.style.display = 'block';
 }
@@ -797,7 +802,7 @@ window.selectProject = (name) => {
   if (drop) drop.style.display = 'none';
 };
 
-window.projectKeyNav = (e) => {
+window.projectKeyNav = function(e) {
   const drop = document.getElementById('project-drop');
   if (!drop || drop.style.display === 'none') return;
   const items = drop.querySelectorAll('.proj-drop-item');
