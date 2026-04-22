@@ -156,7 +156,7 @@ export async function getStreak() {
   } catch(e) { return { currentStreak: 0, lastCompletedDate: null, longestStreak: 0 }; }
 }
 
-export async function recordTaskCompletion() {
+export async function recordTaskCompletion(completedBy) {
   // Build today's date string using LOCAL time (not UTC) to avoid timezone bugs
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
@@ -214,10 +214,12 @@ export async function recordTaskCompletion() {
   const longest = Math.max(newStreak, data.longestStreak || 0);
   // Track top 3 all-time streaks with who achieved them
   const topStreaks = data.topStreaks || [];
-  // Check if this streak should be in the hall of fame
-  if (newStreak > 1) {
-    const existing = topStreaks.findIndex(s => s.name === 'Team');
-    const entry = { streak: newStreak, date: today };
+  // Track individual contributions — each entry has name + streak
+  // We get the name from the task completion caller (passed as param)
+  if (newStreak >= 3) { // only track streaks of 3+ days
+    // Find if this name already has an entry
+    const existing = topStreaks.findIndex(s => s.name === (completedBy || 'Team'));
+    const entry = { streak: newStreak, date: today, name: completedBy || 'Team' };
     if (existing === -1) {
       topStreaks.push(entry);
     } else if (newStreak > topStreaks[existing].streak) {

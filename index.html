@@ -1135,6 +1135,15 @@ function renderMyTasks() {
   }
 
   // Apply search filter
+  // Easter egg: type "quiz" to open the comms trivia game
+  if (searchQuery === 'quiz') {
+    window.location.href = 'quiz.html';
+    return;
+  }
+  if (searchQuery === 'snake') {
+    window.location.href = 'snake.html';
+    return;
+  }
   if (searchQuery) {
     taskList = taskList.filter(t =>
       t.label.toLowerCase().includes(searchQuery) ||
@@ -1906,7 +1915,7 @@ async function setMemberStatus(taskId, memberId, newStatus) {
     } else {
       toast('🎉 All done! Task complete!');
     }
-    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+    recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
     if (checkFirstTaskOfDay()) {
@@ -1914,7 +1923,7 @@ async function setMemberStatus(taskId, memberId, newStatus) {
     } else {
       toast('✓ Your part is done!');
     }
-    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+    recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else { playReopen(); toast('↩ Reopened'); }
 }
 
@@ -1927,7 +1936,7 @@ window.toggleIndividualDone = async (taskId, newStatus) => {
   if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
     toast('✓ Task done!');
-    recordTaskCompletion().then(s => { streakData = s; renderGreeting(); });
+    recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else {
     playReopen(); toast('↩ Reopened');
   }
@@ -2205,10 +2214,10 @@ window.openHoF = () => {
     ? top.map((s,i) => `
       <div class="hof-row">
         <div class="hof-medal">${medals[i]||'🏅'}</div>
-        <div>
-          <div class="hof-streak-num">${s.streak}</div>
-          <div class="hof-streak-label">day streak</div>
-          <div class="hof-streak-date">${s.date || ''}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">${s.name||'Team'}</div>
+          <div class="hof-streak-num" style="font-size:22px">${s.streak} <span class="hof-streak-label">days</span></div>
+          <div class="hof-streak-date">${s.date ? 'Achieved '+s.date : ''}</div>
         </div>
       </div>`).join('')
     : '<div style="color:var(--text3);font-size:13px;padding:12px">No streaks recorded yet — start completing tasks!</div>';
@@ -2218,6 +2227,20 @@ window.openHoF = () => {
   document.getElementById('hof-modal').classList.add('open');
 };
 window.closeHoF = () => document.getElementById('hof-modal').classList.remove('open');
+
+// Easter egg: tap logo 5× → Snake, tap streak 5× → HoF (already wired)
+let _logoTaps=0,_logoTimer;
+document.addEventListener('DOMContentLoaded',()=>{
+  const logo=document.getElementById('nav-brand-tap');
+  if(logo){
+    logo.addEventListener('click',e=>{
+      _logoTaps++;
+      clearTimeout(_logoTimer);
+      if(_logoTaps>=5){ _logoTaps=0; window.location.href='snake.html'; return; }
+      _logoTimer=setTimeout(()=>{ _logoTaps=0; },1200);
+    });
+  }
+});
 
 // ═══════════════════════════════════════════════════════
 // FEATURE 1: GREETING + STREAK

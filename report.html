@@ -126,9 +126,8 @@
   box-shadow:var(--shadow-card);
 }
 .rpt-chart-title { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px }
-.rpt-chart-wrap { position:relative; height:140px; max-width:100%; overflow:hidden }
-.rpt-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px }
-@media (max-width:380px) { .rpt-charts-grid { grid-template-columns:1fr } }
+.rpt-chart-wrap { position:relative; height:180px; width:100%; overflow:hidden }
+.rpt-charts-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:12px }
 
 /* ── MY REPORT PERIOD PILLS ── */
 .rpt-period-row { display:flex; gap:6px; padding:10px 0; flex-wrap:wrap }
@@ -426,8 +425,12 @@ function destroyCharts(){
   chartInstances={};
 }
 const chartBase={animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
-const chartFont={font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:'rgba(240,240,242,.55)'};
-const chartGrid={color:'rgba(255,255,255,.07)'};
+// Read actual CSS vars at render time so light/dark themes both work
+const _cs = getComputedStyle(document.body);
+const _textColor = _cs.getPropertyValue('--text2').trim() || 'rgba(100,100,100,.8)';
+const _gridColor = _cs.getPropertyValue('--border').trim() || 'rgba(0,0,0,.08)';
+const chartFont={font:{size:10,family:"'DM Sans',system-ui,sans-serif"},color:_textColor};
+const chartGrid={color:_gridColor};
 
 function renderCharts(mt){
   destroyCharts();
@@ -439,10 +442,10 @@ function renderCharts(mt){
       type:'doughnut',
       data:{labels:['Done','In Prog','Todo'],datasets:[{
         data:[mt.filter(t=>t.status==='done').length,mt.filter(t=>t.status==='inprog').length,mt.filter(t=>t.status==='todo').length],
-        backgroundColor:['#34c759','#ff9f0a','rgba(255,255,255,.15)'],
+        backgroundColor:['#34c759','#ff9f0a',_cs.getPropertyValue('--bg4').trim()||'#e5e7eb'],
         borderWidth:0,hoverOffset:3,
       }]},
-      options:{...chartBase,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+      options:{...chartBase,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
     });
   } catch(e){}
 
@@ -473,10 +476,10 @@ function renderCharts(mt){
       type:'bar',
       data:{labels:mNames.map(n=>n.split(' ')[0]),datasets:[
         {label:'Done',data:mNames.map(n=>memberMap[n].done),backgroundColor:'#34c759',borderRadius:3,borderWidth:0},
-        {label:'Open',data:mNames.map(n=>memberMap[n].total-memberMap[n].done),backgroundColor:'rgba(255,255,255,.1)',borderRadius:3,borderWidth:0},
+        {label:'Open',data:mNames.map(n=>memberMap[n].total-memberMap[n].done),backgroundColor:_cs.getPropertyValue('--bg4').trim()||'rgba(0,0,0,.08)',borderRadius:3,borderWidth:0},
       ]},
       options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
-        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
     });
   } catch(e){}
 
@@ -490,10 +493,10 @@ function renderCharts(mt){
         type:'bar',
         data:{labels:pNames.map(n=>n.length>12?n.slice(0,11)+'…':n),datasets:[
           {label:'Done',data:pNames.map(n=>projMap[n].done),backgroundColor:'#5e5ce6',borderRadius:3,borderWidth:0},
-          {label:'Open',data:pNames.map(n=>projMap[n].total-projMap[n].done),backgroundColor:'rgba(94,92,230,.2)',borderRadius:3,borderWidth:0},
+          {label:'Open',data:pNames.map(n=>projMap[n].total-projMap[n].done),backgroundColor:_cs.getPropertyValue('--purple-glow').trim()||'rgba(94,92,230,.15)',borderRadius:3,borderWidth:0},
         ]},
         options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
-          plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},color:'rgba(240,240,242,.5)',boxWidth:10,padding:6}}}}
+          plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
       });
     } catch(e){}
   } else {
