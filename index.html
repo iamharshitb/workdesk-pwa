@@ -333,7 +333,19 @@
     }
     .clock-india::before  { background:var(--amber); box-shadow:0 0 6px rgba(255,159,10,.4) }
     .clock-germany::before{ background:var(--neon);  box-shadow:0 0 6px rgba(10,132,255,.4) }
-    .clock-flag  { font-size:18px;flex-shrink:0;line-height:1 }
+    .clock-badge {
+      width:32px;height:32px;border-radius:8px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:800;letter-spacing:.04em;
+    }
+    .clock-badge-in {
+      background:rgba(255,159,10,.12);color:var(--amber);
+      border:1px solid rgba(255,159,10,.25);
+    }
+    .clock-badge-de {
+      background:rgba(10,132,255,.1);color:var(--neon);
+      border:1px solid rgba(10,132,255,.2);
+    }
     .clock-body  { flex:1;min-width:0 }
     .clock-time  {
       font-family:var(--mono);font-size:16px;font-weight:500;
@@ -808,18 +820,18 @@
   <!-- WORLD CLOCK -->
   <div class="clock-strip fi" style="animation-delay:.005s">
     <div class="clock-card clock-india">
-      <div class="clock-flag">🇮🇳</div>
+      <div class="clock-badge clock-badge-in">IN</div>
       <div class="clock-body">
         <div class="clock-time" id="clock-ist">--:--</div>
-        <div class="clock-label">India (IST)</div>
+        <div class="clock-label">IST · India</div>
         <div class="clock-date" id="clock-ist-date"></div>
       </div>
     </div>
     <div class="clock-card clock-germany">
-      <div class="clock-flag">🇩🇪</div>
+      <div class="clock-badge clock-badge-de">DE</div>
       <div class="clock-body">
         <div class="clock-time" id="clock-de">--:--</div>
-        <div class="clock-label">Germany (CET/CEST)</div>
+        <div class="clock-label">CET/CEST · Germany</div>
         <div class="clock-date" id="clock-de-date"></div>
       </div>
     </div>
