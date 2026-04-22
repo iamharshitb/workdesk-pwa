@@ -45,6 +45,16 @@
       list-style:none;
     }
     .project-inp:focus { border-color:var(--neon) }
+    .proj-drop-item {
+      padding:10px 13px;font-size:13px;font-weight:500;color:var(--text);
+      cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:8px;
+    }
+    .proj-drop-item:last-child{border-bottom:none}
+    .proj-drop-item:hover,.proj-drop-item.hovered{background:var(--bg3)}
+    .proj-drop-item .proj-icon{font-size:12px;opacity:.5;flex-shrink:0}
+    .proj-drop-empty{padding:10px 13px;font-size:12px;color:var(--text3);font-style:italic}
+    .proj-drop-new{color:var(--neon)!important;font-weight:700!important}
     .project-datalist-label {
       font-size:11px;font-weight:700;color:var(--text3);
       margin-bottom:5px;
@@ -208,10 +218,20 @@
 
       <div class="sect-label">Project</div>
       <div class="project-row">
-        <input class="project-inp" id="f-project" placeholder="e.g. SMF 2026, Brand Campaign, CIP..."
-          maxlength="80" list="project-suggestions"
-          onkeydown="if(event.key==='Enter')this.blur()">
-        <datalist id="project-suggestions"></datalist>
+        <div style="position:relative">
+          <input class="project-inp" id="f-project"
+            placeholder="e.g. SMF 2026, Brand Campaign, CIP..."
+            maxlength="80" autocomplete="off"
+            oninput="filterProjectDrop(this.value)"
+            onfocus="showProjectDrop()"
+            onblur="hideProjectDrop()"
+            onkeydown="projectKeyNav(event)">
+          <div id="project-drop"
+            style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;
+            background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+            margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);max-height:200px;overflow-y:auto">
+          </div>
+        </div>
       </div>
 
       <div class="sect-label">Assign team members</div>
@@ -412,6 +432,7 @@ onUserReady(async () => {
     });
 
     renderTaskList();
+    updateProjectSuggestions();  // refresh project list whenever tasks update
     updateSummary();
 
     const loader = document.getElementById('page-loader');
@@ -715,13 +736,88 @@ window.toggleInputDoneSection = () => {
   if (arrow) arrow.classList.toggle('open', _inputDoneOpen);
 };
 
+// All known projects (updated from tasks + allTasksHistory)
+let _allProjects = [];
+
 function updateProjectSuggestions() {
-  const projects = [...new Set(
-    tasks.map(t => t.project).filter(Boolean)
-  )].sort();
-  const dl = document.getElementById('project-suggestions');
-  if (dl) dl.innerHTML = projects.map(p => `<option value="${esc(p)}">`).join('');
+  const fromLive    = tasks.map(t => t.project).filter(Boolean);
+  const fromHistory = (allTasksHistory||[]).map(t => t.project).filter(Boolean);
+  _allProjects = [...new Set([...fromLive, ...fromHistory])].sort();
 }
+
+let _projHoverIdx = -1;
+
+function showProjectDrop() {
+  updateProjectSuggestions();
+  filterProjectDrop(document.getElementById('f-project').value || '');
+}
+
+function hideProjectDrop() {
+  // Delay so click on item registers first
+  setTimeout(() => {
+    const drop = document.getElementById('project-drop');
+    if (drop) drop.style.display = 'none';
+  }, 200);
+}
+
+function filterProjectDrop(val) {
+  const drop = document.getElementById('project-drop');
+  if (!drop) return;
+  const q = val.trim().toLowerCase();
+  const matches = _allProjects.filter(p => !q || p.toLowerCase().includes(q));
+  _projHoverIdx = -1;
+
+  if (!matches.length && !q) {
+    drop.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  matches.slice(0, 8).forEach((p, i) => {
+    html += `<div class="proj-drop-item" onmousedown="selectProject('${p.replace(/'/g,"\'")}')">
+      <span class="proj-icon">&#128193;</span>${esc(p)}
+    </div>`;
+  });
+  // Option to create new if typed value doesn't exactly match
+  const exactMatch = _allProjects.some(p => p.toLowerCase() === q);
+  if (q && !exactMatch) {
+    html += `<div class="proj-drop-item proj-drop-new" onmousedown="selectProject('${val.trim().replace(/'/g,"\'")}')">
+      <span class="proj-icon">＋</span>Create "${esc(val.trim())}"
+    </div>`;
+  }
+  if (!html) { drop.style.display = 'none'; return; }
+  drop.innerHTML = html;
+  drop.style.display = 'block';
+}
+
+window.selectProject = (name) => {
+  const inp = document.getElementById('f-project');
+  if (inp) inp.value = name;
+  const drop = document.getElementById('project-drop');
+  if (drop) drop.style.display = 'none';
+};
+
+window.projectKeyNav = (e) => {
+  const drop = document.getElementById('project-drop');
+  if (!drop || drop.style.display === 'none') return;
+  const items = drop.querySelectorAll('.proj-drop-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _projHoverIdx = Math.min(_projHoverIdx + 1, items.length - 1);
+    items.forEach((item, i) => item.classList.toggle('hovered', i === _projHoverIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _projHoverIdx = Math.max(_projHoverIdx - 1, 0);
+    items.forEach((item, i) => item.classList.toggle('hovered', i === _projHoverIdx));
+  } else if (e.key === 'Enter' && _projHoverIdx >= 0) {
+    e.preventDefault();
+    items[_projHoverIdx]?.dispatchEvent(new MouseEvent('mousedown'));
+  } else if (e.key === 'Escape') {
+    drop.style.display = 'none';
+  } else if (e.key === 'Tab') {
+    drop.style.display = 'none';
+  }
+};
 
 function renderTaskList() {
   const el = document.getElementById('task-list');

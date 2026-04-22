@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>WorkDesk Comms Quiz</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0c0c0f;
+  --bg2:#141417;
+  --bg3:#1c1c21;
+  --neon:#0a84ff;
+  --green:#34c759;
+  --amber:#ff9f0a;
+  --red:#ff453a;
+  --purple:#5e5ce6;
+  --text:#f2f2f7;
+  --text2:rgba(242,242,247,.55);
+  --text3:rgba(242,242,247,.28);
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.12);
+}
+
+html,body{
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 100% 0%,rgba(94,92,230,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 0% 100%,rgba(10,132,255,.06) 0%,transparent 55%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{
+  position:relative;z-index:1;
+  max-width:460px;margin:0 auto;
+  padding:16px 16px 40px;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+
+/* NAV */
+.q-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.q-title{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.q-back{
+  font-size:12px;font-weight:700;color:var(--text2);
+  background:var(--bg2);border:1px solid var(--border);
+  padding:6px 12px;border-radius:20px;cursor:pointer;
+  text-decoration:none;transition:all .15s;
+}
+.q-back:hover{color:var(--text)}
+
+/* SCREEN SWITCHER */
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;flex:1}
+
+/* ── START SCREEN ── */
+.start-hero{
+  text-align:center;padding:24px 0 20px;
+}
+.start-emoji{font-size:56px;margin-bottom:12px}
+.start-h{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.start-sub{font-size:14px;color:var(--text2);line-height:1.6;max-width:300px;margin:0 auto 20px}
+
+.diff-row{display:flex;gap:8px;margin-bottom:20px}
+.diff-btn{
+  flex:1;padding:12px 8px;border-radius:12px;
+  border:1.5px solid var(--border2);background:var(--bg2);
+  color:var(--text2);font-family:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.diff-btn:active{transform:scale(.96)}
+.diff-btn.sel-easy  {background:rgba(52,199,89,.08); border-color:rgba(52,199,89,.4); color:var(--green)}
+.diff-btn.sel-medium{background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.4);color:var(--amber)}
+.diff-btn.sel-hard  {background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.4); color:var(--red)}
+.diff-label{font-size:16px;margin-bottom:4px}
+
+.start-stats{
+  display:flex;gap:8px;margin-bottom:20px;
+}
+.start-stat{
+  flex:1;background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:10px;text-align:center;
+}
+.start-stat-n{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:var(--amber)}
+.start-stat-l{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+.btn-primary{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:var(--neon);color:#0c0c0f;
+  font-family:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 20px rgba(10,132,255,.3);
+}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-primary:active{transform:scale(.97)}
+
+/* ── QUIZ SCREEN ── */
+.q-progress-wrap{margin-bottom:14px}
+.q-progress-row{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--text2);font-weight:700;margin-bottom:6px;
+}
+.q-progress-bar{
+  height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;
+}
+.q-progress-fill{
+  height:100%;background:var(--neon);border-radius:2px;
+  transition:width .4s cubic-bezier(.4,0,.2,1);
+}
+
+.q-timer-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.q-cat{
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.1em;
+}
+.q-timer{
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;font-weight:500;
+  padding:4px 10px;border-radius:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  transition:color .3s,border-color .3s,background .3s;
+}
+.q-timer.warn{color:var(--amber);border-color:rgba(255,159,10,.3);background:rgba(255,159,10,.06)}
+.q-timer.danger{color:var(--red);border-color:rgba(255,69,58,.3);background:rgba(255,69,58,.06)}
+
+.q-card{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:18px;padding:20px 18px;margin-bottom:14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 4px 24px rgba(0,0,0,.4);
+  min-height:100px;
+  display:flex;align-items:center;
+}
+.q-text{
+  font-size:16px;font-weight:600;line-height:1.5;color:var(--text);
+}
+
+.q-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.q-opt{
+  padding:13px 16px;border-radius:12px;
+  border:1.5px solid var(--border2);background:var(--bg2);
+  color:var(--text);font-family:inherit;font-size:14px;font-weight:500;
+  cursor:pointer;text-align:left;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;overflow:hidden;
+}
+.q-opt:hover:not(:disabled){border-color:rgba(10,132,255,.4);color:var(--text)}
+.q-opt:active:not(:disabled){transform:scale(.98)}
+.q-opt:disabled{cursor:default}
+.q-opt.correct{
+  border-color:var(--green)!important;
+  background:rgba(52,199,89,.1)!important;
+  color:var(--green)!important;
+}
+.q-opt.wrong{
+  border-color:var(--red)!important;
+  background:rgba(255,69,58,.08)!important;
+  color:var(--red)!important;
+}
+.q-opt.reveal{
+  border-color:rgba(52,199,89,.3)!important;
+  background:rgba(52,199,89,.05)!important;
+  color:rgba(52,199,89,.6)!important;
+}
+
+.q-score-live{
+  display:flex;gap:8px;align-items:center;
+  font-size:12px;color:var(--text2);font-weight:600;
+}
+.q-score-badge{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;color:var(--neon);font-weight:500;
+}
+
+/* Feedback toast */
+.q-feedback{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:10px 18px;
+  font-size:13px;font-weight:700;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index:99;white-space:nowrap;
+}
+.q-feedback.show{transform:translateX(-50%) translateY(0)}
+.q-feedback.good{border-color:rgba(52,199,89,.4);color:var(--green)}
+.q-feedback.bad {border-color:rgba(255,69,58,.3); color:var(--red)}
+
+/* ── RESULTS SCREEN ── */
+.result-hero{text-align:center;padding:20px 0 16px}
+.result-emoji{font-size:52px;margin-bottom:10px}
+.result-rank{
+  font-size:15px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  margin-bottom:4px;
+}
+.result-score{
+  font-family:'JetBrains Mono',monospace;
+  font-size:48px;font-weight:500;line-height:1;margin-bottom:4px;
+}
+.result-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+
+.result-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;
+}
+.result-stat{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:12px;text-align:center;
+}
+.result-stat-n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;line-height:1;margin-bottom:3px}
+.result-stat-l{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+
+.result-breakdown{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;padding:14px;margin-bottom:16px;
+}
+.result-row{
+  display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px solid var(--border);font-size:12px;
+}
+.result-row:last-child{border-bottom:none}
+.result-row-q{flex:1;color:var(--text2);line-height:1.4}
+.result-row-icon{font-size:14px;flex-shrink:0}
+
+.btn-secondary{
+  width:100%;padding:12px;border-radius:12px;
+  border:1.5px solid var(--border2);background:none;
+  color:var(--text2);font-family:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .15s;margin-top:8px;
+}
+.btn-secondary:hover{border-color:var(--border2);color:var(--text)}
+.btn-secondary:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+<div class="q-feedback" id="feedback"></div>
+<div class="wrap">
+  <div class="q-nav">
+    <div class="q-title">📡 Comms Quiz</div>
+    <a class="q-back" href="index.html">← Back</a>
+  </div>
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="start-hero">
+      <div class="start-emoji">🧠</div>
+      <div class="start-h">Comms & Marketing<br>Trivia</div>
+      <div class="start-sub">10 questions on communications, PR, marketing & media. How well do you know your craft?</div>
+    </div>
+
+    <div class="diff-row">
+      <button class="diff-btn sel-easy" id="d-easy" onclick="setDiff('easy')">
+        <div class="diff-label">😊</div>Easy
+      </button>
+      <button class="diff-btn" id="d-medium" onclick="setDiff('medium')">
+        <div class="diff-label">🎯</div>Medium
+      </button>
+      <button class="diff-btn" id="d-hard" onclick="setDiff('hard')">
+        <div class="diff-label">🔥</div>Hard
+      </button>
+    </div>
+
+    <div class="start-stats">
+      <div class="start-stat">
+        <div class="start-stat-n" id="ss-best">—</div>
+        <div class="start-stat-l">Best Score</div>
+      </div>
+      <div class="start-stat">
+        <div class="start-stat-n" id="ss-played">—</div>
+        <div class="start-stat-l">Games Played</div>
+      </div>
+      <div class="start-stat">
+        <div class="start-stat-n" id="ss-acc">—</div>
+        <div class="start-stat-l">Accuracy</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">Start Quiz →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="q-progress-wrap">
+      <div class="q-progress-row">
+        <span id="q-num">Q1 of 10</span>
+        <div class="q-score-live">Score <span class="q-score-badge" id="q-score-live">0</span></div>
+      </div>
+      <div class="q-progress-bar"><div class="q-progress-fill" id="q-prog" style="width:0%"></div></div>
+    </div>
+
+    <div class="q-timer-row">
+      <div class="q-cat" id="q-cat">Category</div>
+      <div class="q-timer" id="q-timer">15s</div>
+    </div>
+
+    <div class="q-card"><div class="q-text" id="q-text">Loading…</div></div>
+
+    <div class="q-options" id="q-opts"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="result-hero">
+      <div class="result-emoji" id="r-emoji">🎉</div>
+      <div class="result-rank" id="r-rank" style="color:var(--amber)">Senior Strategist</div>
+      <div class="result-score" id="r-score" style="color:var(--neon)">0</div>
+      <div class="result-sub" id="r-sub">8 of 10 correct · 45s avg</div>
+    </div>
+    <div class="result-grid">
+      <div class="result-stat"><div class="result-stat-n" id="r-correct" style="color:var(--green)">0</div><div class="result-stat-l">Correct</div></div>
+      <div class="result-stat"><div class="result-stat-n" id="r-wrong"   style="color:var(--red)">0</div><div class="result-stat-l">Wrong</div></div>
+      <div class="result-stat"><div class="result-stat-n" id="r-streak"  style="color:var(--purple)">0</div><div class="result-stat-l">Best Streak</div></div>
+      <div class="result-stat"><div class="result-stat-n" id="r-time"    style="color:var(--amber)">0s</div><div class="result-stat-l">Avg Time</div></div>
+    </div>
+    <div class="result-breakdown" id="r-breakdown"></div>
+    <button class="btn-primary" onclick="startQuiz()">Play Again</button>
+    <button class="btn-secondary" onclick="showScreen('start')">Change Difficulty</button>
+  </div>
+</div>
+
+<script>
+// ── QUESTION BANK ──────────────────────────────────────────────────────────
+const QUESTIONS = [
+  // EASY
+  {q:"What does PR stand for in communications?",a:["Public Relations","Press Release","Promotional Range","Public Reach"],c:0,cat:"PR Basics",d:"easy"},
+  {q:"Which social media platform is primarily used for professional networking?",a:["Instagram","TikTok","LinkedIn","Snapchat"],c:2,cat:"Social Media",d:"easy"},
+  {q:"What is a press release?",a:["A social media post","An official statement issued to media","A paid advertisement","An internal memo"],c:1,cat:"PR Basics",d:"easy"},
+  {q:"What does 'target audience' mean in marketing?",a:["The total number of followers","A specific group of people you want to reach","All employees in a company","The media outlets you contact"],c:1,cat:"Marketing",d:"easy"},
+  {q:"What is a brand?",a:["Just a company logo","A product's price point","The identity and perception of a company or product","A type of advertisement"],c:2,cat:"Branding",d:"easy"},
+  {q:"What is 'earned media'?",a:["Paid advertising","Coverage you've paid for","Free publicity gained through PR efforts","Social media posts"],c:2,cat:"Media",d:"easy"},
+  {q:"What does SEO stand for?",a:["Social Engagement Optimization","Search Engine Optimization","Strategic Editorial Output","Subscriber Engagement Online"],c:1,cat:"Digital",d:"easy"},
+  {q:"Which element is NOT typically in a press release?",a:["Headline","Contact information","Financial projections","Dateline"],c:2,cat:"PR Basics",d:"easy"},
+  {q:"What is a 'call to action' (CTA)?",a:["A phone call to a journalist","A prompt asking the audience to do something","A type of email subject line","A crisis response strategy"],c:1,cat:"Marketing",d:"easy"},
+  {q:"What is 'internal communications'?",a:["Emails to external clients","Messaging between employees within an organization","Social media management","Press releases to media"],c:1,cat:"Corporate Comms",d:"easy"},
+  {q:"Which metric measures how many people saw your content?",a:["Engagement rate","Click-through rate","Reach/Impressions","Conversion rate"],c:2,cat:"Analytics",d:"easy"},
+  {q:"What is a 'media kit'?",a:["A box of cameras","A package of information about your brand for media","A type of press conference","A social media calendar"],c:1,cat:"PR Basics",d:"easy"},
+
+  // MEDIUM
+  {q:"The PESO model in PR stands for which four media types?",a:["Paid, Earned, Shared, Owned","Press, Editorial, Social, Online","Public, External, Shared, Official","Planned, Executed, Shared, Observed"],c:0,cat:"PR Strategy",d:"medium"},
+  {q:"What is 'share of voice' in marketing analytics?",a:["The number of podcast episodes","Your brand's presence vs competitors in a market","The volume of your advertisements","How loud your brand speaks"],c:1,cat:"Analytics",d:"medium"},
+  {q:"What is the primary purpose of a communications strategy?",a:["To increase sales directly","To outline how an org will communicate with stakeholders","To manage social media accounts","To train the PR team"],c:1,cat:"Strategy",d:"medium"},
+  {q:"What is 'crisis communications'?",a:["A communications training program","Managing information during a negative event to protect reputation","Daily internal newsletters","Emergency broadcast systems"],c:1,cat:"Crisis Comms",d:"medium"},
+  {q:"In content marketing, what does 'evergreen content' mean?",a:["Content about environmental topics","Content that remains relevant long after publication","Seasonal campaign content","Content with green branding"],c:1,cat:"Content",d:"medium"},
+  {q:"What is 'thought leadership' in B2B communications?",a:["Hosting internal training sessions","Positioning executives as experts in their field through content","Managing press conferences","Creating product documentation"],c:1,cat:"Corporate Comms",d:"medium"},
+  {q:"What does 'A/B testing' mean in communications?",a:["Testing in two different markets","Comparing two versions to see which performs better","A billing model for agencies","Testing for two audiences simultaneously"],c:1,cat:"Digital",d:"medium"},
+  {q:"What is the 'inverted pyramid' in journalism?",a:["A design technique for visuals","A story structure: most important info first","A social media posting schedule","A PR crisis framework"],c:1,cat:"Journalism",d:"medium"},
+  {q:"What does KPI stand for in marketing?",a:["Key Press Initiative","Key Performance Indicator","Knowledge-based PR Index","Known Publishing Information"],c:1,cat:"Analytics",d:"medium"},
+  {q:"What is an 'editorial calendar'?",a:["A journalist's appointment book","A planned schedule for content creation and publication","A list of media contacts","A social media algorithm"],c:1,cat:"Content",d:"medium"},
+  {q:"What is 'newsjacking' in PR?",a:["Stealing competitor press releases","Inserting your brand into a trending news story","Hacking media databases","Publishing fake news"],c:1,cat:"PR Strategy",d:"medium"},
+  {q:"What is 'stakeholder communications'?",a:["Messages to customers only","Tailored communications to all parties with an interest in your org","Annual reports only","Social media strategy"],c:1,cat:"Corporate Comms",d:"medium"},
+
+  // HARD
+  {q:"Which communication theory suggests media shapes what people think ABOUT (not what they think)?",a:["Uses and gratifications","Agenda-setting theory","Two-step flow model","Spiral of silence"],c:1,cat:"Comms Theory",d:"hard"},
+  {q:"What is the 'third-person effect' in communications?",a:["Three-step communication model","Belief that media influences others more than yourself","Third party PR agencies","Three stakeholder approach"],c:1,cat:"Comms Theory",d:"hard"},
+  {q:"In integrated marketing communications (IMC), what is the core principle?",a:["Using only digital channels","Consistent message across all channels and touchpoints","Prioritizing earned media","Separating B2B and B2C strategies"],c:1,cat:"Marketing",d:"hard"},
+  {q:"What does 'media framing' mean?",a:["Designing ads for different screen sizes","How media presents information to shape audience perception","The layout of a newspaper","A video production technique"],c:1,cat:"Media Theory",d:"hard"},
+  {q:"What is 'issues management' in corporate communications?",a:["Managing employee complaints","Proactively identifying and addressing potential PR problems before they become crises","Managing social media comments","Technical content writing"],c:1,cat:"Crisis Comms",d:"hard"},
+  {q:"The 'Excellence Theory' of PR (Grunig & Hunt) advocates for which communication model?",a:["One-way asymmetric","Press agentry","Two-way symmetric","Public information"],c:2,cat:"Comms Theory",d:"hard"},
+  {q:"What is 'dark social' in digital marketing?",a:["Negative social media campaigns","Private sharing of content (messaging apps, email) not trackable by analytics","Black hat social media tactics","Social media for niche audiences"],c:1,cat:"Digital",d:"hard"},
+  {q:"What is 'astroturfing' in PR?",a:["Outdoor event branding","Creating false impression of grassroots public support for a campaign","A type of guerrilla marketing","Live streaming events outdoors"],c:1,cat:"PR Ethics",d:"hard"},
+  {q:"What does PESO's 'Shared' media primarily refer to?",a:["Content shared between agencies","User-generated and social media content","Co-branded partnerships","Shared editorial calendars"],c:1,cat:"PR Strategy",d:"hard"},
+  {q:"What is the 'two-step flow' theory of communication?",a:["A two-phase content strategy","Media → Opinion leaders → General public","Two-way symmetric communication","A dual social media approach"],c:1,cat:"Comms Theory",d:"hard"},
+  {q:"In crisis PR, what is the 'golden hour'?",a:["The best time to post on social media","The critical first hour after a crisis breaks, where response speed is vital","Award time at PR events","Peak media coverage hour"],c:1,cat:"Crisis Comms",d:"hard"},
+  {q:"What is 'parasocial interaction' in media communications?",a:["Social media advertising","One-sided emotional relationships audiences form with media figures","Cross-platform social strategy","Parallel social media accounts"],c:1,cat:"Media Theory",d:"hard"},
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let difficulty = 'easy';
+let gameQuestions = [], qIndex = 0, score = 0;
+let correct = 0, wrong = 0, streak = 0, bestStreak = 0;
+let timerInterval, timeLeft, timeUsed = [];
+let answered = false;
+const Q_TIME = {easy:20, medium:15, hard:10};
+
+// ── STATS ──────────────────────────────────────────────────────────────────
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('wd_quiz_stats')||'{}'); } catch(e){return{};}
+}
+function saveStats(s) { localStorage.setItem('wd_quiz_stats', JSON.stringify(s)); }
+
+function updateStartStats() {
+  const s = loadStats();
+  document.getElementById('ss-best').textContent    = s.best     || '—';
+  document.getElementById('ss-played').textContent  = s.played   || '0';
+  document.getElementById('ss-acc').textContent     = s.totalQ   ? Math.round(s.totalC/s.totalQ*100)+'%' : '—';
+}
+
+// ── DIFFICULTY ─────────────────────────────────────────────────────────────
+function setDiff(d) {
+  difficulty = d;
+  ['easy','medium','hard'].forEach(x => {
+    const btn = document.getElementById('d-'+x);
+    btn.className = 'diff-btn' + (x===d ? ' sel-'+x : '');
+  });
+}
+
+// ── SCREEN ─────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+window.showScreen = showScreen;
+
+// ── START ──────────────────────────────────────────────────────────────────
+window.startQuiz = () => {
+  // Pick 10 questions for chosen difficulty + mix in a couple from others
+  const pool = QUESTIONS.filter(q=>q.d===difficulty);
+  const others = QUESTIONS.filter(q=>q.d!==difficulty);
+  const shufflePool = [...pool].sort(()=>Math.random()-.5);
+  const shuffleOthers = [...others].sort(()=>Math.random()-.5);
+  // 8 from chosen difficulty, 2 from others
+  gameQuestions = [...shufflePool.slice(0,8), ...shuffleOthers.slice(0,2)].sort(()=>Math.random()-.5);
+
+  qIndex=0; score=0; correct=0; wrong=0; streak=0; bestStreak=0; timeUsed=[];
+  answered=false;
+  showScreen('quiz');
+  renderQuestion();
+};
+
+// ── QUESTION ───────────────────────────────────────────────────────────────
+function renderQuestion() {
+  const q = gameQuestions[qIndex];
+  answered = false;
+
+  document.getElementById('q-num').textContent       = `Q${qIndex+1} of ${gameQuestions.length}`;
+  document.getElementById('q-score-live').textContent = score;
+  document.getElementById('q-cat').textContent        = q.cat;
+  document.getElementById('q-text').textContent       = q.q;
+  document.getElementById('q-prog').style.width       = (qIndex/gameQuestions.length*100)+'%';
+
+  // Shuffle options
+  const opts = q.a.map((text,i)=>({text,origIdx:i})).sort(()=>Math.random()-.5);
+  const correctOptIdx = opts.findIndex(o=>o.origIdx===q.c);
+
+  document.getElementById('q-opts').innerHTML = opts.map((o,i)=>`
+    <button class="q-opt" id="opt-${i}" onclick="answer(${i},${o.origIdx===q.c},${correctOptIdx})">
+      ${o.text}
+    </button>
+  `).join('');
+
+  startTimer(Q_TIME[q.d]||15);
+}
+
+// ── TIMER ──────────────────────────────────────────────────────────────────
+function startTimer(t) {
+  clearInterval(timerInterval);
+  timeLeft = t;
+  updateTimerEl();
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    updateTimerEl();
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      if(!answered) timeOut();
+    }
+  },1000);
+}
+
+function updateTimerEl(){
+  const el = document.getElementById('q-timer');
+  el.textContent = timeLeft+'s';
+  el.className = 'q-timer' + (timeLeft<=5?' danger':timeLeft<=8?' warn':'');
+}
+
+function timeOut() {
+  answered = true;
+  // Reveal correct answer
+  const q = gameQuestions[qIndex];
+  const opts = document.querySelectorAll('.q-opt');
+  opts.forEach(o=>o.disabled=true);
+  // Find correct button
+  opts.forEach((o,i)=>{
+    if(o.textContent.trim()===q.a[q.c]) o.classList.add('correct');
+  });
+  wrong++; streak=0;
+  timeUsed.push(Q_TIME[q.d]||15);
+  showFeedback('⏰ Time\'s up!', false);
+  setTimeout(nextQuestion, 1800);
+}
+
+// ── ANSWER ─────────────────────────────────────────────────────────────────
+window.answer = (clickedIdx, isCorrect, correctIdx) => {
+  if(answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  timeUsed.push((Q_TIME[gameQuestions[qIndex].d]||15) - timeLeft);
+
+  const opts = document.querySelectorAll('.q-opt');
+  opts.forEach(o=>o.disabled=true);
+  opts[clickedIdx].classList.add(isCorrect?'correct':'wrong');
+  if(!isCorrect) opts[correctIdx].classList.add('reveal');
+
+  if(isCorrect) {
+    const timeBonus = Math.max(0, timeLeft);
+    const diff_mult = {easy:1,medium:1.5,hard:2}[gameQuestions[qIndex].d]||1;
+    const pts = Math.round((100 + timeBonus*5) * diff_mult);
+    score += pts;
+    correct++; streak++;
+    if(streak>bestStreak) bestStreak=streak;
+    showFeedback('✓ Correct! +'+pts, true);
+  } else {
+    wrong++; streak=0;
+    showFeedback('✗ Wrong', false);
+  }
+
+  document.getElementById('q-score-live').textContent = score;
+  setTimeout(nextQuestion, 1600);
+};
+
+function nextQuestion() {
+  qIndex++;
+  if(qIndex >= gameQuestions.length) { showResults(); return; }
+  renderQuestion();
+}
+
+// ── FEEDBACK TOAST ─────────────────────────────────────────────────────────
+let feedbackTimeout;
+function showFeedback(msg, good) {
+  clearTimeout(feedbackTimeout);
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.className = 'q-feedback show ' + (good?'good':'bad');
+  feedbackTimeout = setTimeout(()=>{ el.classList.remove('show'); }, 1400);
+}
+
+// ── RESULTS ────────────────────────────────────────────────────────────────
+function showResults() {
+  showScreen('results');
+  const pct = Math.round(correct/gameQuestions.length*100);
+  const avgTime = timeUsed.length ? Math.round(timeUsed.reduce((a,b)=>a+b,0)/timeUsed.length) : 0;
+
+  const ranks = [
+    {min:90,r:'🏆 CMO',   color:'#ff9f0a', e:'🏆'},
+    {min:75,r:'🎯 Director',color:'var(--neon)',e:'🎯'},
+    {min:60,r:'💡 Senior Strategist',color:'var(--purple)',e:'💡'},
+    {min:45,r:'📋 Strategist',color:'var(--green)',e:'📋'},
+    {min:25,r:'📚 Analyst',color:'var(--text2)',e:'📚'},
+    {min:0, r:'🌱 Intern',  color:'var(--text3)',e:'🌱'},
+  ];
+  const rank = ranks.find(r=>pct>=r.min) || ranks[ranks.length-1];
+
+  document.getElementById('r-emoji').textContent    = rank.e;
+  document.getElementById('r-rank').textContent     = rank.r;
+  document.getElementById('r-rank').style.color     = rank.color;
+  document.getElementById('r-score').textContent    = score;
+  document.getElementById('r-score').style.color    = rank.color;
+  document.getElementById('r-sub').textContent      = `${correct} of ${gameQuestions.length} correct · ${avgTime}s avg`;
+  document.getElementById('r-correct').textContent  = correct;
+  document.getElementById('r-wrong').textContent    = wrong;
+  document.getElementById('r-streak').textContent   = bestStreak;
+  document.getElementById('r-time').textContent     = avgTime+'s';
+
+  // Breakdown
+  document.getElementById('r-breakdown').innerHTML =
+    '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Question Review</div>' +
+    gameQuestions.map((q,i)=>{
+      // We stored answered correctly per question — use simple heuristic
+      return `<div class="result-row">
+        <div class="result-row-icon">${timeUsed[i]!==undefined?'—':'?'}</div>
+        <div class="result-row-q">${q.q.length>60?q.q.slice(0,58)+'…':q.q}</div>
+        <div style="font-size:10px;color:var(--text3);flex-shrink:0">${q.cat}</div>
+      </div>`;
+    }).join('');
+
+  // Save stats
+  const s = loadStats();
+  s.played  = (s.played||0)+1;
+  s.best    = Math.max(s.best||0, score);
+  s.totalQ  = (s.totalQ||0)+gameQuestions.length;
+  s.totalC  = (s.totalC||0)+correct;
+  saveStats(s);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+updateStartStats();
+</script>
+</body>
+</html>
