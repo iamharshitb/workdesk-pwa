@@ -1230,13 +1230,10 @@ function renderMyTasks() {
   }
 
   // Apply search filter
-  // Easter egg: type "quiz" to open the comms trivia game
-  if (searchQuery === 'quiz') {
-    window.location.href = 'quiz.html';
-    return;
-  }
-  if (searchQuery === 'snake') {
-    window.location.href = 'snake.html';
+  // Easter egg triggers — navigate after brief delay
+  const _easterEggs = { quiz:'quiz.html', snake:'snake.html', space:'space.html' };
+  if (_easterEggs[searchQuery]) {
+    setTimeout(() => { window.location.href = _easterEggs[searchQuery]; }, 120);
     return;
   }
   if (searchQuery) {
