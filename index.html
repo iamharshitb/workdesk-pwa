@@ -299,7 +299,6 @@
     .wc-zone:first-child {
       border-right:1px solid var(--border2);
     }
-    .wc-flag { font-size:18px;flex-shrink:0;line-height:1 }
     .wc-info { display:flex;flex-direction:column;gap:1px }
     .wc-time {
       font-family:var(--mono);font-size:16px;font-weight:500;
@@ -316,44 +315,6 @@
     /* Subtle dot separator */
     .wc-zone.ist .wc-time { color:var(--amber) }
     .wc-zone.ger .wc-time { color:var(--neon) }
-
-    /* ── WORLD CLOCK STRIP ── */
-    .clock-strip {
-      display:flex;gap:8px;margin-bottom:10px;
-    }
-    .clock-card {
-      flex:1;display:flex;align-items:center;gap:10px;
-      background:var(--bg2);border:1px solid var(--border2);
-      border-radius:var(--r);padding:9px 12px;
-      box-shadow:var(--shadow-card);
-      position:relative;overflow:hidden;
-    }
-    .clock-card::before {
-      content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;
-    }
-    .clock-india::before  { background:var(--amber); box-shadow:0 0 6px rgba(255,159,10,.4) }
-    .clock-germany::before{ background:var(--neon);  box-shadow:0 0 6px rgba(10,132,255,.4) }
-    .clock-badge {
-      width:32px;height:32px;border-radius:8px;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:800;letter-spacing:.04em;
-    }
-    .clock-badge-in {
-      background:rgba(255,159,10,.12);color:var(--amber);
-      border:1px solid rgba(255,159,10,.25);
-    }
-    .clock-badge-de {
-      background:rgba(10,132,255,.1);color:var(--neon);
-      border:1px solid rgba(10,132,255,.2);
-    }
-    .clock-body  { flex:1;min-width:0 }
-    .clock-time  {
-      font-family:var(--mono);font-size:16px;font-weight:500;
-      color:var(--text);line-height:1;margin-bottom:2px;
-      letter-spacing:.02em;
-    }
-    .clock-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em }
-    .clock-date  { font-size:9px;color:var(--text3);font-weight:600;margin-top:1px }
 
     /* ── GREETING BAR ── */
     .greeting-bar {
@@ -800,7 +761,7 @@
   <!-- WORLD CLOCK -->
   <div class="world-clock fi" style="animation-delay:.005s">
     <div class="wc-zone ist">
-      <div class="wc-flag">🇮🇳</div>
+      <div style="width:30px;height:30px;border-radius:7px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--amber);flex-shrink:0;letter-spacing:.02em">IN</div>
       <div class="wc-info">
         <div class="wc-time" id="wc-ist-time">--:--</div>
         <div class="wc-label">IST · India</div>
@@ -808,31 +769,11 @@
       </div>
     </div>
     <div class="wc-zone ger">
-      <div class="wc-flag">🇩🇪</div>
+      <div style="width:30px;height:30px;border-radius:7px;background:rgba(10,132,255,.08);border:1px solid rgba(10,132,255,.18);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--neon);flex-shrink:0;letter-spacing:.02em">DE</div>
       <div class="wc-info">
         <div class="wc-time" id="wc-ger-time">--:--</div>
         <div class="wc-label" id="wc-ger-label">CET · Germany</div>
         <div class="wc-date" id="wc-ger-date"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- WORLD CLOCK -->
-  <div class="clock-strip fi" style="animation-delay:.005s">
-    <div class="clock-card clock-india">
-      <div class="clock-badge clock-badge-in">IN</div>
-      <div class="clock-body">
-        <div class="clock-time" id="clock-ist">--:--</div>
-        <div class="clock-label">IST · India</div>
-        <div class="clock-date" id="clock-ist-date"></div>
-      </div>
-    </div>
-    <div class="clock-card clock-germany">
-      <div class="clock-badge clock-badge-de">DE</div>
-      <div class="clock-body">
-        <div class="clock-time" id="clock-de">--:--</div>
-        <div class="clock-label">CET/CEST · Germany</div>
-        <div class="clock-date" id="clock-de-date"></div>
       </div>
     </div>
   </div>
@@ -1163,49 +1104,6 @@ function updateWorldClock() {
 
 updateWorldClock();
 setInterval(updateWorldClock, 30000); // update every 30s — no need for per-second
-// ── WORLD CLOCK ──────────────────────────────────────────────────────────
-(function startClock() {
-  const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const MONTHS= ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  function fmt(d) {
-    const h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12  = h % 12 || 12;
-    const mm   = String(m).padStart(2,'0');
-    return `${h12}:${mm} ${ampm}`;
-  }
-
-  function fmtDate(d) {
-    return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
-  }
-
-  function tick() {
-    const now = new Date();
-
-    // IST = UTC+5:30
-    const ist = new Date(now.getTime() + (5*60+30)*60000 - now.getTimezoneOffset()*60000);
-    // Germany: CET=UTC+1, CEST=UTC+2 (last Sun Mar → last Sun Oct)
-    // Use Intl API for automatic DST handling
-    const deStr = now.toLocaleString('en-GB', { timeZone:'Europe/Berlin',
-      hour:'numeric', minute:'2-digit', hour12:true });
-    const deDate = new Date(now.toLocaleString('en-US', { timeZone:'Europe/Berlin' }));
-
-    const istEl = document.getElementById('clock-ist');
-    const deEl  = document.getElementById('clock-de');
-    const istDt = document.getElementById('clock-ist-date');
-    const deDt  = document.getElementById('clock-de-date');
-
-    if (istEl)  istEl.textContent  = fmt(ist);
-    if (deEl)   deEl.textContent   = deStr.toUpperCase();
-    if (istDt)  istDt.textContent  = fmtDate(ist);
-    if (deDt)   deDt.textContent   = fmtDate(deDate);
-  }
-
-  tick();
-  setInterval(tick, 1000);
-})();
-
 function renderAll() {
   computeBadges();
   renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
