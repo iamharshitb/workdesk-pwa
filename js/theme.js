@@ -12,12 +12,12 @@ export const THEMES = [
 // Default to ios if no saved theme, or if saved theme no longer exists
 function getValidTheme() {
   const saved = localStorage.getItem('wd_theme');
-  // 'ios' was the old default — migrate to Standard ('')
+  // 'ios' was the old default — migrate to Light theme
   if (!saved || saved === 'ios') {
-    localStorage.setItem('wd_theme', ''); // persist migration immediately
-    return '';
+    localStorage.setItem('wd_theme', 'health');
+    return 'health';
   }
-  return THEMES.find(t => t.id === saved) ? saved : '';
+  return THEMES.find(t => t.id === saved) ? saved : 'health';
 }
 
 let currentTheme = getValidTheme();
