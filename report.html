@@ -192,6 +192,75 @@
 .rt-low   { color:var(--text3); background:var(--bg3); border-color:var(--border) }
 .rt-proj  { color:var(--purple); background:rgba(94,92,230,.08); border-color:rgba(94,92,230,.2) }
 
+/* ── AI NARRATIVE CARD ── */
+.rpt-ai-card {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--rr); padding:14px 16px; margin-bottom:12px;
+  box-shadow:var(--shadow-card); position:relative; overflow:hidden;
+}
+.rpt-ai-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--neon),var(--purple));
+}
+.rpt-ai-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.rpt-ai-label {
+  font-size:10px; font-weight:700; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.1em;
+  display:flex; align-items:center; gap:6px;
+}
+.rpt-ai-label::before {
+  content:'✦'; color:var(--neon); font-size:10px;
+}
+.rpt-ai-regen {
+  background:none; border:1px solid var(--border2); border-radius:8px;
+  padding:4px 10px; color:var(--text3); font-family:var(--sans);
+  font-size:10px; font-weight:700; cursor:pointer; transition:all .15s;
+}
+.rpt-ai-regen:hover { border-color:var(--neon); color:var(--neon) }
+.rpt-ai-regen:disabled { opacity:.4; cursor:not-allowed }
+.rpt-ai-body {
+  font-size:13px; line-height:1.65; color:var(--text2);
+  font-style:italic;
+}
+.rpt-ai-skeleton {
+  display:flex; flex-direction:column; gap:8px;
+}
+.rpt-ai-skel-line {
+  height:12px; background:var(--bg4); border-radius:4px;
+  animation:skel-pulse 1.4s ease-in-out infinite;
+}
+@keyframes skel-pulse {
+  0%,100%{opacity:.4} 50%{opacity:.8}
+}
+
+/* ── SCORECARD ── */
+.rpt-scorecard {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
+  margin-bottom:12px;
+}
+.rpt-sc-item {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--r); padding:10px 12px;
+}
+.rpt-sc-val { font-family:var(--mono); font-size:18px; font-weight:500; line-height:1; margin-bottom:3px }
+.rpt-sc-label { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.07em }
+
+/* ── OVERDUE / CIP ALERT ── */
+.rpt-alert {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:10px 12px; border-radius:var(--r); margin-bottom:8px;
+  border:1px solid;
+}
+.rpt-alert-warn { background:rgba(255,159,10,.06); border-color:rgba(255,159,10,.25) }
+.rpt-alert-info { background:rgba(94,92,230,.06); border-color:rgba(94,92,230,.25) }
+.rpt-alert-icon { font-size:14px; flex-shrink:0; margin-top:1px }
+.rpt-alert-body { flex:1; min-width:0 }
+.rpt-alert-title { font-size:11px; font-weight:700; color:var(--text); margin-bottom:3px }
+.rpt-alert-text { font-size:11px; color:var(--text3); line-height:1.5 }
+
 /* ── PRINT / PDF ── */
 @media print {
   nav, .rpt-tabs, .rpt-filter-row, .rpt-period-row,
@@ -376,6 +445,135 @@ function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day} ${M
 function monthLabel(m){const[y,mo]=m.split('-');return MONTHS[parseInt(mo)-1]+' '+y;}
 function pctColor(p){return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';}
 function priorityBorderColor(p){return{critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--text3)'}[p||'medium'];}
+
+// ── AI NARRATIVE ───────────────────────────────────────────────────────────
+let _lastNarrativeMonth = '';
+let _cachedNarrative = '';
+
+async function generateNarrative(tasks, month) {
+  const lbl = monthLabel(month);
+  const done = tasks.filter(t=>t.status==='done');
+  const pending = tasks.filter(t=>t.status!=='done');
+  const cips = tasks.filter(t=>t.project==='CIPs');
+  const critDone = tasks.filter(t=>t.priority==='critical'&&t.status==='done');
+  const overdue = tasks.filter(t=>{
+    if(t.status==='done') return false;
+    if(!t.taskDueDate) return false;
+    return t.taskDueDate < month+'-31' && t.taskDueDate < new Date().toISOString().slice(0,10);
+  });
+
+  const summary = {
+    month: lbl,
+    total: tasks.length,
+    done: done.length,
+    pending: pending.length,
+    completionPct: tasks.length ? Math.round(done.length/tasks.length*100) : 0,
+    criticalClosed: critDone.length,
+    overdueCount: overdue.length,
+    projects: [...new Set(tasks.map(t=>t.project).filter(Boolean))],
+    cipCount: cips.length,
+    cipDone: cips.filter(t=>t.status==='done').length,
+    doneTaskNames: done.map(t=>t.label).slice(0,12),
+    pendingTaskNames: pending.map(t=>({label:t.label,priority:t.priority,due:t.taskDueDate})).slice(0,8),
+  };
+
+  const prompt = `You are writing the internal narrative summary for an Internal Communications team's monthly report at Bosch Mobility India.
+
+Data for ${lbl}:
+${JSON.stringify(summary, null, 2)}
+
+Write a 3-sentence executive narrative for this month. Requirements:
+- Sentence 1: What the month was dominated by / the main theme of work (reference specific project names)
+- Sentence 2: Completion health — mention the ${summary.completionPct}% rate with honest context (all criticals closed = good signal even if % looks low)
+- Sentence 3: Forward look — what's coming up based on pending tasks / CIPs pipeline
+
+Tone: professional, honest, direct. Not salesy. Sound like an IC Lead writing for their manager, not a press release.
+Keep it under 80 words total. Return only the narrative text, no labels or preamble.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data = await resp.json();
+  return data.content?.find(b=>b.type==='text')?.text || 'Unable to generate narrative.';
+}
+
+function buildScorecardHTML(mt, allMt) {
+  const total = mt.length;
+  const done = mt.filter(t=>t.status==='done').length;
+  const critTotal = mt.filter(t=>t.priority==='critical').length;
+  const critDone = mt.filter(t=>t.priority==='critical'&&t.status==='done').length;
+  const highTotal = mt.filter(t=>t.priority==='high').length;
+  const highDone = mt.filter(t=>t.priority==='high'&&t.status==='done').length;
+  const carryFwd = mt.filter(t=>t.status!=='done').length;
+  const highPct = highTotal ? Math.round(highDone/highTotal*100) : 0;
+  const critStatus = critTotal===0 ? '—' : critDone===critTotal ? `${critDone}/${critTotal} ✓` : `${critDone}/${critTotal}`;
+  const critColor = critTotal===0?'var(--text3)':critDone===critTotal?'var(--green)':'var(--red)';
+
+  return `
+  <div class="rpt-scorecard">
+    <div class="rpt-sc-item">
+      <div class="rpt-sc-val" style="color:${critColor}">${critStatus}</div>
+      <div class="rpt-sc-label">Criticals Closed</div>
+    </div>
+    <div class="rpt-sc-item">
+      <div class="rpt-sc-val" style="color:${highPct>=80?'var(--green)':highPct>=50?'var(--amber)':'var(--red)'}">${highPct}%</div>
+      <div class="rpt-sc-label">High-Pri Done</div>
+    </div>
+    <div class="rpt-sc-item">
+      <div class="rpt-sc-val" style="color:var(--text)">${done}</div>
+      <div class="rpt-sc-label">Tasks Shipped</div>
+    </div>
+    <div class="rpt-sc-item">
+      <div class="rpt-sc-val" style="color:var(--amber)">${carryFwd}</div>
+      <div class="rpt-sc-label">Carry Forward</div>
+    </div>
+  </div>`;
+}
+
+function buildAlertsHTML(mt, selMonth) {
+  const today = new Date().toISOString().slice(0,10);
+  const overdue = mt.filter(t=>{
+    if(t.status==='done') return false;
+    if(!t.taskDueDate) return false;
+    return t.taskDueDate < today;
+  });
+  const cipTasks = mt.filter(t=>t.project==='CIPs');
+  const cipDone = cipTasks.filter(t=>t.status==='done').length;
+
+  let html = '';
+
+  if(overdue.length) {
+    const names = overdue.slice(0,3).map(t=>`"${t.label}"`).join(', ');
+    const more = overdue.length>3 ? ` +${overdue.length-3} more` : '';
+    html += `<div class="rpt-alert rpt-alert-warn">
+      <div class="rpt-alert-icon">⚠️</div>
+      <div class="rpt-alert-body">
+        <div class="rpt-alert-title">${overdue.length} Overdue Task${overdue.length>1?'s':''}</div>
+        <div class="rpt-alert-text">${names}${more} — past due with no completion recorded.</div>
+      </div>
+    </div>`;
+  }
+
+  if(cipTasks.length && cipDone===0) {
+    const nextDue = cipTasks.filter(t=>t.taskDueDate).sort((a,b)=>a.taskDueDate.localeCompare(b.taskDueDate))[0];
+    const nextLabel = nextDue ? ` Next due: ${fmtDate(nextDue.taskDueDate)} — "${nextDue.label}"` : '';
+    html += `<div class="rpt-alert rpt-alert-info">
+      <div class="rpt-alert-icon">📋</div>
+      <div class="rpt-alert-body">
+        <div class="rpt-alert-title">CIPs: ${cipTasks.length} items in pipeline, execution in progress</div>
+        <div class="rpt-alert-text">${cipDone}/${cipTasks.length} complete — these are process improvement items, not day-to-day tasks.${nextLabel}</div>
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
 
 // ── FILTERS ────────────────────────────────────────────────────────────────
 window.applyFilters=()=>{
@@ -586,6 +784,27 @@ function renderMonthly(){
       </div>
     </div>
 
+    <!-- SCORECARD -->
+    ${buildScorecardHTML(mt, allMt)}
+
+    <!-- ALERTS (overdue / CIP) -->
+    ${buildAlertsHTML(mt, selMonth)}
+
+    <!-- AI NARRATIVE -->
+    <div class="rpt-ai-card" id="ai-narrative-card">
+      <div class="rpt-ai-header">
+        <div class="rpt-ai-label">AI Summary</div>
+        <button class="rpt-ai-regen" id="ai-regen-btn" onclick="regenNarrative()">↺ Regenerate</button>
+      </div>
+      <div class="rpt-ai-body" id="ai-narrative-body">
+        <div class="rpt-ai-skeleton">
+          <div class="rpt-ai-skel-line" style="width:95%"></div>
+          <div class="rpt-ai-skel-line" style="width:80%"></div>
+          <div class="rpt-ai-skel-line" style="width:88%"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- CHARTS -->
     <div class="rpt-charts-grid">
       <div class="rpt-chart-card"><div class="rpt-chart-title">Status</div><div class="rpt-chart-wrap"><canvas id="chart-status"></canvas></div></div>
@@ -658,8 +877,48 @@ function renderMonthly(){
   `;
 
   setTimeout(()=>renderCharts(mt),30);
+
+  // Generate AI narrative (cache per month, skip if already loaded for this month)
+  if(_lastNarrativeMonth === selMonth && _cachedNarrative) {
+    const nb = document.getElementById('ai-narrative-body');
+    if(nb) nb.innerHTML = `<div class="rpt-ai-body">${_cachedNarrative}</div>`;
+  } else {
+    generateNarrative(allMt, selMonth).then(text => {
+      _lastNarrativeMonth = selMonth;
+      _cachedNarrative = text;
+      const nb = document.getElementById('ai-narrative-body');
+      if(nb) nb.innerHTML = `<div class="rpt-ai-body">${esc(text)}</div>`;
+      const btn = document.getElementById('ai-regen-btn');
+      if(btn) btn.disabled = false;
+    }).catch(()=>{
+      const nb = document.getElementById('ai-narrative-body');
+      if(nb) nb.innerHTML = `<div style="font-size:12px;color:var(--text3)">Could not generate summary. Try regenerating.</div>`;
+      const btn = document.getElementById('ai-regen-btn');
+      if(btn) btn.disabled = false;
+    });
+    // Disable regen while loading
+    const btn = document.getElementById('ai-regen-btn');
+    if(btn) btn.disabled = true;
+  }
 }
 window.renderMonthly=renderMonthly;
+
+window.regenNarrative=()=>{
+  _lastNarrativeMonth=''; _cachedNarrative='';
+  const nb=document.getElementById('ai-narrative-body');
+  if(nb) nb.innerHTML=`<div class="rpt-ai-skeleton"><div class="rpt-ai-skel-line" style="width:95%"></div><div class="rpt-ai-skel-line" style="width:80%"></div><div class="rpt-ai-skel-line" style="width:88%"></div></div>`;
+  const btn=document.getElementById('ai-regen-btn');
+  if(btn) btn.disabled=true;
+  const allMt=allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
+  generateNarrative(allMt,selMonth).then(text=>{
+    _lastNarrativeMonth=selMonth; _cachedNarrative=text;
+    if(nb) nb.innerHTML=`<div class="rpt-ai-body">${esc(text)}</div>`;
+    if(btn) btn.disabled=false;
+  }).catch(()=>{
+    if(nb) nb.innerHTML=`<div style="font-size:12px;color:var(--text3)">Could not generate. Try again.</div>`;
+    if(btn) btn.disabled=false;
+  });
+};
 
 // ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
 window.toggleProjectComplete=async(projName,idx)=>{
@@ -1004,6 +1263,21 @@ window.exportPDF=()=>{
     </div>`;
   }).join('');
 
+  // Build scorecard values for PDF
+  const critTotal = mt.filter(t=>t.priority==='critical').length;
+  const critDone2 = mt.filter(t=>t.priority==='critical'&&t.status==='done').length;
+  const highTotal = mt.filter(t=>t.priority==='high').length;
+  const highDone2 = mt.filter(t=>t.priority==='high'&&t.status==='done').length;
+  const highPct2 = highTotal ? Math.round(highDone2/highTotal*100) : 0;
+  const carryFwd2 = mt.filter(t=>t.status!=='done').length;
+  const critStatus2 = critTotal===0?'—':critDone2===critTotal?`${critDone2}/${critTotal} ✓`:`${critDone2}/${critTotal}`;
+  const critColor2 = critTotal===0?'#6b7280':critDone2===critTotal?'#16a34a':'#dc2626';
+  const today2 = new Date().toISOString().slice(0,10);
+  const overdue2 = mt.filter(t=>!t.status==='done'&&t.taskDueDate&&t.taskDueDate<today2);
+  const cipTasks2 = mt.filter(t=>t.project==='CIPs');
+  const cipDone2 = cipTasks2.filter(t=>t.status==='done').length;
+  const narrativeText = _cachedNarrative || '';
+
   const win = window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head>
     <title>Monthly Report — ${lbl}</title>
@@ -1038,6 +1312,43 @@ window.exportPDF=()=>{
         <div style="font-size:9px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.08em;margin-top:3px;opacity:.8">${l}</div>
       </div>`).join('')}
     </div>
+
+    <!-- SCORECARD -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div style="padding:10px 12px;background:#f8faff;border:1px solid #dbeafe;border-radius:6px">
+        <div style="font-size:18px;font-weight:800;color:${critColor2};line-height:1;margin-bottom:3px">${critStatus2}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Criticals Closed</div>
+      </div>
+      <div style="padding:10px 12px;background:#f8faff;border:1px solid #dbeafe;border-radius:6px">
+        <div style="font-size:18px;font-weight:800;color:${highPct2>=80?'#16a34a':highPct2>=50?'#d97706':'#dc2626'};line-height:1;margin-bottom:3px">${highPct2}%</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">High-Pri Done</div>
+      </div>
+      <div style="padding:10px 12px;background:#f8faff;border:1px solid #dbeafe;border-radius:6px">
+        <div style="font-size:18px;font-weight:800;color:#111827;line-height:1;margin-bottom:3px">${done}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Tasks Shipped</div>
+      </div>
+      <div style="padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px">
+        <div style="font-size:18px;font-weight:800;color:#d97706;line-height:1;margin-bottom:3px">${carryFwd2}</div>
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Carry Forward</div>
+      </div>
+    </div>
+
+    ${narrativeText ? `
+    <!-- AI NARRATIVE -->
+    <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px;padding:14px 16px;margin-bottom:16px;position:relative;border-top:2px solid #2563eb">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#2563eb;margin-bottom:8px">✦ AI Summary</div>
+      <div style="font-size:12px;line-height:1.7;color:#374151;font-style:italic">${esc(narrativeText)}</div>
+    </div>` : ''}
+
+    ${cipTasks2.length && cipDone2===0 ? `
+    <!-- CIP ALERT -->
+    <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:6px;padding:10px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:14px">📋</div>
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#4c1d95;margin-bottom:2px">CIPs: ${cipTasks2.length} items in pipeline</div>
+        <div style="font-size:10px;color:#6b7280">${cipDone2}/${cipTasks2.length} complete — process improvement items tracked separately from day-to-day delivery.</div>
+      </div>
+    </div>` : ''}
 
     <!-- WHAT WE SHIPPED -->
     ${shipped.length ? `
