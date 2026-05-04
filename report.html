@@ -447,10 +447,13 @@ function pctColor(p){return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red
 function priorityBorderColor(p){return{critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--text3)'}[p||'medium'];}
 
 // ── AI NARRATIVE ───────────────────────────────────────────────────────────
-let _lastNarrativeMonth = '';
 let _cachedNarrative = '';
 
-async function generateNarrative(tasks, month) {
+function getNarrativeKey(month) { return 'wd_narrative_' + month; }
+function loadSavedNarrative(month) { return localStorage.getItem(getNarrativeKey(month)) || ''; }
+function saveNarrative(month, text) { localStorage.setItem(getNarrativeKey(month), text); _cachedNarrative = text; }
+
+function buildPrompt(tasks, month) {
   const lbl = monthLabel(month);
   const done = tasks.filter(t=>t.status==='done');
   const pending = tasks.filter(t=>t.status!=='done');
@@ -462,45 +465,28 @@ async function generateNarrative(tasks, month) {
     return t.taskDueDate < month+'-31' && t.taskDueDate < new Date().toISOString().slice(0,10);
   });
 
-  const summary = {
-    month: lbl,
-    total: tasks.length,
-    done: done.length,
-    pending: pending.length,
-    completionPct: tasks.length ? Math.round(done.length/tasks.length*100) : 0,
-    criticalClosed: critDone.length,
-    overdueCount: overdue.length,
-    projects: [...new Set(tasks.map(t=>t.project).filter(Boolean))],
-    cipCount: cips.length,
-    cipDone: cips.filter(t=>t.status==='done').length,
-    doneTaskNames: done.map(t=>t.label).slice(0,12),
-    pendingTaskNames: pending.map(t=>({label:t.label,priority:t.priority,due:t.taskDueDate})).slice(0,8),
-  };
-
-  const prompt = `You are writing the internal narrative summary for an Internal Communications team's monthly report at Bosch Mobility India.
-
-Data for ${lbl}:
-${JSON.stringify(summary, null, 2)}
-
-Write a 3-sentence executive narrative for this month. Requirements:
-- Sentence 1: What the month was dominated by / the main theme of work (reference specific project names)
-- Sentence 2: Completion health — mention the ${summary.completionPct}% rate with honest context (all criticals closed = good signal even if % looks low)
-- Sentence 3: Forward look — what's coming up based on pending tasks / CIPs pipeline
-
-Tone: professional, honest, direct. Not salesy. Sound like an IC Lead writing for their manager, not a press release.
-Keep it under 80 words total. Return only the narrative text, no labels or preamble.`;
-
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:1000,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  const data = await resp.json();
-  return data.content?.find(b=>b.type==='text')?.text || 'Unable to generate narrative.';
+  const pct = tasks.length ? Math.round(done.length/tasks.length*100) : 0;
+  const lines = [
+    'You are writing the internal narrative summary for an Internal Communications team monthly report at Bosch Mobility India.',
+    '',
+    'Data for ' + lbl + ':',
+    '- Total tasks: ' + tasks.length + ' | Done: ' + done.length + ' | Pending: ' + pending.length + ' | Completion: ' + pct + '%',
+    '- Criticals closed: ' + critDone.length + ' of ' + tasks.filter(t=>t.priority==='critical').length,
+    '- Overdue (past due, not done): ' + overdue.length,
+    '- Projects active: ' + [...new Set(tasks.map(t=>t.project).filter(Boolean))].join(', '),
+    '- CIPs pipeline: ' + cips.length + ' items, ' + cips.filter(t=>t.status==='done').length + ' done',
+    '- Completed tasks: ' + done.map(t=>t.label).join(' | '),
+    '- Pending tasks: ' + pending.map(t=>t.label+' ['+t.priority+(t.taskDueDate?', due '+fmtDate(t.taskDueDate):'')+']').join(' | '),
+    '',
+    'Write a 3-sentence executive narrative for this months Internal Communications report.',
+    '- Sentence 1: What the month was dominated by / the main theme (reference specific project names)',
+    '- Sentence 2: Completion health - honest context on the ' + pct + '% rate (note: all criticals closed is a strong positive even when overall % looks low due to CIPs)',
+    '- Sentence 3: Forward look - what is coming based on pending tasks and CIPs pipeline',
+    '',
+    'Tone: professional, honest, direct. IC Lead writing for their manager - not a press release.',
+    'Under 80 words. Return only the narrative text, no labels or preamble.'
+  ];
+  return lines.join('\n');
 }
 
 function buildScorecardHTML(mt, allMt) {
@@ -794,15 +780,8 @@ function renderMonthly(){
     <div class="rpt-ai-card" id="ai-narrative-card">
       <div class="rpt-ai-header">
         <div class="rpt-ai-label">AI Summary</div>
-        <button class="rpt-ai-regen" id="ai-regen-btn" onclick="regenNarrative()">↺ Regenerate</button>
       </div>
-      <div class="rpt-ai-body" id="ai-narrative-body">
-        <div class="rpt-ai-skeleton">
-          <div class="rpt-ai-skel-line" style="width:95%"></div>
-          <div class="rpt-ai-skel-line" style="width:80%"></div>
-          <div class="rpt-ai-skel-line" style="width:88%"></div>
-        </div>
-      </div>
+      <div id="ai-narrative-body"></div>
     </div>
 
     <!-- CHARTS -->
@@ -878,46 +857,70 @@ function renderMonthly(){
 
   setTimeout(()=>renderCharts(mt),30);
 
-  // Generate AI narrative (cache per month, skip if already loaded for this month)
-  if(_lastNarrativeMonth === selMonth && _cachedNarrative) {
-    const nb = document.getElementById('ai-narrative-body');
-    if(nb) nb.innerHTML = `<div class="rpt-ai-body">${_cachedNarrative}</div>`;
-  } else {
-    generateNarrative(allMt, selMonth).then(text => {
-      _lastNarrativeMonth = selMonth;
-      _cachedNarrative = text;
-      const nb = document.getElementById('ai-narrative-body');
-      if(nb) nb.innerHTML = `<div class="rpt-ai-body">${esc(text)}</div>`;
-      const btn = document.getElementById('ai-regen-btn');
-      if(btn) btn.disabled = false;
-    }).catch(()=>{
-      const nb = document.getElementById('ai-narrative-body');
-      if(nb) nb.innerHTML = `<div style="font-size:12px;color:var(--text3)">Could not generate summary. Try regenerating.</div>`;
-      const btn = document.getElementById('ai-regen-btn');
-      if(btn) btn.disabled = false;
-    });
-    // Disable regen while loading
-    const btn = document.getElementById('ai-regen-btn');
-    if(btn) btn.disabled = true;
-  }
+  // Load saved narrative from localStorage
+  const saved = loadSavedNarrative(selMonth);
+  _cachedNarrative = saved;
+  const nb = document.getElementById('ai-narrative-body');
+  if(nb) nb.innerHTML = saved ? renderNarrativeBody(saved) : renderNarrativeEmpty(allMt, selMonth);
 }
 window.renderMonthly=renderMonthly;
 
-window.regenNarrative=()=>{
-  _lastNarrativeMonth=''; _cachedNarrative='';
-  const nb=document.getElementById('ai-narrative-body');
-  if(nb) nb.innerHTML=`<div class="rpt-ai-skeleton"><div class="rpt-ai-skel-line" style="width:95%"></div><div class="rpt-ai-skel-line" style="width:80%"></div><div class="rpt-ai-skel-line" style="width:88%"></div></div>`;
-  const btn=document.getElementById('ai-regen-btn');
-  if(btn) btn.disabled=true;
-  const allMt=allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
-  generateNarrative(allMt,selMonth).then(text=>{
-    _lastNarrativeMonth=selMonth; _cachedNarrative=text;
-    if(nb) nb.innerHTML=`<div class="rpt-ai-body">${esc(text)}</div>`;
-    if(btn) btn.disabled=false;
-  }).catch(()=>{
-    if(nb) nb.innerHTML=`<div style="font-size:12px;color:var(--text3)">Could not generate. Try again.</div>`;
-    if(btn) btn.disabled=false;
+// ── NARRATIVE UI HELPERS ──────────────────────────────────────────────────
+function renderNarrativeBody(text) {
+  return '<div class="rpt-ai-body" style="margin-bottom:10px">' + esc(text) + '</div>'
+    + '<div style="display:flex;gap:6px;margin-top:8px">'
+    + '<button class="rpt-ai-regen" onclick="clearNarrative()" style="color:var(--red);border-color:rgba(255,69,58,.3)">✕ Clear</button>'
+    + '<button class="rpt-ai-regen" onclick="copyPrompt()">⎘ Copy New Prompt</button>'
+    + '</div>';
+}
+
+function renderNarrativeEmpty(tasks, month) {
+  return '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6">'
+    + '1. Click <strong style="color:var(--text)">Copy Prompt</strong> — your task data is pre-loaded into a Claude prompt.<br>'
+    + '2. Paste into <strong style="color:var(--text)">claude.ai</strong> and copy the response.<br>'
+    + '3. Paste it back below and click <strong style="color:var(--text)">Save</strong>.'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+    + '<button class="rpt-ai-regen" onclick="copyPrompt()" style="color:var(--neon);border-color:rgba(10,132,255,.4)">⎘ Copy Prompt</button>'
+    + '</div>'
+    + '<textarea id="narrative-input" placeholder="Paste Claude response here…" '
+    + 'style="width:100%;min-height:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;'
+    + 'color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.5;resize:vertical;outline:none;box-sizing:border-box"></textarea>'
+    + '<button onclick="saveNarrativeInput()" '
+    + 'style="margin-top:6px;width:100%;padding:8px;border-radius:8px;border:none;background:var(--neon);color:#0c0c0f;'
+    + 'font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Save Summary</button>';
+}
+
+window.copyPrompt = () => {
+  const allMt = allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
+  const prompt = buildPrompt(allMt, selMonth);
+  navigator.clipboard.writeText(prompt).then(()=>{
+    // Show toast
+    let toast = document.getElementById('wd-toast');
+    if(!toast){ toast=document.createElement('div'); toast.id='wd-toast';
+      toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--neon);color:#0c0c0f;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity .3s';
+      document.body.appendChild(toast); }
+    toast.textContent = '✓ Prompt copied — paste into claude.ai';
+    toast.style.opacity = '1';
+    setTimeout(()=>{ toast.style.opacity='0'; }, 2500);
   });
+};
+
+window.saveNarrativeInput = () => {
+  const ta = document.getElementById('narrative-input');
+  const text = ta ? ta.value.trim() : '';
+  if(!text) return;
+  saveNarrative(selMonth, text);
+  const nb = document.getElementById('ai-narrative-body');
+  if(nb) nb.innerHTML = renderNarrativeBody(text);
+};
+
+window.clearNarrative = () => {
+  localStorage.removeItem(getNarrativeKey(selMonth));
+  _cachedNarrative = '';
+  const allMt = allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
+  const nb = document.getElementById('ai-narrative-body');
+  if(nb) nb.innerHTML = renderNarrativeEmpty(allMt, selMonth);
 };
 
 // ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
