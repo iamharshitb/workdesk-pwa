@@ -382,6 +382,59 @@
       width:7px;height:7px;border-radius:50%;flex-shrink:0;
     }
 
+    /* ── INLINE TASK EDIT ── */
+    .task-edit-panel {
+      display:none;
+      padding:14px;
+      background:var(--bg3);
+      border-top:1px solid var(--border2);
+      border-radius:0 0 var(--r) var(--r);
+      animation:sld .18s ease;
+    }
+    .task-edit-panel.open { display:block }
+    .task-edit-row { margin-bottom:10px }
+    .task-edit-label {
+      font-size:10px;font-weight:700;color:var(--text3);
+      text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;
+    }
+    .task-edit-inp {
+      width:100%;background:var(--bg2);border:1px solid var(--border2);
+      border-radius:8px;padding:9px 11px;color:var(--text);
+      font-family:var(--sans);font-size:14px;outline:none;
+      transition:border-color .15s;
+    }
+    .task-edit-inp:focus { border-color:rgba(10,132,255,.4) }
+    .task-edit-prow { display:flex;gap:6px }
+    .task-edit-pchip {
+      flex:1;padding:7px 4px;border-radius:20px;text-align:center;
+      font-family:var(--sans);font-size:11px;font-weight:700;
+      border:1px solid var(--border2);background:var(--bg2);
+      color:var(--text3);cursor:pointer;transition:all .12s;
+    }
+    .task-edit-pchip.pc { background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.3); color:var(--red) }
+    .task-edit-pchip.ph { background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.3);color:var(--amber) }
+    .task-edit-pchip.pm { background:rgba(10,132,255,.08);border-color:rgba(10,132,255,.3); color:var(--neon) }
+    .task-edit-pchip.pl { background:rgba(52,199,89,.06); border-color:rgba(52,199,89,.25); color:var(--green) }
+    .task-edit-dates { display:flex;gap:7px }
+    .task-edit-date-inp {
+      flex:1;background:var(--bg2);border:1px solid var(--border2);
+      border-radius:8px;padding:8px 10px;color:var(--text);
+      font-family:var(--sans);font-size:12px;outline:none;
+    }
+    .task-edit-actions { display:flex;gap:8px;margin-top:14px }
+    .task-edit-save {
+      flex:1;padding:10px;border-radius:9px;border:none;
+      background:var(--neon);color:#0c0c0f;
+      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+      transition:all .15s;
+    }
+    .task-edit-save:active { transform:scale(.97) }
+    .task-edit-cancel {
+      padding:10px 16px;border-radius:9px;
+      border:1px solid var(--border2);background:none;
+      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+    }
+
     /* ── CONFETTI ── */
     .confetti-wrap {
       position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;
@@ -1558,7 +1611,6 @@ function myTaskCard(t, i) {
             ${isDone ? '↩ Reopen' : '✓ Mark Done'}
           </button>`}
           ${(() => {
-            // Only show active reminder badge to person who set it
             const remActive = t.reminder?.active &&
               (!t.reminder.setBy || t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase());
             return `<button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
@@ -1572,8 +1624,45 @@ function myTaskCard(t, i) {
               })() : '🔔 Remind me'}
             </button>`;
           })()}
+          <button class="sc-btn" onclick="event.stopPropagation();openInlineEdit('${t.id}')"
+            style="margin-left:auto;border-color:rgba(10,132,255,.25);color:var(--neon)">
+            ✎ Edit
+          </button>
         </div>
         <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
+
+        <!-- INLINE EDIT PANEL -->
+        <div class="task-edit-panel" id="edit-panel-${t.id}" onclick="event.stopPropagation()">
+          <div class="task-edit-row">
+            <div class="task-edit-label">Task</div>
+            <input class="task-edit-inp" id="edit-label-${t.id}" value="${esc(t.label)}"
+              onkeydown="if(event.key==='Enter')saveInlineEdit('${t.id}')">
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Project</div>
+            <input class="task-edit-inp" id="edit-project-${t.id}" value="${esc(t.project||'')}"
+              placeholder="Project name" style="font-size:13px">
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Priority</div>
+            <div class="task-edit-prow">
+              ${['critical','high','medium','low'].map(p => {
+                const cls = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[p];
+                const sel = (t.priority||'medium') === p ? ' '+cls : '';
+                return `<button class="task-edit-pchip${sel}" id="edit-p-${t.id}-${p}"
+                  onclick="event.stopPropagation();selectEditPriority('${t.id}','${p}')">${p}</button>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Due Date</div>
+            <input type="date" class="task-edit-date-inp" id="edit-due-${t.id}" value="${t.taskDueDate||''}">
+          </div>
+          <div class="task-edit-actions">
+            <button class="task-edit-cancel" onclick="event.stopPropagation();closeInlineEdit('${t.id}')">Cancel</button>
+            <button class="task-edit-save" onclick="event.stopPropagation();saveInlineEdit('${t.id}')">✓ Save Changes</button>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -2101,6 +2190,70 @@ window.toggleIndividualDone = async (taskId, newStatus) => {
   } else {
     playReopen(); toast('↩ Reopened');
   }
+};
+
+// ── INLINE TASK EDIT ──────────────────────────────────────────────────────
+let _editPriority = {};
+
+window.openInlineEdit = (taskId) => {
+  // Close any other open edit panels
+  document.querySelectorAll('.task-edit-panel.open').forEach(p => {
+    if (!p.id.endsWith(taskId)) p.classList.remove('open');
+  });
+  const panel = document.getElementById('edit-panel-' + taskId);
+  if (!panel) return;
+  const t = tasks.find(t => t.id === taskId);
+  if (!t) return;
+  // Store current priority
+  _editPriority[taskId] = t.priority || 'medium';
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    // Focus label input
+    setTimeout(() => document.getElementById('edit-label-' + taskId)?.focus(), 100);
+  }
+};
+
+window.closeInlineEdit = (taskId) => {
+  document.getElementById('edit-panel-' + taskId)?.classList.remove('open');
+};
+
+window.selectEditPriority = (taskId, priority) => {
+  _editPriority[taskId] = priority;
+  const pCls = {critical:'pc',high:'ph',medium:'pm',low:'pl'};
+  ['critical','high','medium','low'].forEach(p => {
+    const btn = document.getElementById(`edit-p-${taskId}-${p}`);
+    if (!btn) return;
+    btn.className = 'task-edit-pchip' + (p === priority ? ' ' + pCls[p] : '');
+  });
+};
+
+window.saveInlineEdit = async (taskId) => {
+  const label   = document.getElementById('edit-label-'   + taskId)?.value.trim();
+  const project = document.getElementById('edit-project-' + taskId)?.value.trim();
+  const due     = document.getElementById('edit-due-'     + taskId)?.value;
+  const priority = _editPriority[taskId] || 'medium';
+
+  if (!label) { toast('Task name cannot be empty'); return; }
+
+  // Update local cache
+  const t = tasks.find(t => t.id === taskId);
+  if (t) {
+    t.label    = label;
+    t.project  = project;
+    t.priority = priority;
+    t.taskDueDate = due || null;
+  }
+
+  // Save to Firestore
+  await updateTask(taskId, {
+    label, project, priority,
+    taskDueDate: due || null,
+    dueDate:     due || null,
+  });
+
+  closeInlineEdit(taskId);
+  renderAll();
+  toast('✓ Task updated');
 };
 
 window.cycleOverall = async (id) => {
