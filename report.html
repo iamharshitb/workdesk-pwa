@@ -867,7 +867,7 @@ window.renderMonthly=renderMonthly;
 
 // ── NARRATIVE UI HELPERS ──────────────────────────────────────────────────
 function renderNarrativeBody(text) {
-  return '<div class="rpt-ai-body" style="margin-bottom:10px">' + esc(text) + '</div>'
+  return '<div class="rpt-ai-body" style="margin-bottom:10px;white-space:pre-wrap">' + esc(text) + '</div>'
     + '<button class="rpt-ai-regen" onclick="editNarrative()" style="margin-top:4px">✏ Edit</button>';
 }
 
@@ -1307,6 +1307,19 @@ window.exportPDF=()=>{
       </div>`).join('')}
     </div>
 
+    <!-- HOW TO READ -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#059669;margin-bottom:5px">📖 How to Read This Report</div>
+      <div style="font-size:10px;color:#374151;line-height:1.65">
+        This is the MBC-IN Internal Communications monthly report. 
+        The <strong>scorecard</strong> gives a priority-weighted view of completion — focus on Criticals Closed and High-Pri Done, not just the overall %. 
+        The <strong>AI Summary</strong> is a hand-written narrative by the IC Lead contextualising the month. 
+        <strong>What We Shipped</strong> lists all completed tasks. 
+        <strong>All Tasks by Project</strong> gives full task-level detail grouped by workstream. 
+        CIPs (Continuous Improvement Projects) are process-improvement items tracked separately from day-to-day delivery.
+      </div>
+    </div>
+
     <!-- SCORECARD -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
       <div style="padding:10px 12px;background:#f8faff;border:1px solid #dbeafe;border-radius:6px">
@@ -1331,7 +1344,7 @@ window.exportPDF=()=>{
     <!-- AI NARRATIVE -->
     <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px;padding:14px 16px;margin-bottom:16px;position:relative;border-top:2px solid #2563eb">
       <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#2563eb;margin-bottom:8px">✦ AI Summary</div>
-      <div style="font-size:12px;line-height:1.7;color:#374151;font-style:italic">${esc(narrativeText)}</div>
+      <div style="font-size:12px;line-height:1.7;color:#374151;font-style:italic;white-space:pre-wrap">${esc(narrativeText)}</div>
     </div>` : ''}
 
     ${cipTasks2.length && cipDone2===0 ? `
