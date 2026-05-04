@@ -477,6 +477,20 @@
     .reminder-set { padding:8px 18px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer }
     .reminder-cancel { padding:8px 14px;border-radius:9px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
     .reminder-dismiss { padding:8px 14px;border-radius:9px;border:1.5px solid rgba(255,58,94,.3);background:none;color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
+    .r-quick-btn {
+      padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
+      background:var(--bg3);color:var(--text2);font-family:var(--sans);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .r-quick-btn:hover,.r-quick-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
+    .r-snooze-btn {
+      padding:5px 10px;border-radius:8px;border:1px solid var(--border2);
+      background:var(--bg3);color:var(--text2);font-family:var(--sans);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .r-snooze-btn:hover,.r-snooze-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
 
     /* ── PULL TO REFRESH ── */
     .ptr-indicator {
@@ -957,15 +971,55 @@
 <div class="reminder-modal" id="reminder-modal">
   <div class="reminder-box">
     <div class="reminder-title">🔔 Set Reminder</div>
-    <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600"></div>
+    <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:14px;font-weight:600;line-height:1.4;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--purple)"></div>
+
+    <!-- Quick pick buttons -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Quick Pick</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="reminder-quick-btns">
+      <button class="r-quick-btn" onclick="setReminderQuick(30)">30 min</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(60)">1 hour</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(180)">3 hours</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(0,'tomorrow','09:00')">Tomorrow 9am</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(0,'tomorrow','18:00')">Tomorrow 6pm</button>
+    </div>
+
+    <!-- Custom date/time -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Custom Time</div>
     <div class="reminder-fields">
       <input type="date" id="reminder-date">
       <input type="time" id="reminder-time" value="09:00">
     </div>
+
     <div class="reminder-btns">
       <button class="reminder-cancel" onclick="closeReminderModal()">Cancel</button>
-      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">Remove</button>
-      <button class="reminder-set" onclick="confirmReminder()">Set Reminder</button>
+      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">🗑 Remove</button>
+      <button class="reminder-set" onclick="confirmReminder()">✓ Set</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER ALERT OVERLAY (replaces toast) -->
+<div id="reminder-alert" style="display:none;position:fixed;bottom:72px;left:16px;right:16px;z-index:9000;max-width:468px;margin:0 auto">
+  <div style="background:var(--bg2);border:1.5px solid rgba(94,92,230,.4);border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(94,92,230,.15)">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="font-size:20px;flex-shrink:0;margin-top:2px">🔔</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Reminder</div>
+        <div id="reminder-alert-task" style="font-size:14px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:10px"></div>
+        <!-- Snooze options -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(5)">5 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(15)">15 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(30)">30 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(60)">1 hour</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(0,'tomorrow')">Tomorrow</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="dismissFromAlert()" style="flex:1;padding:8px;border-radius:9px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Dismiss</button>
+          <button onclick="openFromAlert()" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Open Task →</button>
+        </div>
+      </div>
+      <button onclick="dismissFromAlert()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;flex-shrink:0;padding:0;line-height:1">✕</button>
     </div>
   </div>
 </div>
@@ -2641,104 +2695,158 @@ window.submitComment = async (taskId) => {
 // ═══════════════════════════════════════════════════════
 // FEATURE 4: REMINDER
 // ═══════════════════════════════════════════════════════
+// ── REMINDERS ─────────────────────────────────────────────────────────────
 let _reminderTaskId = null;
+let _alertTaskId    = null;
+const _firedReminders = new Set();
 
+// ── Reminder helpers ─────────────────────────────────────────────────────
+const _rpad = n => String(n).padStart(2,'0');
+const _rDateStr = d => `${d.getFullYear()}-${_rpad(d.getMonth()+1)}-${_rpad(d.getDate())}`;
+const _rTimeStr = d => `${_rpad(d.getHours())}:${_rpad(d.getMinutes())}`;
+const _rDT      = d => `${_rDateStr(d)}T${_rTimeStr(d)}`;
+
+// ── OPEN MODAL ────────────────────────────────────────────────────────────
 window.openReminderModal = (taskId) => {
   _reminderTaskId = taskId;
   const t = tasks.find(t => t.id === taskId);
-  document.getElementById('reminder-task-name').textContent = t ? t.label : '';
-  // Set default date to tomorrow
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
-  document.getElementById('reminder-date').value = tomorrow.toISOString().slice(0,10);
-  document.getElementById('reminder-time').value = '09:00';
-  // Show dismiss button if reminder already set
-  const hasReminder = t?.reminder?.active;
+  if (!t) return;
+  document.getElementById('reminder-task-name').textContent = t.label || '';
+
+  // Pre-fill existing reminder time if set, else default tomorrow 9am
+  const hasReminder = t.reminder?.active;
+  if (hasReminder && t.reminder.date && t.reminder.time) {
+    document.getElementById('reminder-date').value = t.reminder.date;
+    document.getElementById('reminder-time').value = t.reminder.time;
+  } else {
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    document.getElementById('reminder-date').value = _rDateStr(tomorrow);
+    document.getElementById('reminder-time').value = '09:00';
+  }
+
   document.getElementById('reminder-dismiss-btn').style.display = hasReminder ? '' : 'none';
   document.getElementById('reminder-modal').classList.add('open');
 };
+
 window.closeReminderModal = () => {
   document.getElementById('reminder-modal').classList.remove('open');
   _reminderTaskId = null;
 };
+
+// ── QUICK PICK ────────────────────────────────────────────────────────────
+window.setReminderQuick = (minutes, mode, timeOverride) => {
+  const now = new Date();
+  let target;
+  if (mode === 'tomorrow') {
+    target = new Date(now);
+    target.setDate(target.getDate()+1);
+    const [hh,mm] = (timeOverride||'09:00').split(':');
+    target.setHours(parseInt(hh), parseInt(mm), 0, 0);
+  } else {
+    target = new Date(now.getTime() + minutes * 60000);
+  }
+  document.getElementById('reminder-date').value = _rDateStr(target);
+  document.getElementById('reminder-time').value = _rTimeStr(target);
+};
+
+// ── CONFIRM / DISMISS ─────────────────────────────────────────────────────
 window.confirmReminder = async () => {
   if (!_reminderTaskId) return;
   const date = document.getElementById('reminder-date').value;
   const time = document.getElementById('reminder-time').value;
-  if (!date || !time) { toast('Pick a date and time', 'err'); return; }
+  if (!date || !time) { toast('Pick a date and time'); return; }
   await setReminder(_reminderTaskId, date, time, MY_NAME);
+  _firedReminders.delete(_reminderTaskId); // allow re-fire at new time
   closeReminderModal();
-  toast('🔔 Reminder set!');
-  scheduleReminderCheck();
-};
-// Expose firebase dismissReminder on window for inline onclick use
-window.dismissReminderFromToast = async (taskId) => {
-  window._clearFiredReminder(taskId);
-  await dismissReminder(taskId);
-  // Hide the toast
-  const el = document.getElementById('toast');
-  if (el) el.classList.remove('show');
-  toast('Reminder dismissed');
+  toast('🔔 Reminder set for ' + fmtReminderTime(date, time));
 };
 
 window.dismissReminderNow = async () => {
   if (!_reminderTaskId) return;
+  _firedReminders.delete(_reminderTaskId);
   await dismissReminder(_reminderTaskId);
   closeReminderModal();
+  renderAll();
   toast('Reminder removed');
 };
-window.snoozeReminder = async (taskId, newDate, newTime) => {
-  window._clearFiredReminder(taskId); // allow re-firing at new time
-  await snoozeReminder(taskId, newDate, newTime);
-  toast('⏰ Snoozed!');
+
+function fmtReminderTime(date, time) {
+  const d = new Date(date + 'T' + time);
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}) + ' ' + time;
+}
+
+// ── REMINDER ALERT (rich overlay) ────────────────────────────────────────
+function showReminderAlert(t) {
+  playTaskAssigned();
+  _alertTaskId = t.id;
+  document.getElementById('reminder-alert-task').textContent = t.label || '';
+  document.getElementById('reminder-alert').style.display = '';
+}
+
+window.dismissFromAlert = async () => {
+  if (!_alertTaskId) return;
+  _firedReminders.delete(_alertTaskId);
+  document.getElementById('reminder-alert').style.display = 'none';
+  await dismissReminder(_alertTaskId);
+  renderAll();
+  toast('Reminder dismissed');
+  _alertTaskId = null;
 };
 
-// Check reminders every minute
-function scheduleReminderCheck() {
-  setInterval(checkReminders, 60000);
-}
-scheduleReminderCheck();
+window.snoozeFromAlert = async (minutes, mode) => {
+  if (!_alertTaskId) return;
+  const now = new Date();
+  let target;
+  if (mode === 'tomorrow') {
+    target = new Date(now); target.setDate(target.getDate()+1);
+    target.setHours(9,0,0,0);
+  } else {
+    target = new Date(now.getTime() + minutes * 60000);
+  }
+  const date = _rDateStr(target);
+  const time = _rTimeStr(target);
+  _firedReminders.delete(_alertTaskId);
+  document.getElementById('reminder-alert').style.display = 'none';
+  await snoozeReminder(_alertTaskId, date, time);
+  toast('⏰ Snoozed until ' + fmtReminderTime(date, time));
+  _alertTaskId = null;
+};
 
-// Track which reminders have already fired this session
-const _firedReminders = new Set();
+window.openFromAlert = () => {
+  if (!_alertTaskId) return;
+  document.getElementById('reminder-alert').style.display = 'none';
+  // Switch to My Tasks and expand the task
+  switchTab('mytasks', document.querySelector('.tab'));
+  setTimeout(() => {
+    const row = document.getElementById('trc-' + _alertTaskId);
+    if (row) {
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      if (!expandedTasks.has(_alertTaskId)) toggleTaskExpand(_alertTaskId);
+    }
+  }, 200);
+};
+
+// ── CHECK REMINDERS (every 30s) ──────────────────────────────────────────
+window._clearFiredReminder = (id) => { _firedReminders.delete(id); };
 
 function checkReminders() {
-  const now = new Date();
-  // Use LOCAL time for comparison — reminders are set in local time
-  const pad = n => String(n).padStart(2,'0');
-  const nowLocal = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
+  const nowStr = _rDT(new Date());
   tasks.forEach(t => {
     if (!t.reminder?.active) return;
-    // Only fire for the person who set the reminder
     const isMyReminder = !t.reminder.setBy ||
       t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase();
     if (!isMyReminder) return;
     const reminderDT = `${t.reminder.date}T${t.reminder.time}`;
-    if (reminderDT <= nowLocal && !_firedReminders.has(t.id)) {
+    if (reminderDT <= nowStr && !_firedReminders.has(t.id)) {
       _firedReminders.add(t.id);
       showReminderAlert(t);
     }
   });
 }
-
-// When a reminder is dismissed or snoozed, remove from fired set
-// so a snoozed reminder can fire again at the new time
-window._clearFiredReminder = (taskId) => {
-  _firedReminders.delete(taskId);
-};
-
-function showReminderAlert(t) {
-  // Play sound
-  playTaskAssigned();
-  // Show toast with snooze option
-  const el = document.getElementById('toast');
-  el.innerHTML = `🔔 Reminder: <strong>${esc(t.label)}</strong>
-    <button onclick="openReminderModal('${t.id}')" style="margin-left:8px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Snooze</button>
-    <button onclick="window.dismissReminderFromToast('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
-  el.className = 'toast show';
-  el.style.maxWidth = '320px';
-  // Don't auto-hide reminder toasts
-}
+// Check every 30 seconds (was 60s — catch reminders more promptly)
+setInterval(checkReminders, 30000);
+// Also check immediately on load after tasks arrive
+setTimeout(checkReminders, 3000);
 
 // ═══════════════════════════════════════════════════════
 // FEATURE 5: PULL TO REFRESH
