@@ -446,7 +446,7 @@ function monthLabel(m){const[y,mo]=m.split('-');return MONTHS[parseInt(mo)-1]+' 
 function pctColor(p){return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';}
 function priorityBorderColor(p){return{critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--text3)'}[p||'medium'];}
 
-// ── AI NARRATIVE ───────────────────────────────────────────────────────────
+// ── NARRATIVE (MANUAL) ────────────────────────────────────────────────────
 let _cachedNarrative = '';
 
 function getNarrativeKey(month) { return 'wd_narrative_' + month; }
@@ -861,49 +861,41 @@ function renderMonthly(){
   const saved = loadSavedNarrative(selMonth);
   _cachedNarrative = saved;
   const nb = document.getElementById('ai-narrative-body');
-  if(nb) nb.innerHTML = saved ? renderNarrativeBody(saved) : renderNarrativeEmpty(allMt, selMonth);
+  if(nb) nb.innerHTML = saved ? renderNarrativeBody(saved) : renderNarrativeEmpty();
 }
 window.renderMonthly=renderMonthly;
 
 // ── NARRATIVE UI HELPERS ──────────────────────────────────────────────────
 function renderNarrativeBody(text) {
   return '<div class="rpt-ai-body" style="margin-bottom:10px">' + esc(text) + '</div>'
-    + '<div style="display:flex;gap:6px;margin-top:8px">'
-    + '<button class="rpt-ai-regen" onclick="clearNarrative()" style="color:var(--red);border-color:rgba(255,69,58,.3)">✕ Clear</button>'
-    + '<button class="rpt-ai-regen" onclick="copyPrompt()">⎘ Copy New Prompt</button>'
+    + '<button class="rpt-ai-regen" onclick="editNarrative()" style="margin-top:4px">✏ Edit</button>';
+}
+
+function renderNarrativeEdit(text) {
+  return '<textarea id="narrative-input" placeholder="Write a 2–3 sentence summary of this month…" '
+    + 'style="width:100%;min-height:76px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;'
+    + 'padding:8px 10px;color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.55;'
+    + 'resize:vertical;outline:none;box-sizing:border-box">'
+    + text.replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    + '</textarea>'
+    + '<div style="display:flex;gap:6px;margin-top:6px">'
+    + '<button onclick="saveNarrativeInput()" '
+    + 'style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--neon);color:#0c0c0f;'
+    + 'font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Save</button>'
+    + (text ? '<button onclick="clearNarrative()" '
+    + 'style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,69,58,.3);background:none;'
+    + 'color:var(--red);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Clear</button>' : '')
     + '</div>';
 }
 
-function renderNarrativeEmpty(tasks, month) {
-  return '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6">'
-    + '1. Click <strong style="color:var(--text)">Copy Prompt</strong> — your task data is pre-loaded into a Claude prompt.<br>'
-    + '2. Paste into <strong style="color:var(--text)">claude.ai</strong> and copy the response.<br>'
-    + '3. Paste it back below and click <strong style="color:var(--text)">Save</strong>.'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;margin-bottom:8px">'
-    + '<button class="rpt-ai-regen" onclick="copyPrompt()" style="color:var(--neon);border-color:rgba(10,132,255,.4)">⎘ Copy Prompt</button>'
-    + '</div>'
-    + '<textarea id="narrative-input" placeholder="Paste Claude response here…" '
-    + 'style="width:100%;min-height:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;'
-    + 'color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.5;resize:vertical;outline:none;box-sizing:border-box"></textarea>'
-    + '<button onclick="saveNarrativeInput()" '
-    + 'style="margin-top:6px;width:100%;padding:8px;border-radius:8px;border:none;background:var(--neon);color:#0c0c0f;'
-    + 'font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Save Summary</button>';
+function renderNarrativeEmpty() {
+  return renderNarrativeEdit('');
 }
 
-window.copyPrompt = () => {
-  const allMt = allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
-  const prompt = buildPrompt(allMt, selMonth);
-  navigator.clipboard.writeText(prompt).then(()=>{
-    // Show toast
-    let toast = document.getElementById('wd-toast');
-    if(!toast){ toast=document.createElement('div'); toast.id='wd-toast';
-      toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--neon);color:#0c0c0f;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity .3s';
-      document.body.appendChild(toast); }
-    toast.textContent = '✓ Prompt copied — paste into claude.ai';
-    toast.style.opacity = '1';
-    setTimeout(()=>{ toast.style.opacity='0'; }, 2500);
-  });
+window.editNarrative = () => {
+  const nb = document.getElementById('ai-narrative-body');
+  if(nb) nb.innerHTML = renderNarrativeEdit(_cachedNarrative);
+  setTimeout(()=>{ const ta=document.getElementById('narrative-input'); if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);} }, 50);
 };
 
 window.saveNarrativeInput = () => {
@@ -918,9 +910,8 @@ window.saveNarrativeInput = () => {
 window.clearNarrative = () => {
   localStorage.removeItem(getNarrativeKey(selMonth));
   _cachedNarrative = '';
-  const allMt = allTasks.filter(t=>t.month===selMonth&&(t.taskType||'mbc')==='mbc');
   const nb = document.getElementById('ai-narrative-body');
-  if(nb) nb.innerHTML = renderNarrativeEmpty(allMt, selMonth);
+  if(nb) nb.innerHTML = renderNarrativeEmpty();
 };
 
 // ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
