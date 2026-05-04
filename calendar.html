@@ -398,6 +398,7 @@ let viewMonth = new Date().getMonth(); // 0-indexed
 let events    = {}; // { 'YYYY-MM-DD': [ { subject, type, people, id } ] }
 let selectedDate = null;
 let selectedType = null;
+let calMembers = []; // loaded on init for auto-task creation
 
 const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TYPE_COLORS = {
@@ -411,6 +412,9 @@ const TYPE_HEX = {
 
 // ── FIRESTORE SYNC ─────────────────────────────────────────────────────────
 onUserReady(async () => {
+  // Load members for auto-task creation
+  try { calMembers = await getMembers(); } catch(e) { calMembers = []; }
+
   // Render immediately with empty state so calendar grid shows on load
   renderCalendar();
 
