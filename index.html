@@ -820,11 +820,14 @@
 
   <!-- DUE DATE FILTERS -->
   <div class="due-filter-row fi" id="due-filter-row" style="animation-delay:.06s">
+    <button class="due-filter-btn" id="due-today-btn" onclick="filterByDue('today')">
+      🔴 Today <span class="due-filter-count" id="due-today-count">0</span>
+    </button>
     <button class="due-filter-btn" id="due-this-week-btn" onclick="filterByDue('this-week')">
       📅 This Week <span class="due-filter-count" id="due-this-week-count">0</span>
     </button>
     <button class="due-filter-btn" id="due-two-weeks-btn" onclick="filterByDue('two-weeks')">
-      📅 Next 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
+      📅 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
     </button>
   </div>
 
@@ -1115,10 +1118,12 @@ window.filterByDue = (range) => {
   if (activeDueFilter === range) {
     // toggle off
     activeDueFilter = null;
+    document.getElementById('due-today-btn')?.classList.remove('active');
     document.getElementById('due-this-week-btn')?.classList.remove('active');
     document.getElementById('due-two-weeks-btn')?.classList.remove('active');
   } else {
     activeDueFilter = range;
+    document.getElementById('due-today-btn')?.classList.toggle('active',     range === 'today');
     document.getElementById('due-this-week-btn')?.classList.toggle('active', range === 'this-week');
     document.getElementById('due-two-weeks-btn')?.classList.toggle('active', range === 'two-weeks');
     // Clear stat filter when using due filter
@@ -1140,6 +1145,7 @@ window.filterTasks = (type) => {
     document.getElementById('sp-' + (type === 'critical' ? 'crit' : type === 'total' ? 'total' : type)).classList.add('active-filter');
     // Clear due filter
     activeDueFilter = null;
+    document.getElementById('due-today-btn')?.classList.remove('active');
     document.getElementById('due-this-week-btn')?.classList.remove('active');
     document.getElementById('due-two-weeks-btn')?.classList.remove('active');
   }
@@ -1152,6 +1158,7 @@ window.clearFilter = () => {
   activeFilter = null;
   activeDueFilter = null;
   document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  document.getElementById('due-today-btn')?.classList.remove('active');
   document.getElementById('due-this-week-btn')?.classList.remove('active');
   document.getElementById('due-two-weeks-btn')?.classList.remove('active');
   renderMyTasks();
@@ -1181,10 +1188,13 @@ function renderStats() {
   const _ws = `${_w.getFullYear()}-${_p2(_w.getMonth()+1)}-${_p2(_w.getDate())}`;
   const _2w = new Date(_n2); _2w.setDate(_2w.getDate()+14);
   const _2ws= `${_2w.getFullYear()}-${_p2(_2w.getMonth()+1)}-${_p2(_2w.getDate())}`;
+  const todayCount     = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate<=_ts).length;
   const thisWeekCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_ws).length;
   const twoWeeksCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_2ws).length;
-  const twc = document.getElementById('due-this-week-count');
+  const tc   = document.getElementById('due-today-count');
+  const twc  = document.getElementById('due-this-week-count');
   const ttwc = document.getElementById('due-two-weeks-count');
+  if (tc)   tc.textContent   = todayCount;
   if (twc)  twc.textContent  = thisWeekCount;
   if (ttwc) ttwc.textContent = twoWeeksCount;
 }
@@ -1217,16 +1227,21 @@ function renderMyTasks() {
   // Apply due date filter
   if (activeDueFilter) {
     const _today = new Date();
-    const _pad = n => String(n).padStart(2,'0');
-    const _todayStr = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
-    const _cutoff = new Date(_today);
-    _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
-    const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
-    taskList = taskList.filter(t =>
-      t.status !== 'done' &&
-      t.taskDueDate &&
-      t.taskDueDate <= _cutoffStr  // includes overdue (before today) + within range
-    );
+    const _pad   = n => String(n).padStart(2,'0');
+    const _ts    = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
+    if (activeDueFilter === 'today') {
+      // Today + overdue (anything due on or before today)
+      taskList = taskList.filter(t =>
+        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _ts
+      );
+    } else {
+      const _cutoff = new Date(_today);
+      _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
+      const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
+      taskList = taskList.filter(t =>
+        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _cutoffStr
+      );
+    }
   }
 
   // Apply search filter
