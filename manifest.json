@@ -1,12 +1,12 @@
 {
   "name": "WorkDesk",
   "short_name": "WorkDesk",
-  "description": "Team task tracker \u2014 tasks, timer, monthly report",
+  "description": "Team task tracker — tasks, calendar, reports & more",
   "start_url": "/workdesk-pwa/index.html",
   "scope": "/workdesk-pwa/",
   "display": "standalone",
-  "background_color": "#0d1018",
-  "theme_color": "#0d1018",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
   "orientation": "portrait-primary",
   "icons": [
     {

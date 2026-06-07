@@ -1,4 +1,4 @@
-const CACHE = 'workdesk-v7';
+const CACHE = 'workdesk-v8';
 const STATIC = [
   '/workdesk-pwa/css/style.css',
   '/workdesk-pwa/css/themes.css',

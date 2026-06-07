@@ -382,6 +382,59 @@
       width:7px;height:7px;border-radius:50%;flex-shrink:0;
     }
 
+    /* ── INLINE TASK EDIT ── */
+    .task-edit-panel {
+      display:none;
+      padding:14px;
+      background:var(--bg3);
+      border-top:1px solid var(--border2);
+      border-radius:0 0 var(--r) var(--r);
+      animation:sld .18s ease;
+    }
+    .task-edit-panel.open { display:block }
+    .task-edit-row { margin-bottom:10px }
+    .task-edit-label {
+      font-size:10px;font-weight:700;color:var(--text3);
+      text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;
+    }
+    .task-edit-inp {
+      width:100%;background:var(--bg2);border:1px solid var(--border2);
+      border-radius:8px;padding:9px 11px;color:var(--text);
+      font-family:var(--sans);font-size:14px;outline:none;
+      transition:border-color .15s;
+    }
+    .task-edit-inp:focus { border-color:rgba(10,132,255,.4) }
+    .task-edit-prow { display:flex;gap:6px }
+    .task-edit-pchip {
+      flex:1;padding:7px 4px;border-radius:20px;text-align:center;
+      font-family:var(--sans);font-size:11px;font-weight:700;
+      border:1px solid var(--border2);background:var(--bg2);
+      color:var(--text3);cursor:pointer;transition:all .12s;
+    }
+    .task-edit-pchip.pc { background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.3); color:var(--red) }
+    .task-edit-pchip.ph { background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.3);color:var(--amber) }
+    .task-edit-pchip.pm { background:rgba(10,132,255,.08);border-color:rgba(10,132,255,.3); color:var(--neon) }
+    .task-edit-pchip.pl { background:rgba(52,199,89,.06); border-color:rgba(52,199,89,.25); color:var(--green) }
+    .task-edit-dates { display:flex;gap:7px }
+    .task-edit-date-inp {
+      flex:1;background:var(--bg2);border:1px solid var(--border2);
+      border-radius:8px;padding:8px 10px;color:var(--text);
+      font-family:var(--sans);font-size:12px;outline:none;
+    }
+    .task-edit-actions { display:flex;gap:8px;margin-top:14px }
+    .task-edit-save {
+      flex:1;padding:10px;border-radius:9px;border:none;
+      background:var(--neon);color:#0c0c0f;
+      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+      transition:all .15s;
+    }
+    .task-edit-save:active { transform:scale(.97) }
+    .task-edit-cancel {
+      padding:10px 16px;border-radius:9px;
+      border:1px solid var(--border2);background:none;
+      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+    }
+
     /* ── CONFETTI ── */
     .confetti-wrap {
       position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;
@@ -477,6 +530,20 @@
     .reminder-set { padding:8px 18px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-family:var(--sans);font-size:13px;font-weight:800;cursor:pointer }
     .reminder-cancel { padding:8px 14px;border-radius:9px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
     .reminder-dismiss { padding:8px 14px;border-radius:9px;border:1.5px solid rgba(255,58,94,.3);background:none;color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer }
+    .r-quick-btn {
+      padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
+      background:var(--bg3);color:var(--text2);font-family:var(--sans);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .r-quick-btn:hover,.r-quick-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
+    .r-snooze-btn {
+      padding:5px 10px;border-radius:8px;border:1px solid var(--border2);
+      background:var(--bg3);color:var(--text2);font-family:var(--sans);
+      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .r-snooze-btn:hover,.r-snooze-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
 
     /* ── PULL TO REFRESH ── */
     .ptr-indicator {
@@ -820,11 +887,43 @@
 
   <!-- DUE DATE FILTERS -->
   <div class="due-filter-row fi" id="due-filter-row" style="animation-delay:.06s">
+    <button class="due-filter-btn" id="due-today-btn" onclick="filterByDue('today')">
+      🔴 Today <span class="due-filter-count" id="due-today-count">0</span>
+    </button>
     <button class="due-filter-btn" id="due-this-week-btn" onclick="filterByDue('this-week')">
       📅 This Week <span class="due-filter-count" id="due-this-week-count">0</span>
     </button>
     <button class="due-filter-btn" id="due-two-weeks-btn" onclick="filterByDue('two-weeks')">
-      📅 Next 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
+      📅 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
+    </button>
+    <div class="divider-chip"></div>
+    <button class="due-filter-btn" id="prio-crit-btn" onclick="filterByPriority('critical')">
+      🔴 Critical <span class="prio-filter-count" id="prio-crit-count" style="background:rgba(255,69,58,.1);color:var(--red)">0</span>
+    </button>
+    <button class="due-filter-btn" id="prio-high-btn" onclick="filterByPriority('high')">
+      🟠 High <span class="prio-filter-count" id="prio-high-count" style="background:rgba(255,159,10,.1);color:var(--amber)">0</span>
+    </button>
+    <button class="due-filter-btn" id="prio-med-btn" onclick="filterByPriority('medium')">
+      🔵 Medium <span class="prio-filter-count" id="prio-med-count" style="background:rgba(10,132,255,.1);color:var(--neon)">0</span>
+    </button>
+    <button class="due-filter-btn" id="prio-low-btn" onclick="filterByPriority('low')">
+      🟢 Low <span class="prio-filter-count" id="prio-low-count" style="background:rgba(52,199,89,.1);color:var(--green)">0</span>
+    </button>
+  </div>
+
+  <!-- PRIORITY FILTERS -->
+  <div class="priority-filter-row fi" id="priority-filter-row" style="animation-delay:.07s">
+    <button class="pf-btn" id="pf-critical" onclick="filterByPriority('critical')">
+      🔴 Critical
+    </button>
+    <button class="pf-btn" id="pf-high" onclick="filterByPriority('high')">
+      🟠 High
+    </button>
+    <button class="pf-btn" id="pf-medium" onclick="filterByPriority('medium')">
+      🔵 Medium
+    </button>
+    <button class="pf-btn" id="pf-low" onclick="filterByPriority('low')">
+      🟢 Low
     </button>
   </div>
 
@@ -954,15 +1053,55 @@
 <div class="reminder-modal" id="reminder-modal">
   <div class="reminder-box">
     <div class="reminder-title">🔔 Set Reminder</div>
-    <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600"></div>
+    <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:14px;font-weight:600;line-height:1.4;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--purple)"></div>
+
+    <!-- Quick pick buttons -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Quick Pick</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="reminder-quick-btns">
+      <button class="r-quick-btn" onclick="setReminderQuick(30)">30 min</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(60)">1 hour</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(180)">3 hours</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(0,'tomorrow','09:00')">Tomorrow 9am</button>
+      <button class="r-quick-btn" onclick="setReminderQuick(0,'tomorrow','18:00')">Tomorrow 6pm</button>
+    </div>
+
+    <!-- Custom date/time -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Custom Time</div>
     <div class="reminder-fields">
       <input type="date" id="reminder-date">
       <input type="time" id="reminder-time" value="09:00">
     </div>
+
     <div class="reminder-btns">
       <button class="reminder-cancel" onclick="closeReminderModal()">Cancel</button>
-      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">Remove</button>
-      <button class="reminder-set" onclick="confirmReminder()">Set Reminder</button>
+      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">🗑 Remove</button>
+      <button class="reminder-set" onclick="confirmReminder()">✓ Set</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER ALERT OVERLAY (replaces toast) -->
+<div id="reminder-alert" style="display:none;position:fixed;bottom:72px;left:16px;right:16px;z-index:9000;max-width:468px;margin:0 auto">
+  <div style="background:var(--bg2);border:1.5px solid rgba(94,92,230,.4);border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(94,92,230,.15)">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="font-size:20px;flex-shrink:0;margin-top:2px">🔔</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Reminder</div>
+        <div id="reminder-alert-task" style="font-size:14px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:10px"></div>
+        <!-- Snooze options -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(5)">5 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(15)">15 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(30)">30 min</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(60)">1 hour</button>
+          <button class="r-snooze-btn" onclick="snoozeFromAlert(0,'tomorrow')">Tomorrow</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="dismissFromAlert()" style="flex:1;padding:8px;border-radius:9px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Dismiss</button>
+          <button onclick="openFromAlert()" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer">Open Task →</button>
+        </div>
+      </div>
+      <button onclick="dismissFromAlert()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;flex-shrink:0;padding:0;line-height:1">✕</button>
     </div>
   </div>
 </div>
@@ -978,7 +1117,8 @@ let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed d
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
-let activeDueFilter = null; // 'this-week'|'two-weeks'|null
+let activeDueFilter    = null; // 'today'|'this-week'|'two-weeks'|null
+let activePriorityFilter = null; // 'critical'|'high'|'medium'|'low'|null
 
 // Theme handled by theme.js
 initTheme();
@@ -1111,19 +1251,81 @@ function renderAll() {
 
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
+window.filterByPriority = (priority) => {
+  const activeClass = { critical:'active-crit', high:'active-high', medium:'active-med', low:'active-low' };
+  if (activePriorityFilter === priority) {
+    // Toggle off
+    activePriorityFilter = null;
+    ['critical','high','medium','low'].forEach(p => {
+      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
+    });
+  } else {
+    activePriorityFilter = priority;
+    ['critical','high','medium','low'].forEach(p => {
+      const btn = document.getElementById('pf-'+p);
+      if (!btn) return;
+      btn.classList.remove('active-crit','active-high','active-med','active-low');
+      if (p === priority) btn.classList.add(activeClass[priority]);
+    });
+    // Clear stat filter when priority filter is used
+    activeFilter = null;
+    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  }
+  switchTab('mytasks', document.querySelector('.tab'));
+  renderMyTasks();
+};
+
+window.filterByPriority = (priority) => {
+  const ACTIVE_CLASS = { critical:'active-crit', high:'active-high', medium:'active-med', low:'active-low' };
+  const BTN_ID = { critical:'prio-crit-btn', high:'prio-high-btn', medium:'prio-med-btn', low:'prio-low-btn' };
+
+  if (activePriorityFilter === priority) {
+    // Toggle off
+    activePriorityFilter = null;
+    ['crit','high','med','low'].forEach(p =>
+      document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low')
+    );
+  } else {
+    activePriorityFilter = priority;
+    // Clear other priority buttons
+    ['crit','high','med','low'].forEach(p =>
+      document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low')
+    );
+    document.getElementById(BTN_ID[priority])?.classList.add(ACTIVE_CLASS[priority]);
+    // Clear stat + due filters
+    activeFilter    = null;
+    activeDueFilter = null;
+    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+    document.getElementById('due-today-btn')?.classList.remove('active-due');
+    document.getElementById('due-this-week-btn')?.classList.remove('active-due');
+    document.getElementById('due-two-weeks-btn')?.classList.remove('active-due');
+  }
+  switchTab('mytasks', document.querySelector('.tab'));
+  renderMyTasks();
+};
+
 window.filterByDue = (range) => {
   if (activeDueFilter === range) {
     // toggle off
     activeDueFilter = null;
-    document.getElementById('due-this-week-btn')?.classList.remove('active');
-    document.getElementById('due-two-weeks-btn')?.classList.remove('active');
+    document.getElementById('due-today-btn')?.classList.remove('active-due');
+    document.getElementById('due-this-week-btn')?.classList.remove('active-due');
+    document.getElementById('due-two-weeks-btn')?.classList.remove('active-due');
   } else {
     activeDueFilter = range;
-    document.getElementById('due-this-week-btn')?.classList.toggle('active', range === 'this-week');
-    document.getElementById('due-two-weeks-btn')?.classList.toggle('active', range === 'two-weeks');
-    // Clear stat filter when using due filter
+    document.getElementById('due-today-btn')?.classList.toggle('active-due',     range === 'today');
+    document.getElementById('due-this-week-btn')?.classList.toggle('active-due', range === 'this-week');
+    document.getElementById('due-two-weeks-btn')?.classList.toggle('active-due', range === 'two-weeks');
+    // Clear priority filter
+    activePriorityFilter = null;
+    ['crit','high','med','low'].forEach(p => document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low'));
+    // Clear stat + priority filters when using due filter
     activeFilter = null;
+    activePriorityFilter = null;
     document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+    ['critical','high','medium','low'].forEach(p => {
+      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
+    });
   }
   switchTab('mytasks', document.querySelector('.tab'));
   renderMyTasks();
@@ -1138,10 +1340,15 @@ window.filterTasks = (type) => {
     activeFilter = type;
     document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
     document.getElementById('sp-' + (type === 'critical' ? 'crit' : type === 'total' ? 'total' : type)).classList.add('active-filter');
-    // Clear due filter
+    // Clear due and priority filters
     activeDueFilter = null;
+    activePriorityFilter = null;
+    document.getElementById('due-today-btn')?.classList.remove('active');
     document.getElementById('due-this-week-btn')?.classList.remove('active');
     document.getElementById('due-two-weeks-btn')?.classList.remove('active');
+    ['critical','high','medium','low'].forEach(p => {
+      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
+    });
   }
   // Switch to My Tasks tab to show filtered results
   switchTab('mytasks', document.querySelector('.tab'));
@@ -1151,9 +1358,14 @@ window.filterTasks = (type) => {
 window.clearFilter = () => {
   activeFilter = null;
   activeDueFilter = null;
+  activePriorityFilter = null;
   document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  document.getElementById('due-today-btn')?.classList.remove('active');
   document.getElementById('due-this-week-btn')?.classList.remove('active');
   document.getElementById('due-two-weeks-btn')?.classList.remove('active');
+  ['critical','high','medium','low'].forEach(p => {
+    document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
+  });
   renderMyTasks();
 };
 
@@ -1181,12 +1393,27 @@ function renderStats() {
   const _ws = `${_w.getFullYear()}-${_p2(_w.getMonth()+1)}-${_p2(_w.getDate())}`;
   const _2w = new Date(_n2); _2w.setDate(_2w.getDate()+14);
   const _2ws= `${_2w.getFullYear()}-${_p2(_2w.getMonth()+1)}-${_p2(_2w.getDate())}`;
+  const todayCount     = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate<=_ts).length;
   const thisWeekCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_ws).length;
   const twoWeeksCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_2ws).length;
-  const twc = document.getElementById('due-this-week-count');
+  const tc   = document.getElementById('due-today-count');
+  const twc  = document.getElementById('due-this-week-count');
   const ttwc = document.getElementById('due-two-weeks-count');
+  if (tc)   tc.textContent   = todayCount;
   if (twc)  twc.textContent  = thisWeekCount;
   if (ttwc) ttwc.textContent = twoWeeksCount;
+
+  // Priority counts (my active tasks only)
+  const prioCounts = { critical:0, high:0, medium:0, low:0 };
+  myActiveTasks.forEach(t => { const p = t.priority||'medium'; if(prioCounts[p]!==undefined) prioCounts[p]++; });
+  const pc = document.getElementById('prio-crit-count');
+  const ph = document.getElementById('prio-high-count');
+  const pm = document.getElementById('prio-med-count');
+  const pl = document.getElementById('prio-low-count');
+  if(pc) pc.textContent = prioCounts.critical;
+  if(ph) ph.textContent = prioCounts.high;
+  if(pm) pm.textContent = prioCounts.medium;
+  if(pl) pl.textContent = prioCounts.low;
 }
 
 // ── MY TASKS ───────────────────────────────────────────────────────────────
@@ -1214,22 +1441,37 @@ function renderMyTasks() {
       : tasks;
   }
 
+  // Apply priority filter
+  if (activePriorityFilter) {
+    taskList = taskList.filter(t => (t.priority || 'medium') === activePriorityFilter);
+  }
+
   // Apply due date filter
   if (activeDueFilter) {
     const _today = new Date();
-    const _pad = n => String(n).padStart(2,'0');
-    const _todayStr = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
-    const _cutoff = new Date(_today);
-    _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
-    const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
-    taskList = taskList.filter(t =>
-      t.status !== 'done' &&
-      t.taskDueDate &&
-      t.taskDueDate <= _cutoffStr  // includes overdue (before today) + within range
-    );
+    const _pad   = n => String(n).padStart(2,'0');
+    const _ts    = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
+    if (activeDueFilter === 'today') {
+      // Today + overdue (anything due on or before today)
+      taskList = taskList.filter(t =>
+        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _ts
+      );
+    } else {
+      const _cutoff = new Date(_today);
+      _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
+      const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
+      taskList = taskList.filter(t =>
+        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _cutoffStr
+      );
+    }
   }
 
   // Apply search filter
+  // Priority filter
+  if (activePriorityFilter) {
+    taskList = taskList.filter(t => (t.priority||'medium') === activePriorityFilter);
+  }
+
   // Easter egg triggers — navigate after brief delay
   const _easterEggs = { quiz:'quiz.html', snake:'snake.html', space:'space.html' };
   if (_easterEggs[searchQuery]) {
@@ -1489,7 +1731,6 @@ function myTaskCard(t, i) {
             ${isDone ? '↩ Reopen' : '✓ Mark Done'}
           </button>`}
           ${(() => {
-            // Only show active reminder badge to person who set it
             const remActive = t.reminder?.active &&
               (!t.reminder.setBy || t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase());
             return `<button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
@@ -1503,8 +1744,45 @@ function myTaskCard(t, i) {
               })() : '🔔 Remind me'}
             </button>`;
           })()}
+          <button class="sc-btn" onclick="event.stopPropagation();openInlineEdit('${t.id}')"
+            style="margin-left:auto;border-color:rgba(10,132,255,.25);color:var(--neon)">
+            ✎ Edit
+          </button>
         </div>
         <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
+
+        <!-- INLINE EDIT PANEL -->
+        <div class="task-edit-panel" id="edit-panel-${t.id}" onclick="event.stopPropagation()">
+          <div class="task-edit-row">
+            <div class="task-edit-label">Task</div>
+            <input class="task-edit-inp" id="edit-label-${t.id}" value="${esc(t.label)}"
+              onkeydown="if(event.key==='Enter')saveInlineEdit('${t.id}')">
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Project</div>
+            <input class="task-edit-inp" id="edit-project-${t.id}" value="${esc(t.project||'')}"
+              placeholder="Project name" style="font-size:13px">
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Priority</div>
+            <div class="task-edit-prow">
+              ${['critical','high','medium','low'].map(p => {
+                const cls = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[p];
+                const sel = (t.priority||'medium') === p ? ' '+cls : '';
+                return `<button class="task-edit-pchip${sel}" id="edit-p-${t.id}-${p}"
+                  onclick="event.stopPropagation();selectEditPriority('${t.id}','${p}')">${p}</button>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="task-edit-row">
+            <div class="task-edit-label">Due Date</div>
+            <input type="date" class="task-edit-date-inp" id="edit-due-${t.id}" value="${t.taskDueDate||''}">
+          </div>
+          <div class="task-edit-actions">
+            <button class="task-edit-cancel" onclick="event.stopPropagation();closeInlineEdit('${t.id}')">Cancel</button>
+            <button class="task-edit-save" onclick="event.stopPropagation();saveInlineEdit('${t.id}')">✓ Save Changes</button>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -2032,6 +2310,70 @@ window.toggleIndividualDone = async (taskId, newStatus) => {
   } else {
     playReopen(); toast('↩ Reopened');
   }
+};
+
+// ── INLINE TASK EDIT ──────────────────────────────────────────────────────
+let _editPriority = {};
+
+window.openInlineEdit = (taskId) => {
+  // Close any other open edit panels
+  document.querySelectorAll('.task-edit-panel.open').forEach(p => {
+    if (!p.id.endsWith(taskId)) p.classList.remove('open');
+  });
+  const panel = document.getElementById('edit-panel-' + taskId);
+  if (!panel) return;
+  const t = tasks.find(t => t.id === taskId);
+  if (!t) return;
+  // Store current priority
+  _editPriority[taskId] = t.priority || 'medium';
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    // Focus label input
+    setTimeout(() => document.getElementById('edit-label-' + taskId)?.focus(), 100);
+  }
+};
+
+window.closeInlineEdit = (taskId) => {
+  document.getElementById('edit-panel-' + taskId)?.classList.remove('open');
+};
+
+window.selectEditPriority = (taskId, priority) => {
+  _editPriority[taskId] = priority;
+  const pCls = {critical:'pc',high:'ph',medium:'pm',low:'pl'};
+  ['critical','high','medium','low'].forEach(p => {
+    const btn = document.getElementById(`edit-p-${taskId}-${p}`);
+    if (!btn) return;
+    btn.className = 'task-edit-pchip' + (p === priority ? ' ' + pCls[p] : '');
+  });
+};
+
+window.saveInlineEdit = async (taskId) => {
+  const label   = document.getElementById('edit-label-'   + taskId)?.value.trim();
+  const project = document.getElementById('edit-project-' + taskId)?.value.trim();
+  const due     = document.getElementById('edit-due-'     + taskId)?.value;
+  const priority = _editPriority[taskId] || 'medium';
+
+  if (!label) { toast('Task name cannot be empty'); return; }
+
+  // Update local cache
+  const t = tasks.find(t => t.id === taskId);
+  if (t) {
+    t.label    = label;
+    t.project  = project;
+    t.priority = priority;
+    t.taskDueDate = due || null;
+  }
+
+  // Save to Firestore
+  await updateTask(taskId, {
+    label, project, priority,
+    taskDueDate: due || null,
+    dueDate:     due || null,
+  });
+
+  closeInlineEdit(taskId);
+  renderAll();
+  toast('✓ Task updated');
 };
 
 window.cycleOverall = async (id) => {
@@ -2626,104 +2968,158 @@ window.submitComment = async (taskId) => {
 // ═══════════════════════════════════════════════════════
 // FEATURE 4: REMINDER
 // ═══════════════════════════════════════════════════════
+// ── REMINDERS ─────────────────────────────────────────────────────────────
 let _reminderTaskId = null;
+let _alertTaskId    = null;
+const _firedReminders = new Set();
 
+// ── Reminder helpers ─────────────────────────────────────────────────────
+const _rpad = n => String(n).padStart(2,'0');
+const _rDateStr = d => `${d.getFullYear()}-${_rpad(d.getMonth()+1)}-${_rpad(d.getDate())}`;
+const _rTimeStr = d => `${_rpad(d.getHours())}:${_rpad(d.getMinutes())}`;
+const _rDT      = d => `${_rDateStr(d)}T${_rTimeStr(d)}`;
+
+// ── OPEN MODAL ────────────────────────────────────────────────────────────
 window.openReminderModal = (taskId) => {
   _reminderTaskId = taskId;
   const t = tasks.find(t => t.id === taskId);
-  document.getElementById('reminder-task-name').textContent = t ? t.label : '';
-  // Set default date to tomorrow
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
-  document.getElementById('reminder-date').value = tomorrow.toISOString().slice(0,10);
-  document.getElementById('reminder-time').value = '09:00';
-  // Show dismiss button if reminder already set
-  const hasReminder = t?.reminder?.active;
+  if (!t) return;
+  document.getElementById('reminder-task-name').textContent = t.label || '';
+
+  // Pre-fill existing reminder time if set, else default tomorrow 9am
+  const hasReminder = t.reminder?.active;
+  if (hasReminder && t.reminder.date && t.reminder.time) {
+    document.getElementById('reminder-date').value = t.reminder.date;
+    document.getElementById('reminder-time').value = t.reminder.time;
+  } else {
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    document.getElementById('reminder-date').value = _rDateStr(tomorrow);
+    document.getElementById('reminder-time').value = '09:00';
+  }
+
   document.getElementById('reminder-dismiss-btn').style.display = hasReminder ? '' : 'none';
   document.getElementById('reminder-modal').classList.add('open');
 };
+
 window.closeReminderModal = () => {
   document.getElementById('reminder-modal').classList.remove('open');
   _reminderTaskId = null;
 };
+
+// ── QUICK PICK ────────────────────────────────────────────────────────────
+window.setReminderQuick = (minutes, mode, timeOverride) => {
+  const now = new Date();
+  let target;
+  if (mode === 'tomorrow') {
+    target = new Date(now);
+    target.setDate(target.getDate()+1);
+    const [hh,mm] = (timeOverride||'09:00').split(':');
+    target.setHours(parseInt(hh), parseInt(mm), 0, 0);
+  } else {
+    target = new Date(now.getTime() + minutes * 60000);
+  }
+  document.getElementById('reminder-date').value = _rDateStr(target);
+  document.getElementById('reminder-time').value = _rTimeStr(target);
+};
+
+// ── CONFIRM / DISMISS ─────────────────────────────────────────────────────
 window.confirmReminder = async () => {
   if (!_reminderTaskId) return;
   const date = document.getElementById('reminder-date').value;
   const time = document.getElementById('reminder-time').value;
-  if (!date || !time) { toast('Pick a date and time', 'err'); return; }
+  if (!date || !time) { toast('Pick a date and time'); return; }
   await setReminder(_reminderTaskId, date, time, MY_NAME);
+  _firedReminders.delete(_reminderTaskId); // allow re-fire at new time
   closeReminderModal();
-  toast('🔔 Reminder set!');
-  scheduleReminderCheck();
-};
-// Expose firebase dismissReminder on window for inline onclick use
-window.dismissReminderFromToast = async (taskId) => {
-  window._clearFiredReminder(taskId);
-  await dismissReminder(taskId);
-  // Hide the toast
-  const el = document.getElementById('toast');
-  if (el) el.classList.remove('show');
-  toast('Reminder dismissed');
+  toast('🔔 Reminder set for ' + fmtReminderTime(date, time));
 };
 
 window.dismissReminderNow = async () => {
   if (!_reminderTaskId) return;
+  _firedReminders.delete(_reminderTaskId);
   await dismissReminder(_reminderTaskId);
   closeReminderModal();
+  renderAll();
   toast('Reminder removed');
 };
-window.snoozeReminder = async (taskId, newDate, newTime) => {
-  window._clearFiredReminder(taskId); // allow re-firing at new time
-  await snoozeReminder(taskId, newDate, newTime);
-  toast('⏰ Snoozed!');
+
+function fmtReminderTime(date, time) {
+  const d = new Date(date + 'T' + time);
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}) + ' ' + time;
+}
+
+// ── REMINDER ALERT (rich overlay) ────────────────────────────────────────
+function showReminderAlert(t) {
+  playTaskAssigned();
+  _alertTaskId = t.id;
+  document.getElementById('reminder-alert-task').textContent = t.label || '';
+  document.getElementById('reminder-alert').style.display = '';
+}
+
+window.dismissFromAlert = async () => {
+  if (!_alertTaskId) return;
+  _firedReminders.delete(_alertTaskId);
+  document.getElementById('reminder-alert').style.display = 'none';
+  await dismissReminder(_alertTaskId);
+  renderAll();
+  toast('Reminder dismissed');
+  _alertTaskId = null;
 };
 
-// Check reminders every minute
-function scheduleReminderCheck() {
-  setInterval(checkReminders, 60000);
-}
-scheduleReminderCheck();
+window.snoozeFromAlert = async (minutes, mode) => {
+  if (!_alertTaskId) return;
+  const now = new Date();
+  let target;
+  if (mode === 'tomorrow') {
+    target = new Date(now); target.setDate(target.getDate()+1);
+    target.setHours(9,0,0,0);
+  } else {
+    target = new Date(now.getTime() + minutes * 60000);
+  }
+  const date = _rDateStr(target);
+  const time = _rTimeStr(target);
+  _firedReminders.delete(_alertTaskId);
+  document.getElementById('reminder-alert').style.display = 'none';
+  await snoozeReminder(_alertTaskId, date, time);
+  toast('⏰ Snoozed until ' + fmtReminderTime(date, time));
+  _alertTaskId = null;
+};
 
-// Track which reminders have already fired this session
-const _firedReminders = new Set();
+window.openFromAlert = () => {
+  if (!_alertTaskId) return;
+  document.getElementById('reminder-alert').style.display = 'none';
+  // Switch to My Tasks and expand the task
+  switchTab('mytasks', document.querySelector('.tab'));
+  setTimeout(() => {
+    const row = document.getElementById('trc-' + _alertTaskId);
+    if (row) {
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      if (!expandedTasks.has(_alertTaskId)) toggleTaskExpand(_alertTaskId);
+    }
+  }, 200);
+};
+
+// ── CHECK REMINDERS (every 30s) ──────────────────────────────────────────
+window._clearFiredReminder = (id) => { _firedReminders.delete(id); };
 
 function checkReminders() {
-  const now = new Date();
-  // Use LOCAL time for comparison — reminders are set in local time
-  const pad = n => String(n).padStart(2,'0');
-  const nowLocal = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
+  const nowStr = _rDT(new Date());
   tasks.forEach(t => {
     if (!t.reminder?.active) return;
-    // Only fire for the person who set the reminder
     const isMyReminder = !t.reminder.setBy ||
       t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase();
     if (!isMyReminder) return;
     const reminderDT = `${t.reminder.date}T${t.reminder.time}`;
-    if (reminderDT <= nowLocal && !_firedReminders.has(t.id)) {
+    if (reminderDT <= nowStr && !_firedReminders.has(t.id)) {
       _firedReminders.add(t.id);
       showReminderAlert(t);
     }
   });
 }
-
-// When a reminder is dismissed or snoozed, remove from fired set
-// so a snoozed reminder can fire again at the new time
-window._clearFiredReminder = (taskId) => {
-  _firedReminders.delete(taskId);
-};
-
-function showReminderAlert(t) {
-  // Play sound
-  playTaskAssigned();
-  // Show toast with snooze option
-  const el = document.getElementById('toast');
-  el.innerHTML = `🔔 Reminder: <strong>${esc(t.label)}</strong>
-    <button onclick="openReminderModal('${t.id}')" style="margin-left:8px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Snooze</button>
-    <button onclick="window.dismissReminderFromToast('${t.id}')" style="margin-left:4px;background:none;border:1px solid currentColor;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:inherit">Dismiss</button>`;
-  el.className = 'toast show';
-  el.style.maxWidth = '320px';
-  // Don't auto-hide reminder toasts
-}
+// Check every 30 seconds (was 60s — catch reminders more promptly)
+setInterval(checkReminders, 30000);
+// Also check immediately on load after tasks arrive
+setTimeout(checkReminders, 3000);
 
 // ═══════════════════════════════════════════════════════
 // FEATURE 5: PULL TO REFRESH
@@ -2790,6 +3186,10 @@ if ('serviceWorker' in navigator) {
   <a href="calendar.html" class="bn-item">
     <span class="bn-icon">📅</span>
     <span class="bn-label">Calendar</span>
+  </a>
+  <a href="ideas.html" class="bn-item">
+    <span class="bn-icon">💡</span>
+    <span class="bn-label">Ideas</span>
   </a>
 </nav>
 </body>

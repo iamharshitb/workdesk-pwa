@@ -15,12 +15,12 @@ const firebaseConfig = {
   messagingSenderId: "300966370113",
   appId: "1:300966370113:web:c444bfaeaf4c28b2da5fc0"
 };
-const WORKSPACE_ID = "harshit-team-2026";
+export const WORKSPACE_ID = "harshit-team-2026";
 export const DELETE_PASSWORD = "workdesk@delete";
 const ARCHIVE_AFTER_DAYS = 90;
 
 const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
+export const db   = getFirestore(app);
 const auth = getAuth(app);
 
 export function onUserReady(cb) {
