@@ -886,29 +886,69 @@
   </div>
 
   <!-- DUE DATE FILTERS -->
-  <div class="due-filter-row fi" id="due-filter-row" style="animation-delay:.06s">
-    <button class="due-filter-btn" id="due-today-btn" onclick="filterByDue('today')">
-      🔴 Today <span class="due-filter-count" id="due-today-count">0</span>
+  <!-- FILTER TRIGGER ROW -->
+  <div class="filter-trigger-row fi" id="due-filter-row" style="animation-delay:.06s">
+    <button class="filter-trigger-btn" id="filter-trigger-btn" onclick="openFilterSheet()">
+      ⚙ Filters <span id="filter-trigger-count" style="display:none;font-size:10px;background:var(--neon);color:#0c0c0f;padding:1px 7px;border-radius:8px;font-weight:700"></span>
     </button>
-    <button class="due-filter-btn" id="due-this-week-btn" onclick="filterByDue('this-week')">
-      📅 This Week <span class="due-filter-count" id="due-this-week-count">0</span>
-    </button>
-    <button class="due-filter-btn" id="due-two-weeks-btn" onclick="filterByDue('two-weeks')">
-      📅 2 Weeks <span class="due-filter-count" id="due-two-weeks-count">0</span>
-    </button>
-    <div class="divider-chip"></div>
-    <button class="due-filter-btn" id="prio-crit-btn" onclick="filterByPriority('critical')">
-      🔴 Critical <span class="prio-filter-count" id="prio-crit-count" style="background:rgba(255,69,58,.1);color:var(--red)">0</span>
-    </button>
-    <button class="due-filter-btn" id="prio-high-btn" onclick="filterByPriority('high')">
-      🟠 High <span class="prio-filter-count" id="prio-high-count" style="background:rgba(255,159,10,.1);color:var(--amber)">0</span>
-    </button>
-    <button class="due-filter-btn" id="prio-med-btn" onclick="filterByPriority('medium')">
-      🔵 Medium <span class="prio-filter-count" id="prio-med-count" style="background:rgba(10,132,255,.1);color:var(--neon)">0</span>
-    </button>
-    <button class="due-filter-btn" id="prio-low-btn" onclick="filterByPriority('low')">
-      🟢 Low <span class="prio-filter-count" id="prio-low-count" style="background:rgba(52,199,89,.1);color:var(--green)">0</span>
-    </button>
+    <span class="filter-active-tag" id="filter-active-tag" style="display:none"></span>
+    <button class="filter-clear-x" id="filter-clear-x" onclick="clearAllFilters()" style="display:none" title="Clear filter">✕</button>
+  </div>
+
+  <!-- FILTER SHEET OVERLAY -->
+  <div class="filter-sheet-overlay" id="filter-sheet-overlay" onclick="if(event.target===this)closeFilterSheet()">
+    <div class="filter-sheet">
+      <div class="filter-sheet-hd">
+        <div class="filter-sheet-title">⚙ Filter Tasks</div>
+        <button class="filter-sheet-close" onclick="closeFilterSheet()">Done</button>
+      </div>
+      <div class="filter-sheet-body">
+
+        <div class="filter-group-label">By Due Date</div>
+        <div class="filter-chip-row">
+          <button class="filter-chip" id="fc-today" onclick="applySheetFilter('due','today',this)">
+            🔴 Today &amp; Overdue <span class="fc-count" id="fc-today-cnt">0</span>
+          </button>
+          <button class="filter-chip" id="fc-week" onclick="applySheetFilter('due','this-week',this)">
+            📅 This Week <span class="fc-count" id="fc-week-cnt">0</span>
+          </button>
+          <button class="filter-chip" id="fc-2weeks" onclick="applySheetFilter('due','two-weeks',this)">
+            📅 Next 2 Weeks <span class="fc-count" id="fc-2weeks-cnt">0</span>
+          </button>
+        </div>
+
+        <div class="filter-group-label">By Priority</div>
+        <div class="filter-chip-row">
+          <button class="filter-chip" id="fc-critical" onclick="applySheetFilter('priority','critical',this)">
+            🔴 Critical <span class="fc-count" id="fc-crit-cnt" style="background:rgba(255,69,58,.15)">0</span>
+          </button>
+          <button class="filter-chip" id="fc-high" onclick="applySheetFilter('priority','high',this)">
+            🟠 High <span class="fc-count" id="fc-high-cnt" style="background:rgba(255,159,10,.15)">0</span>
+          </button>
+          <button class="filter-chip" id="fc-medium" onclick="applySheetFilter('priority','medium',this)">
+            🔵 Medium <span class="fc-count" id="fc-med-cnt" style="background:rgba(10,132,255,.15)">0</span>
+          </button>
+          <button class="filter-chip" id="fc-low" onclick="applySheetFilter('priority','low',this)">
+            🟢 Low <span class="fc-count" id="fc-low-cnt" style="background:rgba(52,199,89,.15)">0</span>
+          </button>
+        </div>
+
+        <div class="filter-group-label">By Status</div>
+        <div class="filter-chip-row">
+          <button class="filter-chip" id="fc-inprog" onclick="applySheetFilter('status','inprog',this)">
+            🔄 In Progress <span class="fc-count" id="fc-ip-cnt">0</span>
+          </button>
+          <button class="filter-chip" id="fc-todo" onclick="applySheetFilter('status','todo',this)">
+            📋 Todo <span class="fc-count" id="fc-todo-cnt">0</span>
+          </button>
+        </div>
+
+      </div>
+      <div class="filter-sheet-footer">
+        <button class="filter-sheet-clear" onclick="clearAllFilters();closeFilterSheet()">✕ Clear All</button>
+        <button class="filter-sheet-apply" onclick="closeFilterSheet()">✓ Apply</button>
+      </div>
+    </div>
   </div>
 
   <!-- PRIORITY FILTERS -->
@@ -1251,85 +1291,103 @@ function renderAll() {
 
 
 // ── STATS FILTER ───────────────────────────────────────────────────────────
-window.filterByPriority = (priority) => {
-  const activeClass = { critical:'active-crit', high:'active-high', medium:'active-med', low:'active-low' };
-  if (activePriorityFilter === priority) {
-    // Toggle off
-    activePriorityFilter = null;
-    ['critical','high','medium','low'].forEach(p => {
-      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
-    });
-  } else {
-    activePriorityFilter = priority;
-    ['critical','high','medium','low'].forEach(p => {
-      const btn = document.getElementById('pf-'+p);
-      if (!btn) return;
-      btn.classList.remove('active-crit','active-high','active-med','active-low');
-      if (p === priority) btn.classList.add(activeClass[priority]);
-    });
-    // Clear stat filter when priority filter is used
-    activeFilter = null;
-    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+// ── FILTER SHEET ─────────────────────────────────────────────────────────
+let activeStatusFilter = null;
+
+window.openFilterSheet = () => {
+  updateSheetCounts();
+  document.getElementById('filter-sheet-overlay').classList.add('open');
+};
+window.closeFilterSheet = () => {
+  document.getElementById('filter-sheet-overlay').classList.remove('open');
+};
+
+window.applySheetFilter = (type, value, btn) => {
+  const isActive =
+    (type === 'due'      && activeDueFilter      === value) ||
+    (type === 'priority' && activePriorityFilter  === value) ||
+    (type === 'status'   && activeStatusFilter    === value);
+
+  document.querySelectorAll('.filter-chip').forEach(b =>
+    b.className = b.className.replace(/sel-\w+/g,'').trim()
+  );
+
+  activeDueFilter = activePriorityFilter = activeStatusFilter = null;
+
+  if (!isActive) {
+    if (type === 'due')      { activeDueFilter      = value; if(btn) btn.classList.add('sel-due') }
+    if (type === 'priority') {
+      activePriorityFilter = value;
+      const cls = {critical:'sel-crit',high:'sel-high',medium:'sel-med',low:'sel-low'}[value];
+      if(btn) btn.classList.add(cls);
+    }
+    if (type === 'status')   { activeStatusFilter   = value; if(btn) btn.classList.add('sel-stat') }
   }
+
+  activeFilter = null;
+  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  updateFilterTrigger();
+  updateSheetCounts();
   switchTab('mytasks', document.querySelector('.tab'));
   renderMyTasks();
 };
 
-window.filterByPriority = (priority) => {
-  const ACTIVE_CLASS = { critical:'active-crit', high:'active-high', medium:'active-med', low:'active-low' };
-  const BTN_ID = { critical:'prio-crit-btn', high:'prio-high-btn', medium:'prio-med-btn', low:'prio-low-btn' };
-
-  if (activePriorityFilter === priority) {
-    // Toggle off
-    activePriorityFilter = null;
-    ['crit','high','med','low'].forEach(p =>
-      document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low')
-    );
-  } else {
-    activePriorityFilter = priority;
-    // Clear other priority buttons
-    ['crit','high','med','low'].forEach(p =>
-      document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low')
-    );
-    document.getElementById(BTN_ID[priority])?.classList.add(ACTIVE_CLASS[priority]);
-    // Clear stat + due filters
-    activeFilter    = null;
-    activeDueFilter = null;
-    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-    document.getElementById('due-today-btn')?.classList.remove('active-due');
-    document.getElementById('due-this-week-btn')?.classList.remove('active-due');
-    document.getElementById('due-two-weeks-btn')?.classList.remove('active-due');
-  }
-  switchTab('mytasks', document.querySelector('.tab'));
+window.clearAllFilters = () => {
+  activeFilter = activeDueFilter = activePriorityFilter = activeStatusFilter = null;
+  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+  document.querySelectorAll('.filter-chip').forEach(b =>
+    b.className = b.className.replace(/sel-\w+/g,'').trim()
+  );
+  updateFilterTrigger();
   renderMyTasks();
 };
 
-window.filterByDue = (range) => {
-  if (activeDueFilter === range) {
-    // toggle off
-    activeDueFilter = null;
-    document.getElementById('due-today-btn')?.classList.remove('active-due');
-    document.getElementById('due-this-week-btn')?.classList.remove('active-due');
-    document.getElementById('due-two-weeks-btn')?.classList.remove('active-due');
-  } else {
-    activeDueFilter = range;
-    document.getElementById('due-today-btn')?.classList.toggle('active-due',     range === 'today');
-    document.getElementById('due-this-week-btn')?.classList.toggle('active-due', range === 'this-week');
-    document.getElementById('due-two-weeks-btn')?.classList.toggle('active-due', range === 'two-weeks');
-    // Clear priority filter
-    activePriorityFilter = null;
-    ['crit','high','med','low'].forEach(p => document.getElementById('prio-'+p+'-btn')?.classList.remove('active-crit','active-high','active-med','active-low'));
-    // Clear stat + priority filters when using due filter
-    activeFilter = null;
-    activePriorityFilter = null;
-    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-    ['critical','high','medium','low'].forEach(p => {
-      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
-    });
+function updateFilterTrigger() {
+  const btn    = document.getElementById('filter-trigger-btn');
+  const tag    = document.getElementById('filter-active-tag');
+  const clearX = document.getElementById('filter-clear-x');
+  const hasF   = activeDueFilter || activePriorityFilter || activeStatusFilter;
+  if(btn)    btn.classList.toggle('has-filter', !!hasF);
+  if(tag)    tag.style.display    = hasF ? '' : 'none';
+  if(clearX) clearX.style.display = hasF ? '' : 'none';
+  if(tag) {
+    if (activeDueFilter) {
+      const labels = {'today':'Today & Overdue','this-week':'This Week','two-weeks':'2 Weeks'};
+      tag.textContent = '📅 ' + (labels[activeDueFilter]||activeDueFilter);
+    } else if (activePriorityFilter) {
+      const labels = {critical:'🔴 Critical',high:'🟠 High',medium:'🔵 Medium',low:'🟢 Low'};
+      tag.textContent = labels[activePriorityFilter]||activePriorityFilter;
+    } else if (activeStatusFilter) {
+      tag.textContent = activeStatusFilter === 'inprog' ? '🔄 In Progress' : '📋 Todo';
+    }
   }
-  switchTab('mytasks', document.querySelector('.tab'));
-  renderMyTasks();
-};
+}
+
+function updateSheetCounts() {
+  const myActive = tasks.filter(t =>
+    t.status !== 'done' &&
+    (t.members||[]).some(m => m.name && m.name.toLowerCase() === (MY_NAME||'').toLowerCase())
+  );
+  const _n = new Date(), _pd = n => String(n).padStart(2,'0');
+  const _ts  = `${_n.getFullYear()}-${_pd(_n.getMonth()+1)}-${_pd(_n.getDate())}`;
+  const _w   = new Date(_n); _w.setDate(_w.getDate()+7);
+  const _ws  = `${_w.getFullYear()}-${_pd(_w.getMonth()+1)}-${_pd(_w.getDate())}`;
+  const _2w  = new Date(_n); _2w.setDate(_2w.getDate()+14);
+  const _2ws = `${_2w.getFullYear()}-${_pd(_2w.getMonth()+1)}-${_pd(_2w.getDate())}`;
+  const s = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  s('fc-today-cnt',  myActive.filter(t=>t.taskDueDate&&t.taskDueDate<=_ts).length);
+  s('fc-week-cnt',   myActive.filter(t=>t.taskDueDate&&t.taskDueDate>=_ts&&t.taskDueDate<=_ws).length);
+  s('fc-2weeks-cnt', myActive.filter(t=>t.taskDueDate&&t.taskDueDate>=_ts&&t.taskDueDate<=_2ws).length);
+  s('fc-crit-cnt',   myActive.filter(t=>(t.priority||'medium')==='critical').length);
+  s('fc-high-cnt',   myActive.filter(t=>(t.priority||'medium')==='high').length);
+  s('fc-med-cnt',    myActive.filter(t=>(t.priority||'medium')==='medium').length);
+  s('fc-low-cnt',    myActive.filter(t=>(t.priority||'medium')==='low').length);
+  s('fc-ip-cnt',     myActive.filter(t=>t.status==='inprog').length);
+  s('fc-todo-cnt',   myActive.filter(t=>t.status==='todo').length);
+}
+
+window.filterByDue      = (r) => window.applySheetFilter('due', r, null);
+window.filterByPriority = (p) => window.applySheetFilter('priority', p, null);
 
 window.filterTasks = (type) => {
   if (activeFilter === type) {
@@ -1444,6 +1502,10 @@ function renderMyTasks() {
   // Apply priority filter
   if (activePriorityFilter) {
     taskList = taskList.filter(t => (t.priority || 'medium') === activePriorityFilter);
+  }
+  // Apply status filter
+  if (activeStatusFilter) {
+    taskList = taskList.filter(t => t.status === activeStatusFilter);
   }
 
   // Apply due date filter
