@@ -20,7 +20,8 @@ export const DELETE_PASSWORD = "workdesk@delete";
 const ARCHIVE_AFTER_DAYS = 90;
 
 const app  = initializeApp(firebaseConfig);
-export const db   = getFirestore(app);
+const db   = getFirestore(app);
+export function getDb() { return db; }
 const auth = getAuth(app);
 
 export function onUserReady(cb) {

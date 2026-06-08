@@ -294,7 +294,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, db, WORKSPACE_ID } from './js/firebase.js';
+import { onUserReady, getDb, WORKSPACE_ID } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio } from './js/sounds.js';
 import {
@@ -315,9 +315,9 @@ let expandedIdeas = new Set();
 let editingIdeaId = null;
 const MY_NAME = localStorage.getItem('wd_myname') || 'Team';
 
-function ideasCol() { return collection(db, 'workspaces', WORKSPACE_ID, 'ideas'); }
-function ideaDoc(id){ return doc(db, 'workspaces', WORKSPACE_ID, 'ideas', id); }
-function notesCol(id){ return collection(db, 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes'); }
+function ideasCol() { return collection(getDb(), 'workspaces', WORKSPACE_ID, 'ideas'); }
+function ideaDoc(id){ return doc(getDb(), 'workspaces', WORKSPACE_ID, 'ideas', id); }
+function notesCol(id){ return collection(getDb(), 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes'); }
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDate(ts){
