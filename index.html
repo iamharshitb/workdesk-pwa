@@ -889,10 +889,11 @@
   <!-- FILTER TRIGGER ROW -->
   <div class="filter-trigger-row fi" id="due-filter-row" style="animation-delay:.06s">
     <button class="filter-trigger-btn" id="filter-trigger-btn" onclick="openFilterSheet()">
-      ⚙ Filters <span id="filter-trigger-count" style="display:none;font-size:10px;background:var(--neon);color:#0c0c0f;padding:1px 7px;border-radius:8px;font-weight:700"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filters
     </button>
-    <span class="filter-active-tag" id="filter-active-tag" style="display:none"></span>
-    <button class="filter-clear-x" id="filter-clear-x" onclick="clearAllFilters()" style="display:none" title="Clear filter">✕</button>
+    <span id="filter-active-tag" style="display:none;font-size:11px;font-weight:700;color:var(--neon);padding:4px 10px;background:rgba(10,132,255,.08);border:1px solid rgba(10,132,255,.2);border-radius:20px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button id="filter-clear-x" onclick="clearAllFilters()" style="display:none;background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0" title="Clear">✕</button>
   </div>
 
   <!-- FILTER SHEET OVERLAY -->
