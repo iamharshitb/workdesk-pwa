@@ -130,10 +130,10 @@
       border:1px solid rgba(10,132,255,.2);border-radius:20px;cursor:pointer;
     }
     .filter-dropdown {
-      position:fixed;top:auto;left:16px;right:16px;z-index:9999;
+      position:fixed;left:16px;right:16px;z-index:99999;
       background:var(--panel);border:1px solid var(--border2);
       border-radius:14px;padding:14px;
-      box-shadow:0 8px 32px rgba(0,0,0,.5);
+      box-shadow:0 8px 40px rgba(0,0,0,.7);
       display:none;
     }
     .filter-dropdown.open { display:block }
@@ -1289,11 +1289,8 @@ window.toggleFilterDrop = (e) => {
   e.stopPropagation();
   const drop = document.getElementById('filter-drop');
   const btn  = document.getElementById('filter-btn');
-  if (!drop.classList.contains('open')) {
-    // Position below the button
-    const rect = btn.getBoundingClientRect();
-    drop.style.top = (rect.bottom + 6) + 'px';
-  }
+  const rect = btn.getBoundingClientRect();
+  drop.style.top = (rect.bottom + window.scrollY + 6) + 'px';
   drop.classList.toggle('open');
 };
 // Close on outside click
