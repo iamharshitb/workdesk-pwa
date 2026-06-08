@@ -1643,7 +1643,15 @@ function renderMyTasks() {
     </div>
   ` : '';
 
-  el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + doneHTML;
+  try {
+    el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + doneHTML;
+  } catch(err) {
+    el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;font-family:var(--mono)">
+      Render error: ${err.message}<br>
+      Tasks loaded: ${tasks.length}<br>
+      Active: ${activeTasks.length}
+    </div>`;
+  }
 }
 
 // Track which task rows are expanded
