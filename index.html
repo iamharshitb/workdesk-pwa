@@ -1446,6 +1446,13 @@ function renderStats() {
 function renderMyTasks() {
   const el = document.getElementById('my-tasks-list');
 
+  // Debug info
+  const dbg = document.getElementById('debug-panel');
+  if (dbg) {
+    const memberNames = [...new Set(tasks.flatMap(t => (t.members||[]).map(m => m.name)))].join(', ');
+    dbg.innerHTML = `MY_NAME: "<b>${MY_NAME}</b>" | Tasks: ${tasks.length} | Members in tasks: ${memberNames||'none'}`;
+  }
+
   // Get base task list — if filter active show ALL tasks in that filter, not just mine
   let taskList;
   if (activeFilter && activeFilter !== 'total') {
