@@ -1446,13 +1446,6 @@ function renderStats() {
 function renderMyTasks() {
   const el = document.getElementById('my-tasks-list');
 
-  // Debug info
-  const dbg = document.getElementById('debug-panel');
-  if (dbg) {
-    const memberNames = [...new Set(tasks.flatMap(t => (t.members||[]).map(m => m.name)))].join(', ');
-    dbg.innerHTML = `MY_NAME: "<b>${MY_NAME}</b>" | Tasks: ${tasks.length} | Members in tasks: ${memberNames||'none'}`;
-  }
-
   // Get base task list — if filter active show ALL tasks in that filter, not just mine
   let taskList;
   if (activeFilter && activeFilter !== 'total') {
@@ -1463,13 +1456,23 @@ function renderMyTasks() {
     taskList = [...tasks];
   } else {
     if (MY_NAME) {
+      const myNameClean = MY_NAME.trim().toLowerCase();
+      // Find best matching member name from actual task data
+      const allMemberNames = [...new Set(
+        tasks.flatMap(t => (t.members||[]).map(m => (m.name||'').trim()))
+      )];
+      const matchedName = allMemberNames.find(n =>
+        n.toLowerCase() === myNameClean ||
+        n.toLowerCase().startsWith(myNameClean) ||
+        myNameClean.startsWith(n.toLowerCase())
+      );
+      const nameToUse = matchedName || MY_NAME.trim();
       const myTasks = tasks.filter(t => {
-        if ((t.members||[]).some(m => (m.name||'').trim().toLowerCase() === MY_NAME.trim().toLowerCase())) return true;
+        if ((t.members||[]).some(m => (m.name||'').trim().toLowerCase() === nameToUse.toLowerCase())) return true;
         if (t.taskType === 'individual' && (!t.members || t.members.length === 0)) return true;
         return false;
       });
-      // If name matching returns nothing, show all active tasks (name mismatch in Firestore)
-      taskList = myTasks.length > 0 ? myTasks : tasks.filter(t => t.status !== 'done');
+      taskList = myTasks.length > 0 ? myTasks : tasks;
     } else {
       taskList = tasks;
     }
