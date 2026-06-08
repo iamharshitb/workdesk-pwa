@@ -130,10 +130,10 @@
       border:1px solid rgba(10,132,255,.2);border-radius:20px;cursor:pointer;
     }
     .filter-dropdown {
-      position:absolute;top:calc(100% + 6px);left:0;z-index:9999;
+      position:fixed;top:auto;left:16px;right:16px;z-index:9999;
       background:var(--panel);border:1px solid var(--border2);
-      border-radius:14px;padding:14px;width:250px;
-      box-shadow:0 8px 32px rgba(0,0,0,.4);
+      border-radius:14px;padding:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
       display:none;
     }
     .filter-dropdown.open { display:block }
@@ -1287,6 +1287,12 @@ let _pendingFilter  = { type:null, value:null };
 window.toggleFilterDrop = (e) => {
   e.stopPropagation();
   const drop = document.getElementById('filter-drop');
+  const btn  = document.getElementById('filter-btn');
+  if (!drop.classList.contains('open')) {
+    // Position below the button
+    const rect = btn.getBoundingClientRect();
+    drop.style.top = (rect.bottom + 6) + 'px';
+  }
   drop.classList.toggle('open');
 };
 // Close on outside click
@@ -1449,16 +1455,17 @@ function renderMyTasks() {
   } else if (activeFilter === 'total') {
     taskList = [...tasks];
   } else {
-    taskList = MY_NAME
-      ? tasks.filter(t => {
-          // Always include tasks where user is a member
-          if ((t.members||[]).some(m => m.name.toLowerCase() === MY_NAME.toLowerCase())) return true;
-          // Also include individual tasks with no members — they belong to whoever is viewing
-          // (happens when member lookup failed during registration)
-          if (t.taskType === 'individual' && (!t.members || t.members.length === 0)) return true;
-          return false;
-        })
-      : tasks;
+    if (MY_NAME) {
+      const myTasks = tasks.filter(t => {
+        if ((t.members||[]).some(m => (m.name||'').trim().toLowerCase() === MY_NAME.trim().toLowerCase())) return true;
+        if (t.taskType === 'individual' && (!t.members || t.members.length === 0)) return true;
+        return false;
+      });
+      // If name matching returns nothing, show all active tasks (name mismatch in Firestore)
+      taskList = myTasks.length > 0 ? myTasks : tasks.filter(t => t.status !== 'done');
+    } else {
+      taskList = tasks;
+    }
   }
 
   // Apply priority filter
