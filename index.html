@@ -874,7 +874,7 @@
 
 <div id="page-loader"><span class="loader"></span>Loading...</div>
 
-<div class="page" id="main" style="display:none">
+<div class="page" id="main">
 
   <!-- GREETING + STREAK -->
   <!-- WORLD CLOCK -->
@@ -1217,7 +1217,6 @@ onUserReady(async () => {
     const loader = document.getElementById('page-loader');
     if (loader) {
       loader.style.display = 'none';
-      document.getElementById('main').style.display = '';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
       // Show broadcast button — check permission from Firestore
       const adminBtn = document.getElementById('ann-admin-btn');
