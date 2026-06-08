@@ -17,7 +17,7 @@ const firebaseConfig = {
 };
 export const WORKSPACE_ID = "harshit-team-2026";
 export const DELETE_PASSWORD = "workdesk@delete";
-const ARCHIVE_AFTER_DAYS = 90;
+const ARCHIVE_AFTER_DAYS = 365;
 
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
@@ -25,9 +25,14 @@ export function getDb() { return db; }
 const auth = getAuth(app);
 
 export function onUserReady(cb) {
+  // Try auth, but also set a fallback timeout so the app never gets stuck
+  let called = false;
+  const call = (user) => { if (!called) { called = true; cb(user); } };
   onAuthStateChanged(auth, user => {
-    if (user) cb(user);
-    else signInAnonymously(auth);
+    if (user) call(user);
+    else signInAnonymously(auth).catch(() => call(null));
+  // Fallback: if auth takes > 4s, proceed anyway (offline/network issue)
+  setTimeout(() => call(null), 4000);
   });
 }
 

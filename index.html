@@ -944,23 +944,6 @@
       Filters
     </button>
     <span id="filter-pill" class="filter-active-pill" style="display:none" onclick="clearActiveFilter()"></span>
-    <!-- Dropdown -->
-    <div class="filter-dropdown" id="filter-drop">
-      <div class="fd-group-label">Due Date</div>
-      <div class="fd-options">
-        <button class="fd-opt" id="fd-today"   onclick="selectFilter('due','today',this)">Today</button>
-        <button class="fd-opt" id="fd-week"    onclick="selectFilter('due','this-week',this)">This Week</button>
-        <button class="fd-opt" id="fd-2weeks"  onclick="selectFilter('due','two-weeks',this)">2 Weeks</button>
-      </div>
-      <div class="fd-group-label">Priority</div>
-      <div class="fd-options">
-        <button class="fd-opt" id="fd-critical" onclick="selectFilter('priority','critical',this)">🔴 Critical</button>
-        <button class="fd-opt" id="fd-high"     onclick="selectFilter('priority','high',this)">🟠 High</button>
-        <button class="fd-opt" id="fd-medium"   onclick="selectFilter('priority','medium',this)">🔵 Medium</button>
-        <button class="fd-opt" id="fd-low"      onclick="selectFilter('priority','low',this)">🟢 Low</button>
-      </div>
-      <button class="fd-apply" onclick="applyFilter()">✓ Apply</button>
-    </div>
   </div>
 
 
@@ -3239,5 +3222,23 @@ if ('serviceWorker' in navigator) {
     <span class="bn-label">Ideas</span>
   </a>
 </nav>
+
+<!-- FILTER DROPDOWN — body level to avoid clipping -->
+<div class="filter-dropdown" id="filter-drop" onclick="event.stopPropagation()">
+  <div class="fd-group-label">Due Date</div>
+  <div class="fd-options">
+    <button class="fd-opt" id="fd-today"   onclick="selectFilter('due','today',this)">Today</button>
+    <button class="fd-opt" id="fd-week"    onclick="selectFilter('due','this-week',this)">This Week</button>
+    <button class="fd-opt" id="fd-2weeks"  onclick="selectFilter('due','two-weeks',this)">2 Weeks</button>
+  </div>
+  <div class="fd-group-label">Priority</div>
+  <div class="fd-options">
+    <button class="fd-opt" id="fd-critical" onclick="selectFilter('priority','critical',this)">🔴 Critical</button>
+    <button class="fd-opt" id="fd-high"     onclick="selectFilter('priority','high',this)">🟠 High</button>
+    <button class="fd-opt" id="fd-medium"   onclick="selectFilter('priority','medium',this)">🔵 Medium</button>
+    <button class="fd-opt" id="fd-low"      onclick="selectFilter('priority','low',this)">🟢 Low</button>
+  </div>
+  <button class="fd-apply" onclick="applyFilter()">✓ Apply</button>
+</div>
 </body>
 </html>
