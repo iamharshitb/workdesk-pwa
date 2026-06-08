@@ -130,13 +130,13 @@
       border:1px solid rgba(10,132,255,.2);border-radius:20px;cursor:pointer;
     }
     .filter-dropdown {
-      position:fixed;left:16px;right:16px;z-index:99999;
-      background:var(--panel);border:1px solid var(--border2);
-      border-radius:14px;padding:14px;
-      box-shadow:0 8px 40px rgba(0,0,0,.7);
+      position:fixed;left:16px;right:16px;top:180px;z-index:99999;
+      background:var(--panel);border:1.5px solid var(--border2);
+      border-radius:16px;padding:16px;
+      box-shadow:0 16px 48px rgba(0,0,0,.8);
       display:none;
     }
-    .filter-dropdown.open { display:block }
+    .filter-dropdown.open { display:block !important }
     .fd-group-label {
       font-size:10px;font-weight:700;color:var(--text3);
       text-transform:uppercase;letter-spacing:.1em;
@@ -1290,7 +1290,7 @@ window.toggleFilterDrop = (e) => {
   const drop = document.getElementById('filter-drop');
   const btn  = document.getElementById('filter-btn');
   const rect = btn.getBoundingClientRect();
-  drop.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+  drop.style.top = (rect.bottom + 8) + 'px';
   drop.classList.toggle('open');
 };
 // Close on outside click
