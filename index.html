@@ -1155,8 +1155,9 @@ let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed d
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
-let activeDueFilter    = null; // 'today'|'this-week'|'two-weeks'|null
+let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
 let activePriorityFilter = null; // 'critical'|'high'|'medium'|'low'|null
+let activeStatusFilter   = null; // 'inprog'|'todo'|null
 
 // Theme handled by theme.js
 initTheme();
