@@ -294,13 +294,17 @@
 </div>
 
 <script type="module">
-import { onUserReady, getDb, WORKSPACE_ID } from './js/firebase.js';
+import { onUserReady, WORKSPACE_ID } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio } from './js/sounds.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
   onSnapshot, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// Reuse existing Firebase app instance
+const db = getFirestore(getApps()[0]);
 
 initTheme();
 window.toggleThemePanel = toggleThemePanel;
@@ -315,9 +319,9 @@ let expandedIdeas = new Set();
 let editingIdeaId = null;
 const MY_NAME = localStorage.getItem('wd_myname') || 'Team';
 
-function ideasCol() { return collection(getDb(), 'workspaces', WORKSPACE_ID, 'ideas'); }
-function ideaDoc(id){ return doc(getDb(), 'workspaces', WORKSPACE_ID, 'ideas', id); }
-function notesCol(id){ return collection(getDb(), 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes'); }
+function ideasCol() { return collection(db, 'workspaces', WORKSPACE_ID, 'ideas'); }
+function ideaDoc(id){ return doc(db, 'workspaces', WORKSPACE_ID, 'ideas', id); }
+function notesCol(id){ return collection(db, 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes'); }
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDate(ts){
