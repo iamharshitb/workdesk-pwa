@@ -41,13 +41,7 @@ function wsDoc(name, id) { return doc(db, "workspaces", WORKSPACE_ID, name, id);
 
 // ── ACTIVE TASK FILTER ────────────────────────────────────────────────────
 function isActiveTask(task) {
-  if (task.status !== 'done') return true;
-  const completedAt = task.completedAt;
-  if (!completedAt) return true;
-  const completedDate = completedAt.toDate ? completedAt.toDate() : new Date(completedAt);
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - ARCHIVE_AFTER_DAYS);
-  return completedDate >= cutoff;
+  return true; // show all tasks — no archiving
 }
 
 // ── MEMBERS ───────────────────────────────────────────────────────────────
