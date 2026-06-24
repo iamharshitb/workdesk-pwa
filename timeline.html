@@ -202,6 +202,61 @@
 }
 .tl-export-btn:hover { border-color:var(--green);color:var(--green) }
 
+/* ── PROJECT NOTES ── */
+.tl-notes-section {
+  border-top:1px solid var(--border);
+  padding:12px 14px;
+}
+.tl-notes-hd {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.tl-notes-title {
+  font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;
+  display:flex;align-items:center;gap:6px;
+}
+.tl-notes-toggle {
+  font-size:10px;color:var(--text3);transition:transform .2s;
+}
+.tl-notes-toggle.open { transform:rotate(180deg) }
+.tl-notes-body { display:none }
+.tl-notes-body.open { display:block }
+.tl-note-item {
+  display:flex;gap:8px;padding:7px 0;
+  border-bottom:1px solid var(--border);
+}
+.tl-note-item:last-of-type { border-bottom:none }
+.tl-note-av {
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:var(--neon);
+}
+.tl-note-content { flex:1;min-width:0 }
+.tl-note-author { font-size:10px;font-weight:700;color:var(--neon);margin-bottom:2px }
+.tl-note-text { font-size:12px;color:var(--text2);line-height:1.5;white-space:pre-wrap }
+.tl-note-time { font-size:9px;color:var(--text3);margin-top:2px }
+.tl-note-empty { font-size:12px;color:var(--text3);font-style:italic;padding:4px 0 8px }
+.tl-notes-input-row {
+  display:flex;gap:8px;margin-top:10px;align-items:flex-end;
+}
+.tl-note-inp {
+  flex:1;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:10px;padding:8px 11px;color:var(--text);
+  font-family:var(--sans);font-size:13px;resize:none;
+  outline:none;min-height:36px;max-height:80px;line-height:1.4;
+  transition:border-color .15s;
+}
+.tl-note-inp:focus { border-color:rgba(10,132,255,.4) }
+.tl-note-send {
+  width:34px;height:34px;border-radius:10px;border:none;
+  background:var(--neon);color:#fff;font-size:15px;
+  cursor:pointer;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;transition:all .15s;
+}
+.tl-note-send:active { transform:scale(.94) }
+
 /* ── ADD TASK ROW ── */
 .tl-add-task {
   display:flex;align-items:center;gap:6px;
@@ -425,10 +480,11 @@ initTheme();
 window.toggleThemePanel = toggleThemePanel;
 
 const db = getFirestore(getApps()[0]);
-const projCol = () => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects');
-const projDoc = id => doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', id);
-const taskCol = pid => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks');
-const taskDocRef = (pid,tid) => doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks', tid);
+const projCol  = ()         => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects');
+const projDoc  = id         => doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', id);
+const taskCol  = pid        => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks');
+const taskDocRef = (pid,tid)=> doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks', tid);
+const notesCol = pid        => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'notes');
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let projects = [];
@@ -443,6 +499,9 @@ let selectedTaskPriority = 'medium';
 let selectedColor = '#0a84ff';
 let unsubProjects = null;
 let unsubTasks = {};
+let unsubNotes = {};
+let projectNotes = {};
+let openNotesPanels = new Set();
 
 const COLORS = ['#0a84ff','#34c759','#ff9f0a','#ff453a','#5e5ce6','#ff375f','#30d158','#64d2ff'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -479,6 +538,13 @@ function loadProjects() {
         unsubTasks[p.id] = onSnapshot(tq, tsnap => {
           projectTasks[p.id] = tsnap.docs.map(d => ({ id: d.id, ...d.data() }));
           renderAll();
+        });
+      }
+      if (!unsubNotes[p.id]) {
+        const nq = query(notesCol(p.id), orderBy('createdAt','asc'));
+        unsubNotes[p.id] = onSnapshot(nq, nsnap => {
+          projectNotes[p.id] = nsnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          renderNotesFor(p.id);
         });
       }
     });
@@ -583,6 +649,27 @@ function renderProject(p) {
 
     <!-- GANTT -->
     ${ganttHTML}
+
+    <!-- NOTES -->
+    <div class="tl-notes-section">
+      <div class="tl-notes-hd" onclick="toggleNotes('${p.id}')">
+        <div class="tl-notes-title">
+          💬 Project Notes
+          <span id="note-count-${p.id}" style="color:var(--text3);font-weight:600"></span>
+        </div>
+        <span class="tl-notes-toggle" id="notes-toggle-${p.id}">▾</span>
+      </div>
+      <div class="tl-notes-body" id="notes-body-${p.id}">
+        <div id="notes-list-${p.id}"><div class="tl-note-empty">No notes yet</div></div>
+        <div class="tl-notes-input-row">
+          <textarea class="tl-note-inp" id="note-inp-${p.id}"
+            placeholder="Add a note, decision, or update…"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addProjectNote('${p.id}')}"
+            rows="1"></textarea>
+          <button class="tl-note-send" onclick="addProjectNote('${p.id}')">↑</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ADD TASK -->
     <div class="tl-add-task" onclick="openTaskModal('${p.id}')">
@@ -793,6 +880,60 @@ window.deleteTaskFromDrawer = async (projId, taskId) => {
   await deleteDoc(taskDocRef(projId, taskId));
   closeDrawer();
   toast('Task removed');
+};
+
+// ── PROJECT NOTES ────────────────────────────────────────────────────────
+const MY_NAME_TL = localStorage.getItem('wd_myname') || 'Team';
+
+window.toggleNotes = (projId) => {
+  const body    = document.getElementById('notes-body-'+projId);
+  const toggle  = document.getElementById('notes-toggle-'+projId);
+  if (!body) return;
+  const isOpen  = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle?.classList.toggle('open', !isOpen);
+  if (!isOpen) renderNotesFor(projId);
+};
+
+function renderNotesFor(projId) {
+  const notes  = projectNotes[projId] || [];
+  const listEl = document.getElementById('notes-list-'+projId);
+  const cntEl  = document.getElementById('note-count-'+projId);
+  if (cntEl) cntEl.textContent = notes.length ? `(${notes.length})` : '';
+  if (!listEl) return;
+
+  if (!notes.length) {
+    listEl.innerHTML = '<div class="tl-note-empty">No notes yet — add the first one</div>';
+    return;
+  }
+
+  listEl.innerHTML = notes.map(n => {
+    const initials = (n.author||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const d = n.createdAt?.toDate ? n.createdAt.toDate() : new Date(n.createdAt||0);
+    const timeStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' +
+                    d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="tl-note-item">
+      <div class="tl-note-av">${initials}</div>
+      <div class="tl-note-content">
+        <div class="tl-note-author">${esc(n.author||'Team')}</div>
+        <div class="tl-note-text">${esc(n.text||'')}</div>
+        <div class="tl-note-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.addProjectNote = async (projId) => {
+  const inp  = document.getElementById('note-inp-'+projId);
+  const text = inp?.value.trim();
+  if (!text) return;
+  inp.value = '';
+  await addDoc(notesCol(projId), {
+    text,
+    author: MY_NAME_TL,
+    createdAt: serverTimestamp(),
+  });
+  toast('Note added');
 };
 
 // ── EXCEL EXPORT ──────────────────────────────────────────────────────────
