@@ -82,53 +82,125 @@
   background:var(--bg3);color:var(--text2);border:1px solid var(--border);
 }
 
-/* ── GANTT AREA ── */
+/* ── GANTT — EXCEL STYLE ── */
 .tl-gantt-wrap {
-  border-top:1px solid var(--border);
+  border-top:2px solid var(--border2);
   overflow-x:auto;-webkit-overflow-scrolling:touch;
+  position:relative;
 }
-.tl-gantt-wrap::-webkit-scrollbar { height:3px }
-.tl-gantt-wrap::-webkit-scrollbar-thumb { background:var(--border2);border-radius:2px }
-.tl-gantt { min-width:100%;padding:10px 14px 14px }
-.tl-gantt-header {
-  display:flex;margin-bottom:6px;margin-left:110px;
-  border-bottom:1px solid var(--border);padding-bottom:4px;
+.tl-gantt-wrap::-webkit-scrollbar { height:5px }
+.tl-gantt-wrap::-webkit-scrollbar-thumb { background:var(--border2);border-radius:3px }
+.tl-gantt-table {
+  width:100%;border-collapse:collapse;min-width:600px;
+  font-family:var(--sans);
 }
-.tl-gantt-col-label {
-  font-size:9px;font-weight:700;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.06em;text-align:center;
-  flex-shrink:0;
+/* Header rows */
+.tl-gh-month td, .tl-gh-month-cell {
+  font-size:10px;font-weight:700;color:var(--text);
+  text-align:center;padding:5px 4px;
+  background:var(--bg3);border:1px solid var(--border2);
+  text-transform:uppercase;letter-spacing:.06em;
 }
-.tl-task-row {
-  display:flex;align-items:center;margin-bottom:6px;min-height:28px;
+.tl-gh-week td {
+  font-size:9px;color:var(--text3);font-weight:600;
+  text-align:center;padding:3px 2px;
+  background:var(--bg3);border:1px solid var(--border2);
+  white-space:nowrap;
 }
-.tl-task-label {
-  width:110px;flex-shrink:0;padding-right:8px;
-  font-size:11px;font-weight:600;color:var(--text2);
+/* Task rows */
+.tl-gt-row td {
+  border:1px solid var(--border);height:32px;padding:0;
+  vertical-align:middle;
+}
+.tl-gt-row:hover .tl-gt-name-cell { background:var(--bg3) }
+.tl-gt-name-cell {
+  padding:0 10px;font-size:11px;font-weight:600;color:var(--text2);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  max-width:180px;min-width:160px;
+  background:var(--bg2);position:sticky;left:0;z-index:2;
+  cursor:pointer;transition:background .1s;
+  border-right:2px solid var(--border2) !important;
 }
-.tl-task-label.done { text-decoration:line-through;color:var(--text3) }
-.tl-gantt-track { flex:1;position:relative;height:22px }
-.tl-bar {
-  position:absolute;height:18px;top:2px;
-  border-radius:4px;cursor:pointer;
-  transition:filter .15s;display:flex;align-items:center;
-  padding:0 6px;font-size:9px;font-weight:700;
-  white-space:nowrap;overflow:hidden;
-  -webkit-tap-highlight-color:transparent;
+.tl-gt-name-cell.done { color:var(--text3);text-decoration:line-through }
+.tl-gt-name-cell:hover { background:var(--bg3) }
+.tl-gt-cell {
+  position:relative;min-width:28px;
+  background:var(--bg2);
 }
-.tl-bar:hover { filter:brightness(1.15) }
-.tl-bar.done { } /* color handled inline */
-.tl-today-line {
-  position:absolute;top:0;bottom:0;width:1.5px;
-  background:var(--red);opacity:.7;
-  pointer-events:none;z-index:2;
+.tl-gt-cell.weekend { background:var(--bg3) }
+.tl-gt-cell.today-col { background:rgba(255,69,58,.04);border-left:1.5px solid rgba(255,69,58,.5) !important }
+.tl-bar-cell {
+  position:absolute;top:4px;bottom:4px;left:0;right:0;
+  border-radius:3px;cursor:pointer;
+  transition:filter .12s, transform .12s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#fff;
+  overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
-.tl-today-line::after {
-  content:'Today';position:absolute;top:-16px;left:3px;
-  font-size:8px;font-weight:700;color:var(--red);white-space:nowrap;
+.tl-bar-cell:hover { filter:brightness(1.12);transform:scaleY(1.05) }
+.tl-bar-cell.bar-start { border-radius:3px 0 0 3px;left:2px }
+.tl-bar-cell.bar-mid   { border-radius:0;left:0;right:0 }
+.tl-bar-cell.bar-end   { border-radius:0 3px 3px 0;right:2px }
+.tl-bar-cell.bar-single { border-radius:3px;left:2px;right:2px }
+/* Today marker */
+.tl-today-marker {
+  position:absolute;top:0;bottom:0;left:50%;width:2px;
+  background:var(--red);pointer-events:none;z-index:3;
 }
+/* Row status stripe */
+.tl-gt-row.done-row .tl-gt-cell { background:rgba(52,199,89,.03) }
+.tl-gt-row.onhold-row .tl-gt-cell { background:rgba(94,92,230,.03) }
+
+/* Task detail drawer */
+.tl-drawer {
+  position:fixed;right:0;top:0;bottom:0;width:320px;z-index:600;
+  background:var(--panel);border-left:1px solid var(--border2);
+  box-shadow:-8px 0 32px rgba(0,0,0,.35);
+  transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.tl-drawer.open { transform:translateX(0) }
+.tl-drawer-hd {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px;border-bottom:1px solid var(--border2);flex-shrink:0;
+}
+.tl-drawer-title { font-size:15px;font-weight:800;color:var(--text);flex:1;padding-right:8px }
+.tl-drawer-close {
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:20px;padding:4px 12px;cursor:pointer;
+  font-family:var(--sans);font-size:11px;font-weight:700;color:var(--text2);
+}
+.tl-drawer-body { padding:16px;overflow-y:auto;flex:1 }
+.tl-drawer-row { margin-bottom:14px }
+.tl-drawer-label {
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;
+}
+.tl-drawer-val { font-size:13px;color:var(--text);font-weight:500 }
+.tl-drawer-actions {
+  padding:12px 16px;border-top:1px solid var(--border2);
+  display:flex;flex-direction:column;gap:8px;flex-shrink:0;
+}
+.tl-drawer-btn {
+  width:100%;padding:10px;border-radius:var(--r);border:none;
+  font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.tl-drawer-btn.primary { background:var(--neon);color:#0c0c0f }
+.tl-drawer-btn.success { background:var(--green);color:#0c0c0f }
+.tl-drawer-btn.hold    { background:rgba(94,92,230,.15);color:var(--purple);border:1px solid rgba(94,92,230,.3) }
+.tl-drawer-btn.danger  { background:rgba(255,69,58,.1);color:var(--red);border:1px solid rgba(255,69,58,.25) }
+.tl-drawer-btn.secondary { background:var(--bg3);color:var(--text2);border:1px solid var(--border2) }
+.tl-drawer-btn:active { transform:scale(.98) }
+
+/* Export btn */
+.tl-export-btn {
+  display:flex;align-items:center;gap:6px;
+  padding:7px 13px;border-radius:20px;border:1px solid var(--border2);
+  background:var(--bg2);color:var(--text2);font-family:var(--sans);
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.tl-export-btn:hover { border-color:var(--green);color:var(--green) }
 
 /* ── ADD TASK ROW ── */
 .tl-add-task {
@@ -234,6 +306,21 @@
 </head>
 <body>
 
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- TASK DETAIL DRAWER -->
+<div class="tl-drawer" id="tl-drawer">
+  <div class="tl-drawer-hd">
+    <div class="tl-drawer-title" id="drawer-title">Task Detail</div>
+    <button class="tl-drawer-close" onclick="closeDrawer()">✕ Close</button>
+  </div>
+  <div class="tl-drawer-body" id="drawer-body"></div>
+  <div class="tl-drawer-actions" id="drawer-actions"></div>
+</div>
+<div id="drawer-overlay" onclick="closeDrawer()"
+  style="display:none;position:fixed;inset:0;z-index:599;background:rgba(0,0,0,.3)"></div>
+
 <nav class="nav">
   <a class="nav-brand" href="index.html">
     <span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span>
@@ -244,11 +331,14 @@
   </div>
 </nav>
 
-<div class="page" style="padding-top:14px;max-width:900px;margin:0 auto">
+<div class="page" style="padding-top:14px;max-width:1100px;margin:0 auto">
 
   <div class="tl-header-row">
     <div class="tl-page-title">📅 Timeline</div>
-    <button class="tl-new-btn" onclick="openProjectModal()">＋ New Project</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="tl-export-btn" onclick="exportAllExcel()">⬇ Excel</button>
+      <button class="tl-new-btn" onclick="openProjectModal()">＋ New Project</button>
+    </div>
   </div>
 
   <div id="tl-list">
@@ -502,60 +592,259 @@ function renderProject(p) {
   </div>`;
 }
 
+// ── EXCEL-STYLE GANTT ────────────────────────────────────────────────────
 function renderGantt(p, tasks, color) {
-  if (!tasks.length) return '';
+  if (!tasks.length) return '<div style="padding:12px 14px;font-size:12px;color:var(--text3)">No tasks yet — tap ＋ below to add</div>';
+
   const pStart = parseDate(p.startDate);
   const pEnd   = parseDate(p.endDate);
-  const totalDays = diffDays(pStart, pEnd) || 1;
-  const today = new Date();
-  const todayPct = Math.max(0, Math.min(100, diffDays(pStart, today)/totalDays*100));
+  const today  = new Date();
 
-  // Month labels across the header
-  const monthLabels = [];
-  let cur = new Date(pStart);
-  while (cur <= pEnd) {
-    const pct = diffDays(pStart, cur)/totalDays*100;
-    monthLabels.push({ label: MONTHS[cur.getMonth()], pct });
-    cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  // Build array of days in project range
+  const days = [];
+  let d = new Date(pStart);
+  while (d <= pEnd) {
+    days.push(new Date(d));
+    d.setDate(d.getDate()+1);
   }
 
-  const headerHTML = monthLabels.map(m =>
-    `<div class="tl-gantt-col-label" style="position:absolute;left:${m.pct}%;transform:translateX(-50%)">${m.label}</div>`
+  // Group days by month for header
+  const months = [];
+  days.forEach((day, i) => {
+    const mo = day.getMonth();
+    if (!months.length || months[months.length-1].month !== mo) {
+      months.push({ month: mo, year: day.getFullYear(), label: MONTHS[mo], startIdx: i, count: 1 });
+    } else {
+      months[months.length-1].count++;
+    }
+  });
+
+  // Week labels (every 7 days — show date)
+  const CELL_W = Math.max(22, Math.min(36, Math.floor(900/days.length)));
+
+  // Month header row
+  const monthCells = months.map(m =>
+    `<td colspan="${m.count}" class="tl-gh-month-cell" style="min-width:${m.count*CELL_W}px">
+      ${m.label} ${m.year}
+    </td>`
   ).join('');
 
-  const rowsHTML = tasks.map(t => {
+  // Day header row — show day number, weekend highlighted
+  const dayCells = days.map((day, i) => {
+    const isWeekend = day.getDay()===0||day.getDay()===6;
+    const isToday   = day.toDateString()===today.toDateString();
+    const showLabel = CELL_W >= 22 && (i===0||day.getDate()===1||day.getDate()%5===0||isToday);
+    return `<td style="min-width:${CELL_W}px;${isWeekend?'background:var(--bg4);':''};${isToday?'background:rgba(255,69,58,.08);border-bottom:2px solid var(--red);':''};
+      font-size:8px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--red)':'var(--text3)'};
+      text-align:center;padding:2px 0;border:1px solid var(--border)">
+      ${showLabel?day.getDate():''}
+    </td>`;
+  }).join('');
+
+  // Task rows
+  const taskRows = tasks.map(t => {
     const tStart = parseDate(t.startDate);
     const tEnd   = parseDate(t.endDate);
     if (!tStart || !tEnd) return '';
-    const left  = Math.max(0, diffDays(pStart, tStart)/totalDays*100);
-    const width = Math.max(1, diffDays(tStart, tEnd)/totalDays*100);
-    const isDone = t.status === 'done';
-    // members not shown in bar (fix 4)
-    return `<div class="tl-task-row">
-      <div class="tl-task-label${isDone?' done':''}"
-        onclick="openTaskModal('${p.id}','${t.id}')"
-        title="${esc(t.name)}">${esc(t.name)}</div>
-      <div class="tl-gantt-track">
-        <div class="tl-today-line" style="left:${todayPct}%"></div>
-        <div class="tl-bar${isDone?' done':''}"
-          style="left:${left}%;width:${Math.min(width,100-left)}%;background:${isDone?'#34c759':t.status==='onhold'?'#5e5ce6':color};color:#fff;opacity:${isDone?'.7':'1'}"
-          onclick="${t.fromWorkDesk?'':"openTaskModal('${p.id}','${t.id}')"}"
-          title="${esc(t.name)} · ${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}${isDone?' · Done':''}">
-        </div>
-      </div>
-    </div>`;
+    const isDone   = t.status === 'done';
+    const isOnhold = t.status === 'onhold';
+    const barColor = isDone?'#34c759':isOnhold?'#5e5ce6':color;
+    const rowClass = isDone?'done-row':isOnhold?'onhold-row':'';
+
+    // Build cells — mark which days fall within the task
+    const taskCells = days.map((day, i) => {
+      const inRange  = day >= tStart && day <= tEnd;
+      const isStart  = day.toDateString()===tStart.toDateString();
+      const isEnd    = day.toDateString()===tEnd.toDateString();
+      const isWknd   = day.getDay()===0||day.getDay()===6;
+      const isTodayD = day.toDateString()===today.toDateString();
+
+      if (inRange) {
+        const radius = isStart&&isEnd?'3px' : isStart?'3px 0 0 3px' : isEnd?'0 3px 3px 0' : '0';
+        const leftPad  = isStart?'2px':'0';
+        const rightPad = isEnd?'2px':'0';
+        return `<td style="min-width:${CELL_W}px;padding:0;border:1px solid var(--border);${isTodayD?'border-left:1.5px solid rgba(255,69,58,.5);':''}position:relative;">
+          <div onclick="openDrawer('${p.id}','${t.id}')"
+            style="position:absolute;top:4px;bottom:4px;left:${leftPad};right:${rightPad};
+              background:${barColor};border-radius:${radius};cursor:pointer;
+              transition:filter .1s;opacity:${isDone?.75:1};"
+            onmouseover="this.style.filter='brightness(1.12)'"
+            onmouseout="this.style.filter=''"
+            title="${esc(t.name)}"></div>
+        </td>`;
+      }
+      return `<td style="min-width:${CELL_W}px;background:${isWknd?'var(--bg4)':'var(--bg2)'};border:1px solid var(--border);${isTodayD?'border-left:1.5px solid rgba(255,69,58,.4);':''}"></td>`;
+    }).join('');
+
+    const pct = isDone?'✓':isOnhold?'⏸':'';
+
+    return `<tr class="tl-gt-row ${rowClass}">
+      <td class="tl-gt-name-cell${isDone?' done':''}"
+        onclick="openDrawer('${p.id}','${t.id}')"
+        title="${esc(t.name)}">
+        ${pct?`<span style="color:${barColor};margin-right:4px;font-size:10px">${pct}</span>`:''}${esc(t.name)}
+      </td>
+      ${taskCells}
+    </tr>`;
   }).join('');
 
   return `<div class="tl-gantt-wrap">
-    <div class="tl-gantt">
-      <div style="position:relative;height:20px;margin-left:110px;margin-bottom:8px">
-        ${headerHTML}
-        <div style="position:absolute;left:${todayPct}%;top:0;bottom:0;width:1px;background:var(--red);opacity:.5"></div>
-      </div>
-      ${rowsHTML}
-    </div>
+    <table class="tl-gantt-table">
+      <colgroup><col style="width:180px;min-width:160px"></colgroup>
+      <thead>
+        <tr class="tl-gh-month">
+          <td style="background:var(--bg3);border:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--text3);padding:5px 10px">TASK</td>
+          ${monthCells}
+        </tr>
+        <tr class="tl-gh-week">
+          <td style="background:var(--bg3);border:1px solid var(--border2)"></td>
+          ${dayCells}
+        </tr>
+      </thead>
+      <tbody>${taskRows}</tbody>
+    </table>
   </div>`;
 }
+
+// ── TASK DRAWER ───────────────────────────────────────────────────────────
+let drawerProjId = null, drawerTaskId = null;
+
+window.openDrawer = (projId, taskId) => {
+  drawerProjId = projId;
+  drawerTaskId = taskId;
+  const proj  = projects.find(p => p.id === projId);
+  const tasks = projectTasks[projId] || [];
+  const t     = tasks.find(t => t.id === taskId);
+  if (!t) return;
+
+  const isDone   = t.status === 'done';
+  const isOnhold = t.status === 'onhold';
+  const color    = isDone?'#34c759':isOnhold?'#5e5ce6':(proj?.color||'#0a84ff');
+  const members  = (t.members||[]).map(m=>m.name).join(', ') || '—';
+  const priority = t.priority || 'medium';
+  const prioColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--green)'}[priority];
+
+  document.getElementById('drawer-title').textContent = t.name;
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="tl-drawer-row">
+      <div class="tl-drawer-label">Status</div>
+      <div class="tl-drawer-val">
+        <span style="color:${color};font-weight:700">
+          ${isDone?'✅ Done':isOnhold?'⏸ On Hold':'🔄 Active'}
+        </span>
+      </div>
+    </div>
+    <div class="tl-drawer-row">
+      <div class="tl-drawer-label">Project</div>
+      <div class="tl-drawer-val">${esc(proj?.name||'')}</div>
+    </div>
+    <div class="tl-drawer-row">
+      <div class="tl-drawer-label">Date Range</div>
+      <div class="tl-drawer-val">${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}</div>
+    </div>
+    <div class="tl-drawer-row">
+      <div class="tl-drawer-label">Priority</div>
+      <div class="tl-drawer-val" style="color:${prioColor};text-transform:capitalize">${priority}</div>
+    </div>
+    <div class="tl-drawer-row">
+      <div class="tl-drawer-label">Assigned To</div>
+      <div class="tl-drawer-val">${esc(members)}</div>
+    </div>
+    ${t.fromWorkDesk ? '<div style="font-size:10px;color:var(--text3);margin-top:8px">📋 Added from WorkDesk Input</div>' : ''}
+  `;
+
+  document.getElementById('drawer-actions').innerHTML = `
+    ${!isDone ? `<button class="tl-drawer-btn success" onclick="setDrawerTaskDone()">✓ Mark as Done</button>` : `<button class="tl-drawer-btn secondary" onclick="setDrawerTaskStatus('todo')">↩ Reopen Task</button>`}
+    ${!isOnhold && !isDone ? `<button class="tl-drawer-btn hold" onclick="setDrawerTaskStatus('onhold')">⏸ Put On Hold</button>` : ''}
+    ${isOnhold ? `<button class="tl-drawer-btn secondary" onclick="setDrawerTaskStatus('todo')">▶ Resume Task</button>` : ''}
+    ${!t.fromWorkDesk ? `<button class="tl-drawer-btn primary" onclick="openTaskModal('${projId}','${taskId}');closeDrawer()">✎ Edit Task</button>` : ''}
+    ${!t.fromWorkDesk ? `<button class="tl-drawer-btn danger" onclick="deleteTaskFromDrawer('${projId}','${taskId}')">🗑 Delete</button>` : ''}
+  `;
+
+  document.getElementById('tl-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').style.display = '';
+};
+
+window.closeDrawer = () => {
+  document.getElementById('tl-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').style.display = 'none';
+};
+
+window.setDrawerTaskDone = async () => {
+  if (!drawerTaskId || !drawerProjId) return;
+  const t = (projectTasks[drawerProjId]||[]).find(t=>t.id===drawerTaskId);
+  if (!t) return;
+  await updateDoc(taskDocRef(drawerProjId,drawerTaskId), {status:'done'});
+  // Also update in WorkDesk tasks if linked
+  toast('✅ Task marked done');
+  closeDrawer();
+};
+
+window.setDrawerTaskStatus = async (status) => {
+  if (!drawerTaskId || !drawerProjId) return;
+  await updateDoc(taskDocRef(drawerProjId,drawerTaskId), {status});
+  const labels={todo:'Moved to Active',onhold:'⏸ On Hold'};
+  toast(labels[status]||'Updated');
+  closeDrawer();
+};
+
+window.deleteTaskFromDrawer = async (projId, taskId) => {
+  if (!confirm('Remove this task from the timeline?')) return;
+  await deleteDoc(taskDocRef(projId, taskId));
+  closeDrawer();
+  toast('Task removed');
+};
+
+// ── EXCEL EXPORT ──────────────────────────────────────────────────────────
+window.exportAllExcel = () => {
+  if (!window.XLSX) { toast('Excel library not loaded yet'); return; }
+  const wb = XLSX.utils.book_new();
+
+  projects.forEach(p => {
+    const tasks = projectTasks[p.id] || [];
+    const today = new Date();
+    const pStart = parseDate(p.startDate), pEnd = parseDate(p.endDate);
+    const totalDays = diffDays(pStart,pEnd)||1;
+    const timePct = Math.round(Math.max(0,Math.min(100,diffDays(pStart,today)/totalDays*100)));
+    const done = tasks.filter(t=>t.status==='done').length;
+    const taskPct = tasks.length?Math.round(done/tasks.length*100):0;
+
+    const rows = [
+      [p.name],
+      [`Period: ${p.startDate} to ${p.endDate}  |  Task completion: ${taskPct}%  |  Time elapsed: ${timePct}%`],
+      [],
+      ['Task Name','Start Date','End Date','Duration (days)','Assigned To','Priority','Status'],
+      ...tasks.map(t => [
+        t.name||'',
+        t.startDate||'',
+        t.endDate||'',
+        t.startDate&&t.endDate ? diffDays(parseDate(t.startDate),parseDate(t.endDate)) : '',
+        (t.members||[]).map(m=>m.name).join(', '),
+        t.priority||'medium',
+        t.status==='done'?'Done':t.status==='onhold'?'On Hold':t.status==='inprog'?'In Progress':'Todo',
+      ]),
+      [],
+      [`Total tasks: ${tasks.length}`, `Done: ${done}`, `Completion: ${taskPct}%`],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [
+      {wch:35},{wch:12},{wch:12},{wch:16},{wch:25},{wch:12},{wch:14}
+    ];
+
+    // Merge project name across columns
+    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:6}}];
+
+    const sheetName = p.name.slice(0,30).replace(/[:\\/\?\*\[\]]/g,'_');
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  if (!projects.length) { toast('No projects to export'); return; }
+  XLSX.writeFile(wb, `WorkDesk_Timeline_${todayStr()}.xlsx`);
+  toast('📊 Excel exported!');
+};
 
 // ── PROJECT MODAL ─────────────────────────────────────────────────────────
 window.openProjectModal = (projId) => {
