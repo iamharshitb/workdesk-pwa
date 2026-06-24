@@ -1779,8 +1779,9 @@ function myTaskCard(t, i) {
           }).join('')}
         </div>
         <div class="tc-actions">
-          ${!isDone ? `<button class="sc-btn" onclick="event.stopPropagation();cycleOverall('${t.id}')">
-            ${t.status === 'todo' ? 'Start →' : 'Back to Todo ↩'}
+          ${!isDone ? `<button class="sc-btn" onclick="event.stopPropagation();cycleOverall('${t.id}')"
+            style="${t.status==='onhold'?'color:var(--purple);border-color:rgba(94,92,230,.3)':''}">
+            ${t.status === 'todo' ? '▶ Start' : t.status === 'inprog' ? '⏸ On Hold' : '↩ Resume'}
           </button>` : ''}
           ${myMemberId ? `
           <button class="mark-done-btn${myIsDone?' undone':''}"
