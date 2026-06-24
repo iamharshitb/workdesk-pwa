@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkDesk — Timeline</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
+<style>
+/* ── TIMELINE PAGE ── */
+.tl-header-row {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.tl-page-title {
+  font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.tl-new-btn {
+  display:flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:20px;border:none;
+  background:var(--neon);color:#0c0c0f;
+  font-family:var(--sans);font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.tl-new-btn:active { transform:scale(.96) }
+
+/* ── PROJECT CARD ── */
+.tl-project {
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:12px;
+  overflow:hidden;box-shadow:var(--shadow-card);
+  border-left:4px solid;
+}
+.tl-project-hd {
+  padding:14px 14px 12px;
+}
+.tl-project-top {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:10px;gap:8px;
+}
+.tl-project-name {
+  font-size:15px;font-weight:800;color:var(--text);
+  letter-spacing:-.01em;line-height:1.2;flex:1;
+}
+.tl-project-dates {
+  font-size:10px;color:var(--text3);font-weight:600;
+  text-align:right;flex-shrink:0;line-height:1.5;
+}
+.tl-project-menu {
+  background:none;border:none;color:var(--text3);
+  font-size:18px;cursor:pointer;padding:0 0 0 6px;line-height:1;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ── DUAL PROGRESS ── */
+.tl-dual-progress { display:flex;flex-direction:column;gap:7px }
+.tl-prog-row { display:flex;align-items:center;gap:8px }
+.tl-prog-label {
+  font-size:9px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;width:58px;flex-shrink:0;
+}
+.tl-prog-bar-bg {
+  flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;
+}
+.tl-prog-bar-fill {
+  height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+.tl-prog-pct {
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  width:32px;text-align:right;flex-shrink:0;
+}
+.tl-status-row {
+  display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;
+}
+.tl-stat-chip {
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;
+  background:var(--bg3);color:var(--text2);border:1px solid var(--border);
+}
+
+/* ── GANTT AREA ── */
+.tl-gantt-wrap {
+  border-top:1px solid var(--border);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.tl-gantt-wrap::-webkit-scrollbar { height:3px }
+.tl-gantt-wrap::-webkit-scrollbar-thumb { background:var(--border2);border-radius:2px }
+.tl-gantt { min-width:100%;padding:10px 14px 14px }
+.tl-gantt-header {
+  display:flex;margin-bottom:6px;margin-left:110px;
+  border-bottom:1px solid var(--border);padding-bottom:4px;
+}
+.tl-gantt-col-label {
+  font-size:9px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.06em;text-align:center;
+  flex-shrink:0;
+}
+.tl-task-row {
+  display:flex;align-items:center;margin-bottom:6px;min-height:28px;
+}
+.tl-task-label {
+  width:110px;flex-shrink:0;padding-right:8px;
+  font-size:11px;font-weight:600;color:var(--text2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.tl-task-label.done { text-decoration:line-through;color:var(--text3) }
+.tl-gantt-track { flex:1;position:relative;height:22px }
+.tl-bar {
+  position:absolute;height:18px;top:2px;
+  border-radius:4px;cursor:pointer;
+  transition:filter .15s;display:flex;align-items:center;
+  padding:0 6px;font-size:9px;font-weight:700;
+  white-space:nowrap;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.tl-bar:hover { filter:brightness(1.15) }
+.tl-bar.done { opacity:.5 }
+.tl-today-line {
+  position:absolute;top:0;bottom:0;width:1.5px;
+  background:var(--red);opacity:.7;
+  pointer-events:none;z-index:2;
+}
+.tl-today-line::after {
+  content:'Today';position:absolute;top:-16px;left:3px;
+  font-size:8px;font-weight:700;color:var(--red);white-space:nowrap;
+}
+
+/* ── ADD TASK ROW ── */
+.tl-add-task {
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-top:1px solid var(--border);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .12s;
+}
+.tl-add-task:hover { background:var(--bg3) }
+.tl-add-task-icon {
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(10,132,255,.1);border:1px dashed rgba(10,132,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--neon);flex-shrink:0;
+}
+.tl-add-task-label { font-size:12px;color:var(--text3);font-weight:600 }
+
+/* ── MODALS ── */
+.tl-modal {
+  position:fixed;inset:0;z-index:500;
+  display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+}
+.tl-modal.open { display:flex }
+.tl-modal-box {
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr) var(--rr) 0 0;
+  padding:20px 16px calc(env(safe-area-inset-bottom,0px) + 24px);
+  width:100%;max-width:500px;
+  max-height:88vh;overflow-y:auto;
+  animation:sheet-up .22s ease-out;
+}
+@keyframes sheet-up {
+  from{transform:translateY(20px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+.tl-modal-title {
+  font-size:16px;font-weight:800;color:var(--text);
+  margin-bottom:16px;display:flex;align-items:center;
+  justify-content:space-between;
+}
+.tl-close-btn {
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:20px;padding:4px 12px;cursor:pointer;
+  font-family:var(--sans);font-size:11px;font-weight:700;
+  color:var(--text2);
+}
+.tl-field-label {
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:6px;margin-top:14px;
+}
+.tl-field-label:first-of-type { margin-top:0 }
+.tl-field-inp {
+  width:100%;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:10px 12px;color:var(--text);
+  font-family:var(--sans);font-size:14px;outline:none;
+  transition:border-color .15s;
+}
+.tl-field-inp:focus { border-color:rgba(10,132,255,.4) }
+.tl-date-row { display:flex;gap:8px }
+.tl-date-row .tl-field-inp { flex:1 }
+.tl-color-row { display:flex;gap:8px;margin-top:6px }
+.tl-color-chip {
+  width:28px;height:28px;border-radius:8px;cursor:pointer;
+  border:2px solid transparent;transition:all .12s;flex-shrink:0;
+}
+.tl-color-chip.sel { border-color:var(--text);transform:scale(1.15) }
+.tl-member-chips { display:flex;flex-wrap:wrap;gap:6px;margin-top:6px }
+.tl-member-chip {
+  padding:5px 11px;border-radius:20px;border:1px solid var(--border2);
+  background:var(--bg2);color:var(--text2);font-family:var(--sans);
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+}
+.tl-member-chip.sel {
+  background:rgba(94,92,230,.1);border-color:rgba(94,92,230,.35);color:var(--purple);
+}
+.tl-modal-btns { display:flex;gap:8px;margin-top:18px }
+.tl-modal-save {
+  flex:1;padding:11px;border-radius:var(--r);border:none;
+  background:var(--neon);color:#0c0c0f;
+  font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;
+}
+.tl-modal-cancel {
+  padding:11px 18px;border-radius:var(--r);
+  border:1px solid var(--border2);background:none;
+  color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;
+}
+.tl-modal-delete {
+  padding:11px 14px;border-radius:var(--r);
+  border:1px solid rgba(255,69,58,.3);background:none;
+  color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+}
+
+/* ── EMPTY ── */
+.tl-empty {
+  text-align:center;padding:48px 16px;color:var(--text3);
+}
+.tl-empty-icon { font-size:40px;margin-bottom:12px;opacity:.3 }
+.tl-empty-title { font-size:15px;font-weight:700;margin-bottom:6px }
+.tl-empty-sub { font-size:13px;line-height:1.5 }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="index.html">
+    <span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span>
+    <span class="brand-dot"></span>
+  </a>
+  <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+  </div>
+</nav>
+
+<div class="page" style="padding-top:14px">
+
+  <div class="tl-header-row">
+    <div class="tl-page-title">📅 Timeline</div>
+    <button class="tl-new-btn" onclick="openProjectModal()">＋ New Project</button>
+  </div>
+
+  <div id="tl-list">
+    <div id="tl-loader" class="tl-empty">
+      <div class="loader"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a href="index.html"    class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
+  <a href="input.html"    class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
+  <a href="report.html"   class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+  <a href="calendar.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Calendar</span></a>
+  <a href="ideas.html"    class="bn-item"><span class="bn-icon">💡</span><span class="bn-label">Ideas</span></a>
+</nav>
+
+<!-- PROJECT MODAL -->
+<div class="tl-modal" id="proj-modal" onclick="if(event.target===this)closeProjModal()">
+  <div class="tl-modal-box">
+    <div class="tl-modal-title">
+      <span id="proj-modal-title">📅 New Project</span>
+      <button class="tl-close-btn" onclick="closeProjModal()">Cancel</button>
+    </div>
+    <div class="tl-field-label">Project Name *</div>
+    <input class="tl-field-inp" id="proj-name" placeholder="e.g. SMF 2026, Brand Refresh…">
+    <div class="tl-field-label">Date Range *</div>
+    <div class="tl-date-row">
+      <input type="date" class="tl-field-inp" id="proj-start" placeholder="Start">
+      <input type="date" class="tl-field-inp" id="proj-end" placeholder="End">
+    </div>
+    <div class="tl-field-label">Colour</div>
+    <div class="tl-color-row" id="proj-colors"></div>
+    <div class="tl-modal-btns">
+      <button class="tl-modal-cancel" id="proj-delete-btn" style="display:none" onclick="deleteProject()">🗑 Delete</button>
+      <button class="tl-modal-save" onclick="saveProject()">✓ Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="tl-modal" id="task-modal" onclick="if(event.target===this)closeTaskModal()">
+  <div class="tl-modal-box">
+    <div class="tl-modal-title">
+      <span id="task-modal-title">＋ Add Task</span>
+      <button class="tl-close-btn" onclick="closeTaskModal()">Cancel</button>
+    </div>
+    <div class="tl-field-label">Task Name *</div>
+    <input class="tl-field-inp" id="task-name" placeholder="e.g. Video Production, Email Campaign…">
+    <div class="tl-field-label">Date Range *</div>
+    <div class="tl-date-row">
+      <input type="date" class="tl-field-inp" id="task-start">
+      <input type="date" class="tl-field-inp" id="task-end">
+    </div>
+    <div class="tl-field-label">Assign Members</div>
+    <div class="tl-member-chips" id="task-members"></div>
+    <div class="tl-field-label">Priority</div>
+    <div style="display:flex;gap:6px;margin-top:6px" id="task-priority-row">
+      <button class="tl-member-chip" data-p="critical" onclick="selectTaskPriority(this)">🔴 Critical</button>
+      <button class="tl-member-chip" data-p="high"     onclick="selectTaskPriority(this)">🟠 High</button>
+      <button class="tl-member-chip sel" data-p="medium"  onclick="selectTaskPriority(this)">🔵 Medium</button>
+      <button class="tl-member-chip" data-p="low"      onclick="selectTaskPriority(this)">🟢 Low</button>
+    </div>
+    <div class="tl-modal-btns">
+      <button class="tl-modal-delete" id="task-delete-btn" style="display:none" onclick="deleteTask()">🗑</button>
+      <button class="tl-modal-cancel" onclick="closeTaskModal()">Cancel</button>
+      <button class="tl-modal-save" onclick="saveTask()">✓ Save Task</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { onUserReady, getMembers, addTask, updateTask, deleteTask as fbDeleteTask, WORKSPACE_ID } from './js/firebase.js';
+import { initTheme, toggleThemePanel } from './js/theme.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+initTheme();
+window.toggleThemePanel = toggleThemePanel;
+
+const db = getFirestore(getApps()[0]);
+const projCol = () => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects');
+const projDoc = id => doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', id);
+const taskCol = pid => collection(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks');
+const taskDocRef = (pid,tid) => doc(db, 'workspaces', WORKSPACE_ID, 'timeline_projects', pid, 'tasks', tid);
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let projects = [];
+let projectTasks = {}; // { projectId: [tasks] }
+let allMembers = [];
+let editingProjId = null;
+let editingTaskId = null;
+let editingTaskProjId = null;
+let selectedTaskMembers = {};
+let selectedTaskPriority = 'medium';
+let selectedColor = '#0a84ff';
+let unsubProjects = null;
+let unsubTasks = {};
+
+const COLORS = ['#0a84ff','#34c759','#ff9f0a','#ff453a','#5e5ce6','#ff375f','#30d158','#64d2ff'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function parseDate(s){ return s ? new Date(s+'T00:00:00') : null; }
+function fmtDate(s){
+  if (!s) return '';
+  const d = parseDate(s);
+  return d.getDate()+' '+MONTHS[d.getMonth()];
+}
+function diffDays(a, b){ return Math.round((b-a)/(1000*60*60*24)); }
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+onUserReady(async () => {
+  allMembers = await getMembers();
+  loadProjects();
+});
+
+function loadProjects() {
+  const q = query(projCol(), orderBy('createdAt','asc'));
+  unsubProjects = onSnapshot(q, snap => {
+    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Subscribe to tasks for each project
+    projects.forEach(p => {
+      if (!unsubTasks[p.id]) {
+        const tq = query(taskCol(p.id), orderBy('startDate','asc'));
+        unsubTasks[p.id] = onSnapshot(tq, tsnap => {
+          projectTasks[p.id] = tsnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          renderAll();
+        });
+      }
+    });
+    renderAll();
+    document.getElementById('tl-loader')?.remove();
+  });
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────
+function renderAll() {
+  const el = document.getElementById('tl-list');
+  if (!projects.length) {
+    el.innerHTML = `<div class="tl-empty">
+      <div class="tl-empty-icon">📅</div>
+      <div class="tl-empty-title">No projects yet</div>
+      <div class="tl-empty-sub">Tap + New Project to create your first timeline</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = projects.map(p => renderProject(p)).join('');
+}
+
+function renderProject(p) {
+  const tasks = projectTasks[p.id] || [];
+  const color = p.color || '#0a84ff';
+  const today = todayStr();
+  const pStart = p.startDate, pEnd = p.endDate;
+  const totalDays = diffDays(parseDate(pStart), parseDate(pEnd));
+  const elapsedDays = Math.max(0, Math.min(totalDays, diffDays(parseDate(pStart), new Date())));
+  const timePct = totalDays > 0 ? Math.round(elapsedDays/totalDays*100) : 0;
+  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const taskPct = tasks.length ? Math.round(doneTasks/tasks.length*100) : 0;
+  const daysLeft = diffDays(new Date(), parseDate(pEnd));
+  const isOverdue = daysLeft < 0;
+
+  // Gantt
+  const ganttHTML = renderGantt(p, tasks, color);
+
+  return `<div class="tl-project" style="border-left-color:${color}">
+    <div class="tl-project-hd">
+      <div class="tl-project-top">
+        <div class="tl-project-name">${esc(p.name)}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="tl-project-dates">${fmtDate(pStart)}<br>${fmtDate(pEnd)}</div>
+          <button class="tl-project-menu" onclick="openProjectModal('${p.id}')">⋯</button>
+        </div>
+      </div>
+
+      <!-- DUAL PROGRESS -->
+      <div class="tl-dual-progress">
+        <div class="tl-prog-row">
+          <div class="tl-prog-label">Tasks</div>
+          <div class="tl-prog-bar-bg">
+            <div class="tl-prog-bar-fill" style="width:${taskPct}%;background:${color}"></div>
+          </div>
+          <div class="tl-prog-pct" style="color:${color}">${taskPct}%</div>
+        </div>
+        <div class="tl-prog-row">
+          <div class="tl-prog-label">Time</div>
+          <div class="tl-prog-bar-bg">
+            <div class="tl-prog-bar-fill" style="width:${timePct}%;background:${isOverdue?'var(--red)':'var(--amber)'}"></div>
+          </div>
+          <div class="tl-prog-pct" style="color:${isOverdue?'var(--red)':'var(--amber)'}">
+            ${isOverdue ? 'Overdue' : daysLeft+'d left'}
+          </div>
+        </div>
+      </div>
+
+      <!-- STATUS CHIPS -->
+      <div class="tl-status-row">
+        <span class="tl-stat-chip">📋 ${tasks.length} task${tasks.length!==1?'s':''}</span>
+        <span class="tl-stat-chip">✅ ${doneTasks} done</span>
+        ${tasks.length - doneTasks > 0 ? `<span class="tl-stat-chip">🔄 ${tasks.length-doneTasks} active</span>` : ''}
+        ${isOverdue ? '<span class="tl-stat-chip" style="color:var(--red);border-color:rgba(255,69,58,.3)">⚠ Overdue</span>' : ''}
+      </div>
+    </div>
+
+    <!-- GANTT -->
+    ${ganttHTML}
+
+    <!-- ADD TASK -->
+    <div class="tl-add-task" onclick="openTaskModal('${p.id}')">
+      <div class="tl-add-task-icon">＋</div>
+      <div class="tl-add-task-label">Add task to timeline</div>
+    </div>
+  </div>`;
+}
+
+function renderGantt(p, tasks, color) {
+  if (!tasks.length) return '';
+  const pStart = parseDate(p.startDate);
+  const pEnd   = parseDate(p.endDate);
+  const totalDays = diffDays(pStart, pEnd) || 1;
+  const today = new Date();
+  const todayPct = Math.max(0, Math.min(100, diffDays(pStart, today)/totalDays*100));
+
+  // Month labels across the header
+  const monthLabels = [];
+  let cur = new Date(pStart);
+  while (cur <= pEnd) {
+    const pct = diffDays(pStart, cur)/totalDays*100;
+    monthLabels.push({ label: MONTHS[cur.getMonth()], pct });
+    cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  }
+
+  const headerHTML = monthLabels.map(m =>
+    `<div class="tl-gantt-col-label" style="position:absolute;left:${m.pct}%;transform:translateX(-50%)">${m.label}</div>`
+  ).join('');
+
+  const rowsHTML = tasks.map(t => {
+    const tStart = parseDate(t.startDate);
+    const tEnd   = parseDate(t.endDate);
+    if (!tStart || !tEnd) return '';
+    const left  = Math.max(0, diffDays(pStart, tStart)/totalDays*100);
+    const width = Math.max(1, diffDays(tStart, tEnd)/totalDays*100);
+    const isDone = t.status === 'done';
+    const members = (t.members||[]).map(m=>m.name.split(' ')[0]).join(', ');
+    return `<div class="tl-task-row">
+      <div class="tl-task-label${isDone?' done':''}"
+        onclick="openTaskModal('${p.id}','${t.id}')"
+        title="${esc(t.name)}">${esc(t.name)}</div>
+      <div class="tl-gantt-track">
+        <div class="tl-today-line" style="left:${todayPct}%"></div>
+        <div class="tl-bar${isDone?' done':''}"
+          style="left:${left}%;width:${Math.min(width,100-left)}%;background:${isDone?'var(--green)':color};color:${isDone?'#0c0c0f':'#fff'}"
+          onclick="openTaskModal('${p.id}','${t.id}')"
+          title="${esc(t.name)} · ${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}">
+          ${members ? esc(members) : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="tl-gantt-wrap">
+    <div class="tl-gantt">
+      <div style="position:relative;height:20px;margin-left:110px;margin-bottom:8px">
+        ${headerHTML}
+        <div style="position:absolute;left:${todayPct}%;top:0;bottom:0;width:1px;background:var(--red);opacity:.5"></div>
+      </div>
+      ${rowsHTML}
+    </div>
+  </div>`;
+}
+
+// ── PROJECT MODAL ─────────────────────────────────────────────────────────
+window.openProjectModal = (projId) => {
+  editingProjId = projId || null;
+  const modal = document.getElementById('proj-modal');
+  const title = document.getElementById('proj-modal-title');
+  const delBtn = document.getElementById('proj-delete-btn');
+
+  // Render color chips
+  document.getElementById('proj-colors').innerHTML = COLORS.map(col =>
+    `<div class="tl-color-chip${col===selectedColor?' sel':''}"
+      style="background:${col}" onclick="selectColor('${col}',this)"></div>`
+  ).join('');
+
+  if (projId) {
+    const p = projects.find(p => p.id === projId);
+    if (!p) return;
+    title.textContent = '✎ Edit Project';
+    document.getElementById('proj-name').value  = p.name || '';
+    document.getElementById('proj-start').value = p.startDate || '';
+    document.getElementById('proj-end').value   = p.endDate || '';
+    selectedColor = p.color || '#0a84ff';
+    delBtn.style.display = '';
+  } else {
+    title.textContent = '📅 New Project';
+    document.getElementById('proj-name').value  = '';
+    document.getElementById('proj-start').value = '';
+    document.getElementById('proj-end').value   = '';
+    selectedColor = '#0a84ff';
+    delBtn.style.display = 'none';
+  }
+
+  // Re-render colors with correct selection
+  document.getElementById('proj-colors').innerHTML = COLORS.map(col =>
+    `<div class="tl-color-chip${col===selectedColor?' sel':''}"
+      style="background:${col}" onclick="selectColor('${col}',this)"></div>`
+  ).join('');
+
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('proj-name').focus(), 200);
+};
+
+window.closeProjModal = () => {
+  document.getElementById('proj-modal').classList.remove('open');
+  editingProjId = null;
+};
+
+window.selectColor = (col, el) => {
+  selectedColor = col;
+  document.querySelectorAll('.tl-color-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+window.saveProject = async () => {
+  const name  = document.getElementById('proj-name').value.trim();
+  const start = document.getElementById('proj-start').value;
+  const end   = document.getElementById('proj-end').value;
+  if (!name || !start || !end) { toast('Fill in name and dates'); return; }
+  if (start >= end) { toast('End date must be after start date'); return; }
+
+  if (editingProjId) {
+    await updateDoc(projDoc(editingProjId), { name, startDate:start, endDate:end, color:selectedColor });
+    toast('Project updated ✓');
+  } else {
+    await addDoc(projCol(), { name, startDate:start, endDate:end, color:selectedColor, createdAt:serverTimestamp() });
+    toast('Project created ✓');
+  }
+  closeProjModal();
+};
+
+window.deleteProject = async () => {
+  if (!editingProjId) return;
+  if (!confirm('Delete this project and all its timeline tasks?')) return;
+  // Delete all tasks first
+  const tasks = projectTasks[editingProjId] || [];
+  await Promise.all(tasks.map(t => deleteDoc(taskDocRef(editingProjId, t.id))));
+  await deleteDoc(projDoc(editingProjId));
+  if (unsubTasks[editingProjId]) { unsubTasks[editingProjId](); delete unsubTasks[editingProjId]; }
+  delete projectTasks[editingProjId];
+  closeProjModal();
+  toast('Project deleted');
+};
+
+// ── TASK MODAL ────────────────────────────────────────────────────────────
+window.openTaskModal = (projId, taskId) => {
+  editingTaskProjId = projId;
+  editingTaskId = taskId || null;
+  selectedTaskMembers = {};
+  selectedTaskPriority = 'medium';
+
+  const modal = document.getElementById('task-modal');
+  const title = document.getElementById('task-modal-title');
+  const delBtn = document.getElementById('task-delete-btn');
+  const proj = projects.find(p => p.id === projId);
+
+  // Member chips
+  document.getElementById('task-members').innerHTML = allMembers.map(m =>
+    `<div class="tl-member-chip" id="tm-${m.id}" onclick="toggleTaskMember('${m.id}','${esc(m.name)}')">${esc(m.name)}</div>`
+  ).join('');
+
+  // Reset priority
+  document.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('sel', b.dataset.p === 'medium'));
+
+  if (taskId) {
+    const t = (projectTasks[projId]||[]).find(t => t.id === taskId);
+    if (!t) return;
+    title.textContent = '✎ Edit Task';
+    document.getElementById('task-name').value  = t.name || '';
+    document.getElementById('task-start').value = t.startDate || proj?.startDate || '';
+    document.getElementById('task-end').value   = t.endDate   || proj?.endDate || '';
+    selectedTaskPriority = t.priority || 'medium';
+    // Pre-select members
+    (t.members||[]).forEach(m => {
+      selectedTaskMembers[m.id] = m;
+      document.getElementById('tm-'+m.id)?.classList.add('sel');
+    });
+    // Pre-select priority
+    document.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('sel', b.dataset.p === selectedTaskPriority));
+    delBtn.style.display = '';
+  } else {
+    title.textContent = '＋ Add Task';
+    document.getElementById('task-name').value  = '';
+    document.getElementById('task-start').value = proj?.startDate || '';
+    document.getElementById('task-end').value   = proj?.endDate   || '';
+    delBtn.style.display = 'none';
+  }
+
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('task-name').focus(), 200);
+};
+
+window.closeTaskModal = () => {
+  document.getElementById('task-modal').classList.remove('open');
+  editingTaskId = editingTaskProjId = null;
+};
+
+window.toggleTaskMember = (id, name) => {
+  if (selectedTaskMembers[id]) {
+    delete selectedTaskMembers[id];
+    document.getElementById('tm-'+id)?.classList.remove('sel');
+  } else {
+    selectedTaskMembers[id] = { id, name };
+    document.getElementById('tm-'+id)?.classList.add('sel');
+  }
+};
+
+window.selectTaskPriority = (btn) => {
+  selectedTaskPriority = btn.dataset.p;
+  document.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('sel', b.dataset.p === selectedTaskPriority));
+};
+
+window.saveTask = async () => {
+  const name  = document.getElementById('task-name').value.trim();
+  const start = document.getElementById('task-start').value;
+  const end   = document.getElementById('task-end').value;
+  if (!name || !start || !end) { toast('Fill in task name and dates'); return; }
+
+  const proj = projects.find(p => p.id === editingTaskProjId);
+  const members = Object.values(selectedTaskMembers).map(m => ({ id:m.id, name:m.name }));
+  const today = todayStr();
+
+  const taskData = {
+    name, startDate:start, endDate:end,
+    members, priority: selectedTaskPriority,
+    status: editingTaskId ? ((projectTasks[editingTaskProjId]||[]).find(t=>t.id===editingTaskId)?.status || 'todo') : 'todo',
+    projectId: editingTaskProjId, projectName: proj?.name || '',
+  };
+
+  if (editingTaskId) {
+    await updateDoc(taskDocRef(editingTaskProjId, editingTaskId), taskData);
+    toast('Task updated ✓');
+  } else {
+    // Save to timeline
+    await addDoc(taskCol(editingTaskProjId), { ...taskData, createdAt:serverTimestamp() });
+    // Also push to WorkDesk tasks (one-way: timeline → workdesk)
+    await addTask({
+      label: name,
+      project: proj?.name || '',
+      priority: selectedTaskPriority,
+      members,
+      taskDueDate: end,
+      dueDate: start,
+      taskType: 'mbc',
+      fromTimeline: true,
+    });
+    toast('Task added to timeline + WorkDesk ✓');
+  }
+  closeTaskModal();
+};
+
+window.deleteTask = async () => {
+  if (!editingTaskId || !editingTaskProjId) return;
+  if (!confirm('Remove this task from the timeline?')) return;
+  await deleteDoc(taskDocRef(editingTaskProjId, editingTaskId));
+  closeTaskModal();
+  toast('Task removed from timeline');
+};
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg) {
+  let el = document.getElementById('tl-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'tl-toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.className = 'toast show';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
