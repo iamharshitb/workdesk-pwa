@@ -22,6 +22,9 @@
       border-color: rgba(245,168,0,.35);
       box-shadow: 0 0 0 1px rgba(245,168,0,.1), 0 4px 16px rgba(245,168,0,.08);
     }
+    .task-card.status-onhold {
+      border-left-color: var(--purple) !important;
+    }
     .task-card.status-done {
       background: rgba(0,229,184,.05);
       border-color: rgba(0,229,184,.2);
@@ -180,6 +183,7 @@
     .task-row-compact.status-inprog {
       background:rgba(245,168,0,.06);border-color:rgba(245,168,0,.28);
     }
+    .task-row-compact.status-onhold { opacity:.75; border-left-color:var(--purple) !important }
     .task-row-compact.status-done { opacity:.5; }
     .trc-left { flex:1;min-width:0; }
     .trc-name {
@@ -900,6 +904,19 @@
 
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
+  <!-- TIMELINE QUICK LINK -->
+  <a href="timeline.html" style="display:flex;align-items:center;gap:10px;
+    background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+    padding:10px 14px;margin-bottom:10px;text-decoration:none;
+    border-left:3px solid var(--purple);">
+    <span style="font-size:18px">📅</span>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--text)">Project Timeline</div>
+      <div style="font-size:10px;color:var(--text3)">Track Gantt-style project progress</div>
+    </div>
+    <span style="margin-left:auto;font-size:12px;color:var(--text3)">→</span>
+  </a>
+
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
@@ -1383,7 +1400,7 @@ function renderStats() {
   const mbcTasks = tasks.filter(t => (t.taskType||'mbc') === 'mbc');
   const total = mbcTasks.length;
   const done  = mbcTasks.filter(t => t.status === 'done').length;
-  const inprog = mbcTasks.filter(t => t.status === 'inprog').length;
+  const inprog = mbcTasks.filter(t => t.status === 'inprog' || t.status === 'onhold').length;
   const crit  = mbcTasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
   const pct   = total ? Math.round(done / total * 100) : 0;
   set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
@@ -1524,7 +1541,7 @@ function renderMyTasks() {
     return;
   }
 
-  const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,done:2};
+  const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,onhold:2,done:3};
   const _n = new Date(), _p = n => String(n).padStart(2,'0');
   const now16 = `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}`;
   const todayStr = new Date().toISOString().slice(0,10);
@@ -1626,7 +1643,20 @@ function renderMyTasks() {
   ` : '';
 
   try {
-    el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + doneHTML;
+    // On Hold section
+  const onholdHTML = onholdTasks.length ? `
+    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
+      <span style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.1em">⏸ On Hold</span>
+      <span style="font-size:10px;color:var(--text3);font-weight:600">${onholdTasks.length}</span>
+    </div>
+    ${onholdTasks.map((t,i) => myTaskCard(t, i)).join('')}
+  ` : '';
+
+  try {
+    el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + onholdHTML + doneHTML;
+  } catch(err) {
+    el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">Render error: ${err.message}</div>`;
+  }
   } catch(err) {
     el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;font-family:var(--mono)">
       Render error: ${err.message}<br>
@@ -1682,7 +1712,8 @@ function myTaskCard(t, i) {
   const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
   const isDone = t.status === 'done';
   const isInprog = t.status === 'inprog';
-  const statusClass = isDone ? 'status-done' : isInprog ? 'status-inprog' : '';
+  const isOnhold = t.status === 'onhold';
+  const statusClass = isDone ? 'status-done' : isInprog ? 'status-inprog' : isOnhold ? 'status-onhold' : '';
   const isExpanded = expandedTasks.has(t.id);
 
   const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
@@ -1956,7 +1987,7 @@ function memberTaskCard(t, member, i) {
   const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[memberStatus];
   const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[memberStatus];
   const isDone = memberStatus === 'done';
-  const statusClass = isDone ? 'status-done' : t.status === 'inprog' ? 'status-inprog' : '';
+  const statusClass = isDone ? 'status-done' : t.status === 'inprog' ? 'status-inprog' : t.status === 'onhold' ? 'status-onhold' : '';
 
   // Show button if: this is your own card, OR you are the admin
   const isMyCard = MY_NAME && member.name.toLowerCase() === MY_NAME.toLowerCase();
@@ -2410,10 +2441,12 @@ window.saveInlineEdit = async (taskId) => {
 window.cycleOverall = async (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
   if (t.status === 'done') return;
-  const next = t.status === 'todo' ? 'inprog' : 'todo';
+  const cycle = {todo:'inprog', inprog:'onhold', onhold:'todo'};
+  const labels = {inprog:'🔄 In Progress', onhold:'⏸ On Hold', todo:'↩ Back to Todo'};
+  const next = cycle[t.status] || 'inprog';
   t.status = next;
   await updateTask(id, {status: next});
-  renderAll(); toast(next === 'inprog' ? 'Marked in progress' : 'Moved back to Todo');
+  renderAll(); toast(labels[next]);
 };
 
 window.setMemberStatusWindow = (taskId, memberId, newStatus) => {

@@ -441,9 +441,9 @@ function renderCharts(mt){
   try {
     chartInstances.status=new Chart(document.getElementById('chart-status'),{
       type:'doughnut',
-      data:{labels:['Done','In Prog','Todo'],datasets:[{
-        data:[mt.filter(t=>t.status==='done').length,mt.filter(t=>t.status==='inprog').length,mt.filter(t=>t.status==='todo').length],
-        backgroundColor:['#34c759','#ff9f0a',_cs.getPropertyValue('--bg4').trim()||'#e5e7eb'],
+      data:{labels:['Done','In Prog','On Hold','Todo'],datasets:[{
+        data:[mt.filter(t=>t.status==='done').length,mt.filter(t=>t.status==='inprog').length,mt.filter(t=>t.status==='onhold').length,mt.filter(t=>t.status==='todo').length],
+        backgroundColor:['#34c759','#ff9f0a','#5e5ce6',_cs.getPropertyValue('--bg4').trim()||'#e5e7eb'],
         borderWidth:0,hoverOffset:3,
       }]},
       options:{...chartBase,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
