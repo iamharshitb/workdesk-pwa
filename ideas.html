@@ -238,6 +238,29 @@
   <button class="status-tab"        data-status="parked"       onclick="filterIdeas('parked',this)">🅿 Parked</button>
 </div>
 
+<div style="padding:10px 16px 0;background:var(--bg2);border-bottom:1px solid var(--border2)">
+  <div style="display:flex;gap:8px;align-items:center">
+    <input id="quick-idea-inp" type="text"
+      placeholder="⚡ Quick capture — type an idea and press Enter…"
+      style="flex:1;background:var(--bg3);border:1.5px solid var(--border2);
+        border-radius:20px;padding:9px 16px;color:var(--text);
+        font-family:var(--sans);font-size:13px;outline:none;
+        transition:border-color .15s;"
+      onfocus="this.style.borderColor='rgba(10,132,255,.4)'"
+      onblur="this.style.borderColor=''"
+      onkeydown="if(event.key==='Enter'&&this.value.trim())quickCaptureIdea(this)">
+    <button onclick="quickCaptureIdea(document.getElementById('quick-idea-inp'))"
+      style="padding:9px 16px;border-radius:20px;border:none;
+        background:var(--neon);color:#0c0c0f;font-family:var(--sans);
+        font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
+      ＋ Add
+    </button>
+  </div>
+  <div style="font-size:10px;color:var(--text3);padding:5px 4px 10px">
+    Quick capture adds to Ideation. Tap any idea to fill in details.
+  </div>
+</div>
+
 <div class="page" style="padding-top:14px" id="ideas-list">
   <div id="page-loader" class="empty">
     <div class="loader"></div>
@@ -249,10 +272,11 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <a href="index.html"    class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html"    class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="report.html"   class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Calendar</span></a>
+  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
+  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
+  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+  <a href="timeline.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Timeline</span></a>
+  <a href="ideas.html" class="bn-item active"><span class="bn-icon">💡</span><span class="bn-label">Ideas</span></a>
 </nav>
 
 <!-- NEW IDEA MODAL -->
@@ -593,6 +617,23 @@ window.deleteIdea = async (id) => {
 };
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
+window.quickCaptureIdea = async (inp) => {
+  const title = inp.value.trim();
+  if (!title) return;
+  inp.value = '';
+  await addDoc(ideasCol(), {
+    title,
+    description: '',
+    category:   'Other',
+    status:     'ideation',
+    author:     MY_NAME,
+    noteCount:  0,
+    createdAt:  serverTimestamp(),
+    updatedAt:  serverTimestamp(),
+  });
+  toast('💡 Idea captured!');
+};
+
 function toast(msg) {
   let el = document.getElementById('toast');
   if (!el) {

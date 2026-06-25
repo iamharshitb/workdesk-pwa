@@ -373,6 +373,76 @@
     .wc-zone.ist .wc-time { color:var(--amber) }
     .wc-zone.ger .wc-time { color:var(--neon) }
 
+    /* ── WELCOME SCREEN ── */
+    .welcome-overlay {
+      position:fixed;inset:0;z-index:9000;
+      background:var(--bg);
+      display:flex;align-items:center;justify-content:center;
+      padding:24px;
+    }
+    .welcome-box {
+      width:100%;max-width:360px;text-align:center;
+    }
+    .welcome-logo {
+      font-size:36px;font-weight:900;letter-spacing:-.03em;
+      margin-bottom:4px;
+    }
+    .welcome-logo .w1 { color:var(--neon) }
+    .welcome-logo .w2 { color:var(--text) }
+    .welcome-tagline {
+      font-size:13px;color:var(--text3);margin-bottom:32px;
+    }
+    .welcome-q {
+      font-size:18px;font-weight:800;color:var(--text);
+      margin-bottom:6px;letter-spacing:-.01em;
+    }
+    .welcome-sub {
+      font-size:12px;color:var(--text3);margin-bottom:18px;
+    }
+    .welcome-chips {
+      display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+      margin-bottom:16px;
+    }
+    .welcome-chip {
+      padding:9px 18px;border-radius:20px;
+      border:1.5px solid var(--border2);background:var(--bg2);
+      color:var(--text2);font-family:var(--sans);
+      font-size:13px;font-weight:700;cursor:pointer;
+      transition:all .15s;-webkit-tap-highlight-color:transparent;
+    }
+    .welcome-chip:hover { border-color:var(--neon);color:var(--neon);background:rgba(10,132,255,.06) }
+    .welcome-chip:active { transform:scale(.95) }
+    .welcome-chip.sel {
+      border-color:var(--neon);background:rgba(10,132,255,.1);color:var(--neon);
+    }
+    .welcome-divider {
+      font-size:10px;color:var(--text3);margin:10px 0;
+      display:flex;align-items:center;gap:8px;
+    }
+    .welcome-divider::before,.welcome-divider::after {
+      content:'';flex:1;height:1px;background:var(--border);
+    }
+    .welcome-inp-row {
+      display:flex;gap:8px;margin-bottom:20px;
+    }
+    .welcome-inp {
+      flex:1;background:var(--bg2);border:1.5px solid var(--border2);
+      border-radius:12px;padding:10px 14px;color:var(--text);
+      font-family:var(--sans);font-size:14px;outline:none;
+      transition:border-color .15s;
+    }
+    .welcome-inp:focus { border-color:rgba(10,132,255,.5) }
+    .welcome-go {
+      padding:10px 18px;border-radius:12px;border:none;
+      background:var(--neon);color:#0c0c0f;
+      font-family:var(--sans);font-size:14px;font-weight:700;
+      cursor:pointer;transition:all .15s;white-space:nowrap;
+    }
+    .welcome-go:active { transform:scale(.96) }
+    .welcome-note {
+      font-size:10px;color:var(--text3);line-height:1.6;
+    }
+
     /* ── GREETING BAR ── */
     .greeting-bar {
       padding:14px 16px;
@@ -904,19 +974,6 @@
 
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
-  <!-- TIMELINE QUICK LINK -->
-  <a href="timeline.html" style="display:flex;align-items:center;gap:10px;
-    background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
-    padding:10px 14px;margin-bottom:10px;text-decoration:none;
-    border-left:3px solid var(--purple);">
-    <span style="font-size:18px">📅</span>
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--text)">Project Timeline</div>
-      <div style="font-size:10px;color:var(--text3)">Track Gantt-style project progress</div>
-    </div>
-    <span style="margin-left:auto;font-size:12px;color:var(--text3)">→</span>
-  </a>
-
   <!-- SLIM TIMER — at top -->
   <div class="panel fi" style="animation-delay:.02s">
     <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
@@ -1173,12 +1230,46 @@ function updateMuteBtn() {
 window.handleMuteToggle = () => { toggleMute(); updateMuteBtn(); };
 updateMuteBtn();
 
+// ── WELCOME SCREEN ───────────────────────────────────────────────────────
+async function showWelcomeScreen() {
+  return new Promise(async resolve => {
+    const overlay = document.getElementById('welcome-overlay');
+    overlay.style.display = 'flex';
+
+    // Populate member chips
+    const teamMembers = await getMembers();
+    const chipsEl = document.getElementById('welcome-chips');
+    chipsEl.innerHTML = teamMembers.map(m =>
+      `<button class="welcome-chip" onclick="selectWelcomeMember('${m.name}')">${m.name}</button>`
+    ).join('');
+
+    window._welcomeResolve = resolve;
+  });
+}
+
+window.selectWelcomeMember = (name) => {
+  document.querySelectorAll('.welcome-chip').forEach(c => c.classList.toggle('sel', c.textContent===name));
+  document.getElementById('welcome-inp').value = name;
+};
+
+window.confirmWelcome = () => {
+  const name = document.getElementById('welcome-inp').value.trim();
+  if (!name) {
+    document.getElementById('welcome-inp').style.borderColor = 'var(--red)';
+    return;
+  }
+  MY_NAME = name;
+  localStorage.setItem('wd_myname', name);
+  document.getElementById('welcome-overlay').style.display = 'none';
+  if (window._welcomeResolve) { window._welcomeResolve(); window._welcomeResolve = null; }
+};
+
 // BOOTSTRAP
 onUserReady(async () => {
   // Ask for name first (before listener fires so renderAll has MY_NAME)
   if (!MY_NAME) {
-    MY_NAME = prompt('Your name (to show your tasks):') || '';
-    if (MY_NAME) localStorage.setItem('wd_myname', MY_NAME);
+    // Show welcome screen instead of bare prompt
+    await showWelcomeScreen();
   }
 
   // Load members once (they don't change often)
@@ -3233,6 +3324,24 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- WELCOME SCREEN -->
+<div class="welcome-overlay" id="welcome-overlay" style="display:none">
+  <div class="welcome-box">
+    <div class="welcome-logo"><span class="w1">Work</span><span class="w2">Desk</span></div>
+    <div class="welcome-tagline">MBC-IN Internal Communications Hub</div>
+    <div class="welcome-q">Who are you? 👋</div>
+    <div class="welcome-sub">Tap your name to get started</div>
+    <div class="welcome-chips" id="welcome-chips"></div>
+    <div class="welcome-divider">or type your name</div>
+    <div class="welcome-inp-row">
+      <input class="welcome-inp" id="welcome-inp" placeholder="Your name…"
+        onkeydown="if(event.key==='Enter') confirmWelcome()">
+      <button class="welcome-go" onclick="confirmWelcome()">Go →</button>
+    </div>
+    <div class="welcome-note">Your name is only stored on this device.<br>It helps show your tasks on the dashboard.</div>
+  </div>
+</div>
 
 <nav class="bottom-nav">
   <a href="index.html" class="bn-item active">

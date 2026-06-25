@@ -223,13 +223,22 @@
 </div>
 
 <!-- REPORT TABS -->
-<div class="rpt-tabs">
+<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border2)">
+<div class="rpt-tabs" style="border-bottom:none;flex:1">
   <button class="rpt-tab active" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
   <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
   <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">My Report</button>
 </div>
+<button id="rpt-filter-btn" onclick="toggleRptFilters()"
+  style="display:none;flex-shrink:0;margin-right:12px;padding:5px 12px;
+    border-radius:20px;border:1px solid var(--border2);background:var(--bg2);
+    color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">
+  ⚙ Filters
+</button>
+</div>
 
 <!-- FILTER ROW (monthly only) -->
+<div style="padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border2);display:none" id="filter-row-wrap">
 <div class="rpt-filter-row" id="filter-row">
   <select id="filter-project" class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Projects</option></select>
   <select id="filter-member"  class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Members</option></select>
@@ -248,6 +257,7 @@
   </select>
   <button class="rpt-clear-btn" onclick="clearFilters()">✕</button>
   <span class="rpt-filter-count" id="filter-count"></span>
+</div>
 </div>
 
 <!-- ═══ MONTHLY PANEL ═══ -->
@@ -284,10 +294,10 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <a href="index.html"    class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html"    class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="report.html"   class="bn-item active"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Calendar</span></a>
+  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
+  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
+  <a href="report.html" class="bn-item active"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+  <a href="timeline.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Timeline</span></a>
   <a href="ideas.html" class="bn-item"><span class="bn-icon">💡</span><span class="bn-label">Ideas</span></a>
 </nav>
 
@@ -347,6 +357,16 @@ function renderActiveTab(){
 }
 
 // ── TAB SWITCHING ──────────────────────────────────────────────────────────
+window.toggleRptFilters = () => {
+  const wrap = document.getElementById('filter-row-wrap');
+  const btn  = document.getElementById('rpt-filter-btn');
+  const open = wrap.style.display !== 'none';
+  wrap.style.display = open ? 'none' : '';
+  btn.style.background = open ? '' : 'rgba(10,132,255,.08)';
+  btn.style.color      = open ? '' : 'var(--neon)';
+  btn.style.borderColor = open ? '' : 'rgba(10,132,255,.3)';
+};
+
 window.switchRptTab=(tab)=>{
   activeRptTab=tab;
   document.querySelectorAll('.rpt-tab').forEach(b=>b.classList.remove('active'));
@@ -355,6 +375,9 @@ window.switchRptTab=(tab)=>{
   document.getElementById('panel-'+tab).classList.add('active');
   // Show/hide filter row
   document.getElementById('filter-row').style.display=tab==='monthly'?'flex':'none';
+  document.getElementById('filter-row-wrap').style.display='none';
+  const fb=document.getElementById('rpt-filter-btn');
+  if(fb)fb.style.display=tab==='monthly'?'':'none';
   renderActiveTab();
 };
 
