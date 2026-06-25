@@ -119,13 +119,15 @@
     .filter-wrap { position:relative; margin-bottom:10px }
     .filter-btn {
       display:inline-flex;align-items:center;gap:6px;
-      padding:7px 16px;border-radius:20px;
-      border:1px solid var(--border2);background:var(--bg2);
-      color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:700;
+      padding:8px 18px;border-radius:20px;
+      border:1.5px solid var(--border2);background:var(--bg2);
+      color:var(--text);font-family:var(--sans);font-size:12px;font-weight:700;
       cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
+      box-shadow:0 1px 4px rgba(0,0,0,.12);
     }
+    .filter-btn:hover { border-color:var(--neon);color:var(--neon) }
     .filter-btn:active { transform:scale(.97) }
-    .filter-btn.active { border-color:var(--neon);color:var(--neon);background:rgba(10,132,255,.06) }
+    .filter-btn.active { border-color:var(--neon);color:var(--neon);background:rgba(10,132,255,.08) }
     .filter-active-pill {
       display:inline-flex;align-items:center;gap:5px;margin-left:8px;
       font-size:11px;font-weight:700;color:var(--neon);
@@ -1055,6 +1057,13 @@
     </div>
   </div>
 
+  <!-- GAMES HINT -->
+  <div style="text-align:center;padding:2px 0 6px">
+    <span style="font-size:11px;color:var(--text3);cursor:pointer;opacity:.4;user-select:none"
+      onclick="document.getElementById('search-inp')?.focus()"
+      title="Psst... try typing 'snake', 'quiz' or 'space' in the search bar 🎮">🎮</span>
+  </div>
+
   <!-- NOTES -->
   <div class="panel fi" style="animation-delay:.15s">
     <div class="panel-hd"><span class="panel-title">Quick Notes</span></div>
@@ -1628,7 +1637,20 @@ function renderMyTasks() {
     : '';
 
   if (!taskList.length) {
-    el.innerHTML = banner + `<div class="empty"><div class="ei">◈</div>${activeFilter ? 'No tasks in this category' : MY_NAME ? `Nothing on your plate right now, ${esc(MY_NAME)} 🎉` : 'No tasks yet — add one in the Input tab'}</div>`;
+    const _hasFilter = activeFilter || activeDueFilter || activePriorityFilter || activeStatusFilter || searchQuery;
+    if (_hasFilter) {
+      el.innerHTML = banner + `<div class="empty">
+        <div class="ei">🔍</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">No tasks match this filter</div>
+        <button onclick="clearAllFilters();clearSearch()"
+          style="padding:8px 20px;border-radius:20px;border:1.5px solid var(--neon);
+          background:rgba(10,132,255,.08);color:var(--neon);font-family:var(--sans);
+          font-size:12px;font-weight:700;cursor:pointer">✕ Clear Filter</button>
+      </div>`;
+    } else {
+      const _emptyMsg = MY_NAME ? 'Nothing on your plate right now, ' + esc(MY_NAME) + ' 🎉' : 'No tasks yet — add one in the Input tab';
+      el.innerHTML = banner + '<div class="empty"><div class="ei">◈</div>' + _emptyMsg + '</div>';
+    }
     return;
   }
 
@@ -3356,9 +3378,9 @@ if ('serviceWorker' in navigator) {
     <span class="bn-icon">▤</span>
     <span class="bn-label">Report</span>
   </a>
-  <a href="calendar.html" class="bn-item">
+  <a href="timeline.html" class="bn-item">
     <span class="bn-icon">📅</span>
-    <span class="bn-label">Calendar</span>
+    <span class="bn-label">Timeline</span>
   </a>
   <a href="ideas.html" class="bn-item">
     <span class="bn-icon">💡</span>
