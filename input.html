@@ -220,7 +220,20 @@
       </div>
 
       <input class="task-input" id="f-task" placeholder="What's the overall task?" maxlength="120"
-        onkeydown="if(event.key==='Enter')this.blur()">
+        onkeydown="if(event.key==='Enter')this.blur()"
+        oninput="checkSimilarTasks(this.value)">
+
+      <!-- SIMILAR TASKS WARNING -->
+      <div id="similar-tasks-wrap" style="display:none;margin-top:8px;margin-bottom:4px">
+        <div style="background:rgba(255,159,10,.08);border:1px solid rgba(255,159,10,.3);
+          border-radius:10px;padding:10px 13px;">
+          <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:7px;
+            display:flex;align-items:center;gap:6px">
+            ⚠ Similar tasks already exist
+          </div>
+          <div id="similar-tasks-list"></div>
+        </div>
+      </div>
 
       <div class="sect-label">Project</div>
       <div class="project-row">
@@ -543,6 +556,103 @@ window.selectPriority = (btn) => {
   btn.classList.add({ critical:'pc', high:'ph', medium:'pm', low:'pl' }[p]);
 };
 
+// ── SIMILARITY / DUPLICATE DETECTION ─────────────────────────────────────
+const STOP_WORDS = new Set(['a','an','the','and','or','for','to','of','in','on','at','with',
+  'by','from','is','are','was','were','be','been','being','have','has','had',
+  'do','does','did','will','would','could','should','may','might','shall',
+  'this','that','these','those','it','its','all','any','as','up','so','but']);
+
+function tokenise(text) {
+  return text.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1 && !STOP_WORDS.has(w));
+}
+
+function bigrams(text) {
+  const s = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const bg = new Set();
+  for (let i = 0; i < s.length - 1; i++) bg.add(s.slice(i, i+2));
+  return bg;
+}
+
+function similarity(a, b) {
+  // Token overlap score
+  const ta = new Set(tokenise(a));
+  const tb = new Set(tokenise(b));
+  const common = [...ta].filter(w => tb.has(w)).length;
+  const tokenScore = ta.size + tb.size > 0
+    ? (2 * common) / (ta.size + tb.size) : 0;
+
+  // Bigram score (Sorensen-Dice)
+  const ba = bigrams(a), bb = bigrams(b);
+  const bgCommon = [...ba].filter(bg => bb.has(bg)).length;
+  const bigramScore = ba.size + bb.size > 0
+    ? (2 * bgCommon) / (ba.size + bb.size) : 0;
+
+  // Weighted average — bigrams catch word variations better
+  return tokenScore * 0.45 + bigramScore * 0.55;
+}
+
+function findDuplicates(label, project) {
+  const THRESHOLD = 0.38; // tune: 0 = no match, 1 = exact
+  return tasks
+    .filter(t => t.status !== 'done' && t.id !== editingId)
+    .map(t => {
+      let score = similarity(label, t.label);
+      // Boost score if same project
+      if (project && t.project && project.toLowerCase() === t.project.toLowerCase()) {
+        score = Math.min(1, score + 0.1);
+      }
+      return { task: t, score };
+    })
+    .filter(r => r.score >= THRESHOLD)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3); // show top 3 at most
+}
+
+let _pendingSaveData = null;
+
+function showDupModal(dupes, saveData) {
+  _pendingSaveData = saveData;
+  const sub = document.getElementById('dup-sub');
+  sub.textContent = `Found ${dupes.length} similar task${dupes.length>1?'s':''} already in the system. Check if this is a duplicate before saving.`;
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('dup-matches').innerHTML = dupes.map(({ task: t, score }) => {
+    const pct = Math.round(score * 100);
+    const members = (t.members||[]).map(m=>m.name).join(', ');
+    const barColor = pct >= 70 ? 'var(--red)' : pct >= 50 ? 'var(--amber)' : 'var(--neon)';
+    return `<div class="dup-item" style="border-left-color:${barColor}">
+      <div class="dup-item-name">${esc(t.label)}</div>
+      <div class="dup-item-meta">
+        ${t.project ? `<span>📁 ${esc(t.project)}</span>` : ''}
+        ${members ? `<span>👥 ${members}</span>` : ''}
+        <span>${t.status==='inprog'?'🔄 In Progress':'📋 Todo'}</span>
+        <span class="dup-score">${pct}% similar</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dup-overlay').classList.add('open');
+}
+
+window.closeDupModal = () => {
+  document.getElementById('dup-overlay').classList.remove('open');
+  _pendingSaveData = null;
+  // Re-enable save button
+  const btn = document.getElementById('send-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '⬡ Register Task'; }
+};
+
+window.forceSaveTask = async () => {
+  document.getElementById('dup-overlay').classList.remove('open');
+  if (_pendingSaveData) {
+    await _doSave(_pendingSaveData);
+    _pendingSaveData = null;
+  }
+};
+
 // ── SUBMIT ─────────────────────────────────────────────────────────────────
 window.submitTask = async () => {
   const label   = document.getElementById('f-task').value.trim();
@@ -578,13 +688,20 @@ window.submitTask = async () => {
         const me = members.find(m => m.name.toLowerCase() === _registrant.toLowerCase());
         if (me) finalMembers = [{ id: me.id, name: me.name, role: 'Personal task' }];
       }
-      const id = await fbAddTask({ label, project, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
-      tasks.unshift({ id, label, project, priority: selectedPriority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, status: 'todo', memberStatus: {} });
-      toast('Task registered ✓'); resetForm();
-      updateProjectSuggestions();
+
+      // ── DUPLICATE CHECK ────────────────────────────────────────────────
+      const dupes = findDuplicates(label, project);
+      if (dupes.length > 0) {
+        btn.disabled = false; btn.textContent = '⬡ Register Task';
+        showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
+        return;
+      }
+
+      await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
       // Play sound if you're assigned to this task
       const _myNameCheck = localStorage.getItem('wd_myname') || '';
-      if (_myNameCheck && finalMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
+      const _savedMembers = tasks[0]?.members || finalMembers;
+      if (_myNameCheck && _savedMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
         playTaskAssigned();
       }
     }
@@ -830,6 +947,77 @@ window.projectKeyNav = function(e) {
   }
 };
 
+// ── SIMILAR TASK DETECTION ───────────────────────────────────────────────
+function getWords(str) {
+  // Extract meaningful words (4+ chars), lowercase, ignore common filler words
+  const stopWords = new Set(['with','that','this','from','have','will','your',
+    'into','they','been','were','also','when','what','more','some','than',
+    'task','work','for','the','and','but','not','are','can','its','our']);
+  return str.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !stopWords.has(w));
+}
+
+function similarityScore(a, b) {
+  const wa = new Set(getWords(a));
+  const wb = new Set(getWords(b));
+  if (!wa.size || !wb.size) return 0;
+  let matches = 0;
+  wa.forEach(w => { if (wb.has(w)) matches++; });
+  // Also check partial matches (one word contains the other)
+  wa.forEach(wa_w => {
+    wb.forEach(wb_w => {
+      if (wa_w !== wb_w && (wa_w.includes(wb_w) || wb_w.includes(wa_w))) {
+        matches += 0.6;
+      }
+    });
+  });
+  return matches / Math.max(wa.size, wb.size);
+}
+
+window.checkSimilarTasks = (val) => {
+  const wrap = document.getElementById('similar-tasks-wrap');
+  const list = document.getElementById('similar-tasks-list');
+  if (!wrap || !list) return;
+
+  const query = val.trim();
+  if (query.length < 4) { wrap.style.display = 'none'; return; }
+
+  // Find similar tasks — threshold 0.35 means ~35% word overlap
+  const similar = tasks
+    .filter(t => {
+      if (editingId && t.id === editingId) return false; // skip self when editing
+      return similarityScore(query, t.label) >= 0.35;
+    })
+    .sort((a,b) => similarityScore(query, b.label) - similarityScore(query, a.label))
+    .slice(0, 4);
+
+  if (!similar.length) { wrap.style.display = 'none'; return; }
+
+  const stClass = { done:'sim-st-done', inprog:'sim-st-inprog',
+    todo:'sim-st-todo', onhold:'sim-st-onhold' };
+  const stLabel = { done:'Done', inprog:'In Progress',
+    todo:'Todo', onhold:'On Hold' };
+
+  list.innerHTML = similar.map(t => `
+    <div class="sim-task-item">
+      <div style="flex:1">
+        <div class="sim-task-name">${esc(t.label)}</div>
+        <div class="sim-task-meta">${[
+          t.project ? '📁 '+esc(t.project) : '',
+          t.taskDueDate ? '📅 '+t.taskDueDate : '',
+          (t.members||[]).map(m=>m.name).join(', ') ? '👥 '+(t.members||[]).map(m=>m.name).join(', ') : ''
+        ].filter(Boolean).join(' · ')}</div>
+      </div>
+      <span class="sim-task-status ${stClass[t.status]||'sim-st-todo'}">
+        ${stLabel[t.status]||'Todo'}
+      </span>
+    </div>`).join('');
+
+  wrap.style.display = '';
+};
+
 function renderTaskList() {
   const el = document.getElementById('task-list');
   const activeTasks = tasks.filter(t => t.status !== 'done');
@@ -1029,6 +1217,7 @@ function updateSummary() {
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function resetForm() {
   document.getElementById('f-task').value = '';
+  document.getElementById('similar-tasks-wrap').style.display = 'none';
   document.getElementById('f-start').value = '';
   document.getElementById('f-due').value = '';
   setTaskType('mbc');
@@ -1070,5 +1259,18 @@ if ('serviceWorker' in navigator) {
   <a href="timeline.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Timeline</span></a>
   <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
 </nav>
+<!-- DUPLICATE WARNING MODAL -->
+<div class="dup-overlay" id="dup-overlay">
+  <div class="dup-box">
+    <div class="dup-title">⚠️ Possible Duplicate</div>
+    <div class="dup-sub" id="dup-sub">We found similar tasks already registered. Check if this is a duplicate before saving.</div>
+    <div id="dup-matches"></div>
+    <div class="dup-actions">
+      <button class="dup-btn-cancel" onclick="closeDupModal()">← Go Back</button>
+      <button class="dup-btn-save" onclick="forceSaveTask()">Save Anyway →</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
