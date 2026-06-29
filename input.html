@@ -700,8 +700,7 @@ window.submitTask = async () => {
       await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
       // Play sound if you're assigned to this task
       const _myNameCheck = localStorage.getItem('wd_myname') || '';
-      const _savedMembers = tasks[0]?.members || finalMembers;
-      if (_myNameCheck && _savedMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
+      if (_myNameCheck && finalMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
         playTaskAssigned();
       }
     }
@@ -712,6 +711,29 @@ window.submitTask = async () => {
   btn.disabled = false;
   btn.textContent = editingId ? '⬡ Update Task' : '⬡ Register Task';
 };
+
+// ── DO SAVE (called directly or after duplicate confirmation) ─────────────
+async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType }) {
+  const id = await fbAddTask({
+    label, project, priority,
+    members: finalMembers,
+    dueDate: startDate,
+    taskDueDate: dueDate,
+    taskType
+  });
+  tasks.unshift({
+    id, label, project, priority,
+    members: finalMembers,
+    dueDate: startDate,
+    taskDueDate: dueDate,
+    taskType,
+    status: 'todo',
+    memberStatus: {}
+  });
+  toast('Task registered ✓');
+  resetForm();
+  updateProjectSuggestions();
+}
 
 // ── EDIT ───────────────────────────────────────────────────────────────────
 window.editTask = (id) => {
