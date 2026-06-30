@@ -31,6 +31,39 @@
       opacity: .55;
     }
 
+    /* ── TIMER TOGGLE ICON ── */
+    .timer-icon-btn {
+      width:48px;height:48px;border-radius:12px;flex-shrink:0;
+      background:var(--bg2);border:1px solid var(--border2);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all .15s;position:relative;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .timer-icon-btn:hover { border-color:var(--neon) }
+    .timer-icon-btn:active { transform:scale(.95) }
+    .timer-icon-btn.running {
+      border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.08);
+      box-shadow:0 0 0 2px rgba(10,132,255,.12);
+    }
+    .timer-icon-emoji { font-size:20px;line-height:1 }
+    .timer-icon-running-dot {
+      position:absolute;top:5px;right:5px;
+      width:7px;height:7px;border-radius:50%;
+      background:var(--neon);box-shadow:0 0 6px var(--neon);
+      display:none;animation:pulse 1.4s ease-in-out infinite;
+    }
+    .timer-icon-btn.running .timer-icon-running-dot { display:block }
+    .timer-icon-mini-time {
+      position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+      font-size:7px;font-weight:800;color:var(--neon);
+      background:var(--bg2);padding:0 3px;border-radius:4px;
+      display:none;font-family:var(--mono);white-space:nowrap;
+    }
+    .timer-icon-btn.running .timer-icon-mini-time { display:block }
+
+    .timer-panel-wrap { display:none }
+    .timer-panel-wrap.open { display:block }
+
     /* ── SLIM TIMER — clock expands to 2/3, controls shrink to 1/3 ── */
     .timer-slim {
       display: flex;
@@ -978,7 +1011,7 @@
 
   <!-- GREETING + STREAK -->
   <!-- WORLD CLOCK -->
-  <div class="world-clock fi" style="animation-delay:.005s">
+  <div class="world-clock fi" style="animation-delay:.005s;align-items:stretch">
     <div class="wc-zone ist">
       <div style="width:30px;height:30px;border-radius:7px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--amber);flex-shrink:0;letter-spacing:.02em">IN</div>
       <div class="wc-info">
@@ -995,13 +1028,22 @@
         <div class="wc-date" id="wc-ger-date"></div>
       </div>
     </div>
+    <button class="timer-icon-btn" id="timer-icon-btn" onclick="toggleTimerPanel()" title="Focus Timer">
+      <span class="timer-icon-emoji">⏱</span>
+      <span class="timer-icon-running-dot"></span>
+      <span class="timer-icon-mini-time" id="timer-icon-mini"></span>
+    </button>
   </div>
 
   <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
 
-  <!-- SLIM TIMER — at top -->
+  <!-- SLIM TIMER — collapsible, hidden by default -->
+  <div class="timer-panel-wrap" id="timer-panel-wrap">
   <div class="panel fi" style="animation-delay:.02s">
-    <div class="panel-hd"><span class="panel-title">Focus Timer</span></div>
+    <div class="panel-hd">
+      <span class="panel-title">Focus Timer</span>
+      <button onclick="toggleTimerPanel()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0">✕</button>
+    </div>
     <div class="timer-slim" style="position:relative"><div class="timer-scanline" id="timer-scanline"></div>
       <div class="timer-slim-clock" id="t-clock">
         <div class="timer-slim-digits" id="t-disp">45:00</div>
@@ -1019,6 +1061,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- STATS — clickable filters -->
@@ -2660,7 +2703,22 @@ function updateTimerUI() {
     pre.style.display = 'none';
     if(tog){ tog.className='t-btn t-pa'; tog.textContent='⏸ Pause'; }
   }
+  updateTimerIcon();
 }
+
+// ── TIMER ICON (in world clock row) ──────────────────────────────────────
+function updateTimerIcon() {
+  const btn  = document.getElementById('timer-icon-btn');
+  const mini = document.getElementById('timer-icon-mini');
+  if (!btn) return;
+  btn.classList.toggle('running', tRunning);
+  if (mini) mini.textContent = tRunning ? fmtTime(tLeft) : '';
+}
+
+window.toggleTimerPanel = () => {
+  const wrap = document.getElementById('timer-panel-wrap');
+  wrap.classList.toggle('open');
+};
 
 let tStartedAt = null; // wall-clock time when timer was last started/resumed
 
@@ -3361,6 +3419,8 @@ function toast(msg,type=''){
 }
 
 updateTimerUI();
+// Auto-expand timer panel if a session is already running
+if (tRunning) document.getElementById('timer-panel-wrap')?.classList.add('open');
 </script>
 <script>
 if ('serviceWorker' in navigator) {
