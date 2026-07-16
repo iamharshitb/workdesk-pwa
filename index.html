@@ -478,6 +478,87 @@
       font-size:10px;color:var(--text3);line-height:1.6;
     }
 
+    /* ── WEEKLY SPRINT ── */
+    .sprint-section {
+      background:var(--bg2);border:1px solid var(--border2);
+      border-radius:var(--rr);margin-bottom:12px;overflow:hidden;
+      box-shadow:var(--shadow-card);
+    }
+    .sprint-hd {
+      display:flex;align-items:center;gap:10px;
+      padding:12px 14px;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      transition:background .12s;
+    }
+    .sprint-hd:hover { background:var(--bg3) }
+    .sprint-icon {
+      width:32px;height:32px;border-radius:9px;flex-shrink:0;
+      background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.2);
+      display:flex;align-items:center;justify-content:center;font-size:16px;
+    }
+    .sprint-title {
+      font-size:13px;font-weight:800;color:var(--text);flex:1;
+    }
+    .sprint-count {
+      font-size:11px;font-weight:700;
+      padding:3px 9px;border-radius:20px;
+      background:rgba(10,132,255,.1);color:var(--neon);
+    }
+    .sprint-count.full {
+      background:rgba(255,159,10,.1);color:var(--amber);
+    }
+    .sprint-arrow {
+      font-size:11px;color:var(--text3);transition:transform .2s;
+    }
+    .sprint-arrow.open { transform:rotate(180deg) }
+    .sprint-body { display:none; border-top:1px solid var(--border) }
+    .sprint-body.open { display:block }
+    .sprint-progress {
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px 6px;
+    }
+    .sprint-bar-bg {
+      flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;
+    }
+    .sprint-bar-fill {
+      height:100%;border-radius:3px;background:var(--neon);
+      transition:width .4s cubic-bezier(.4,0,.2,1);
+    }
+    .sprint-bar-fill.full { background:var(--amber) }
+    .sprint-bar-label {
+      font-size:10px;font-weight:700;color:var(--text3);flex-shrink:0;
+    }
+    .sprint-empty {
+      padding:14px;font-size:12px;color:var(--text3);
+      text-align:center;font-style:italic;
+    }
+    .sprint-reset {
+      font-size:10px;color:var(--text3);text-align:center;
+      padding:4px 14px 10px;
+    }
+    /* Sprint badge on task card */
+    .sprint-badge {
+      display:inline-flex;align-items:center;gap:3px;
+      font-size:9px;font-weight:700;color:var(--neon);
+      background:rgba(10,132,255,.08);border:1px solid rgba(10,132,255,.2);
+      padding:2px 6px;border-radius:8px;
+    }
+    /* Sprint button in task actions */
+    .sprint-task-btn {
+      padding:5px 10px;border-radius:8px;
+      border:1px solid rgba(10,132,255,.25);
+      background:rgba(10,132,255,.06);color:var(--neon);
+      font-family:var(--sans);font-size:11px;font-weight:700;
+      cursor:pointer;transition:all .12s;white-space:nowrap;
+    }
+    .sprint-task-btn:active { transform:scale(.95) }
+    .sprint-task-btn.remove {
+      border-color:rgba(255,69,58,.25);background:rgba(255,69,58,.06);color:var(--red);
+    }
+    .sprint-task-btn.full-disabled {
+      border-color:var(--border);background:none;color:var(--text3);cursor:default;
+    }
+
     /* ── GREETING BAR ── */
     .greeting-bar {
       padding:14px 16px;
@@ -1286,9 +1367,65 @@ let tasks = [], members = [];
 let calendarEvents = {}; // comms calendar events
 let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed daily
 let MY_NAME = localStorage.getItem('wd_myname') || '';
+loadSprint();
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
 let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
+
+// ── WEEKLY SPRINT ──────────────────────────────────────────────────────────
+const SPRINT_MAX = 10;
+let sprintTaskIds = new Set(); // IDs of tasks in this week's sprint
+let sprintOpen = true; // collapsed state
+
+function getWeekKey() {
+  // Returns 'YYYY-Www' — unique key per calendar week, resets every Monday
+  const d = new Date();
+  const day = d.getDay() === 0 ? 6 : d.getDay() - 1; // Mon=0
+  const monday = new Date(d); monday.setDate(d.getDate() - day);
+  const y = monday.getFullYear();
+  const start = new Date(y, 0, 1);
+  const week = Math.ceil(((monday - start) / 86400000 + start.getDay() + 1) / 7);
+  return y + '-W' + String(week).padStart(2,'0');
+}
+
+function loadSprint() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('wd_sprint') || '{}');
+    const wk = getWeekKey();
+    if (stored.week === wk) {
+      sprintTaskIds = new Set(stored.ids || []);
+    } else {
+      // New week — reset sprint
+      sprintTaskIds = new Set();
+      saveSprint();
+    }
+  } catch(e) { sprintTaskIds = new Set(); }
+}
+
+function saveSprint() {
+  localStorage.setItem('wd_sprint', JSON.stringify({
+    week: getWeekKey(),
+    ids: [...sprintTaskIds],
+  }));
+}
+
+window.toggleSprintTask = (taskId) => {
+  if (sprintTaskIds.has(taskId)) {
+    sprintTaskIds.delete(taskId);
+    saveSprint(); renderAll(); toast('Removed from This Week');
+  } else {
+    if (sprintTaskIds.size >= SPRINT_MAX) {
+      toast('Sprint full — max ' + SPRINT_MAX + ' tasks per week'); return;
+    }
+    sprintTaskIds.add(taskId);
+    saveSprint(); renderAll(); toast('🎯 Added to This Week!');
+  }
+};
+
+window.toggleSprintPanel = () => {
+  sprintOpen = !sprintOpen;
+  renderMyTasks();
+};
 let activePriorityFilter = null; // 'critical'|'high'|'medium'|'low'|null
 let activeStatusFilter   = null; // 'inprog'|'todo'|null
 
@@ -1611,6 +1748,42 @@ function renderStats() {
 function renderMyTasks() {
   const el = document.getElementById('my-tasks-list');
 
+  // Build sprint section
+  const sprintTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status !== 'done');
+  const sprintDone  = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done').length;
+  const sprintCount = sprintTaskIds.size;
+  const isFull = sprintCount >= SPRINT_MAX;
+  const donePct = sprintCount > 0 ? Math.round(sprintDone / sprintCount * 100) : 0;
+
+  // Monday date for next reset
+  const nextMon = new Date();
+  const daysUntilMon = (7 - nextMon.getDay() + 1) % 7 || 7;
+  nextMon.setDate(nextMon.getDate() + daysUntilMon);
+  const resetStr = nextMon.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'});
+
+  const sprintHTML = `<div class="sprint-section">
+    <div class="sprint-hd" onclick="toggleSprintPanel()">
+      <div class="sprint-icon">🎯</div>
+      <div class="sprint-title">This Week's Sprint</div>
+      <span class="sprint-count${isFull?' full':''}">${sprintCount} / ${SPRINT_MAX}</span>
+      <span class="sprint-arrow${sprintOpen?' open':''}">▾</span>
+    </div>
+    <div class="sprint-body${sprintOpen?' open':''}">
+      <div class="sprint-progress">
+        <div class="sprint-bar-bg">
+          <div class="sprint-bar-fill${isFull?' full':''}" style="width:${donePct}%"></div>
+        </div>
+        <div class="sprint-bar-label">${sprintDone}/${sprintCount} done</div>
+      </div>
+      ${sprintTasks.length === 0 && sprintDone === 0
+        ? '<div class="sprint-empty">No tasks yet — expand any task and tap ＋ This Week to add it</div>'
+        : sprintTasks.map((t,i) => myTaskCard(t, i)).join('')
+      }
+      ${sprintCount > 0 ? `<div class="sprint-reset">Resets ${resetStr}</div>` : ''}
+    </div>
+  </div>`;
+  const banner = sprintHTML;
+
   // Get base task list — if filter active show ALL tasks in that filter, not just mine
   let taskList;
   if (activeFilter && activeFilter !== 'total') {
@@ -1695,7 +1868,7 @@ function renderMyTasks() {
 
   // Filter banner
   const filterLabels = { total: 'All Tasks', inprog: 'In Progress', done: 'Done', critical: 'Critical' };
-  const banner = activeFilter
+  const filterBanner = activeFilter
     ? `<div class="filter-banner">
         Showing: ${filterLabels[activeFilter]} (${taskList.length})
         <button class="filter-clear" onclick="clearFilter()">✕ Clear</button>
@@ -1715,7 +1888,7 @@ function renderMyTasks() {
       </div>`;
     } else {
       const _emptyMsg = MY_NAME ? 'Nothing on your plate right now, ' + esc(MY_NAME) + ' 🎉' : 'No tasks yet — add one in the Input tab';
-      el.innerHTML = banner + '<div class="empty"><div class="ei">◈</div>' + _emptyMsg + '</div>';
+      el.innerHTML = sprintHTML + '<div class="empty"><div class="ei">◈</div>' + _emptyMsg + '</div>';
     }
     return;
   }
@@ -1831,7 +2004,7 @@ function renderMyTasks() {
   ` : '';
 
   try {
-    el.innerHTML = banner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + onholdHTML + doneHTML;
+    el.innerHTML = sprintHTML + filterBanner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + onholdHTML + doneHTML;
   } catch(err) {
     el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">Render error: ${err.message}</div>`;
   }
@@ -1985,6 +2158,11 @@ function myTaskCard(t, i) {
               })() : '🔔 Remind me'}
             </button>`;
           })()}
+          ${!isDone ? `<button class="sprint-task-btn${sprintTaskIds.has(t.id) ? ' remove' : (sprintTaskIds.size >= SPRINT_MAX ? ' full-disabled' : '')}"
+            onclick="event.stopPropagation();${sprintTaskIds.size >= SPRINT_MAX && !sprintTaskIds.has(t.id) ? '' : "toggleSprintTask('" + t.id + "')"}"
+            title="${sprintTaskIds.size >= SPRINT_MAX && !sprintTaskIds.has(t.id) ? 'Sprint full (max 10)' : ''}">
+            ${sprintTaskIds.has(t.id) ? '✕ Remove' : sprintTaskIds.size >= SPRINT_MAX ? '🎯 Full' : '🎯 This Week'}
+          </button>` : ''}
           <button class="sc-btn" onclick="event.stopPropagation();openInlineEdit('${t.id}')"
             style="margin-left:auto;border-color:rgba(10,132,255,.25);color:var(--neon)">
             ✎ Edit
