@@ -7,17 +7,18 @@ export const THEMES = [
   { id:'ios-system', name:'Dark',          sub:'iOS System · Clean',        dot:'#0a84ff', bg:'#1c1c1e' },
   { id:'health',     name:'Light',         sub:'iOS Health · Pastel White', dot:'#007aff', bg:'#f2f2f7' },
   { id:'neon',       name:'Neon',          sub:'Retro Neon · Modern Dark',  dot:'#00f5d4', bg:'#070b12' },
+  { id:'editorial',  name:'Editorial',     sub:'Inter · Clean · Minimal',   dot:'#16171A', bg:'#F3F3F5' },
 ];
 
 // Default to ios if no saved theme, or if saved theme no longer exists
 function getValidTheme() {
   const saved = localStorage.getItem('wd_theme');
-  // 'ios' was the old default — migrate to Standard ('')
+  // 'ios' was the old default — migrate to Light theme
   if (!saved || saved === 'ios') {
-    localStorage.setItem('wd_theme', ''); // persist migration immediately
-    return '';
+    localStorage.setItem('wd_theme', 'health');
+    return 'health';
   }
-  return THEMES.find(t => t.id === saved) ? saved : '';
+  return THEMES.find(t => t.id === saved) ? saved : 'health';
 }
 
 let currentTheme = getValidTheme();
