@@ -1479,6 +1479,7 @@ window.toggleSprintTask = (taskId) => {
     }
     sprintTaskIds.add(taskId);
     expandedTasks.delete(taskId);
+    if (navigator.vibrate) navigator.vibrate(10);
     saveSprint(); renderAll(); toast('🎯 Added to This Week!');
   }
 };
@@ -2853,6 +2854,14 @@ window.toggleIndividualDone = async (taskId, newStatus) => {
   renderAll();
   if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
+    // Satisfying settle on the card that just completed (post-render, so the
+    // node exists), plus a tiny haptic tick on devices that support it.
+    const card = document.getElementById('trc-' + taskId);
+    if (card) {
+      card.classList.add('just-done');
+      card.addEventListener('animationend', () => card.classList.remove('just-done'), { once: true });
+    }
+    if (navigator.vibrate) navigator.vibrate(12);
     toast('✓ Task done!');
     recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else {
@@ -3395,10 +3404,13 @@ async function renderGreeting() {
   // Friday 5pm special message
   const day = new Date().getDay(); // 0=Sun,5=Fri
   const isFridayEvening = day === 5 && hour >= 17;
-  let greetText = greet + (name ? `, ${esc(name)}` : '');
+  // NOTE: `name` above already contains ', ' — the old code wrapped it in
+  // another ', ${...}' which double-commaed the greeting. Using MY_NAME
+  // directly, wrapped in .g-name for the animated gradient treatment.
+  let greetText = greet + (MY_NAME ? `, <span class="g-name">${esc(MY_NAME)}</span>` : '');
   let greetEmoji = ' 👋';
   if (isFridayEvening) {
-    greetText = 'Happy weekend' + (name ? `, ${esc(name)}` : '');
+    greetText = 'Happy weekend' + (MY_NAME ? `, <span class="g-name">${esc(MY_NAME)}</span>` : '');
     greetEmoji = ' <span class="party-emoji">🎉</span>';
     sub = "You've earned it. See you Monday!";
   }

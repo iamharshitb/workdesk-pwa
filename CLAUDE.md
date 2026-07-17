@@ -118,6 +118,12 @@ Every `transition` in `style.css` and `index.html` now routes through these. Pre
 
 Glass is applied to: `.nav`, `.bottom-nav`, `.panel`, `.prog-wrap`, `.toast`, `.install-banner`. It is deliberately **not** applied to `.task-card` / `.task-row-compact` — those are plain translucent fills that composite over the panel's frost. Giving each card its own `backdrop-filter` stacks a blur layer per card and gets expensive on mid-range Android past ~20 tasks.
 
+### Alive layer (bottom of style.css)
+
+Theme-agnostic motion/light effects: progress-bar shine sweep, button sheen on hover (`.send-btn`/`.mark-done-btn`/`.t-go` — these now have `overflow:hidden`, so nothing inside them can poke outside the pill), press-compress physics, stat-pill hover lift, task-detail unfold, nav icon spring, staggered panel entrance, animated gradient on the greeting name (`.g-name`, with `@supports` fallback), sprint 🎯 breathe, and `.just-done` settle (applied by `toggleIndividualDone`, self-removes on animationend). Haptics: `navigator.vibrate` on task-done (12ms) and sprint-add (10ms) — no-ops where unsupported, including all of iOS Safari.
+
+Rules: effects here must only use tokens, white-gradient overlays, and transform/opacity animations (GPU-cheap). Every ambient loop added here must also be switched off in BOTH `prefers-reduced-motion` blocks in style.css. The nav active indicator is `.bn-item.active::after` and carries `translateX(-50%)` — any animation on it must include that transform in its keyframes or the line jumps off-centre.
+
 ### Shadow tokens
 
 `--shadow-card` / `--shadow-elevated` / `--shadow-neon`, layered (contact + ambient) and **tinted to the surface**, not black.
@@ -126,13 +132,15 @@ Glass is applied to: `.nav`, `.bottom-nav`, `.panel`, `.prog-wrap`, `.toast`, `.
 
 ---
 
-## Themes (3 total)
+## Themes (5 total)
 
 | ID | Name | Description |
 |----|------|-------------|
-| `health` | Light | iOS Health pastel white (default) |
+| `health` | Light | iOS Health pastel white + gradient mesh (default) |
 | `frosted` | Frosted Glass | Heavy blur, translucent |
 | `editorial` | Editorial | Inter font, #F3F3F5 bg, Linear/Notion style |
+| `neu` | Neumorphism | Soft UI on #e0e5ec clay; `--neu-out`/`--neu-in` shadow pairs define raised vs pressed — no borders anywhere, `--glass-blur:none` (opaque material), body background MUST stay flat or the light model breaks. Contrast is the style's endemic weakness: text alphas (.85/.8) and accent #2d56d8 are measured AA minimums — don't lighten them |
+| `glass` | Glassmorphism | Showcase glass: aurora blobs drift on `body::before` (transform-only animation, `position:fixed` for free parallax), panels get a `::after` refraction streak. Task cards deliberately have NO backdrop-filter (per-card blur cost — see theme-health note) |
 
 Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as body class e.g. `body.theme-editorial`.
 
