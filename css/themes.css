@@ -108,34 +108,65 @@ body.theme-ios .toast { background:rgba(44,44,46,.9);backdrop-filter:blur(20px);
    Bold numbers. Minimal borders. Apple Health app vibes.
 ══════════════════════════════════════════════════════ */
 body.theme-health {
-  --bg:#f2f2f7;
+  --bg:#eef0f6;
   --bg2:#ffffff;
   --bg3:#f2f2f7;
   --panel:#ffffff;
-  --border:rgba(0,0,0,.06);
-  --border2:rgba(0,0,0,.1);
+  --border:rgba(16,24,40,.06);
+  --border2:rgba(16,24,40,.1);
   --neon:#007aff;
   --neon2:#34c759;
   --purple:#5e5ce6;
   --amber:#ff9500;
   --red:#ff3b30;
   --text:#000000;
-  --text2:rgba(60,60,67,.6);
-  --text3:rgba(60,60,67,.3);
-  --nav-bg:rgba(242,242,247,.95);
+  /* Contrast fix. Measured on the blended card surface (#f4f5f9):
+       was --text2 rgba(60,60,67,.6) = 3.44:1  FAIL
+       was --text3 rgba(60,60,67,.3) = 1.74:1  FAIL badly
+     --text3 is used on 9–11px labels, so it needs the full 4.5:1 (small text
+     gets no large-text exemption). Now 6.48:1 / 4.78:1 — both pass AA, and
+     there's still a clear step between the two levels. */
+  --text2:rgba(44,44,52,.78);   /* 6.48:1 */
+  --text3:rgba(44,44,52,.68);   /* 4.78:1 */
+  --nav-bg:rgba(248,249,253,.72);
   --grid:transparent;
-  --shadow-card:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
-  --shadow-neon:none;
+
+  /* Light-surface shadows: tinted blue-grey (not black), layered contact +
+     ambient. MUST override --shadow-elevated too — the :root default is
+     rgba(0,0,0,.6), built for a near-black page, and it reads as a dirty
+     smudge on white. */
+  --shadow-card:     0 1px 2px rgba(16,24,40,.04), 0 4px 12px rgba(16,24,40,.06);
+  --shadow-elevated: 0 2px 4px rgba(16,24,40,.05), 0 12px 32px rgba(16,24,40,.11);
+  --shadow-neon:     none;
+
+  /* Glass — now meaningful, because the body below has a gradient mesh */
+  --glass-bg:   rgba(255,255,255,.68);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-edge: inset 0 1px 0 rgba(255,255,255,.9);
 }
+
+/* ── GRADIENT MESH ──
+   The reason glass works at all. Previously this was `background-image:none`
+   over a flat #f2f2f7, so every backdrop-filter in the theme was a no-op —
+   blurring a flat colour returns that same flat colour. These are three very
+   low-opacity radial gradients: enough for translucent surfaces to pick up a
+   colour shift as you scroll, nowhere near enough to hurt text legibility.
+   `background-attachment:fixed` keeps the mesh still while content scrolls,
+   so panels appear to move OVER the light rather than drag it along. */
 body.theme-health {
-  background-color:#f2f2f7;
-  background-image:none;
+  background-color:#eef0f6;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 8% 0%,   rgba(0,122,255,.10)  0%, transparent 60%),
+    radial-gradient(ellipse 70% 55% at 95% 12%, rgba(94,92,230,.09)  0%, transparent 58%),
+    radial-gradient(ellipse 90% 60% at 50% 100%,rgba(52,199,89,.055) 0%, transparent 62%);
+  background-attachment:fixed;
+  background-repeat:no-repeat;
 }
 body.theme-health .nav {
-  background:rgba(242,242,247,.95);
-  border-bottom:1px solid rgba(0,0,0,.08);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  background:var(--nav-bg);
+  border-bottom:1px solid rgba(16,24,40,.06);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
 }
 body.theme-health .nav-brand { color:#007aff;text-shadow:none }
 body.theme-health .brand-dot { background:#007aff;box-shadow:none;animation:pdot 2.2s ease-in-out infinite }
@@ -144,8 +175,12 @@ body.theme-health .nav-link:hover { color:#000;background:rgba(0,0,0,.04) }
 body.theme-health .nav-link.active { color:#007aff;border-color:rgba(0,122,255,.2);background:rgba(0,122,255,.07);border-radius:100px !important }
 body.theme-health .btn-theme-toggle { background:#fff;border-color:rgba(0,0,0,.1);color:var(--text2);box-shadow:0 1px 3px rgba(0,0,0,.06) }
 body.theme-health .panel {
-  background:#fff;border:none;border-radius:16px !important;
-  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
+  background:var(--glass-bg);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid rgba(255,255,255,.6);
+  border-radius:16px !important;
+  box-shadow:var(--shadow-card), var(--glass-edge);
 }
 body.theme-health .panel-hd { border-bottom:1px solid rgba(0,0,0,.06) }
 body.theme-health .panel-title { color:#007aff;text-shadow:none }
@@ -159,20 +194,41 @@ body.theme-health .sn-a { color:#e65100 !important }
 body.theme-health .sn-b { color:#1565c0 !important }
 body.theme-health .sn-r { color:#c62828 !important }
 body.theme-health .stat-l { color:rgba(0,0,0,.45) }
-body.theme-health .prog-wrap { background:#fff;border:none;border-radius:14px !important;box-shadow:0 1px 3px rgba(0,0,0,.05) }
+body.theme-health .prog-wrap {
+  background:var(--glass-bg);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid rgba(255,255,255,.6);
+  border-radius:14px !important;
+  box-shadow:var(--shadow-card), var(--glass-edge);
+}
+/* Compact rows inherit an opaque --bg2 (#fff) from the base sheet — make them
+   translucent tiles so the panel's frost shows through. No backdrop-filter
+   here either: same per-card cost reasoning as .task-card above. */
+body.theme-health .task-row-compact { background:rgba(255,255,255,.6);border-color:rgba(255,255,255,.55) }
+body.theme-health .task-row-compact:hover { background:rgba(255,255,255,.85) }
 body.theme-health .prog-track { background:rgba(0,0,0,.06);height:6px }
 body.theme-health .prog-fill { background:#007aff;box-shadow:none }
 body.theme-health .prog-pct { color:#007aff }
 body.theme-health .prog-label { color:var(--text2) }
+/* Task cards sit INSIDE panels that are already frosted. Giving each card its
+   own backdrop-filter would stack a blur layer per card — expensive on mid-range
+   Android once you have 20+ tasks. Instead they're plain translucent white, so
+   they composite over the panel's frosted surface as brighter tiles. Same look,
+   a fraction of the cost. */
 body.theme-health .task-card {
-  background:#fff;border:none;border-radius:16px !important;
-  box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.5);
+  border-radius:16px !important;
+  box-shadow:0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.05);
 }
 body.theme-health .task-card::before { width:0 }
-body.theme-health .task-card.pc { background:#fff5f5;border-left:4px solid #ff3b30 }
-body.theme-health .task-card.ph { background:#fffbf0;border-left:4px solid #ff9500 }
-body.theme-health .task-card.pm { background:#f0f8ff;border-left:4px solid #007aff }
-body.theme-health .task-card.pl { background:#f0fdf4;border-left:4px solid #34c759 }
+/* Priority now reads as an accent edge, not a pastel wash — matching the
+   Due Today / In Progress treatment rather than fighting it. */
+body.theme-health .task-card.pc { background:rgba(255,255,255,.62);border-left:4px solid #ff3b30 }
+body.theme-health .task-card.ph { background:rgba(255,255,255,.62);border-left:4px solid #ff9500 }
+body.theme-health .task-card.pm { background:rgba(255,255,255,.62);border-left:4px solid #007aff }
+body.theme-health .task-card.pl { background:rgba(255,255,255,.62);border-left:4px solid #34c759 }
 body.theme-health .task-card.status-inprog.ph { border-color: rgba(255,149,0,.3); }
 body.theme-health .task-card.status-done { opacity:.5 }
 body.theme-health .tc-title { color:#000;font-size:15px }
@@ -333,14 +389,17 @@ body.theme-ios .bottom-nav{
 body.theme-ios .bn-item.active { color:#0a84ff }
 body.theme-ios .bn-item.active::before { background:#0a84ff;box-shadow:0 0 8px #0a84ff }
 
+/* Was rgba(...,.95) — 95% opaque over a flat page, so the blur did nothing.
+   At .72 over the gradient mesh it actually frosts, and content scrolling
+   underneath reads as colour movement through the bar. */
 body.theme-health .bottom-nav {
-  background:rgba(242,242,247,.95);
-  border-top:1px solid rgba(0,0,0,.1);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  background:rgba(248,249,253,.72);
+  border-top:1px solid rgba(16,24,40,.07);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
 }
-body.theme-health .bn-item { color:rgba(60,60,67,.45) }
-body.theme-health .bn-item:hover { color:rgba(60,60,67,.8) }
+body.theme-health .bn-item { color:rgba(44,44,52,.68) }  /* was .45 (≈3.1:1) — failed AA on the app's primary nav */
+body.theme-health .bn-item:hover { color:rgba(44,44,52,.9) }
 body.theme-health .bn-item.active { color:#007aff }
 body.theme-health .bn-item.active::before { background:#007aff;box-shadow:none }
 

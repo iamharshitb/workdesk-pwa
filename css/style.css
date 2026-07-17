@@ -5,7 +5,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=DM+Mono:wght@400;500&display=swap');
-@import url('themes.css');
+/* NOTE: themes.css is NOT @imported here — every page that loads style.css
+   already has its own <link rel="stylesheet" href="css/themes.css"> AFTER
+   this file. Importing it here too loaded it twice and made the cascade
+   ambiguous (base vs theme rules could win in either order), which is why
+   themes accumulated ~100 `!important` overrides. Load order is now simply:
+   style.css (base + tokens) → themes.css (overrides). Don't re-add this. */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -42,10 +47,37 @@
   --rr:  16px;
   --rrr: 22px;
 
-  /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.03) inset;
+  /* ── MOTION TOKENS ──
+     Every transition should use one of these. Rule of thumb:
+       --dur-fast  → colour / opacity only (no travel)
+       --dur-base  → anything that moves or scales
+       --dur-slow  → panels, sheets, layout shifts
+     Easing:
+       --ease-out    → default for entrances & most UI (calm, decelerating)
+       --ease-spring → confirmations & playful taps (slight overshoot)
+       --ease-inout  → looping ambient animations */
+  --dur-fast:   .15s;
+  --dur-base:   .24s;
+  --dur-slow:   .36s;
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-inout:  cubic-bezier(.4, 0, .2, 1);
+
+  /* ── GLASS ──
+     Surfaces read as glass only when there's something behind them worth
+     blurring. Each theme sets --glass-bg opacity + whether the page has a
+     gradient mesh. Themes with a flat background set --glass-blur: none. */
+  --glass-bg:   rgba(20,20,23,.72);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-edge: inset 0 1px 0 rgba(255,255,255,.06);
+
+  /* ── SHADOWS ──
+     Layered (contact + ambient) rather than one big blur, and tinted to the
+     surface they fall on. Dark themes can use black; light themes MUST
+     override these — a 60%-black shadow on white reads as a grey smudge. */
+  --shadow-card:     0 1px 3px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.03) inset;
   --shadow-elevated: 0 4px 24px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.05) inset;
-  --shadow-neon: 0 0 20px rgba(10,132,255,.2);
+  --shadow-neon:     0 0 20px rgba(10,132,255,.2);
 
   /* Nav */
   --nav-bg: rgba(12,12,15,.92);
@@ -62,7 +94,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background .3s, color .3s;
+  transition: background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out);
   /* Moises-style ambient gradient glow — bleeds from corners */
   background-image:
     radial-gradient(ellipse 70% 50% at 100% 0%,   rgba(10,132,255,.07)  0%, transparent 60%),
@@ -136,7 +168,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
   white-space: nowrap;
   letter-spacing: .01em;
 }
@@ -168,7 +200,7 @@ body {
   flex: 1;
   text-decoration: none;
   color: var(--text3);
-  transition: color .15s ease;
+  transition: color var(--dur-fast) var(--ease-out);
   padding: 6px 4px;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
@@ -194,7 +226,7 @@ body {
 .bn-icon {
   font-size: 20px;
   line-height: 1;
-  transition: transform .15s ease;
+  transition: transform var(--dur-base) var(--ease-spring);
 }
 .bn-item.active .bn-icon { transform: scale(1.1); }
 
@@ -258,7 +290,7 @@ body {
   font-size: 15px;
   font-weight: 400;
   outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .task-input::placeholder { color: var(--text3); }
 .task-input:focus {
@@ -292,7 +324,7 @@ body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -312,7 +344,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 700;
   flex-shrink: 0;
-  transition: all .15s;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .m-chip.sel .m-av {
   background: rgba(10,132,255,.1);
@@ -326,7 +358,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: 9px; color: var(--bg); font-weight: 700;
   opacity: 0; transform: scale(0);
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .m-chip.sel .m-ck { opacity: 1; transform: scale(1); }
 
@@ -364,7 +396,7 @@ body {
   font-size: 13px;
   font-weight: 400;
   outline: none;
-  transition: border-color .15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 .role-input::placeholder { color: var(--text3); }
 .role-input:focus { border-color: var(--neon); }
@@ -384,7 +416,7 @@ body {
   background: var(--bg3);
   color: var(--text3);
   cursor: pointer;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .p-chip:hover { color: var(--text); border-color: var(--border2); }
 .p-chip:active { transform: scale(.97); }
@@ -407,7 +439,7 @@ body {
   letter-spacing: .04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
   margin-top: 14px;
   box-shadow: 0 4px 20px rgba(10,132,255,.2);
 }
@@ -431,7 +463,7 @@ body {
   font-family: var(--sans);
   font-size: 13px;
   outline: none;
-  transition: border-color .15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 .add-member-inp::placeholder { color: var(--text3); }
 .add-member-inp:focus { border-color: var(--neon); }
@@ -445,7 +477,7 @@ body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--dur-base) var(--ease-out);
   white-space: nowrap;
 }
 .add-member-btn:hover { background: rgba(10,132,255,.1); }
@@ -459,7 +491,7 @@ body {
   margin-bottom: 8px;
   position: relative;
   overflow: hidden;
-  transition: border-color .15s ease, transform .15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
   box-shadow: var(--shadow-card);
 }
 .task-card::before {
@@ -534,7 +566,7 @@ body {
   border: none;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(10,132,255,.2);
-  transition: all .12s ease;
+  transition: all var(--dur-fast) var(--ease-out);
   letter-spacing: .01em;
 }
 .mark-done-btn:hover {
@@ -563,7 +595,7 @@ body {
   font-weight: 700;
   letter-spacing: .02em;
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .sc-btn:hover { border-color: rgba(10,132,255,.2); color: var(--neon); }
 
@@ -574,7 +606,7 @@ body {
   font-size: 14px; cursor: pointer;
   padding: 4px 6px;
   border-radius: 6px;
-  transition: color .15s;
+  transition: color var(--dur-fast) var(--ease-out);
   font-family: var(--sans); font-weight: 700;
 }
 .del-btn:hover { color: var(--red); }
@@ -598,7 +630,7 @@ body {
   border: none;
   background: none;
   border-bottom: 2px solid transparent;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
   margin-bottom: -1px;
   letter-spacing: .01em;
 }
@@ -616,7 +648,7 @@ body {
   border-radius: var(--r);
   box-shadow: var(--shadow-card);
   cursor: pointer;
-  transition: all .15s ease;
+  transition: all var(--dur-base) var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 .stat-pill:hover { border-color: var(--border2); background: var(--bg3); }
@@ -685,7 +717,7 @@ body {
   background: linear-gradient(90deg, var(--neon), var(--neon2));
   border-radius: 2px;
   box-shadow: 0 0 8px rgba(10,132,255,.2);
-  transition: width .6s cubic-bezier(.4,0,.2,1);
+  transition: width .6s var(--ease-inout);
 }
 
 /* ── MEMBER SECTION (By Member tab) ───────────────────────────────────── */
@@ -712,7 +744,7 @@ body {
 .member-name { font-size: 14px; font-weight: 700; color: var(--purple); flex: 1; }
 .member-cnt  { font-size: 12px; font-weight: 500; color: var(--text3); font-family: var(--mono); }
 .member-prog { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-top: 5px; }
-.member-prog-fill { height: 100%; background: var(--neon); border-radius: 2px; transition: width .5s ease; }
+.member-prog-fill { height: 100%; background: var(--neon); border-radius: 2px; transition: width .5s var(--ease-out); }
 
 /* ── FOLLOW-UP ─────────────────────────────────────────────────────────── */
 .fu-card {
@@ -776,7 +808,7 @@ body {
   color: var(--text2);
   font-family: var(--sans); font-size: 13px; font-weight: 700;
   cursor: pointer; text-align: center;
-  transition: all .15s;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .t-pre:hover { border-color: rgba(10,132,255,.2); color: var(--text); }
 .t-pre.ap { background: rgba(10,132,255,.07); border-color: rgba(10,132,255,.2); color: var(--neon); }
@@ -801,7 +833,7 @@ body {
   flex: 1; padding: 11px;
   border-radius: var(--r);
   font-family: var(--sans); font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all .15s; border: none;
+  cursor: pointer; transition: all var(--dur-base) var(--ease-out); border: none;
   letter-spacing: .02em;
 }
 .t-btn:active { transform: scale(.96); }
@@ -822,7 +854,7 @@ body {
   font-family: var(--sans); font-size: 13px; font-weight: 400;
   line-height: 1.6; resize: none; outline: none;
   min-height: 80px;
-  transition: border-color .15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 .notes-ta:focus { border-color: var(--neon); }
 .notes-ta::placeholder { color: var(--text3); }
@@ -855,7 +887,7 @@ body {
   background: rgba(0,0,0,.7);
   display: flex; align-items: center; justify-content: center;
   z-index: 999; opacity: 0; pointer-events: none;
-  transition: opacity .18s;
+  transition: opacity var(--dur-fast) var(--ease-out);
   backdrop-filter: blur(6px);
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
@@ -867,7 +899,7 @@ body {
   width: 300px;
   box-shadow: 0 0 40px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.04) inset;
   transform: translateY(8px) scale(.98);
-  transition: transform .2s ease;
+  transition: transform var(--dur-base) var(--ease-spring);
 }
 .modal-overlay.open .modal { transform: translateY(0) scale(1); }
 .modal-title { font-family: var(--sans); font-size: 15px; font-weight: 700; color: var(--red); margin-bottom: 5px; text-align: center; }
@@ -882,7 +914,7 @@ body {
   width: 100%; background: var(--bg3); border: 1px solid var(--border2);
   border-radius: 8px; padding: 11px 12px;
   color: var(--neon); font-family: var(--mono); font-size: 14px;
-  outline: none; transition: border-color .15s; margin-bottom: 8px;
+  outline: none; transition: border-color var(--dur-fast) var(--ease-out); margin-bottom: 8px;
 }
 .modal-inp:focus { border-color: rgba(240,62,95,.4); }
 .modal-inp.wrong { border-color: var(--red); }
@@ -922,7 +954,7 @@ body {
   color: var(--neon);
   z-index: 9999;
   opacity: 0;
-  transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
+  transition: transform var(--dur-base) var(--ease-spring), opacity var(--dur-base) var(--ease-out);
   white-space: nowrap;
   box-shadow: var(--shadow-elevated);
   pointer-events: none;
@@ -946,11 +978,41 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── FADE-IN ANIMATION ─────────────────────────────────────────────────── */
+/* Applied ONLY to elements mounting for the first time. index.html tracks
+   which task cards have already animated (_animatedCards) so a live update
+   from a teammate doesn't replay the whole staggered cascade. If you find
+   yourself adding .fi to something that re-renders, gate it the same way. */
 .fi {
   opacity: 0;
   transform: translateY(8px);
-  animation: fu .3s ease forwards;
+  animation: fu var(--dur-slow) var(--ease-out) forwards;
 }
 @keyframes fu {
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── REDUCED MOTION ────────────────────────────────────────────────────────
+   Respects the OS-level "reduce motion" setting (iOS: Settings → Accessibility
+   → Motion; Android: Settings → Accessibility → Remove animations). Motion
+   sensitivity is real — vestibular disorders can make parallax/slide UI cause
+   genuine nausea. Content still appears, it just stops moving. Ambient loops
+   (pulses, shimmers, the FAB breathe) are switched off entirely rather than
+   sped up, since a fast loop is worse than none. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fi { opacity: 1; transform: none; animation: none; }
+  /* Ambient loops off — they communicate nothing essential */
+  .brand-dot,
+  .ideas-fab,
+  .due-today-badge,
+  .task-card.status-inprog::before,
+  .task-row-compact.status-inprog::after,
+  .task-row-compact.due-today::after {
+    animation: none !important;
+  }
 }
