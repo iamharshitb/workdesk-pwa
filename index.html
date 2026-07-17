@@ -18,9 +18,21 @@
   <style>
     /* ── TASK CARD STATUS COLORS ── */
     .task-card.status-inprog {
-      background: rgba(245,168,0,.07);
-      border-color: rgba(245,168,0,.35);
-      box-shadow: 0 0 0 1px rgba(245,168,0,.1), 0 4px 16px rgba(245,168,0,.08);
+      position: relative;
+      border-left-color: var(--amber) !important;
+      overflow: hidden;
+    }
+    .task-card.status-inprog::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--amber) 45%, var(--amber) 55%, transparent);
+      background-size: 250% 100%;
+      animation: inprog-shimmer 2.6s ease-in-out infinite;
+      opacity: .8;
+    }
+    @keyframes inprog-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -100% 0; }
     }
     .task-card.status-onhold {
       border-left-color: var(--purple) !important;
@@ -214,9 +226,26 @@
       transition:all .15s;
       -webkit-tap-highlight-color:transparent;
     }
-    .task-row-compact:hover { border-color:var(--neon2);background:var(--bg3); }
+    .task-row-compact:hover {
+      border-color:var(--neon2);background:var(--bg3);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    }
+    .task-row-compact:active { transform: translateY(0) scale(.99); }
     .task-row-compact.status-inprog {
-      background:rgba(245,168,0,.06);border-color:rgba(245,168,0,.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .task-row-compact.status-inprog::after {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber);
+      animation: inprog-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes inprog-pulse {
+      0%,100% { opacity: .45; }
+      50%     { opacity: 1; }
     }
     .task-row-compact.status-onhold { opacity:.75; border-left-color:var(--purple) !important }
     .task-row-compact.status-done { opacity:.5; }
@@ -352,10 +381,19 @@
 
     /* ── DUE TODAY HIGHLIGHT ── */
     .task-row-compact.due-today {
-      border-left:3px solid var(--red) !important;
-      background:rgba(255,58,94,.07) !important;
-      border-color:rgba(255,58,94,.35) !important;
-      box-shadow:0 0 0 1px rgba(255,58,94,.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .task-row-compact.due-today::after {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--red);
+      box-shadow: 0 0 10px var(--red);
+      animation: due-today-glow 1.6s ease-in-out infinite;
+    }
+    @keyframes due-today-glow {
+      0%,100% { opacity: .5; }
+      50%     { opacity: 1; }
     }
     .due-today-badge {
       display:inline-flex;align-items:center;gap:3px;
@@ -689,8 +727,13 @@
       box-shadow:0 4px 16px rgba(94,92,230,.4),0 2px 6px rgba(0,0,0,.2);
       transition:all .2s cubic-bezier(.34,1.56,.64,1);
       -webkit-tap-highlight-color:transparent;
+      animation: fab-breathe 3.5s ease-in-out infinite;
     }
-    .ideas-fab:hover { transform:scale(1.1) }
+    @keyframes fab-breathe {
+      0%,100% { box-shadow:0 4px 16px rgba(94,92,230,.4),0 2px 6px rgba(0,0,0,.2); }
+      50%     { box-shadow:0 4px 24px rgba(94,92,230,.6),0 2px 10px rgba(0,0,0,.25); }
+    }
+    .ideas-fab:hover { transform:scale(1.1); animation-play-state:paused; }
     .ideas-fab:active { transform:scale(.93) }
     .ideas-fab-badge {
       position:absolute;top:-2px;right:-2px;
@@ -1416,12 +1459,14 @@ function saveSprint() {
 window.toggleSprintTask = (taskId) => {
   if (sprintTaskIds.has(taskId)) {
     sprintTaskIds.delete(taskId);
+    expandedTasks.delete(taskId);
     saveSprint(); renderAll(); toast('Removed from This Week');
   } else {
     if (sprintTaskIds.size >= SPRINT_MAX) {
       toast('Sprint full — max ' + SPRINT_MAX + ' tasks per week'); return;
     }
     sprintTaskIds.add(taskId);
+    expandedTasks.delete(taskId);
     saveSprint(); renderAll(); toast('🎯 Added to This Week!');
   }
 };
@@ -3599,6 +3644,7 @@ function toast(msg,type=''){
   void el.offsetWidth; el.classList.add('show');
   clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2400);
 }
+window.toast = toast;
 
 updateTimerUI();
 // Auto-expand timer panel if a session is already running
@@ -3609,6 +3655,135 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
   });
+}
+</script>
+
+<!-- INSTALL APP BANNER -->
+<div class="install-banner" id="install-banner" style="display:none">
+  <div class="install-banner-icon">📲</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title">Install WorkDesk</div>
+    <div class="install-banner-sub" id="install-banner-sub">Add it to your home screen for the full app experience.</div>
+  </div>
+  <button class="install-banner-btn" id="install-banner-btn" onclick="handleInstallClick()">Install</button>
+  <button class="install-banner-close" onclick="dismissInstallBanner()" aria-label="Dismiss">✕</button>
+</div>
+<style>
+  .install-banner {
+    position: fixed;
+    left: 50%; bottom: 84px;
+    transform: translateX(-50%) translateY(20px);
+    width: min(420px, calc(100% - 24px));
+    background: var(--panel);
+    background: color-mix(in srgb, var(--panel) 75%, transparent);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    padding: 14px 14px 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
+    z-index: 500;
+    opacity: 0;
+    animation: install-banner-in .45s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  .install-banner.hide {
+    animation: install-banner-out .3s ease forwards;
+  }
+  @keyframes install-banner-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(.96); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  }
+  @keyframes install-banner-out {
+    from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateX(-50%) translateY(16px) scale(.96); }
+  }
+  .install-banner-icon { font-size: 26px; flex-shrink: 0; }
+  .install-banner-text { flex: 1; min-width: 0; }
+  .install-banner-title { font-size: 13px; font-weight: 800; color: var(--text); }
+  .install-banner-sub { font-size: 11px; color: var(--text2); margin-top: 1px; line-height: 1.35; }
+  .install-banner-btn {
+    flex-shrink: 0;
+    padding: 8px 14px; border-radius: 12px; border: none;
+    background: var(--neon); color: #fff;
+    font-size: 12px; font-weight: 800; cursor: pointer;
+    transition: transform .15s, filter .15s;
+  }
+  .install-banner-btn:hover { filter: brightness(1.1); }
+  .install-banner-btn:active { transform: scale(.94); }
+  .install-banner-close {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    border: none; background: var(--bg3); color: var(--text2);
+    font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .install-banner-close:hover { background: var(--bg2); color: var(--text); }
+  @media (max-width: 480px) {
+    .install-banner { bottom: 78px; padding: 12px; }
+  }
+</style>
+<script>
+// ── PWA INSTALL PROMPT ──────────────────────────────────────────────────
+let _deferredInstallPrompt = null;
+const INSTALL_DISMISS_KEY = 'wd_install_dismissed_at';
+const INSTALL_DISMISS_DAYS = 14;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function wasRecentlyDismissed() {
+  const raw = localStorage.getItem(INSTALL_DISMISS_KEY);
+  if (!raw) return false;
+  const days = (Date.now() - parseInt(raw, 10)) / 86400000;
+  return days < INSTALL_DISMISS_DAYS;
+}
+window.dismissInstallBanner = () => {
+  localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now()));
+  const el = document.getElementById('install-banner');
+  if (!el) return;
+  el.classList.add('hide');
+  setTimeout(() => { el.style.display = 'none'; }, 300);
+};
+window.handleInstallClick = async () => {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    if (outcome === 'accepted') dismissInstallBanner();
+    else dismissInstallBanner();
+  } else {
+    // iOS Safari has no native prompt — show manual instructions instead
+    toast('Tap Share ⬆️ then "Add to Home Screen"');
+  }
+};
+
+if (!isStandalone() && !wasRecentlyDismissed()) {
+  const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) && !window.MSStream;
+
+  if (isIOS) {
+    // iOS never fires beforeinstallprompt — show manual instructions after a short delay
+    setTimeout(() => {
+      const el = document.getElementById('install-banner');
+      const sub = document.getElementById('install-banner-sub');
+      const btn = document.getElementById('install-banner-btn');
+      if (!el) return;
+      sub.textContent = 'Tap Share ⬆️ then "Add to Home Screen".';
+      btn.textContent = 'Got it';
+      btn.onclick = dismissInstallBanner;
+      el.style.display = 'flex';
+    }, 4000);
+  } else {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      _deferredInstallPrompt = e;
+      const el = document.getElementById('install-banner');
+      if (el) el.style.display = 'flex';
+    });
+    window.addEventListener('appinstalled', () => {
+      _deferredInstallPrompt = null;
+      dismissInstallBanner();
+    });
+  }
 }
 </script>
 
@@ -3640,7 +3815,6 @@ if ('serviceWorker' in navigator) {
   <a href="index.html" class="bn-item active"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
   <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
   <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="timeline.html" class="bn-item"><span class="bn-icon">📅</span><span class="bn-label">Timeline</span></a>
   <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
 </nav>
 

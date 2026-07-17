@@ -56,7 +56,6 @@ workdesk-pwa/
 ├── input.html          — Task input with duplicate detection
 ├── report.html         — Reports (Monthly / Weekly / My Report)
 ├── calendar.html       — Communications calendar
-├── timeline.html       — Gantt-style project tracker
 ├── ideas.html          — Ideas management
 ├── backup.html         — Backup & restore
 ├── cards.html          — Player Cards (easter egg)
@@ -94,25 +93,23 @@ workdesk-pwa/
 
 ---
 
-## Themes (7 total)
+## Themes (3 total)
 
 | ID | Name | Description |
 |----|------|-------------|
-| `` (empty) | Standard | Dark, ambient neon |
-| `frosted` | Frosted Glass | Heavy blur, translucent |
-| `bigsur` | iOS Fans | macOS warm coral glass |
-| `ios-system` | Dark | iOS system clean |
 | `health` | Light | iOS Health pastel white (default) |
-| `neon` | Neon | Retro neon modern dark |
+| `frosted` | Frosted Glass | Heavy blur, translucent |
 | `editorial` | Editorial | Inter font, #F3F3F5 bg, Linear/Notion style |
 
 Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as body class e.g. `body.theme-editorial`.
+
+**Removed (previously 7 total):** Standard (empty id), iOS Fans (`bigsur`), Dark (`ios-system`), and Neon (`neon`) were removed from the picker and stripped out of `css/themes.css`. A few orphaned/unused theme blocks (`theme-ios`, `theme-ember`, `theme-matrix`) still sit in `css/themes.css` from earlier iterations but are unreachable from the UI — leave alone unless asked to clean up further.
 
 ---
 
 ## Navigation Structure
 
-**Bottom nav (all pages):** Dashboard / Input / Calendar / Timeline / Report  
+**Bottom nav (all pages):** Dashboard / Input / Calendar / Report  
 **Ideas:** Accessible via purple 💡 FAB button on dashboard (not in nav)  
 **Backup:** Accessible from Report page or direct URL  
 
@@ -171,18 +168,6 @@ Status cycles via button in expanded task card:
 ### Calendar (calendar.html)
 - Fixed monthly grid, 7 event types colour-coded
 - Auto-task checkbox (assigns Harshit + Godly)
-
-### Timeline (timeline.html)
-- 1–3 projects, Gantt-style per project
-- Excel-style Gantt — HTML table, sticky task name column, day columns, month header, weekends shaded, today line (red)
-- Dual progress bars: task completion % + time elapsed %
-- Task detail right-side drawer (Mark Done / On Hold / Resume / Edit / Delete)
-- WorkDesk tasks matching project name auto-appear on Gantt (one-way pull from WorkDesk → Timeline)
-- Timeline tasks auto-push to WorkDesk dashboard (one-way: Timeline → WorkDesk)
-- Project Notes — collapsible threaded notes per project (Firestore subcollection)
-- ⬇ Excel export (SheetJS, one sheet per project)
-- Mobile: Gantt hidden by default, tap "📊 Show Gantt" to expand
-- Max width 1100px
 
 ### Ideas (ideas.html)
 - Quick capture bar at top (type + Enter → instant Ideation status)
@@ -246,11 +231,9 @@ workspaces/
     calendar/           — Calendar events (single doc)
     announcements/      — Broadcast announcements
     userData/           — Per-user data (streaks, prefs)
-    timeline_projects/  — Timeline projects
-      {projectId}/
-        tasks/          — Timeline tasks
-        notes/          — Project notes
 ```
+
+**Deprecated:** `timeline_projects/` (and its `tasks/`/`notes/` subcollections) is orphaned data left over from the removed Timeline page. Nothing in the app reads or writes it anymore — safe to ignore, or delete manually in the Firebase Console if you want to tidy up.
 
 ---
 
@@ -299,6 +282,9 @@ let sprintOpen = true
 6. **_doSave function** — in input.html, handles actual task save. Called directly for new tasks, or via `window.forceSaveTask()` after duplicate confirmation
 7. **Python str_replace failures** — exact string matching is sensitive to whitespace. Always read the exact content with sed/grep before replacing
 8. **iamharshit.com** — this is Harshit's personal portfolio domain. WorkDesk is at iamharshitb.github.io/workdesk-pwa. Both resolve but GitHub Pages is the source of truth
+9. **Sprint duplicate-render glitch (fixed)** — a task added to "This Week" renders a second time inside the Sprint section via the same `myTaskCard()` function, producing duplicate DOM ids (`trc-`, `trx-`, `trd-` + taskId). `toggleSprintTask()` now calls `expandedTasks.delete(taskId)` before re-rendering so the card collapses instead of staying stuck open. If more sprint-related glitches show up, this duplicate-id situation is the likely root cause
+10. **PWA install prompt** — index.html now has custom install-banner logic (`#install-banner` + script near the bottom) instead of relying on the browser's automatic mini-infobar. iOS Safari never fires `beforeinstallprompt` — the banner shows manual "Add to Home Screen" instructions there instead. Android/desktop Chrome shows a real Install button via the captured `beforeinstallprompt` event. Dismissal is remembered in localStorage (`wd_install_dismissed_at`) for 14 days
+11. **`toast()` scope** — `toast()` is defined inside the `<script type="module">` block in index.html and is explicitly assigned to `window.toast` so plain (non-module) `<script>` blocks lower on the page can call it. Any future module-scoped helper that needs to be called from a plain script must be exposed on `window` the same way
 
 ---
 
