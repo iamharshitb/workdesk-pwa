@@ -78,18 +78,51 @@ workdesk-pwa/
 
 ## Design System
 
-**Default theme:** Light / Health (`theme-health`) — `#f2f2f7` background, iOS blue `#007aff` primary  
-**CSS variables (from style.css):**
-- `--bg`, `--bg2`, `--bg3`, `--bg4` — background layers
+**Default theme:** Light / Health (`theme-health`) — `#eef0f6` base + gradient mesh, iOS blue `#007aff` primary  
+**CSS variables (from style.css `:root`):**
+- `--bg`, `--bg2`, `--bg3` — background layers
 - `--panel` — card/panel background
-- `--border`, `--border2`, `--border3` — border colours
+- `--border`, `--border2` — border colours
 - `--neon` — primary accent (blue)
 - `--text`, `--text2`, `--text3` — text hierarchy
 - `--red`, `--amber`, `--green`, `--purple` — semantic colours
 - `--rr` — large border radius (cards), `--r` — small border radius
-- `--sans` — DM Sans, `--mono` — JetBrains Mono
+- `--sans` — Inter, `--mono` — DM Mono
 
-**Fonts:** DM Sans (body), Syne (headings), JetBrains Mono (numbers/timers), Inter + Roboto Mono (Editorial theme only)
+**Fonts:** Inter (body/headings), DM Mono (numbers/timers). Loaded via `@import` at the top of `style.css`. *(Earlier versions of this doc claimed DM Sans / Syne / JetBrains Mono — that was never what the code loaded.)*
+
+### Motion tokens — use these, don't hardcode timings
+
+```
+--dur-fast   .15s   colour / opacity only (no travel)
+--dur-base   .24s   anything that moves or scales
+--dur-slow   .36s   panels, sheets, layout shifts
+--ease-out     cubic-bezier(.22,1,.36,1)     default — entrances & most UI
+--ease-spring  cubic-bezier(.34,1.56,.64,1)  confirmations & taps (slight overshoot)
+--ease-inout   cubic-bezier(.4,0,.2,1)       looping ambient animations
+```
+
+Every `transition` in `style.css` and `index.html` now routes through these. Previously 46 transitions were hardcoded `.15s` — snappy but characterless, and the reason the app felt utilitarian rather than polished. **If you add a transition, use a token.**
+
+`@media (prefers-reduced-motion: reduce)` in style.css kills all motion and switches ambient loops off entirely. Any new ambient/looping animation should be added to that block's selector list.
+
+### Glass tokens
+
+```
+--glass-bg     surface fill (translucent)
+--glass-blur   blur(20px) saturate(180%)
+--glass-edge   inset highlight along the top edge
+```
+
+**Glass only works if something is behind it.** Light theme's `body` has a three-stop radial gradient mesh (`background-attachment:fixed`) specifically so translucent surfaces have something to reveal. Before this, `theme-health` set `background-image:none` over a flat `#f2f2f7` and made panels `#fff` opaque — so every `backdrop-filter` in the theme was a no-op costing a compositing layer for zero visual gain. **If you ever flatten the body background, the glass silently dies.**
+
+Glass is applied to: `.nav`, `.bottom-nav`, `.panel`, `.prog-wrap`, `.toast`, `.install-banner`. It is deliberately **not** applied to `.task-card` / `.task-row-compact` — those are plain translucent fills that composite over the panel's frost. Giving each card its own `backdrop-filter` stacks a blur layer per card and gets expensive on mid-range Android past ~20 tasks.
+
+### Shadow tokens
+
+`--shadow-card` / `--shadow-elevated` / `--shadow-neon`, layered (contact + ambient) and **tinted to the surface**, not black.
+
+⚠️ **Light themes MUST override `--shadow-elevated`.** The `:root` default is `rgba(0,0,0,.6)` — built for the old near-black Standard theme. It used to leak into Light theme (which only overrode `--shadow-card`), painting a 60%-black shadow on a white page — it read as a grey smudge on `.task-card:hover` and `.toast`. `:root` is still a dark palette that no selectable theme uses; treat it as the fallback layer, and assume anything a theme doesn't override falls through to dark values.
 
 ---
 
@@ -297,6 +330,13 @@ let sprintOpen = true
 9. **Sprint duplicate-render glitch (fixed)** — a task added to "This Week" renders a second time inside the Sprint section via the same `myTaskCard()` function, producing duplicate DOM ids (`trc-`, `trx-`, `trd-` + taskId). `toggleSprintTask()` now calls `expandedTasks.delete(taskId)` before re-rendering so the card collapses instead of staying stuck open. If more sprint-related glitches show up, this duplicate-id situation is the likely root cause
 10. **PWA install prompt** — index.html now has custom install-banner logic (`#install-banner` + script near the bottom) instead of relying on the browser's automatic mini-infobar. iOS Safari never fires `beforeinstallprompt` — the banner shows manual "Add to Home Screen" instructions there instead. Android/desktop Chrome shows a real Install button via the captured `beforeinstallprompt` event. Dismissal is remembered in localStorage (`wd_install_dismissed_at`) for 14 days
 11. **`toast()` scope** — `toast()` is defined inside the `<script type="module">` block in index.html and is explicitly assigned to `window.toast` so plain (non-module) `<script>` blocks lower on the page can call it. Any future module-scoped helper that needs to be called from a plain script must be exposed on `window` the same way
+12. **Re-render cascade (fixed)** — `renderMyTasks()` rebuilds the entire list with `el.innerHTML = ...` and is reached from `renderAll()`, which fires on **every task change by any teammate** via `onTasksChanged`. Two consequences were fixed:
+    - Every card replayed its `.fi` staggered fade-up on each sync, so a colleague marking a task done made your whole screen flicker. Cards now animate only on first mount, gated by `_animatedCards`; the stagger itself is gated by `_firstPaintDone` so later arrivals appear immediately.
+    - The inline edit panel's open state lived only in the DOM (`classList.toggle('open')`) and inputs rendered from the task object, so a background sync closed the editor and **discarded unsaved typing**. Open state is now `_openEditId`, keystrokes go to `_editDraft`, priority to `_editPriority`, and `_captureEditFocus()`/`_restoreEditFocus()` preserve caret position across the rebuild.
+
+    If you touch `renderMyTasks`, keep all four (`_animatedCards`, `_firstPaintDone`, `_openEditId`, `_editDraft`) intact — they're the only thing making live sync non-destructive. The real long-term fix is keyed DOM reconciliation instead of `innerHTML`.
+13. **CSS load order** — `style.css` no longer `@import`s `themes.css`. Every page already has its own `<link>` for both, so importing it too loaded 56KB twice and made the cascade ambiguous (which is likely why themes accumulated ~100 `!important` overrides). Order is now: `style.css` (base + tokens) → `themes.css` (overrides). **Don't re-add the `@import`.** Note `quiz.html`, `snake.html`, `space.html` load neither stylesheet — they're standalone.
+14. **Backticks inside template literals** — `myTaskCard()` is one big template literal. An HTML comment inside it containing a backtick (e.g. writing `` `t` ``) silently terminates the string and throws a confusing `Unexpected identifier` at a line number far from the real problem. Always `node --check` the extracted module script after editing that function.
 
 ---
 

@@ -48,7 +48,7 @@
       width:48px;height:48px;border-radius:12px;flex-shrink:0;
       background:var(--bg2);border:1px solid var(--border2);
       display:flex;align-items:center;justify-content:center;
-      cursor:pointer;transition:all .15s;position:relative;
+      cursor:pointer;transition:all var(--dur-base) var(--ease-out);position:relative;
       -webkit-tap-highlight-color:transparent;
     }
     .timer-icon-btn:hover { border-color:var(--neon) }
@@ -82,12 +82,12 @@
       align-items: center;
       gap: 14px;
       padding: 14px 16px;
-      transition: all .35s ease;
+      transition: all var(--dur-slow) var(--ease-out);
     }
     .timer-slim-clock {
       flex: 1;
       text-align: center;
-      transition: flex .35s ease;
+      transition: flex var(--dur-slow) var(--ease-out);
     }
     .timer-slim-clock.big { flex: 2; }
     .timer-slim-digits {
@@ -97,7 +97,7 @@
       letter-spacing: -.02em;
       color: var(--text);
       line-height: 1;
-      transition: font-size .35s ease, color .25s;
+      transition: font-size var(--dur-slow) var(--ease-out), color var(--dur-base) var(--ease-out);
     }
     .timer-slim-clock.big .timer-slim-digits { font-size: 58px; }
     .timer-slim-digits.run { color: var(--neon); }
@@ -110,7 +110,7 @@
       letter-spacing: .12em;
       text-transform: uppercase;
       margin-top: 4px;
-      transition: color .25s;
+      transition: color var(--dur-base) var(--ease-out);
     }
     .timer-slim-clock.big .timer-slim-st { color: var(--neon); }
     .timer-slim-controls {
@@ -118,7 +118,7 @@
       display: flex;
       flex-direction: column;
       gap: 7px;
-      transition: flex .35s ease;
+      transition: flex var(--dur-slow) var(--ease-out);
       overflow: hidden;
     }
     .timer-slim-controls.small { flex: 0.5; }
@@ -130,7 +130,7 @@
     /* ── STATS FILTER ── */
     .stat-pill {
       cursor: pointer;
-      transition: all .15s;
+      transition: all var(--dur-base) var(--ease-out);
       user-select: none;
     }
     .stat-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
@@ -143,7 +143,7 @@
       flex:1;padding:7px 10px;border-radius:8px;
       border:1px solid var(--border);background:var(--bg2);
       color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all .15s ease;text-align:center;
+      cursor:pointer;transition:all var(--dur-base) var(--ease-out);text-align:center;
       display:flex;align-items:center;justify-content:center;gap:5px;
       letter-spacing:.01em;
     }
@@ -167,7 +167,7 @@
       padding:8px 18px;border-radius:20px;
       border:1.5px solid var(--border2);background:var(--bg2);
       color:var(--text);font-family:var(--sans);font-size:12px;font-weight:700;
-      cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
+      cursor:pointer;transition:all var(--dur-base) var(--ease-out);-webkit-tap-highlight-color:transparent;
       box-shadow:0 1px 4px rgba(0,0,0,.12);
     }
     .filter-btn:hover { border-color:var(--neon);color:var(--neon) }
@@ -198,7 +198,7 @@
       padding:5px 12px;border-radius:20px;
       border:1px solid var(--border2);background:var(--bg2);
       color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all .12s;-webkit-tap-highlight-color:transparent;
+      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);-webkit-tap-highlight-color:transparent;
     }
     .fd-opt:active { transform:scale(.95) }
     .fd-opt.sel     { border-color:var(--neon);background:rgba(10,132,255,.08);color:var(--neon) }
@@ -211,7 +211,7 @@
       width:100%;margin-top:12px;padding:9px;border-radius:10px;border:none;
       background:var(--neon);color:#0c0c0f;
       font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-      transition:all .15s;
+      transition:all var(--dur-base) var(--ease-out);
     }
     .fd-apply:active { transform:scale(.98) }
 
@@ -223,7 +223,7 @@
       border:1px solid var(--border2);
       background:var(--bg2);
       cursor:pointer;
-      transition:all .15s;
+      transition:all var(--dur-base) var(--ease-out);
       -webkit-tap-highlight-color:transparent;
     }
     .task-row-compact:hover {
@@ -265,7 +265,7 @@
       flex-shrink:0;width:28px;height:28px;border-radius:50%;
       border:1px solid var(--border2);background:var(--bg3);
       display:flex;align-items:center;justify-content:center;
-      font-size:13px;color:var(--text2);transition:all .2s;
+      font-size:13px;color:var(--text2);transition:all var(--dur-base) var(--ease-out);
       cursor:pointer;
     }
     .trc-expand.open { transform:rotate(180deg);border-color:var(--neon);color:var(--neon); }
@@ -289,10 +289,10 @@
       background:var(--bg2);cursor:pointer;
       font-size:12px;font-weight:700;color:var(--text2);
       user-select:none;-webkit-tap-highlight-color:transparent;
-      transition:all .15s;
+      transition:all var(--dur-base) var(--ease-out);
     }
     .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
-    .done-section-arrow { transition:transform .2s;font-size:10px }
+    .done-section-arrow { transition:transform var(--dur-base) var(--ease-spring);font-size:10px }
     .done-section-arrow.open { transform:rotate(180deg) }
     .done-section-body { display:none;margin-top:4px }
     .done-section-body.open { display:block }
@@ -303,10 +303,10 @@
       border-radius:8px;background:var(--bg3);
       font-size:10px;font-weight:800;color:var(--text2);
       letter-spacing:.06em;text-transform:uppercase;
-      cursor:pointer;user-select:none;transition:all .15s;
+      cursor:pointer;user-select:none;transition:all var(--dur-base) var(--ease-out);
     }
     .done-month-toggle:hover { background:var(--bg2);color:var(--text) }
-    .done-month-arrow { font-size:9px;transition:transform .18s }
+    .done-month-arrow { font-size:9px;transition:transform var(--dur-base) var(--ease-spring) }
     .done-month-arrow.open { transform:rotate(180deg) }
     .done-month-body { display:none }
     .done-month-body.open { display:block }
@@ -320,13 +320,13 @@
     .member-card-hd {
       display:flex;align-items:center;gap:10px;
       padding:12px 14px;cursor:pointer;
-      transition:background .12s;
+      transition:background var(--dur-fast) var(--ease-out);
       user-select:none;-webkit-tap-highlight-color:transparent;
     }
     .member-card-hd:hover { background:var(--bg3) }
     .member-card-body { display:none;padding:0 14px 12px }
     .member-card-body.open { display:block }
-    .member-card-arrow { font-size:11px;color:var(--text3);transition:transform .2s;flex-shrink:0 }
+    .member-card-arrow { font-size:11px;color:var(--text3);transition:transform var(--dur-base) var(--ease-spring);flex-shrink:0 }
     .member-card-arrow.open { transform:rotate(180deg) }
     .member-card-rank {
       font-size:10px;font-weight:800;color:var(--text3);
@@ -350,7 +350,7 @@
       padding:10px 12px;border-radius:12px;margin-bottom:6px;
       border:1.5px solid rgba(157,126,255,.3);
       background:rgba(157,126,255,.07);
-      cursor:pointer;transition:all .15s;
+      cursor:pointer;transition:all var(--dur-base) var(--ease-out);
       -webkit-tap-highlight-color:transparent;
     }
     .comms-card:hover { background:rgba(157,126,255,.12) }
@@ -481,7 +481,7 @@
       border:1.5px solid var(--border2);background:var(--bg2);
       color:var(--text2);font-family:var(--sans);
       font-size:13px;font-weight:700;cursor:pointer;
-      transition:all .15s;-webkit-tap-highlight-color:transparent;
+      transition:all var(--dur-base) var(--ease-out);-webkit-tap-highlight-color:transparent;
     }
     .welcome-chip:hover { border-color:var(--neon);color:var(--neon);background:rgba(10,132,255,.06) }
     .welcome-chip:active { transform:scale(.95) }
@@ -502,14 +502,14 @@
       flex:1;background:var(--bg2);border:1.5px solid var(--border2);
       border-radius:12px;padding:10px 14px;color:var(--text);
       font-family:var(--sans);font-size:14px;outline:none;
-      transition:border-color .15s;
+      transition:border-color var(--dur-fast) var(--ease-out);
     }
     .welcome-inp:focus { border-color:rgba(10,132,255,.5) }
     .welcome-go {
       padding:10px 18px;border-radius:12px;border:none;
       background:var(--neon);color:#0c0c0f;
       font-family:var(--sans);font-size:14px;font-weight:700;
-      cursor:pointer;transition:all .15s;white-space:nowrap;
+      cursor:pointer;transition:all var(--dur-base) var(--ease-out);white-space:nowrap;
     }
     .welcome-go:active { transform:scale(.96) }
     .welcome-note {
@@ -526,7 +526,7 @@
       display:flex;align-items:center;gap:10px;
       padding:12px 14px;cursor:pointer;
       -webkit-tap-highlight-color:transparent;
-      transition:background .12s;
+      transition:background var(--dur-fast) var(--ease-out);
     }
     .sprint-hd:hover { background:var(--bg3) }
     .sprint-icon {
@@ -546,7 +546,7 @@
       background:rgba(255,159,10,.1);color:var(--amber);
     }
     .sprint-arrow {
-      font-size:11px;color:var(--text3);transition:transform .2s;
+      font-size:11px;color:var(--text3);transition:transform var(--dur-base) var(--ease-spring);
     }
     .sprint-arrow.open { transform:rotate(180deg) }
     .sprint-body { display:none; border-top:1px solid var(--border) }
@@ -560,7 +560,7 @@
     }
     .sprint-bar-fill {
       height:100%;border-radius:3px;background:var(--neon);
-      transition:width .4s cubic-bezier(.4,0,.2,1);
+      transition:width .4s var(--ease-inout);
     }
     .sprint-bar-fill.full { background:var(--amber) }
     .sprint-bar-label {
@@ -587,7 +587,7 @@
       border:1px solid rgba(10,132,255,.25);
       background:rgba(10,132,255,.06);color:var(--neon);
       font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all .12s;white-space:nowrap;
+      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);white-space:nowrap;
     }
     .sprint-task-btn:active { transform:scale(.95) }
     .sprint-task-btn.remove {
@@ -632,7 +632,7 @@
     .priority-row {
       display:flex;align-items:center;gap:10px;
       padding:10px 14px;cursor:pointer;
-      transition:all .15s ease;
+      transition:all var(--dur-base) var(--ease-out);
       border-bottom:1px solid var(--border);
       -webkit-tap-highlight-color:transparent;
     }
@@ -682,7 +682,7 @@
       width:100%;background:var(--bg2);border:1px solid var(--border2);
       border-radius:8px;padding:9px 11px;color:var(--text);
       font-family:var(--sans);font-size:14px;outline:none;
-      transition:border-color .15s;
+      transition:border-color var(--dur-fast) var(--ease-out);
     }
     .task-edit-inp:focus { border-color:rgba(10,132,255,.4) }
     .task-edit-prow { display:flex;gap:6px }
@@ -690,7 +690,7 @@
       flex:1;padding:7px 4px;border-radius:20px;text-align:center;
       font-family:var(--sans);font-size:11px;font-weight:700;
       border:1px solid var(--border2);background:var(--bg2);
-      color:var(--text3);cursor:pointer;transition:all .12s;
+      color:var(--text3);cursor:pointer;transition:all var(--dur-fast) var(--ease-out);
     }
     .task-edit-pchip.pc { background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.3); color:var(--red) }
     .task-edit-pchip.ph { background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.3);color:var(--amber) }
@@ -707,7 +707,7 @@
       flex:1;padding:10px;border-radius:9px;border:none;
       background:var(--neon);color:#0c0c0f;
       font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-      transition:all .15s;
+      transition:all var(--dur-base) var(--ease-out);
     }
     .task-edit-save:active { transform:scale(.97) }
     .task-edit-cancel {
@@ -725,7 +725,7 @@
       display:flex;align-items:center;justify-content:center;
       font-size:20px;
       box-shadow:0 4px 16px rgba(94,92,230,.4),0 2px 6px rgba(0,0,0,.2);
-      transition:all .2s cubic-bezier(.34,1.56,.64,1);
+      transition:all var(--dur-base) var(--ease-spring);
       -webkit-tap-highlight-color:transparent;
       animation: fab-breathe 3.5s ease-in-out infinite;
     }
@@ -787,7 +787,7 @@
     .comment-edit-btn {
       background:none;border:none;cursor:pointer;
       font-size:11px;color:var(--text3);padding:2px 5px;
-      border-radius:5px;transition:color .12s;
+      border-radius:5px;transition:color var(--dur-fast) var(--ease-out);
     }
     .comment-edit-btn:hover { color:var(--neon) }
     .comment-input-row { display:flex;gap:7px }
@@ -842,14 +842,14 @@
     .r-quick-btn {
       padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
       background:var(--bg3);color:var(--text2);font-family:var(--sans);
-      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      font-size:11px;font-weight:700;cursor:pointer;transition:all var(--dur-fast) var(--ease-out);
       -webkit-tap-highlight-color:transparent;
     }
     .r-quick-btn:hover,.r-quick-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
     .r-snooze-btn {
       padding:5px 10px;border-radius:8px;border:1px solid var(--border2);
       background:var(--bg3);color:var(--text2);font-family:var(--sans);
-      font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+      font-size:11px;font-weight:700;cursor:pointer;transition:all var(--dur-fast) var(--ease-out);
       -webkit-tap-highlight-color:transparent;
     }
     .r-snooze-btn:hover,.r-snooze-btn:active { background:rgba(94,92,230,.1);border-color:var(--purple);color:var(--purple) }
@@ -872,7 +872,7 @@
     .badge {
       font-size:14px;cursor:default;
       filter:drop-shadow(0 0 4px rgba(245,168,0,.4));
-      transition:transform .15s;
+      transition:transform var(--dur-base) var(--ease-spring);
     }
     .badge:hover { transform:scale(1.3) }
     .badge-tooltip {
@@ -899,7 +899,7 @@
         0deg,transparent,transparent 3px,rgba(0,245,212,.03) 3px,rgba(0,245,212,.03) 4px
       );
       animation:scanline 2s linear infinite;
-      opacity:0;transition:opacity .3s;
+      opacity:0;transition:opacity var(--dur-slow) var(--ease-out);
     }
     .timer-scanline.active { opacity:1 }
 
@@ -964,7 +964,7 @@
       margin-bottom:10px;
       background:var(--bg2);border:1.5px solid var(--border2);
       border-radius:10px;padding:8px 12px;
-      transition:border-color .15s;
+      transition:border-color var(--dur-fast) var(--ease-out);
     }
     .search-bar:focus-within { border-color:var(--neon) }
     .search-icon { font-size:14px;color:var(--text3);flex-shrink:0 }
@@ -976,7 +976,7 @@
     .search-clear {
       background:none;border:none;cursor:pointer;
       font-size:13px;color:var(--text3);padding:0 2px;
-      transition:color .12s;
+      transition:color var(--dur-fast) var(--ease-out);
     }
     .search-clear:hover { color:var(--red) }
 
@@ -1015,7 +1015,7 @@
     .ann-meta { font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;font-weight:600 }
     .ann-dismiss {
       flex-shrink:0;background:none;border:none;cursor:pointer;
-      color:rgba(255,255,255,.4);font-size:16px;padding:2px;transition:color .12s;
+      color:rgba(255,255,255,.4);font-size:16px;padding:2px;transition:color var(--dur-fast) var(--ease-out);
     }
     .ann-dismiss:hover { color:rgba(255,255,255,.8) }
     /* Admin post button */
@@ -1026,7 +1026,7 @@
       background:rgba(157,126,255,.06);
       color:var(--purple);font-family:var(--sans);
       font-size:12px;font-weight:700;cursor:pointer;
-      transition:all .15s;
+      transition:all var(--dur-base) var(--ease-out);
     }
     .ann-post-btn:hover { background:rgba(157,126,255,.12) }
     /* Announcement modal */
@@ -1059,12 +1059,12 @@
     .ann-perm-toggle {
       position:relative;width:36px;height:20px;cursor:pointer;
       background:var(--bg3);border-radius:10px;border:none;
-      transition:background .2s;flex-shrink:0;
+      transition:background var(--dur-base) var(--ease-out);flex-shrink:0;
     }
     .ann-perm-toggle::after {
       content:'';position:absolute;top:3px;left:3px;
       width:14px;height:14px;border-radius:50%;
-      background:#fff;transition:transform .2s;
+      background:#fff;transition:transform var(--dur-base) var(--ease-spring);
     }
     .ann-perm-toggle.on { background:var(--neon) }
     .ann-perm-toggle.on::after { transform:translateX(16px) }
@@ -1072,7 +1072,7 @@
       width:100%;background:var(--bg2);border:1.5px solid var(--border2);
       border-radius:10px;padding:10px 12px;color:var(--text);
       font-family:var(--sans);font-size:14px;resize:none;outline:none;
-      min-height:80px;transition:border-color .15s;
+      min-height:80px;transition:border-color var(--dur-fast) var(--ease-out);
     }
     .ann-inp:focus { border-color:var(--purple) }
     .ann-modal-btns { display:flex;gap:8px;margin-top:12px;justify-content:flex-end }
@@ -2065,11 +2065,18 @@ function renderMyTasks() {
     ${onholdTasks.map((t,i) => myTaskCard(t, i)).join('')}
   ` : '';
 
+  // innerHTML destroys every node, which also drops focus and caret position.
+  // _editDraft preserves the *values*; this preserves where the user was typing,
+  // so a teammate's change syncing in mid-sentence no longer kicks you out of
+  // the field. Snapshot before, restore after.
+  const _focusSnap = _captureEditFocus();
   try {
     el.innerHTML = sprintHTML + filterBanner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + onholdHTML + doneHTML;
   } catch(err) {
     el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">Render error: ${err.message}</div>`;
   }
+  _restoreEditFocus(_focusSnap);
+  _firstPaintDone = true;
   } catch(err) {
     el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;font-family:var(--mono)">
       Render error: ${err.message}<br>
@@ -2081,6 +2088,42 @@ function renderMyTasks() {
 
 // Track which task rows are expanded
 const expandedTasks = new Set();
+// Task ids whose entry animation has already played this session. Cards render
+// with .fi only on first mount — see myTaskCard(). Not persisted: a page reload
+// should animate the list in again, a background sync should not.
+const _animatedCards = new Set();
+// True once the initial task list has painted. Gates the entry stagger so it
+// only runs on first load, not for tasks arriving later over the live listener.
+let _firstPaintDone = false;
+
+// ── INLINE EDIT STATE ──
+// Declared here (not next to the edit handlers further down) because
+// myTaskCard() renders from it, and myTaskCard is defined above those handlers.
+// Keeping render state together also avoids the temporal-dead-zone trap
+// documented in CLAUDE.md.
+let _editPriority = {};   // { [taskId]: 'critical'|'high'|'medium'|'low' }
+let _openEditId = null;   // taskId of the currently open editor, or null
+const _editDraft = {};    // { [taskId]: { label?, project?, due? } } — unsaved keystrokes
+
+// Snapshot which edit field has focus + the caret position, so renderMyTasks()
+// can put the user back exactly where they were after an innerHTML rebuild.
+function _captureEditFocus() {
+  const a = document.activeElement;
+  if (!a || !a.id || !/^edit-(label|project|due)-/.test(a.id)) return null;
+  // selectionStart throws on input[type=date] in some browsers — guard it.
+  let start = null, end = null;
+  try { start = a.selectionStart; end = a.selectionEnd; } catch(e) {}
+  return { id: a.id, start, end };
+}
+function _restoreEditFocus(snap) {
+  if (!snap) return;
+  const el = document.getElementById(snap.id);
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  if (snap.start != null) {
+    try { el.setSelectionRange(snap.start, snap.end); } catch(e) {}
+  }
+}
 
 let _doneOpen = false;
 window.toggleDoneSection = () => {
@@ -2142,8 +2185,21 @@ function myTaskCard(t, i) {
   // Left accent color based on priority
   const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
 
+  // Entry animation ONLY for cards this session hasn't shown before. Without
+  // this, every renderAll() (which fires on EVERY task change by ANY teammate,
+  // via onTasksChanged) replays the staggered fade-up for the entire list —
+  // so someone else marking a task done made your whole screen flicker.
+  //
+  // The stagger is deliberately limited to first paint: cascading the initial
+  // list in feels considered, but a single task arriving later should land
+  // immediately rather than inherit a queue delay of up to 360ms.
+  const isNew = !_animatedCards.has(t.id);
+  if (isNew) _animatedCards.add(t.id);
+  const delay = _firstPaintDone ? 0 : Math.min(i, 12) * .03;
+  const entryAnim = isNew ? ` class="fi" style="animation-delay:${delay}s"` : '';
+
   return `
-    <div style="animation-delay:${i*.03}s" class="fi">
+    <div${entryAnim}>
       <!-- COMPACT ROW -->
       <div class="task-row-compact ${statusClass}${t.taskDueDate === todayStr && t.status !== 'done' ? ' due-today' : ''}" id="trc-${t.id}"
         onclick="toggleTaskExpand('${t.id}')"
@@ -2233,15 +2289,25 @@ function myTaskCard(t, i) {
         <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
 
         <!-- INLINE EDIT PANEL -->
-        <div class="task-edit-panel" id="edit-panel-${t.id}" onclick="event.stopPropagation()">
+        <!-- Open state and field values come from JS state (_openEditId /
+             _editDraft / _editPriority), NOT from the DOM. Previously this
+             rendered with no .open class and read values straight off the task
+             object, so any renderAll() — including one triggered by a teammate's
+             edit landing over the live listener — closed the panel and threw
+             away whatever the user had typed.
+             NOTE: no backticks in this comment; it lives inside a template
+             literal and a stray backtick terminates the string. -->
+        <div class="task-edit-panel${_openEditId === t.id ? ' open' : ''}" id="edit-panel-${t.id}" onclick="event.stopPropagation()">
           <div class="task-edit-row">
             <div class="task-edit-label">Task</div>
-            <input class="task-edit-inp" id="edit-label-${t.id}" value="${esc(t.label)}"
+            <input class="task-edit-inp" id="edit-label-${t.id}" value="${esc(_editDraft[t.id]?.label ?? t.label)}"
+              oninput="__editDraft('${t.id}','label',this.value)"
               onkeydown="if(event.key==='Enter')saveInlineEdit('${t.id}')">
           </div>
           <div class="task-edit-row">
             <div class="task-edit-label">Project</div>
-            <input class="task-edit-inp" id="edit-project-${t.id}" value="${esc(t.project||'')}"
+            <input class="task-edit-inp" id="edit-project-${t.id}" value="${esc(_editDraft[t.id]?.project ?? t.project ?? '')}"
+              oninput="__editDraft('${t.id}','project',this.value)"
               placeholder="Project name" style="font-size:13px">
           </div>
           <div class="task-edit-row">
@@ -2249,7 +2315,7 @@ function myTaskCard(t, i) {
             <div class="task-edit-prow">
               ${['critical','high','medium','low'].map(p => {
                 const cls = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[p];
-                const sel = (t.priority||'medium') === p ? ' '+cls : '';
+                const sel = (_editPriority[t.id] ?? t.priority ?? 'medium') === p ? ' '+cls : '';
                 return `<button class="task-edit-pchip${sel}" id="edit-p-${t.id}-${p}"
                   onclick="event.stopPropagation();selectEditPriority('${t.id}','${p}')">${p}</button>`;
               }).join('')}
@@ -2257,7 +2323,8 @@ function myTaskCard(t, i) {
           </div>
           <div class="task-edit-row">
             <div class="task-edit-label">Due Date</div>
-            <input type="date" class="task-edit-date-inp" id="edit-due-${t.id}" value="${t.taskDueDate||''}">
+            <input type="date" class="task-edit-date-inp" id="edit-due-${t.id}" value="${_editDraft[t.id]?.due ?? t.taskDueDate ?? ''}"
+              oninput="__editDraft('${t.id}','due',this.value)">
           </div>
           <div class="task-edit-actions">
             <button class="task-edit-cancel" onclick="event.stopPropagation();closeInlineEdit('${t.id}')">Cancel</button>
@@ -2502,7 +2569,7 @@ function renderFollowup() {
           <button onclick="toggleFuMore('${fuId}',this)"
             style="background:none;border:1px solid var(--border2);border-radius:20px;
             padding:4px 14px;font-family:var(--sans);font-size:11px;font-weight:700;
-            color:var(--text2);cursor:pointer;transition:all .15s">
+            color:var(--text2);cursor:pointer;transition:all var(--dur-base) var(--ease-out)">
             +${hidden.length} more
           </button>
         </div>`;
@@ -2794,28 +2861,51 @@ window.toggleIndividualDone = async (taskId, newStatus) => {
 };
 
 // ── INLINE TASK EDIT ──────────────────────────────────────────────────────
-let _editPriority = {};
+// State (_editPriority / _openEditId / _editDraft) is declared up with
+// expandedTasks — myTaskCard() reads it, and myTaskCard is defined earlier in
+// the file than this block. It works today only because renders happen inside
+// callbacks; declaring it here would be one stray top-level render away from
+// the same "Cannot access before initialization" bug the sprint code hit.
+
+// Called on every keystroke in an edit field. Cheap (plain object write), and
+// it's what lets an in-flight edit survive a background sync re-render.
+window.__editDraft = (taskId, field, val) => {
+  (_editDraft[taskId] ||= {})[field] = val;
+};
 
 window.openInlineEdit = (taskId) => {
-  // Close any other open edit panels
-  document.querySelectorAll('.task-edit-panel.open').forEach(p => {
-    if (!p.id.endsWith(taskId)) p.classList.remove('open');
-  });
   const panel = document.getElementById('edit-panel-' + taskId);
   if (!panel) return;
   const t = tasks.find(t => t.id === taskId);
   if (!t) return;
-  // Store current priority
-  _editPriority[taskId] = t.priority || 'medium';
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) {
-    // Focus label input
+
+  const willOpen = _openEditId !== taskId;
+
+  // Close any other open editor (DOM + state), discarding its draft
+  if (_openEditId && _openEditId !== taskId) {
+    document.getElementById('edit-panel-' + _openEditId)?.classList.remove('open');
+    delete _editDraft[_openEditId];
+  }
+  document.querySelectorAll('.task-edit-panel.open').forEach(p => {
+    if (p.id !== 'edit-panel-' + taskId) p.classList.remove('open');
+  });
+
+  if (willOpen) {
+    _openEditId = taskId;
+    _editPriority[taskId] = t.priority || 'medium';
+    panel.classList.add('open');
     setTimeout(() => document.getElementById('edit-label-' + taskId)?.focus(), 100);
+  } else {
+    _openEditId = null;
+    delete _editDraft[taskId];
+    panel.classList.remove('open');
   }
 };
 
 window.closeInlineEdit = (taskId) => {
   document.getElementById('edit-panel-' + taskId)?.classList.remove('open');
+  if (_openEditId === taskId) _openEditId = null;
+  delete _editDraft[taskId];
 };
 
 window.selectEditPriority = (taskId, priority) => {
@@ -3720,7 +3810,7 @@ if ('serviceWorker' in navigator) {
     padding: 8px 14px; border-radius: 12px; border: none;
     background: var(--neon); color: #fff;
     font-size: 12px; font-weight: 800; cursor: pointer;
-    transition: transform .15s, filter .15s;
+    transition: transform var(--dur-base) var(--ease-spring), filter var(--dur-fast) var(--ease-out);
   }
   .install-banner-btn:hover { filter: brightness(1.1); }
   .install-banner-btn:active { transform: scale(.94); }
@@ -3728,7 +3818,7 @@ if ('serviceWorker' in navigator) {
     flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
     border: none; background: var(--bg3); color: var(--text2);
     font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background .15s;
+    transition: background var(--dur-fast) var(--ease-out);
   }
   .install-banner-close:hover { background: var(--bg2); color: var(--text); }
   @media (max-width: 480px) {
