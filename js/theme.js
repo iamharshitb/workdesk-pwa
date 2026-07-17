@@ -1,12 +1,8 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
 
 export const THEMES = [
-  { id:'',           name:'Standard',      sub:'Dark · Ambient Neon',       dot:'#00d2a8', bg:'#0c0c0f' },
-  { id:'frosted',    name:'Frosted Glass', sub:'Heavy blur · Translucent',  dot:'#a78bfa', bg:'#0f0720' },
-  { id:'bigsur',     name:'iOS Fans',      sub:'macOS · Warm Coral Glass',  dot:'#5ac8fa', bg:'#1a0a0a' },
-  { id:'ios-system', name:'Dark',          sub:'iOS System · Clean',        dot:'#0a84ff', bg:'#1c1c1e' },
   { id:'health',     name:'Light',         sub:'iOS Health · Pastel White', dot:'#007aff', bg:'#f2f2f7' },
-  { id:'neon',       name:'Neon',          sub:'Retro Neon · Modern Dark',  dot:'#00f5d4', bg:'#070b12' },
+  { id:'frosted',    name:'Frosted Glass', sub:'Heavy blur · Translucent',  dot:'#a78bfa', bg:'#0f0720' },
   { id:'editorial',  name:'Editorial',     sub:'Inter · Clean · Minimal',   dot:'#16171A', bg:'#F3F3F5' },
 ];
 
