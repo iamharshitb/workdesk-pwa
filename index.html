@@ -1370,6 +1370,8 @@ let tasks = [], members = [];
 let calendarEvents = {}; // comms calendar events
 let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed daily
 let MY_NAME = localStorage.getItem('wd_myname') || '';
+let sprintTaskIds = new Set();
+let sprintOpen = true;
 loadSprint();
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
@@ -1377,8 +1379,7 @@ let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
 
 // ── WEEKLY SPRINT ──────────────────────────────────────────────────────────
 const SPRINT_MAX = 10;
-let sprintTaskIds = new Set(); // IDs of tasks in this week's sprint
-let sprintOpen = true; // collapsed state
+// sprintTaskIds and sprintOpen declared at top
 
 function getWeekKey() {
   // Returns 'YYYY-Www' — unique key per calendar week, resets every Monday
