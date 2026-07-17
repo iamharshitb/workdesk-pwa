@@ -1016,3 +1016,143 @@ body {
     animation: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALIVE LAYER — theme-agnostic motion & light effects
+   Everything here works in every theme because it only uses tokens, white
+   overlays, and transform/opacity animations (GPU-cheap, no layout thrash).
+   Ambient loops added here MUST also be listed in the reduced-motion block.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── PROGRESS SHINE ──
+   A soft light band sweeps along every progress fill. Overlay is pure white
+   gradient so it works over any theme's fill colour. */
+.prog-fill, .member-prog-fill { position: relative; overflow: hidden; }
+.prog-fill::after, .member-prog-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: prog-shine 2.8s var(--ease-inout) infinite;
+}
+@keyframes prog-shine {
+  0%   { background-position: 180% 0; }
+  100% { background-position: -80% 0; }
+}
+
+/* ── BUTTON SHEEN ──
+   Primary action buttons get a light streak that sweeps across on hover.
+   ::before is parked off-left and slides through once per hover. */
+.send-btn, .mark-done-btn, .t-go {
+  position: relative; overflow: hidden;
+}
+.send-btn::before, .mark-done-btn::before, .t-go::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -75%;
+  width: 50%; pointer-events: none;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.45), transparent);
+  transform: skewX(-20deg);
+  transition: none;
+}
+.send-btn:hover::before, .mark-done-btn:hover::before, .t-go:hover::before {
+  animation: btn-sheen .7s var(--ease-out);
+}
+@keyframes btn-sheen {
+  from { left: -75%; }
+  to   { left: 125%; }
+}
+
+/* ── PRESS PHYSICS ──
+   Interactive elements compress on press with the spring curve. Scale only —
+   no layout involvement. */
+.send-btn:active, .mark-done-btn:active, .sc-btn:active,
+.stat-pill:active, .m-chip:active, .p-chip:active, .bn-item:active {
+  transform: scale(.955);
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+
+/* ── STAT PILL LIFT ── */
+.stat-pill { transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+.stat-pill:hover { transform: translateY(-3px); }
+
+/* ── TASK DETAIL REVEAL ──
+   The expanded task panel unfolds instead of popping. display:none → block
+   can't transition, so the open state runs a one-shot entrance animation. */
+.task-detail.open { animation: detail-unfold var(--dur-slow) var(--ease-out); transform-origin: top center; }
+@keyframes detail-unfold {
+  from { opacity: 0; transform: translateY(-6px) scaleY(.96); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+/* ── NAV ICON SPRING ──
+   Active tab icon springs up; the top accent line scales in. The accent is
+   .bn-item.active::after and is centred with translateX(-50%), so the
+   keyframes must carry that transform or the line jumps off-centre. */
+.bn-item .bn-icon { transition: transform var(--dur-base) var(--ease-spring); }
+.bn-item.active .bn-icon { transform: translateY(-2px) scale(1.15); }
+.bn-item.active::after { animation: dot-in var(--dur-base) var(--ease-spring); }
+@keyframes dot-in {
+  from { transform: translateX(-50%) scaleX(0); }
+  to   { transform: translateX(-50%) scaleX(1); }
+}
+
+/* ── PANEL ENTRANCE ──
+   Panels rise gently on page load. One-shot, so no re-render concerns:
+   panels are static containers, only their contents re-render. */
+.panel { animation: panel-rise var(--dur-slow) var(--ease-out) backwards; }
+.panel:nth-of-type(2) { animation-delay: .06s; }
+.panel:nth-of-type(3) { animation-delay: .12s; }
+.panel:nth-of-type(4) { animation-delay: .18s; }
+@keyframes panel-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── GREETING GRADIENT ──
+   The greeting text gets a slow moving gradient — subtle signature touch.
+   Falls back to plain --text wherever background-clip:text is unsupported. */
+.greeting-name, .g-name {
+  background: linear-gradient(90deg, var(--text) 0%, var(--neon) 35%, var(--neon2) 55%, var(--text) 80%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: greet-flow 7s var(--ease-inout) infinite;
+}
+@supports not (background-clip: text) {
+  .greeting-name, .g-name { background: none; -webkit-text-fill-color: currentColor; color: var(--text); }
+}
+@keyframes greet-flow {
+  0%,100% { background-position: 0% 0; }
+  50%     { background-position: 100% 0; }
+}
+
+/* ── SPRINT TARGET PULSE ──
+   The 🎯 sprint header ring breathes gently — draws the eye without nagging. */
+.sprint-icon { display:inline-block; animation: target-breathe 3s var(--ease-inout) infinite; }
+@keyframes target-breathe {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.12); }
+}
+
+/* ── DONE CELEBRATION ──
+   Cards fading to done get a quick satisfying settle. Applied by JS via
+   .just-done, removed after the animation ends. */
+.just-done { animation: done-settle .5s var(--ease-spring); }
+@keyframes done-settle {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* ── REDUCED MOTION: alive-layer loops off ── */
+@media (prefers-reduced-motion: reduce) {
+  .prog-fill::after, .member-prog-fill::after,
+  .greeting-name, .g-name,
+  .sprint-icon,
+  body.theme-glass::before {
+    animation: none !important;
+  }
+  .greeting-name, .g-name {
+    background: none; -webkit-text-fill-color: currentColor; color: var(--text);
+  }
+  .panel { animation: none; }
+  .task-detail.open { animation: none; }
+}

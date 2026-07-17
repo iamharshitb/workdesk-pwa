@@ -1006,3 +1006,267 @@ body.theme-editorial .streak-badge { background:#EAF1FE; border-color:rgba(37,99
 body.theme-editorial .due-today-badge { background:#FDECEC; color:#DC2B2B }
 body.theme-editorial .due-soon-badge { background:#FDF0E3; color:#D9730D }
 body.theme-editorial .overdue-badge { background:#FDECEC; color:#DC2B2B }
+
+/* ══════════════════════════════════════════════════════
+   THEME: NEUMORPHISM
+   Soft UI — surfaces extruded from a single clay-like
+   material. Light falls from top-left: every raised
+   element gets a light NW shadow + dark SE shadow, and
+   pressed/active states invert to inset. No hard borders
+   anywhere — depth IS the border.
+══════════════════════════════════════════════════════ */
+body.theme-neu {
+  --bg:#e0e5ec;
+  --bg2:#e0e5ec;
+  --bg3:#d6dce6;
+  --panel:#e0e5ec;
+  --border:transparent;
+  --border2:transparent;
+  --neon:#2d56d8;   /* 4.83:1 on the clay bg — #4a7dff scored 2.93 and failed */
+  --neon2:#1f9e72;
+  --purple:#6a5ce0;
+  --amber:#c77c14;
+  --red:#d63a55;
+  --text:#3b4356;
+  /* Neumorphism's endemic weakness is low contrast — the style lives on
+     subtle greys. These alphas are the measured minimums that pass AA on
+     #e0e5ec (5.37:1 / 4.75:1); hierarchy leans on the size difference
+     between label and body text rather than a bigger alpha gap. */
+  --text2:rgba(59,67,86,.85);
+  --text3:rgba(59,67,86,.8);
+  --nav-bg:rgba(224,229,236,.85);
+  --grid:transparent;
+  /* The two shadow directions that define the whole theme */
+  --neu-out: -6px -6px 14px rgba(255,255,255,.85), 6px 6px 14px rgba(163,177,198,.55);
+  --neu-out-sm: -3px -3px 7px rgba(255,255,255,.8), 3px 3px 7px rgba(163,177,198,.5);
+  --neu-in: inset -4px -4px 9px rgba(255,255,255,.75), inset 4px 4px 9px rgba(163,177,198,.55);
+  --neu-in-sm: inset -2px -2px 5px rgba(255,255,255,.7), inset 2px 2px 5px rgba(163,177,198,.5);
+  --shadow-card: var(--neu-out);
+  --shadow-elevated: -8px -8px 20px rgba(255,255,255,.9), 10px 10px 24px rgba(163,177,198,.6);
+  --shadow-neon:none;
+  --glass-bg:#e0e5ec;
+  --glass-blur:none;          /* opaque material — blur has nothing to do here */
+  --glass-edge:none;
+  background-color:#e0e5ec;
+  background-image:none;      /* neumorphism NEEDS a flat bg — the shadows ARE the light model */
+}
+body.theme-neu .nav {
+  background:var(--nav-bg);
+  border-bottom:none;
+  box-shadow:0 4px 12px rgba(163,177,198,.35);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+body.theme-neu .nav-brand { color:var(--neon);text-shadow:none }
+body.theme-neu .brand-dot { background:var(--neon);box-shadow:none }
+body.theme-neu .nav-link { color:var(--text2) }
+body.theme-neu .nav-link.active { color:var(--neon);background:#e0e5ec;border:none;border-radius:100px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neu .btn-theme-toggle { background:#e0e5ec;border:none;color:var(--text2);box-shadow:var(--neu-out-sm) }
+body.theme-neu .btn-theme-toggle:active { box-shadow:var(--neu-in-sm) }
+body.theme-neu .panel {
+  background:#e0e5ec;border:none;border-radius:22px !important;
+  box-shadow:var(--neu-out);
+}
+body.theme-neu .panel-hd { border-bottom:1px solid rgba(163,177,198,.25) }
+body.theme-neu .panel-title { color:var(--text);text-shadow:none }
+body.theme-neu .panel-title::before { background:var(--neon);box-shadow:none }
+/* Stat pills: carved INTO the surface — inset wells with coloured numbers */
+body.theme-neu .stat-pill { background:#e0e5ec;border:none;border-radius:18px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neu .stat-pill.active-filter { box-shadow:var(--neu-in);color:var(--neon) }
+body.theme-neu .sn-g { color:var(--neon2) !important }
+body.theme-neu .sn-a { color:var(--amber) !important }
+body.theme-neu .sn-b { color:var(--neon) !important }
+body.theme-neu .sn-r { color:var(--red) !important }
+body.theme-neu .prog-wrap { background:#e0e5ec;border:none;border-radius:18px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .prog-track { background:#e0e5ec;box-shadow:var(--neu-in-sm);height:8px;border-radius:8px }
+body.theme-neu .prog-fill { background:linear-gradient(90deg,var(--neon),var(--purple));box-shadow:none;border-radius:8px }
+body.theme-neu .prog-pct { color:var(--neon) }
+/* Task cards: raised buttons of material; press = sink in */
+body.theme-neu .task-card { background:#e0e5ec;border:none;border-radius:18px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .task-card::before { width:0 }
+body.theme-neu .task-card.pc { border-left:4px solid var(--red) }
+body.theme-neu .task-card.ph { border-left:4px solid var(--amber) }
+body.theme-neu .task-card.pm { border-left:4px solid var(--neon) }
+body.theme-neu .task-card.pl { border-left:4px solid var(--neon2) }
+body.theme-neu .task-row-compact { background:#e0e5ec;border:none;border-radius:14px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .task-row-compact:hover { background:#e4e9f0;box-shadow:var(--neu-out);transform:translateY(-2px) }
+body.theme-neu .task-row-compact:active { box-shadow:var(--neu-in-sm);transform:none }
+body.theme-neu .task-detail { background:#dde3ea;border:none;box-shadow:var(--neu-in-sm);border-radius:14px !important }
+body.theme-neu .send-btn { background:linear-gradient(145deg,#5285ff,#3f6fe8);border:none;border-radius:16px !important;color:#fff;box-shadow:var(--neu-out-sm) }
+body.theme-neu .send-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neu .mark-done-btn { background:linear-gradient(145deg,#35d49e,#28b886);border:none;border-radius:22px !important;color:#fff;box-shadow:var(--neu-out-sm) }
+body.theme-neu .mark-done-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neu .mark-done-btn.undone { background:#e0e5ec;color:var(--text2);box-shadow:var(--neu-in-sm) }
+body.theme-neu .sc-btn { background:#e0e5ec;border:none;border-radius:20px !important;color:var(--text2);box-shadow:var(--neu-out-sm) }
+body.theme-neu .sc-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neu .m-chip { background:#e0e5ec;border:none;border-radius:22px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .m-chip.sel { box-shadow:var(--neu-in-sm);color:var(--neon) }
+body.theme-neu .p-chip { background:#e0e5ec;border:none;border-radius:22px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .p-chip.pc { color:var(--red) } body.theme-neu .p-chip.pc.sel,body.theme-neu .p-chip.pc:active { box-shadow:var(--neu-in-sm) }
+body.theme-neu .p-chip.ph { color:var(--amber) }
+body.theme-neu .p-chip.pm { color:var(--neon) }
+body.theme-neu .p-chip.pl { color:var(--neon2) }
+body.theme-neu .task-input,body.theme-neu .role-input,body.theme-neu .notes-ta {
+  background:#e0e5ec;border:none;color:var(--text);box-shadow:var(--neu-in-sm);border-radius:14px !important;
+}
+body.theme-neu .task-input:focus { box-shadow:var(--neu-in-sm),0 0 0 3px rgba(74,125,255,.15) }
+body.theme-neu .bottom-nav {
+  background:rgba(224,229,236,.9);border-top:none;
+  box-shadow:0 -4px 16px rgba(163,177,198,.4);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+body.theme-neu .bn-item { color:rgba(59,67,86,.55) }
+body.theme-neu .bn-item.active { color:var(--neon) }
+body.theme-neu .bn-item.active::before { background:var(--neon);box-shadow:none }
+body.theme-neu .toast { background:#e0e5ec;border:none;color:var(--neon);box-shadow:var(--shadow-elevated) }
+body.theme-neu .filter-banner { background:#e0e5ec;border:none;box-shadow:var(--neu-in-sm);color:var(--neon) }
+body.theme-neu .member-prog-fill { background:var(--neon) }
+body.theme-neu .fu-card { background:#e0e5ec;border:none;border-radius:16px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neu .member-hd { background:#e0e5ec;border:none;border-radius:14px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neu .nav-logo { filter:none }
+body.theme-neu .task-edit-panel { background:#dde3ea;border:none;box-shadow:var(--neu-in-sm);border-radius:14px !important }
+body.theme-neu .comment-item { background:#e6ebf2;border:none;box-shadow:var(--neu-in-sm) }
+body.theme-neu .ideas-fab { background:linear-gradient(145deg,#8a7df5,#6d60e8);box-shadow:var(--neu-out) }
+body.theme-neu .install-banner { background:#e0e5ec;border:none;box-shadow:var(--shadow-elevated);backdrop-filter:none;-webkit-backdrop-filter:none }
+
+/* ══════════════════════════════════════════════════════
+   THEME: GLASSMORPHISM
+   The showcase glass theme. Deep aurora gradient with
+   drifting colour blobs behind heavy frost. Every surface
+   is translucent; light refracts on hover as a moving
+   sheen. Turn this on to demo what glass can do.
+══════════════════════════════════════════════════════ */
+body.theme-glass {
+  --bg:#0b1023;
+  --bg2:rgba(255,255,255,.07);
+  --bg3:rgba(255,255,255,.12);
+  --panel:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.14);
+  --border2:rgba(255,255,255,.22);
+  --neon:#22d3ee;
+  --neon2:#a78bfa;
+  --purple:#c084fc;
+  --amber:#fbbf24;
+  --red:#fb7185;
+  --text:#f8fafc;
+  --text2:rgba(248,250,252,.72);
+  --text3:rgba(248,250,252,.5);
+  --nav-bg:rgba(255,255,255,.06);
+  --grid:transparent;
+  --shadow-card:0 8px 32px rgba(2,6,23,.35),inset 0 1px 0 rgba(255,255,255,.2);
+  --shadow-elevated:0 16px 48px rgba(2,6,23,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  --shadow-neon:0 4px 24px rgba(34,211,238,.3);
+  --glass-bg:rgba(255,255,255,.08);
+  --glass-blur:blur(28px) saturate(190%);
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.25);
+  background-color:#0b1023;
+}
+/* Aurora: two fixed layers. ::before holds drifting colour blobs (animated,
+   cheap — transform only). Fixed so the aurora stays put while content
+   scrolls over it — parallax for free. */
+body.theme-glass::before {
+  content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 45% 40% at 20% 25%, rgba(34,211,238,.32) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 45% at 80% 20%, rgba(167,139,250,.35) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 45% at 70% 80%, rgba(236,72,153,.24) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 15% 85%, rgba(59,130,246,.28) 0%, transparent 60%);
+  animation:aurora-drift 24s var(--ease-inout) infinite alternate;
+  will-change:transform;
+}
+@keyframes aurora-drift {
+  0%   { transform:translate(0,0) scale(1) rotate(0deg); }
+  50%  { transform:translate(3%,-2%) scale(1.08) rotate(1.5deg); }
+  100% { transform:translate(-3%,2%) scale(1.04) rotate(-1.5deg); }
+}
+body.theme-glass .nav {
+  background:var(--nav-bg);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+body.theme-glass .nav-brand { color:#fff;text-shadow:0 0 24px rgba(34,211,238,.5) }
+body.theme-glass .brand-dot { background:var(--neon);box-shadow:0 0 10px var(--neon) }
+body.theme-glass .panel {
+  background:var(--glass-bg);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid rgba(255,255,255,.16);border-radius:22px !important;
+  box-shadow:var(--shadow-card);
+  position:relative;overflow:hidden;
+}
+/* Refraction edge: a diagonal light streak across each panel's top corner */
+body.theme-glass .panel::after {
+  content:'';position:absolute;top:0;left:0;right:0;height:80px;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.14) 0%,transparent 40%);
+  border-radius:inherit;
+}
+body.theme-glass .panel-title { color:#fff;text-shadow:none }
+body.theme-glass .panel-title::before { background:var(--neon);box-shadow:0 0 10px var(--neon) }
+body.theme-glass .stat-pill {
+  background:rgba(255,255,255,.09);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.16);border-radius:18px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 4px 16px rgba(2,6,23,.3);
+}
+body.theme-glass .sn-g { color:#34d399 !important;text-shadow:0 0 16px rgba(52,211,153,.5) }
+body.theme-glass .sn-a { color:var(--amber) !important;text-shadow:0 0 16px rgba(251,191,36,.45) }
+body.theme-glass .sn-b { color:var(--neon) !important;text-shadow:0 0 16px rgba(34,211,238,.5) }
+body.theme-glass .sn-r { color:var(--red) !important;text-shadow:0 0 16px rgba(251,113,133,.45) }
+body.theme-glass .prog-wrap {
+  background:rgba(255,255,255,.07);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.14);border-radius:18px !important;
+}
+body.theme-glass .prog-track { background:rgba(255,255,255,.1) }
+body.theme-glass .prog-fill { background:linear-gradient(90deg,var(--neon),var(--neon2));box-shadow:0 0 14px rgba(34,211,238,.5) }
+body.theme-glass .prog-pct { color:var(--neon) }
+/* Task cards: lighter frost than panels (they sit ON panels — see the
+   per-card blur cost note in theme-health; same reasoning, so no
+   backdrop-filter here, translucency alone reads fine over the frost) */
+body.theme-glass .task-card {
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);border-radius:18px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 4px 16px rgba(2,6,23,.25);
+}
+body.theme-glass .task-card::before { width:0 }
+body.theme-glass .task-row-compact {
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.13);border-radius:14px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+body.theme-glass .task-row-compact:hover { background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25) }
+body.theme-glass .task-detail { background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1) }
+body.theme-glass .send-btn {
+  background:linear-gradient(135deg,#22d3ee,#818cf8);border:none;border-radius:16px !important;color:#081018;
+  box-shadow:0 4px 20px rgba(34,211,238,.4),inset 0 1px 0 rgba(255,255,255,.4);
+}
+body.theme-glass .mark-done-btn {
+  background:linear-gradient(135deg,#34d399,#10b981);border:none;border-radius:22px !important;color:#052e21;
+  box-shadow:0 4px 20px rgba(52,211,153,.35),inset 0 1px 0 rgba(255,255,255,.4);
+}
+body.theme-glass .mark-done-btn.undone { background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);color:var(--text2);box-shadow:none }
+body.theme-glass .sc-btn { background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);border-radius:20px !important;color:var(--text2) }
+body.theme-glass .m-chip { background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);border-radius:22px !important }
+body.theme-glass .m-chip.sel { background:rgba(34,211,238,.16);border-color:rgba(34,211,238,.5);color:var(--neon) }
+body.theme-glass .p-chip { background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);border-radius:22px !important }
+body.theme-glass .p-chip.pc { background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.4);color:var(--red) }
+body.theme-glass .p-chip.ph { background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.35);color:var(--amber) }
+body.theme-glass .p-chip.pm { background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.4);color:var(--neon) }
+body.theme-glass .p-chip.pl { background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.35);color:#34d399 }
+body.theme-glass .task-input,body.theme-glass .role-input,body.theme-glass .notes-ta {
+  background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff;
+}
+body.theme-glass .task-input:focus { border-color:rgba(34,211,238,.55);box-shadow:0 0 0 3px rgba(34,211,238,.14) }
+body.theme-glass .bottom-nav {
+  background:rgba(255,255,255,.07);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-top:1px solid rgba(255,255,255,.12);
+}
+body.theme-glass .bn-item { color:rgba(248,250,252,.55) }
+body.theme-glass .bn-item.active { color:var(--neon) }
+body.theme-glass .bn-item.active::before { background:var(--neon);box-shadow:0 0 10px var(--neon) }
+body.theme-glass .toast { background:rgba(255,255,255,.12);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-color:rgba(34,211,238,.4);color:var(--neon) }
+body.theme-glass .filter-banner { background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:var(--neon) }
+body.theme-glass .member-prog-fill { background:var(--neon) }
+body.theme-glass .fu-card { background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:16px !important }
+body.theme-glass .member-hd { background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:14px !important }
+body.theme-glass .task-edit-panel { background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px !important }
+body.theme-glass .comment-item { background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12) }
+body.theme-glass .streak-badge { background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3);color:var(--amber) }
