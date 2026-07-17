@@ -1094,17 +1094,18 @@ body {
   to   { transform: translateX(-50%) scaleX(1); }
 }
 
-/* ── PANEL ENTRANCE ──
-   Panels rise gently on page load. One-shot, so no re-render concerns:
-   panels are static containers, only their contents re-render. */
-.panel { animation: panel-rise var(--dur-slow) var(--ease-out) backwards; }
-.panel:nth-of-type(2) { animation-delay: .06s; }
-.panel:nth-of-type(3) { animation-delay: .12s; }
-.panel:nth-of-type(4) { animation-delay: .18s; }
-@keyframes panel-rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* NOTE: panel entrance animation deliberately removed. It was added here
+   as `.panel { animation: panel-rise ... backwards; }`, which conflicts with
+   the pre-existing `.fi { animation: fu ... forwards; }` used all over the
+   app (e.g. `class="panel fi"` on the Dashboard's Task Tracker panel and
+   Input's task/summary panels). Same specificity, later in the cascade, so
+   `.panel` won the animation-name/fill-mode fight — but `backwards` fill-mode
+   does not persist the end state, so once the animation finished the element
+   fell back to `.fi`'s static `opacity:0`, PERMANENTLY. That's why Dashboard
+   and Input silently went blank below the stats — not a data-loading bug,
+   a CSS one. `.fi` (with its existing per-element animation-delay) already
+   does this job correctly everywhere it's used. Don't re-add a competing
+   entrance animation on the bare `.panel` selector. */
 
 /* ── GREETING GRADIENT ──
    The greeting text gets a slow moving gradient — subtle signature touch.
@@ -1153,6 +1154,6 @@ body {
   .greeting-name, .g-name {
     background: none; -webkit-text-fill-color: currentColor; color: var(--text);
   }
-  .panel { animation: none; }
+  /* .panel animation override removed — the animation itself was removed above */
   .task-detail.open { animation: none; }
 }
