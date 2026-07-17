@@ -1415,12 +1415,14 @@ let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed d
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 let sprintTaskIds = new Set();
 let sprintOpen = true;
-loadSprint();
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
 let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
 
 // ── WEEKLY SPRINT ──────────────────────────────────────────────────────────
+// Per-user — stored on this person's own Firestore user doc (same doc as
+// notes/broadcastEnabled) so it syncs across all of THEIR devices, and stays
+// completely separate from every other team member's "This Week" list.
 const SPRINT_MAX = 10;
 // sprintTaskIds and sprintOpen declared at top
 
@@ -1435,25 +1437,35 @@ function getWeekKey() {
   return y + '-W' + String(week).padStart(2,'0');
 }
 
-function loadSprint() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('wd_sprint') || '{}');
-    const wk = getWeekKey();
-    if (stored.week === wk) {
+// Called once MY_NAME is confirmed (see initNotes() call site) — loads this
+// person's sprint from Firestore and wires a live listener so edits made on
+// one of their devices show up instantly on their others.
+let _sprintInitialized = false;
+function initSprint() {
+  if (!MY_NAME || _sprintInitialized) return;
+  _sprintInitialized = true;
+
+  const applySprintData = (data) => {
+    const stored = data?.sprint;
+    if (stored && stored.week === getWeekKey()) {
       sprintTaskIds = new Set(stored.ids || []);
     } else {
-      // New week — reset sprint
       sprintTaskIds = new Set();
-      saveSprint();
+      if (stored) saveSprint(); // stale week from a previous session — reset it in Firestore too
     }
-  } catch(e) { sprintTaskIds = new Set(); }
+    renderAll();
+  };
+
+  getUserData(MY_NAME).then(applySprintData);
+  // Live listener — keeps this person's sprint synced across their own devices
+  onUserDataChanged(MY_NAME, applySprintData);
 }
 
 function saveSprint() {
-  localStorage.setItem('wd_sprint', JSON.stringify({
-    week: getWeekKey(),
-    ids: [...sprintTaskIds],
-  }));
+  if (!MY_NAME) return;
+  saveUserData(MY_NAME, {
+    sprint: { week: getWeekKey(), ids: [...sprintTaskIds] },
+  });
 }
 
 window.toggleSprintTask = (taskId) => {
@@ -1572,6 +1584,7 @@ onUserReady(async () => {
     if (loader) {
       loader.style.display = 'none';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
+      initSprint(); // load this user's personal "This Week" list and wire live sync
       // Show broadcast button — check permission from Firestore
       const adminBtn = document.getElementById('ann-admin-btn');
       const isAdminUser = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();

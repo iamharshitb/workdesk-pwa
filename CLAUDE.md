@@ -251,24 +251,36 @@ workspaces/
 
 ## Weekly Sprint Details
 
-```javascript
-// localStorage key
-'wd_sprint' → { week: 'YYYY-Www', ids: ['taskId1', 'taskId2', ...] }
+**Per-user, synced via Firestore** (changed from localStorage — see below). Each person's "This Week" list lives on their own Firestore user doc, the same doc used for Quick Notes and `broadcastEnabled`:
 
+```
+workspaces/{WORKSPACE_ID}/users/{userNameLowercase}
+  { notes, broadcastEnabled, sprint: { week: 'YYYY-Www', ids: ['taskId1', ...] } }
+```
+
+Because it's keyed by lowercase name (not device), the same person's sprint syncs across all their devices, while staying completely separate from every other team member's list — nobody sees anyone else's "This Week" selections.
+
+```javascript
 // Key functions
 getWeekKey()           // returns 'YYYY-Www' based on Monday
-loadSprint()           // loads from localStorage, resets if new week
-saveSprint()           // saves to localStorage
+initSprint()           // call once MY_NAME is confirmed — loads from Firestore
+                       // + wires onUserDataChanged live listener (guarded by
+                       // _sprintInitialized so it only wires once, even though
+                       // the surrounding onTasksChanged block re-fires on every
+                       // task update — see "loader re-fire" note below)
+saveSprint()           // writes { sprint: {week, ids} } to this user's Firestore doc
 window.toggleSprintTask(taskId)  // add/remove task from sprint
-window.toggleSprintPanel()       // collapse/expand sprint section
+window.toggleSprintPanel()       // collapse/expand sprint section (local UI state only)
 
 // Constants
 const SPRINT_MAX = 10
-let sprintTaskIds = new Set()  // MUST be declared before loadSprint() is called
+let sprintTaskIds = new Set()
 let sprintOpen = true
 ```
 
-**Critical:** `sprintTaskIds` and `sprintOpen` must be declared **before** `loadSprint()` is called, otherwise you get `ReferenceError: Cannot access 'sprintTaskIds' before initialization`.
+**"Loader re-fire" gotcha:** the block that calls `initNotes()` / `initSprint()` lives inside the `onTasksChanged` callback, gated by `if (loader) {...}` — but `loader.style.display='none'` never actually removes the element, so that whole block (including `initNotes()` and `onAnnouncementChanged(...)`) re-runs on **every** task snapshot, not just once. `initNotes()` already re-attaches its textarea listener each time (pre-existing, harmless-ish). `initSprint()` is explicitly guarded with `_sprintInitialized` so it only calls `getUserData`/`onUserDataChanged` once per session — don't remove that guard, or sprint sync will pile up duplicate Firestore listeners over a long session.
+
+**Previously (until [this session]):** sprint data was stored in `localStorage` under `wd_sprint` — per-device, not per-person, and never synced. Migrated to Firestore because tasks marked "This Week" on one device weren't showing up on the same person's other devices.
 
 ---
 
