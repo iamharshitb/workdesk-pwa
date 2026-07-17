@@ -910,8 +910,10 @@ body {
   position: fixed;
   bottom: 76px;
   left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--bg2);
+  transform: translateX(-50%) translateY(20px) scale(.9);
+  background: color-mix(in srgb, var(--bg2) 80%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgba(10,132,255,.2);
   border-radius: 10px;
   padding: 10px 18px;
@@ -920,12 +922,12 @@ body {
   color: var(--neon);
   z-index: 9999;
   opacity: 0;
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
   white-space: nowrap;
   box-shadow: var(--shadow-elevated);
   pointer-events: none;
 }
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 .toast.err  { border-color: rgba(240,62,95,.25); color: var(--red); }
 
 /* ── LOADER ────────────────────────────────────────────────────────────── */
@@ -951,13 +953,4 @@ body {
 }
 @keyframes fu {
   to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── STANDARD THEME EXPLICIT RESET ── */
-/* When theme-'' is applied, ensure no other theme bleeds in */
-body.theme- {
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(ellipse 70% 50% at 100% 0%,  rgba(10,132,255,.07) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 0%  100%,  rgba(94,92,230,.05)  0%, transparent 55%);
 }
