@@ -115,7 +115,7 @@ Every `transition` in `style.css` and `index.html` now routes through these. Pre
 --glass-edge   inset highlight along the top edge
 ```
 
-**Glass only works if something is behind it.** Light theme's `body` has a three-stop radial gradient mesh (`background-attachment:fixed`) specifically so translucent surfaces have something to reveal. Before this, `theme-health` set `background-image:none` over a flat `#f2f2f7` and made panels `#fff` opaque — so every `backdrop-filter` in the theme was a no-op costing a compositing layer for zero visual gain. **If you ever flatten the body background, the glass silently dies.**
+**Glass only works if something is behind it.** This was learned the hard way on the old Light theme (`theme-health`, removed — see below): it set `background-image:none` over a flat `#f2f2f7` and made panels `#fff` opaque, so every `backdrop-filter` was a no-op costing a compositing layer for zero visual gain. Glassmorphism avoids this via the aurora blobs on `body::before`. **The general rule stands for any future light/translucent theme: flatten the body background and glass silently dies.**
 
 Glass is applied to: `.nav`, `.bottom-nav`, `.panel`, `.prog-wrap`, `.toast`, `.install-banner`. It is deliberately **not** applied to `.task-card` / `.task-row-compact` — those are plain translucent fills that composite over the panel's frost. Giving each card its own `backdrop-filter` stacks a blur layer per card and gets expensive on mid-range Android past ~20 tasks.
 
@@ -176,23 +176,24 @@ Fires from inside `onTasksChanged`'s existing `type === 'added'` + `assignedToMe
 
 `--shadow-card` / `--shadow-elevated` / `--shadow-neon`, layered (contact + ambient) and **tinted to the surface**, not black.
 
-⚠️ **Light themes MUST override `--shadow-elevated`.** The `:root` default is `rgba(0,0,0,.6)` — built for the old near-black Standard theme. It used to leak into Light theme (which only overrode `--shadow-card`), painting a 60%-black shadow on a white page — it read as a grey smudge on `.task-card:hover` and `.toast`. `:root` is still a dark palette that no selectable theme uses; treat it as the fallback layer, and assume anything a theme doesn't override falls through to dark values.
+⚠️ **Any light-background theme MUST override `--shadow-elevated`.** The `:root` default is `rgba(0,0,0,.6)` — built for the old near-black Standard theme (removed). This bit the old Light theme (also removed, see below), which only overrode `--shadow-card` and ended up painting a 60%-black shadow on a white page — read as a grey smudge on `.task-card:hover` and `.toast`. `:root` is still a dark palette that no current theme uses; treat it as the fallback layer, and assume anything a theme doesn't override falls through to dark values. Skeuomorphism and Neumorphism both override `--shadow-elevated` correctly — check them for reference before adding another light theme.
 
 ---
 
-## Themes (5 total)
+## Themes (4 total)
 
 | ID | Name | Description |
 |----|------|-------------|
-| `health` | Light | iOS Health pastel white + gradient mesh (default) |
-| `frosted` | Frosted Glass | Heavy blur, translucent |
 | `editorial` | Editorial | Inter font, #F3F3F5 bg, Linear/Notion style |
-| `neu` | Neumorphism | Soft UI on #e0e5ec clay; `--neu-out`/`--neu-in` shadow pairs define raised vs pressed — no borders anywhere, `--glass-blur:none` (opaque material), body background MUST stay flat or the light model breaks. Contrast is the style's endemic weakness: text alphas (.85/.8) and accent #2d56d8 are measured AA minimums — don't lighten them |
-| `glass` | Glassmorphism | Showcase glass: aurora blobs drift on `body::before` (transform-only animation, `position:fixed` for free parallax), panels get a `::after` refraction streak. Task cards deliberately have NO backdrop-filter (per-card blur cost — see theme-health note) |
+| `neu` | Neumorphism | **Default.** Soft UI on #e0e5ec clay; `--neu-out`/`--neu-in` shadow pairs define raised vs pressed — no borders anywhere, `--glass-blur:none` (opaque material), body background MUST stay flat or the light model breaks. Contrast is the style's endemic weakness: text alphas (.85/.8) and accent #2d56d8 are measured AA minimums — don't lighten them |
+| `glass` | Glassmorphism | Showcase glass: aurora blobs drift on `body::before` (transform-only animation, `position:fixed` for free parallax), panels get a `::after` refraction streak. Task cards deliberately have NO backdrop-filter (per-card blur cost — cards sit ON already-frosted panels, a blur per card stacks up fast on mid-range Android past ~20 tasks) |
+| `skeu` | Skeuomorphism | Leather/paper/brass — digital objects that look like their real-world counterparts, the opposite instinct from Neumorphism despite the similar name (see below). Realistic single-direction drop shadows (`--shadow-card`/`--shadow-elevated`), a dog-eared corner (`::after` triangle) on every `.panel`, dashed-double-border "stitching" on the leather nav/bottom-nav, glossy buttons via a permanent `::after` highlight overlay (deliberately `::after` not `::before` — the shared alive-layer hover-sheen in style.css already owns `::before` on `.send-btn`/`.mark-done-btn`, so both effects layer without conflict). `--glass-blur:none` — paper, no blur anywhere. Text alphas (.78/.68) and the accent palette (esp. `--amber:#8f5f19`, darkened from a "true" brass which failed AA at 2.75:1) are measured minimums on the card bg `#fbf3e0` — don't lighten them. Intentionally the busiest-looking theme of the four; that's the aesthetic |
 
-Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as body class e.g. `body.theme-editorial`.
+Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as body class e.g. `body.theme-editorial`. Default theme is set in `getValidTheme()` in `js/theme.js` (currently `'neu'`) — that function already falls back gracefully to the default for ANY unrecognized/removed theme id in localStorage, so removing a theme from `THEMES` never needs a matching migration branch.
 
-**Removed (previously 7 total):** Standard (empty id), iOS Fans (`bigsur`), Dark (`ios-system`), and Neon (`neon`) were removed from the picker and stripped out of `css/themes.css`. A few orphaned/unused theme blocks (`theme-ios`, `theme-ember`, `theme-matrix`) still sit in `css/themes.css` from earlier iterations but are unreachable from the UI — leave alone unless asked to clean up further.
+**Neumorphism vs Skeuomorphism — don't confuse these despite the similar names:** Neumorphism is abstract (one continuous material, depth from soft dual shadows only, no literal textures). Skeuomorphism is literal (real textures, real object references — leather, paper, brass). Historically skeuomorphism (~2007–2013, early iOS) came first; flat design killed it; neumorphism (~2019–2020) was a partial reaction back toward physicality/depth without bringing back literal ornamentation. If asked to adjust one, make sure it's the intended one.
+
+**Removed (previously 7 total):** Standard (empty id), iOS Fans (`bigsur`), Dark (`ios-system`), Neon (`neon`), Light (`health`), and Frosted Glass (`frosted`) were removed from the picker and stripped out of `css/themes.css`. A few orphaned/unused theme blocks (`theme-ios`, `theme-ember`, `theme-matrix`) still sit in `css/themes.css` from earlier iterations but are unreachable from the UI — leave alone unless asked to clean up further.
 
 ---
 
