@@ -1302,6 +1302,7 @@
     <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
     <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
     <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
+    <button class="btn-theme-toggle" id="notif-btn" onclick="handleNotifToggle()" title="Task notifications">🔕</button>
   </div>
 </nav>
 
@@ -1705,6 +1706,102 @@ function updateMuteBtn() {
 window.handleMuteToggle = () => { toggleMute(); updateMuteBtn(); };
 updateMuteBtn();
 
+// ── TASK NOTIFICATIONS ──────────────────────────────────────────────────────
+// "Lighter" version, deliberately: no backend, no Firebase Cloud Messaging, no
+// Cloud Functions. This piggybacks on the Firestore listener that's already
+// running (see onTasksChanged below) — so it only fires while WorkDesk's JS is
+// alive somewhere on this device (foreground, background tab, or an installed
+// PWA that hasn't been fully closed). It will NOT wake the phone from a fully
+// closed app or a locked screen — that needs real push (Cloud Functions +
+// FCM), which is a separate, heavier build. See CLAUDE.md if that's ever
+// wanted later.
+//
+// Notifications are displayed via the already-registered service worker's
+// showNotification(), NOT `new Notification(...)`. The plain constructor
+// throws a TypeError on nearly all mobile browsers, including Android Chrome
+// — MDN is explicit about this. It only "works" on desktop, which would have
+// meant this silently never fired on anyone's phone.
+//
+// Two independent layers of "off": the browser-level permission
+// (Notification.permission — 'granted'/'denied'/'default', can't be
+// overridden by us once denied) and an app-level mute
+// (localStorage.wd_notif_enabled) so someone who granted permission can
+// still quiet WorkDesk specifically without digging into browser settings.
+function notifEnabled() {
+  return 'Notification' in window
+    && Notification.permission === 'granted'
+    && localStorage.getItem('wd_notif_enabled') !== 'false';
+}
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+  if (Notification.permission === 'denied') {
+    btn.textContent = '🔕';
+    btn.title = 'Notifications blocked — re-enable them in your browser/site settings';
+  } else if (notifEnabled()) {
+    btn.textContent = '🔔';
+    btn.title = 'Task notifications on — tap to mute';
+  } else {
+    btn.textContent = '🔕';
+    btn.title = Notification.permission === 'granted'
+      ? 'Task notifications muted — tap to turn on'
+      : 'Get notified when a task is assigned to you (while WorkDesk is open)';
+  }
+}
+window.handleNotifToggle = async () => {
+  if (!('Notification' in window)) {
+    toast('Notifications aren\u2019t supported in this browser');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    toast('Blocked at browser level — check site settings to re-enable');
+    return;
+  }
+  if (Notification.permission === 'default') {
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      localStorage.setItem('wd_notif_enabled', 'true');
+      toast('🔔 Notifications on — you\u2019ll get an alert when a task is assigned to you while WorkDesk is open');
+    } else {
+      toast('Notifications not enabled');
+    }
+    updateNotifBtn();
+    return;
+  }
+  // Already granted at browser level — this toggles WorkDesk's own mute flag
+  const nowEnabled = localStorage.getItem('wd_notif_enabled') === 'false';
+  localStorage.setItem('wd_notif_enabled', nowEnabled ? 'true' : 'false');
+  toast(nowEnabled ? '🔔 Notifications on' : '🔕 Notifications muted');
+  updateNotifBtn();
+};
+updateNotifBtn();
+
+// Called from onTasksChanged when a task is newly assigned to this person.
+// Skips quietly (not an error) if permission/support/mute state says no, or
+// if the person is already looking at WorkDesk right now — the existing
+// toast + sound already cover that case, a system notification on top would
+// just be double-signalling the same thing.
+async function maybeShowTaskNotification(task) {
+  if (!notifEnabled()) return;
+  if (document.visibilityState === 'visible') return;
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    reg.showNotification('New task assigned', {
+      body: task.label || 'A new task was added for you',
+      icon: '/workdesk-pwa/icons/icon-192.png',
+      badge: '/workdesk-pwa/icons/icon-192.png',
+      tag: 'wd-task-' + task.id, // re-notifying the same task replaces rather than stacks
+      data: { taskId: task.id },
+    });
+  } catch (e) {
+    // Fails silently — a missed local notification isn't worth surfacing an
+    // error over, and this can legitimately fail on browsers with partial
+    // support without it being a bug.
+  }
+}
+
 // ── WELCOME SCREEN ───────────────────────────────────────────────────────
 async function showWelcomeScreen() {
   return new Promise(async resolve => {
@@ -1763,6 +1860,7 @@ onUserReady(async () => {
         if (assignedToMe) {
           playTaskAssigned();
           toast('📋 New task assigned to you!');
+          maybeShowTaskNotification(task);
         }
       }
       if (type === 'modified') {
