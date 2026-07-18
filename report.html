@@ -200,9 +200,145 @@
   .rpt-panel { display:block !important }
   .rpt-chart-card, .rpt-project, .rpt-stat, .rpt-task { break-inside:avoid }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   QUARTERLY REPORT — magazine-style on-screen preview.
+   The exported/shared version is a SEPARATE hand-built HTML document (see
+   window.exportQuarterlyPDF) using inline styles so it survives being
+   printed/PDF'd in a blank popup window with no access to this stylesheet.
+   This on-screen version reuses theme tokens so it matches whichever theme
+   the person has active.
+   ═══════════════════════════════════════════════════════════════════════ */
+.qr-controls {
+  display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;
+}
+.qr-sel {
+  background:var(--bg2); border:1px solid var(--border2); border-radius:9px;
+  padding:7px 11px; color:var(--text); font-family:var(--sans); font-size:13px;
+  font-weight:600; outline:none; cursor:pointer; -webkit-appearance:none;
+}
+.qr-share-btn {
+  margin-left:auto; flex-shrink:0;
+  background:linear-gradient(135deg,var(--neon),var(--purple)); color:#fff;
+  border:none; border-radius:10px; padding:8px 16px;
+  font-family:var(--sans); font-size:12px; font-weight:800; cursor:pointer;
+  box-shadow:0 4px 16px rgba(10,132,255,.3);
+  transition:transform var(--dur-fast) var(--ease-spring);
+}
+.qr-share-btn:active { transform:scale(.95) }
+.qr-copy-btn {
+  flex-shrink:0; background:var(--bg2); border:1px solid var(--border2);
+  border-radius:10px; padding:8px 14px; color:var(--text2);
+  font-family:var(--sans); font-size:12px; font-weight:700; cursor:pointer;
+}
+
+/* Hero */
+.qr-hero {
+  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#0f1420,#1a2138 60%,#221a38);
+  border-radius:var(--rrr); padding:24px 20px; margin-bottom:14px;
+  color:#fff;
+}
+.qr-hero::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 0%, rgba(34,211,238,.25) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 50% at 100% 100%, rgba(167,139,250,.22) 0%, transparent 60%);
+}
+.qr-hero-eyebrow {
+  position:relative; font-size:10px; font-weight:800; letter-spacing:.12em;
+  text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:6px;
+}
+.qr-hero-title {
+  position:relative; font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.1;
+}
+.qr-hero-sub { position:relative; font-size:13px; color:rgba(255,255,255,.65); margin-top:4px }
+.qr-hero-headline {
+  position:relative; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.14);
+  font-size:14px; line-height:1.55; color:rgba(255,255,255,.92);
+}
+.qr-hero-headline b { color:#fff }
+
+/* Stat strip */
+.qr-stat-strip { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px }
+.qr-stat-card {
+  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--rr);
+  padding:14px; box-shadow:var(--shadow-card);
+}
+.qr-stat-card-n { font-family:var(--mono); font-size:24px; font-weight:600; line-height:1 }
+.qr-stat-card-l { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.07em; margin-top:5px }
+.qr-stat-card-trend { font-size:10px; font-weight:700; margin-top:4px }
+.qr-stat-card-trend.up { color:var(--green) }
+.qr-stat-card-trend.down { color:var(--red) }
+
+/* Section header, magazine-style rule */
+.qr-sec { margin-top:22px; margin-bottom:12px }
+.qr-sec-eyebrow {
+  font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--neon); margin-bottom:2px;
+}
+.qr-sec-title { font-size:17px; font-weight:800; color:var(--text); letter-spacing:-.01em }
+.qr-sec-rule { height:2px; background:linear-gradient(90deg,var(--neon),transparent); margin-top:8px; border-radius:1px }
+
+/* Leaderboard */
+.qr-lb-row {
+  display:flex; align-items:center; gap:11px;
+  padding:11px 12px; background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--rr); margin-bottom:7px;
+}
+.qr-lb-rank {
+  flex-shrink:0; width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:12px; font-weight:700;
+  background:var(--bg3); color:var(--text2);
+}
+.qr-lb-rank.r1 { background:linear-gradient(135deg,#ffd76a,#f5a623); color:#5a3d00 }
+.qr-lb-rank.r2 { background:linear-gradient(135deg,#e2e8f0,#b8c2cf); color:#2d3748 }
+.qr-lb-rank.r3 { background:linear-gradient(135deg,#e8b088,#c47a4f); color:#3d1f0a }
+.qr-lb-body { flex:1; min-width:0 }
+.qr-lb-name { font-size:13px; font-weight:700; color:var(--text) }
+.qr-lb-meta { font-size:11px; color:var(--text3); margin-top:1px }
+.qr-lb-bar-wrap { width:100%; height:5px; background:var(--bg3); border-radius:3px; margin-top:6px; overflow:hidden }
+.qr-lb-bar { height:100%; border-radius:3px; transition:width var(--dur-slow) var(--ease-out) }
+.qr-lb-pct { flex-shrink:0; font-family:var(--mono); font-size:15px; font-weight:600 }
+
+/* Project spotlight cards */
+.qr-proj-grid { display:flex; flex-direction:column; gap:8px }
+.qr-proj-card {
+  background:var(--bg2); border:1px solid var(--border2); border-left:3px solid var(--neon);
+  border-radius:var(--rr); padding:12px 13px;
+}
+.qr-proj-card.done { border-left-color:var(--green) }
+.qr-proj-top { display:flex; align-items:center; justify-content:space-between; gap:8px }
+.qr-proj-name { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px }
+.qr-proj-badge {
+  font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  padding:2px 7px; border-radius:20px; background:rgba(48,209,88,.14); color:var(--green);
+}
+.qr-proj-pct { font-family:var(--mono); font-size:15px; font-weight:600 }
+.qr-proj-bar-wrap { width:100%; height:5px; background:var(--bg3); border-radius:3px; margin-top:8px; overflow:hidden }
+.qr-proj-bar { height:100%; border-radius:3px }
+.qr-proj-meta { font-size:11px; color:var(--text3); margin-top:6px }
+
+/* Trend chart card */
+.qr-chart-card {
+  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--rr);
+  padding:14px; height:170px;
+}
+
+/* ── PERFORMANCE MODE TOGGLE (My Report tab) ── */
+.perf-mode-row { display:flex; gap:6px; margin-bottom:8px }
+.perf-mode-btn {
+  flex:1; padding:7px; border-radius:9px; border:1px solid var(--border2);
+  background:var(--bg2); color:var(--text2); font-family:var(--sans);
+  font-size:11px; font-weight:700; cursor:pointer; transition:all var(--dur-fast) var(--ease-out);
+}
+.perf-mode-btn.active { background:var(--neon); color:#fff; border-color:var(--neon) }
 </style>
 </head>
 <body>
+
+<div class="toast" id="toast"></div>
 
 <nav class="nav">
   <a class="nav-brand" href="index.html">
@@ -227,7 +363,8 @@
 <div class="rpt-tabs" style="border-bottom:none;flex:1">
   <button class="rpt-tab active" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
   <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
-  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">My Report</button>
+  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">Performance</button>
+  <button class="rpt-tab" id="tab-quarterly" onclick="switchRptTab('quarterly')">Quarterly</button>
 </div>
 <button id="rpt-filter-btn" onclick="toggleRptFilters()"
   style="display:none;flex-shrink:0;margin-right:12px;padding:5px 12px;
@@ -267,18 +404,28 @@
   </div>
 </div>
 
-<!-- ═══ MY REPORT PANEL ═══ -->
+<!-- ═══ PERFORMANCE PANEL (formerly "My Report") ═══
+     Gauges either a member's or a project's completion performance across
+     Week / Month / Quarter / Overall. Mode toggle swaps the dropdown between
+     members and projects; getMyReportTasks()/renderMyReport() branch on
+     perfMode to filter accordingly (project mode = all tasks under that
+     project regardless of assignee, rather than one person's tasks). -->
 <div class="rpt-panel page" id="panel-myreport" style="padding-top:12px">
-  <!-- Member selector + period + export -->
+  <div class="perf-mode-row">
+    <button class="perf-mode-btn active" data-mode="member" onclick="setPerfMode('member',this)">👤 By Member</button>
+    <button class="perf-mode-btn" data-mode="project" onclick="setPerfMode('project',this)">📁 By Project</button>
+  </div>
+  <!-- Member/project selector + period + export -->
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <select id="my-report-member" onchange="renderMyReport()"
       style="background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;flex:1;-webkit-appearance:none"></select>
     <button onclick="exportMyReportPDF()" class="rpt-export-btn" style="flex-shrink:0">⬇ PDF</button>
   </div>
   <div class="rpt-period-row">
-    <button class="rpt-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)">This Month</button>
     <button class="rpt-period-btn" data-period="week" onclick="setMyReportPeriod('week',this)">Last Week</button>
+    <button class="rpt-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)">This Month</button>
     <button class="rpt-period-btn" data-period="quarter" onclick="setMyReportPeriod('quarter',this)">Last Quarter</button>
+    <button class="rpt-period-btn" data-period="overall" onclick="setMyReportPeriod('overall',this)">Overall</button>
   </div>
   <div id="my-report-content" style="margin-top:4px">
     <div class="rpt-empty"><div class="rpt-empty-icon">👤</div>Select a period above</div>
@@ -289,6 +436,23 @@
 <div class="rpt-panel page" id="panel-weekly" style="padding-top:12px">
   <div id="weekly-content">
     <div class="rpt-empty"><div class="rpt-empty-icon">📅</div>Loading…</div>
+  </div>
+</div>
+
+<!-- ═══ QUARTERLY REPORT PANEL ═══
+     The flagship, management-facing report. On-screen preview here; the
+     "Share Report" button generates a separate, fully self-contained
+     magazine-styled HTML document (window.exportQuarterlyPDF) in a new tab,
+     ready to Print → Save as PDF and send on. -->
+<div class="rpt-panel page" id="panel-quarterly" style="padding-top:12px">
+  <div class="qr-controls">
+    <select id="qr-quarter-sel" class="qr-sel" onchange="renderQuarterly()"></select>
+    <select id="qr-year-sel" class="qr-sel" onchange="renderQuarterly()"></select>
+    <button class="qr-copy-btn" onclick="copyQuarterlySummary()">📋 Copy Summary</button>
+    <button class="qr-share-btn" onclick="exportQuarterlyPDF()">📤 Share Report</button>
+  </div>
+  <div id="quarterly-content">
+    <div class="rpt-empty"><div class="rpt-empty-icon">🏆</div>Loading…</div>
   </div>
 </div>
 
@@ -317,7 +481,9 @@ let selMonth='';
 let activeFilters={project:'',member:'',priority:'',status:''};
 let chartInstances={};
 let myReportPeriod='month';
+let perfMode='member';           // 'member' | 'project' — drives the Performance tab
 let activeRptTab='monthly';
+let qrChartInstance=null;
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const pad=n=>String(n).padStart(2,'0');
@@ -349,10 +515,24 @@ onUserReady(async()=>{
   renderActiveTab();
 });
 
+// ── INIT QUARTER/YEAR SELECTORS ─────────────────────────────────────────────
+function getCurrentQuarter(){ return Math.floor(new Date().getMonth()/3)+1; }
+(function initQuarterSelectors(){
+  const qSel=document.getElementById('qr-quarter-sel');
+  const ySel=document.getElementById('qr-year-sel');
+  if(!qSel||!ySel) return;
+  qSel.innerHTML=[1,2,3,4].map(q=>`<option value="${q}"${q===getCurrentQuarter()?' selected':''}>Q${q} ${['(Jan–Mar)','(Apr–Jun)','(Jul–Sep)','(Oct–Dec)'][q-1]}</option>`).join('');
+  const curY=new Date().getFullYear();
+  let yOpts='';
+  for(let y=curY;y>=curY-2;y--) yOpts+=`<option value="${y}"${y===curY?' selected':''}>${y}</option>`;
+  ySel.innerHTML=yOpts;
+})();
+
 function renderActiveTab(){
-  if(activeRptTab==='monthly')  renderMonthly();
-  if(activeRptTab==='myreport') renderMyReport();
-  if(activeRptTab==='weekly')   renderWeekly();
+  if(activeRptTab==='monthly')   renderMonthly();
+  if(activeRptTab==='myreport')  renderMyReport();
+  if(activeRptTab==='weekly')    renderWeekly();
+  if(activeRptTab==='quarterly') renderQuarterly();
 }
 
 // ── TAB SWITCHING ──────────────────────────────────────────────────────────
@@ -710,11 +890,23 @@ window.toggleProject=(id)=>{
 // ── MY REPORT ──────────────────────────────────────────────────────────────
 function populateMemberSelector(){
   const sel=document.getElementById('my-report-member');
+  if(perfMode==='project'){
+    const projects=[...new Set(allTasks.map(t=>t.project).filter(Boolean))].sort();
+    sel.innerHTML=projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+    return;
+  }
   const myName=localStorage.getItem('wd_myname')||'';
   const isAdmin=myName.toLowerCase()==='harshit';
   const viewable=isAdmin?allMembers:allMembers.filter(m=>m.name.toLowerCase()===myName.toLowerCase());
   sel.innerHTML=viewable.map(m=>`<option value="${m.id}"${m.name.toLowerCase()===myName.toLowerCase()?' selected':''}>${esc(m.name)}</option>`).join('');
 }
+
+window.setPerfMode=(mode,btn)=>{
+  perfMode=mode;
+  document.querySelectorAll('.perf-mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  populateMemberSelector();
+  renderMyReport();
+};
 
 window.setMyReportPeriod=(period,btn)=>{
   myReportPeriod=period;
@@ -722,13 +914,38 @@ window.setMyReportPeriod=(period,btn)=>{
   renderMyReport();
 };
 
-function getMyReportTasks(memberId){
+function getMyReportTasks(id){
   const now=new Date();
-  const memberObj=allMembers.find(m=>m.id===memberId);
+
+  // ── PROJECT MODE: id is the project name itself, not a member id ──
+  if(perfMode==='project'){
+    const isMine=t=>(t.project||'')===id;
+    if(myReportPeriod==='week'){
+      const cutoff=new Date(now); cutoff.setDate(cutoff.getDate()-7);
+      return allTasks.filter(t=>{
+        if(!isMine(t)) return false;
+        if(t.status!=='done') return true;
+        const ca=t.completedAt?(t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt)):null;
+        const cr=t.createdAt?(t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt)):null;
+        return (ca&&ca>=cutoff)||(cr&&cr>=cutoff);
+      });
+    } else if(myReportPeriod==='quarter'){
+      const months=[];
+      for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);}
+      return allTasks.filter(t=>isMine(t)&&months.includes(t.month));
+    } else if(myReportPeriod==='overall'){
+      return allTasks.filter(isMine);
+    } else {
+      return allTasks.filter(t=>t.month===selMonth&&isMine(t));
+    }
+  }
+
+  // ── MEMBER MODE (original behaviour) ──
+  const memberObj=allMembers.find(m=>m.id===id);
   const memberName=memberObj?memberObj.name.toLowerCase():'';
   const isMine=t=>memberName
     ?(t.members||[]).some(m=>m.name&&m.name.toLowerCase()===memberName)
-    :(t.members||[]).some(m=>m.id===memberId);
+    :(t.members||[]).some(m=>m.id===id);
 
   if(myReportPeriod==='week'){
     const cutoff=new Date(now); cutoff.setDate(cutoff.getDate()-7);
@@ -743,6 +960,8 @@ function getMyReportTasks(memberId){
     const months=[];
     for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);}
     return allTasks.filter(t=>isMine(t)&&months.includes(t.month));
+  } else if(myReportPeriod==='overall'){
+    return allTasks.filter(isMine);
   } else {
     return allTasks.filter(t=>t.month===selMonth&&isMine(t));
   }
@@ -751,20 +970,97 @@ function getMyReportTasks(memberId){
 function getPeriodLabel(){
   if(myReportPeriod==='week') return 'Last 7 Days';
   if(myReportPeriod==='quarter') return 'Last Quarter (3 months)';
+  if(myReportPeriod==='overall') return 'All Time';
   return monthLabel(selMonth);
 }
 
+// Completion check that respects per-member status on shared tasks
+// (t.memberStatus) when it exists, falling back to the task's own status.
+function isDoneForMember(t, memberName){
+  const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===memberName.toLowerCase())?.id;
+  return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';
+}
+
 window.renderMyReport=()=>{
-  const sel=document.getElementById('my-report-member');
-  const memberId=sel?.value;
-  const member=allMembers.find(m=>m.id===memberId);
   const el=document.getElementById('my-report-content');
+  const sel=document.getElementById('my-report-member');
+  const id=sel?.value;
+
+  if(perfMode==='project'){
+    if(!id){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📁</div>No project selected</div>`;return;}
+    const mt=getMyReportTasks(id);
+    if(!mt.length){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📋</div>No tasks found for ${getPeriodLabel()}</div>`;return;}
+
+    const totalDone=mt.filter(t=>t.status==='done').length;
+    const total=mt.length;
+    const pct=total?Math.round(totalDone/total*100):0;
+    const pc=pctColor(pct);
+    const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
+
+    // Group by contributing member instead of by project (there's only one
+    // project in this view) — shows who's doing the work on this project.
+    const byMember={};
+    mt.forEach(t=>{
+      const names=(t.members||[]).map(m=>m.name).filter(Boolean);
+      if(!names.length) names.push('Unassigned');
+      names.forEach(n=>{ (byMember[n]||=[]).push(t); });
+    });
+    const memberKeys=Object.keys(byMember).sort((a,b)=>byMember[b].length-byMember[a].length);
+
+    el.innerHTML=`
+      <div class="panel" style="padding:14px 16px;margin-bottom:12px">
+        <div class="rpt-ring-wrap">
+          <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
+            <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
+            <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
+              stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+              stroke-linecap="round" transform="rotate(-90 42 42)"/>
+            <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
+          </svg>
+          <div class="rpt-ring-labels">
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px">📁 ${esc(id)}</div>
+            <div class="rpt-ring-pct" style="color:${pc};font-size:18px">${pct}% complete</div>
+            <div class="rpt-ring-sub">${totalDone}/${total} tasks · ${getPeriodLabel()}</div>
+          </div>
+        </div>
+      </div>
+      <div class="rpt-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+        <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
+        <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${totalDone}</div><div class="rpt-stat-l">Done</div></div>
+        <div class="rpt-stat"><div class="rpt-stat-n" style="color:${pc}">${pct}%</div><div class="rpt-stat-l">Complete</div></div>
+      </div>
+      <div class="rpt-sec-hd"><div class="rpt-sec-title">By Contributor</div></div>
+      ${memberKeys.map((name,idx)=>{
+        const pt=byMember[name];
+        const pd=pt.filter(t=>t.status==='done').length;
+        const pp=pt.length?Math.round(pd/pt.length*100):0;
+        const pc2=pctColor(pp);
+        return `<div class="rpt-project">
+          <div class="rpt-project-hd" onclick="toggleProject('mrp-${idx}')">
+            <div class="rpt-project-name">👤 ${esc(name)}</div>
+            <div class="rpt-project-meta">
+              <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
+              <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
+              <span class="rpt-project-arrow" id="mrp-arr-${idx}">▾</span>
+            </div>
+          </div>
+          <div class="rpt-project-body" id="mrp-${idx}" style="display:none">
+            ${pt.map(t=>taskRowHTML(t)).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+    return;
+  }
+
+  // ── MEMBER MODE (original behaviour) ──
+  const member=allMembers.find(m=>m.id===id);
   if(!member){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">👤</div>No member selected</div>`;return;}
 
-  const mt=getMyReportTasks(memberId);
+  const mt=getMyReportTasks(id);
   if(!mt.length){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📋</div>No tasks found for ${getPeriodLabel()}</div>`;return;}
 
-  const totalDone=mt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+  const totalDone=mt.filter(t=>isDoneForMember(t,member.name)).length;
   const total=mt.length;
   const pct=total?Math.round(totalDone/total*100):0;
   const pc=pctColor(pct);
@@ -809,7 +1105,7 @@ window.renderMyReport=()=>{
     <div class="rpt-sec-hd"><div class="rpt-sec-title">By Project</div></div>
     ${projKeys.filter(k=>k).map((proj,idx)=>{
       const pt=byProj[proj];
-      const pd=pt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+      const pd=pt.filter(t=>isDoneForMember(t,member.name)).length;
       const pp=pt.length?Math.round(pd/pt.length*100):0;
       const pc2=pctColor(pp);
       return `<div class="rpt-project">
@@ -1120,23 +1416,44 @@ window.exportPDF=()=>{
 
 window.exportMyReportPDF=()=>{
   const sel=document.getElementById('my-report-member');
-  const member=allMembers.find(m=>m.id===sel?.value);
-  if(!member) return;
-  const mt=getMyReportTasks(sel.value);
-  const memberId=sel.value;
-  const periodLabel=getPeriodLabel();
+  const id=sel?.value;
+  if(!id) return;
 
-  const totalDone=mt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+  const isProj=perfMode==='project';
+  const member=isProj?null:allMembers.find(m=>m.id===id);
+  if(!isProj && !member) return;
+
+  const mt=getMyReportTasks(id);
+  const periodLabel=getPeriodLabel();
+  const entityName=isProj?id:member.name;
+  const entityIcon=isProj?'📁':'👤';
+  const doneCheck=isProj?(t=>t.status==='done'):(t=>isDoneForMember(t,member.name));
+
+  const totalDone=mt.filter(doneCheck).length;
   const total=mt.length;
   const pct=total?Math.round(totalDone/total*100):0;
   const pc=pct>=80?'#34c759':pct>=50?'#ff9f0a':'#ff453a';
 
-  const byProj={};
-  mt.forEach(t=>{const p=t.project||'— No Project —';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
-  const projKeys=Object.keys(byProj).sort((a,b)=>{if(a==='— No Project —')return 1;if(b==='— No Project —')return-1;return a.localeCompare(b);});
+  // Member mode groups by project; project mode groups by contributor —
+  // matches the on-screen renderMyReport behaviour.
+  const byGroup={};
+  if(isProj){
+    mt.forEach(t=>{
+      const names=(t.members||[]).map(m=>m.name).filter(Boolean);
+      if(!names.length) names.push('Unassigned');
+      names.forEach(n=>{ (byGroup[n]||=[]).push(t); });
+    });
+  } else {
+    mt.forEach(t=>{const p=t.project||'— No Project —';(byGroup[p]||=[]).push(t);});
+  }
+  const groupKeys=Object.keys(byGroup).sort((a,b)=>{
+    if(isProj) return byGroup[b].length-byGroup[a].length;
+    if(a==='— No Project —')return 1; if(b==='— No Project —')return-1;
+    return a.localeCompare(b);
+  });
 
   function pdfRow(t){
-    const ms=(t.memberStatus||{})[memberId]||t.status||'todo';
+    const ms=isProj?(t.status||'todo'):((t.memberStatus||{})[(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id]||t.status||'todo');
     const sc=ms==='done'?'#34c759':ms==='inprog'?'#ff9f0a':'#6b7280';
     const si=ms==='done'?'✓':ms==='inprog'?'↻':'○';
     const pc2={critical:'#dc2626',high:'#d97706',medium:'#2563eb',low:'#6b7280'}[t.priority||'medium'];
@@ -1148,14 +1465,15 @@ window.exportMyReportPDF=()=>{
     </tr>`;
   }
 
-  const sections=projKeys.map(proj=>{
-    const pt=byProj[proj];
-    const pd=pt.filter(t=>{const mid=(t.members||[]).find(m=>m.name&&m.name.toLowerCase()===member.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
+  const sections=groupKeys.map(group=>{
+    const pt=byGroup[group];
+    const pd=pt.filter(doneCheck).length;
     const pp=pt.length?Math.round(pd/pt.length*100):0;
     const pbar=pp>=80?'#34c759':pp>=50?'#ff9f0a':'#dc2626';
+    const gicon=isProj?'👤':'&#128193;';
     return `<div style="margin-bottom:16px;page-break-inside:avoid">
       <div style="display:flex;justify-content:space-between;padding:7px 10px;background:#f5f3ff;border-left:3px solid #5e5ce6;border-radius:4px;margin-bottom:4px">
-        <span style="font-weight:800;font-size:11px;color:#1e1b4b">&#128193; ${esc(proj)}</span>
+        <span style="font-weight:800;font-size:11px;color:#1e1b4b">${gicon} ${esc(group)}</span>
         <span style="font-size:10px;font-weight:700;color:${pbar}">${pd}/${pt.length} · ${pp}%</span>
       </div>
       <table style="width:100%;border-collapse:collapse">
@@ -1172,19 +1490,19 @@ window.exportMyReportPDF=()=>{
 
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head>
-    <title>My Report — ${esc(member.name)} — ${periodLabel}</title>
+    <title>Performance Report — ${esc(entityName)} — ${periodLabel}</title>
     <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;color:#111;padding:0}@page{size:A4;margin:16mm 14mm}@media print{.no-print{display:none}}</style>
   </head><body>
     <!-- How to read -->
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin-bottom:16px">
       <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#059669;margin-bottom:4px">📖 How to Read This Report</div>
-      <div style="font-size:10px;color:#374151;line-height:1.6">Tasks for <strong>${esc(member.name)}</strong> · <strong>${periodLabel}</strong>. Grouped by project. ✓ Done &nbsp;·&nbsp; ↻ In Progress &nbsp;·&nbsp; ○ Todo. Percentage shows completion per project and overall.</div>
+      <div style="font-size:10px;color:#374151;line-height:1.6">Tasks for <strong>${esc(entityName)}</strong> · <strong>${periodLabel}</strong>. Grouped by ${isProj?'contributor':'project'}. ✓ Done &nbsp;·&nbsp; ↻ In Progress &nbsp;·&nbsp; ○ Todo. Percentage shows completion per group and overall.</div>
     </div>
     <!-- Header -->
     <div style="background:#111827;color:#fff;padding:18px 22px;border-radius:6px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">BBM-IN · M/MBC-IN · Internal Communications</div>
-        <div style="font-size:18px;font-weight:800">My Report · <span style="color:#0a84ff">${esc(member.name)}</span></div>
+        <div style="font-size:18px;font-weight:800">Performance Report · <span style="color:#0a84ff">${entityIcon} ${esc(entityName)}</span></div>
       </div>
       <div style="text-align:right">
         <div style="font-size:11px;color:rgba(255,255,255,.5)">Period</div>
@@ -1206,6 +1524,405 @@ window.exportMyReportPDF=()=>{
   </body></html>`);
   win.document.close();
   setTimeout(()=>win.print(),400);
+};
+
+// ── TOAST (local — report.html has no shared toast helper) ─────────────────
+let _toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  if(!el) return;
+  el.textContent=msg; el.className='toast show';
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+// ── QUARTERLY REPORT ─────────────────────────────────────────────────────────
+// The flagship, management-facing view. Everything here is derived from the
+// same allTasks/allMembers/projectsData already loaded for the other tabs —
+// no extra Firestore reads. Convention matches the rest of report.html:
+// a task "belongs" to a quarter if its `.month` (YYYY-MM) falls in that
+// quarter's 3 months, and only taskType 'mbc' counts toward team stats
+// (individual tasks are excluded, same as Monthly/My Report).
+function getQuarterMonths(year,q){
+  const startMonth=(q-1)*3; // Q1->Jan(0), Q2->Apr(3), Q3->Jul(6), Q4->Oct(9)
+  return [0,1,2].map(i=>`${year}-${pad(startMonth+i+1)}`);
+}
+function getPrevQuarter(year,q){
+  return q===1 ? {year:year-1,q:4} : {year,q:q-1};
+}
+function getQuarterTasksFor(year,q){
+  const months=getQuarterMonths(year,q);
+  return allTasks.filter(t=>months.includes(t.month)&&(t.taskType||'mbc')==='mbc');
+}
+
+function computeQuarterStats(qt,year,q){
+  const months=getQuarterMonths(year,q);
+  const total=qt.length;
+  const doneTasks=qt.filter(t=>t.status==='done');
+  const done=doneTasks.length;
+  const pct=total?Math.round(done/total*100):0;
+
+  // On-time delivery: of DONE tasks that had a due date, how many were
+  // completed on or before it. Tasks with no due date are excluded from
+  // this specific rate (there's nothing to be "on time" against).
+  const withDue=doneTasks.filter(t=>t.taskDueDate);
+  const onTime=withDue.filter(t=>{
+    const ca=t.completedAt?(t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt)):null;
+    if(!ca) return false;
+    return ca<=new Date(t.taskDueDate+'T23:59:59');
+  }).length;
+  const onTimeRate=withDue.length?Math.round(onTime/withDue.length*100):null;
+
+  const critResolved=doneTasks.filter(t=>t.priority==='critical').length;
+  const critOpen=qt.filter(t=>t.priority==='critical'&&t.status!=='done').length;
+
+  const projectNames=[...new Set(qt.map(t=>t.project).filter(Boolean))];
+  const projectsCompletedThisQ=projectNames.filter(p=>{
+    const pd=projectsData[btoa(p)];
+    return pd&&pd.completedMonth&&months.includes(pd.completedMonth);
+  }).length;
+
+  // Leaderboard — one row per person who appears on at least one task this
+  // quarter. Sorted by tasks DONE (a clearer, less gameable headline number
+  // than raw %, which a 1/1 task person would otherwise "win" on).
+  const memberAgg={};
+  qt.forEach(t=>{
+    (t.members||[]).forEach(m=>{
+      if(!m.name) return;
+      const k=m.name;
+      (memberAgg[k]||=({name:m.name,total:0,done:0})).total++;
+      if(isDoneForMember(t,m.name)) memberAgg[k].done++;
+    });
+  });
+  const leaderboard=Object.values(memberAgg)
+    .map(m=>({...m,pct:m.total?Math.round(m.done/m.total*100):0}))
+    .sort((a,b)=>b.done-a.done||b.pct-a.pct);
+
+  // Project spotlight — completed projects first (celebrate wins), then by
+  // completion % descending.
+  const projAgg={};
+  qt.forEach(t=>{
+    const p=t.project; if(!p) return;
+    (projAgg[p]||=({name:p,total:0,done:0})).total++;
+    if(t.status==='done') projAgg[p].done++;
+  });
+  const projectSpotlight=Object.values(projAgg).map(p=>{
+    const pd=projectsData[btoa(p.name)];
+    const completed=!!(pd&&pd.completedMonth&&months.includes(pd.completedMonth));
+    return {...p,pct:p.total?Math.round(p.done/p.total*100):0,completed};
+  }).sort((a,b)=>(b.completed-a.completed)||(b.pct-a.pct)||(b.total-a.total));
+
+  // Trend — done-task count per month within the quarter, for the bar chart.
+  const monthlyTrend=months.map(m=>({
+    month:m,
+    label:MONTHS[parseInt(m.split('-')[1])-1],
+    done:qt.filter(t=>t.month===m&&t.status==='done').length,
+  }));
+
+  return {total,done,pct,onTimeRate,critResolved,critOpen,
+    projectCount:projectNames.length,projectsCompletedThisQ,
+    leaderboard,projectSpotlight,monthlyTrend,months};
+}
+
+function generateHeadline(stats,prevStats,lbl){
+  let trend='';
+  if(prevStats.done>0){
+    const chg=Math.round((stats.done-prevStats.done)/prevStats.done*100);
+    if(chg>0) trend=`, up <b>${chg}%</b> from last quarter`;
+    else if(chg<0) trend=`, down ${Math.abs(chg)}% from last quarter`;
+    else trend=`, matching last quarter's pace`;
+  } else if(stats.done>0){
+    trend=' — no prior-quarter baseline to compare against';
+  }
+  const otSentence=stats.onTimeRate!==null
+    ? `<b>${stats.onTimeRate}%</b> of completed tasks were delivered on or before their due date.`
+    : `No due dates were tracked on completed tasks this quarter.`;
+  return `The team completed <b>${stats.done}</b> task${stats.done===1?'':'s'} across <b>${stats.projectCount}</b> project${stats.projectCount===1?'':'s'} in ${lbl}${trend}. ${otSentence}${stats.critResolved?` <b>${stats.critResolved}</b> critical issue${stats.critResolved===1?'':'s'} ${stats.critResolved===1?'was':'were'} resolved.`:''}`;
+}
+
+function qrGetSelection(){
+  const q=parseInt(document.getElementById('qr-quarter-sel').value,10);
+  const year=parseInt(document.getElementById('qr-year-sel').value,10);
+  return {q,year};
+}
+
+window.renderQuarterly=()=>{
+  const {q,year}=qrGetSelection();
+  const lbl=`Q${q} ${year}`;
+  const dateRangeLbl=(()=>{
+    const ms=getQuarterMonths(year,q);
+    return `${MONTHS[parseInt(ms[0].split('-')[1])-1]} – ${MONTHS[parseInt(ms[2].split('-')[1])-1]} ${year}`;
+  })();
+
+  const qt=getQuarterTasksFor(year,q);
+  const stats=computeQuarterStats(qt,year,q);
+  const prev=getPrevQuarter(year,q);
+  const prevQt=getQuarterTasksFor(prev.year,prev.q);
+  const prevStats=computeQuarterStats(prevQt,prev.year,prev.q);
+
+  const el=document.getElementById('quarterly-content');
+  if(!qt.length){
+    el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">🏆</div>No tasks logged for ${lbl} yet</div>`;
+    return;
+  }
+
+  const doneTrend=prevStats.done>0?Math.round((stats.done-prevStats.done)/prevStats.done*100):null;
+  const pctTrend=stats.pct-prevStats.pct;
+
+  el.innerHTML=`
+    <div class="qr-hero">
+      <div class="qr-hero-eyebrow">Quarterly Performance Report</div>
+      <div class="qr-hero-title">${lbl}</div>
+      <div class="qr-hero-sub">${dateRangeLbl} · Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      <div class="qr-hero-headline">${generateHeadline(stats,prevStats,lbl)}</div>
+    </div>
+
+    <div class="qr-stat-strip">
+      <div class="qr-stat-card">
+        <div class="qr-stat-card-n" style="color:var(--neon)">${stats.done}</div>
+        <div class="qr-stat-card-l">Tasks Completed</div>
+        ${doneTrend!==null?`<div class="qr-stat-card-trend ${doneTrend>=0?'up':'down'}">${doneTrend>=0?'▲':'▼'} ${Math.abs(doneTrend)}% vs last qtr</div>`:''}
+      </div>
+      <div class="qr-stat-card">
+        <div class="qr-stat-card-n" style="color:${pctColor(stats.pct)}">${stats.pct}%</div>
+        <div class="qr-stat-card-l">Completion Rate</div>
+        <div class="qr-stat-card-trend ${pctTrend>=0?'up':'down'}">${pctTrend>=0?'▲':'▼'} ${Math.abs(pctTrend)}pt vs last qtr</div>
+      </div>
+      <div class="qr-stat-card">
+        <div class="qr-stat-card-n" style="color:var(--green)">${stats.onTimeRate!==null?stats.onTimeRate+'%':'—'}</div>
+        <div class="qr-stat-card-l">On-Time Delivery</div>
+      </div>
+      <div class="qr-stat-card">
+        <div class="qr-stat-card-n" style="color:${stats.critOpen?'var(--red)':'var(--green)'}">${stats.critResolved}</div>
+        <div class="qr-stat-card-l">Critical Resolved</div>
+        ${stats.critOpen?`<div class="qr-stat-card-trend down">${stats.critOpen} still open</div>`:''}
+      </div>
+    </div>
+
+    <div class="qr-sec">
+      <div class="qr-sec-eyebrow">Quarter Trend</div>
+      <div class="qr-sec-title">Monthly Momentum</div>
+      <div class="qr-sec-rule"></div>
+    </div>
+    <div class="qr-chart-card"><canvas id="qr-trend-chart"></canvas></div>
+
+    <div class="qr-sec">
+      <div class="qr-sec-eyebrow">${stats.leaderboard.length} Contributor${stats.leaderboard.length===1?'':'s'}</div>
+      <div class="qr-sec-title">Top Performers</div>
+      <div class="qr-sec-rule"></div>
+    </div>
+    ${stats.leaderboard.slice(0,8).map((m,i)=>{
+      const rankCls=i===0?'r1':i===1?'r2':i===2?'r3':'';
+      const barColor=pctColor(m.pct);
+      return `<div class="qr-lb-row">
+        <div class="qr-lb-rank ${rankCls}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+        <div class="qr-lb-body">
+          <div class="qr-lb-name">${esc(m.name)}</div>
+          <div class="qr-lb-meta">${m.done}/${m.total} tasks done</div>
+          <div class="qr-lb-bar-wrap"><div class="qr-lb-bar" style="width:${m.pct}%;background:${barColor}"></div></div>
+        </div>
+        <div class="qr-lb-pct" style="color:${barColor}">${m.pct}%</div>
+      </div>`;
+    }).join('')}
+
+    <div class="qr-sec">
+      <div class="qr-sec-eyebrow">${stats.projectSpotlight.length} Project${stats.projectSpotlight.length===1?'':'s'} · ${stats.projectsCompletedThisQ} Shipped</div>
+      <div class="qr-sec-title">Project Spotlight</div>
+      <div class="qr-sec-rule"></div>
+    </div>
+    <div class="qr-proj-grid">
+      ${stats.projectSpotlight.map(p=>{
+        const barColor=p.completed?'var(--green)':pctColor(p.pct);
+        return `<div class="qr-proj-card ${p.completed?'done':''}">
+          <div class="qr-proj-top">
+            <div class="qr-proj-name">📁 ${esc(p.name)} ${p.completed?'<span class="qr-proj-badge">✓ Shipped</span>':''}</div>
+            <div class="qr-proj-pct" style="color:${barColor}">${p.pct}%</div>
+          </div>
+          <div class="qr-proj-bar-wrap"><div class="qr-proj-bar" style="width:${p.pct}%;background:${barColor}"></div></div>
+          <div class="qr-proj-meta">${p.done}/${p.total} tasks complete</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  // Trend chart
+  if(qrChartInstance){ try{qrChartInstance.destroy()}catch(e){} }
+  const ctx=document.getElementById('qr-trend-chart');
+  if(ctx&&window.Chart){
+    qrChartInstance=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:stats.monthlyTrend.map(m=>m.label),
+        datasets:[{data:stats.monthlyTrend.map(m=>m.done),backgroundColor:_cs.getPropertyValue('--neon').trim()||'#0a84ff',borderRadius:6,maxBarThickness:48}],
+      },
+      options:{...chartBase,scales:{x:{grid:{display:false},ticks:chartFont},y:{beginAtZero:true,ticks:{...chartFont,stepSize:Math.max(1,Math.ceil(Math.max(...stats.monthlyTrend.map(m=>m.done),1)/4))},grid:chartGrid}}},
+    });
+  }
+};
+
+window.copyQuarterlySummary=async()=>{
+  const {q,year}=qrGetSelection();
+  const lbl=`Q${q} ${year}`;
+  const qt=getQuarterTasksFor(year,q);
+  if(!qt.length){ toast('No data for '+lbl); return; }
+  const stats=computeQuarterStats(qt,year,q);
+  const prev=getPrevQuarter(year,q);
+  const prevStats=computeQuarterStats(getQuarterTasksFor(prev.year,prev.q),prev.year,prev.q);
+
+  const top3=stats.leaderboard.slice(0,3).map((m,i)=>`${['🥇','🥈','🥉'][i]} ${m.name} (${m.done} tasks, ${m.pct}%)`).join('\n');
+  const shipped=stats.projectSpotlight.filter(p=>p.completed).map(p=>p.name);
+
+  const text=`📊 *WorkDesk — ${lbl} Summary*\n\n`+
+    `${stats.done}/${stats.total} tasks completed (${stats.pct}%)\n`+
+    `${stats.onTimeRate!==null?stats.onTimeRate+'% delivered on time\n':''}`+
+    `${stats.critResolved} critical issue${stats.critResolved===1?'':'s'} resolved\n`+
+    `${stats.projectsCompletedThisQ}/${stats.projectCount} projects shipped this quarter\n\n`+
+    `*Top Performers*\n${top3||'—'}\n`+
+    (shipped.length?`\n*Shipped This Quarter*\n${shipped.map(s=>'✓ '+s).join('\n')}\n`:'')+
+    `\n${generateHeadline(stats,prevStats,lbl).replace(/<\/?b>/g,'')}`;
+
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('📋 Summary copied — paste it anywhere');
+  }catch(e){
+    // Clipboard API needs a secure context / permission — fall back to a
+    // manual-copy prompt rather than failing silently.
+    window.prompt('Copy this summary:',text);
+  }
+};
+
+window.exportQuarterlyPDF=()=>{
+  const {q,year}=qrGetSelection();
+  const lbl=`Q${q} ${year}`;
+  const dateRangeLbl=(()=>{
+    const ms=getQuarterMonths(year,q);
+    return `${MONTHS[parseInt(ms[0].split('-')[1])-1]} – ${MONTHS[parseInt(ms[2].split('-')[1])-1]} ${year}`;
+  })();
+  const qt=getQuarterTasksFor(year,q);
+  if(!qt.length){ toast('No data for '+lbl+' to export'); return; }
+  const stats=computeQuarterStats(qt,year,q);
+  const prev=getPrevQuarter(year,q);
+  const prevStats=computeQuarterStats(getQuarterTasksFor(prev.year,prev.q),prev.year,prev.q);
+  const doneTrend=prevStats.done>0?Math.round((stats.done-prevStats.done)/prevStats.done*100):null;
+  const maxTrend=Math.max(...stats.monthlyTrend.map(m=>m.done),1);
+
+  const rankMedal=i=>i<3?['🥇','🥈','🥉'][i]:`<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700">${i+1}</span>`;
+
+  const leaderboardHTML=stats.leaderboard.slice(0,8).map((m,i)=>`
+    <tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:9px 8px;width:28px;font-size:13px">${rankMedal(i)}</td>
+      <td style="padding:9px 8px;font-size:12px;font-weight:700;color:#111827">${esc(m.name)}</td>
+      <td style="padding:9px 8px;font-size:11px;color:#6b7280">${m.done}/${m.total} tasks</td>
+      <td style="padding:9px 8px;width:120px">
+        <div style="width:100%;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
+          <div style="width:${m.pct}%;height:100%;background:${m.pct>=80?'#16a34a':m.pct>=50?'#d97706':'#dc2626'};border-radius:3px"></div>
+        </div>
+      </td>
+      <td style="padding:9px 8px;width:44px;text-align:right;font-size:13px;font-weight:800;color:${m.pct>=80?'#16a34a':m.pct>=50?'#d97706':'#dc2626'}">${m.pct}%</td>
+    </tr>`).join('');
+
+  const projectHTML=stats.projectSpotlight.map(p=>{
+    const col=p.completed?'#16a34a':(p.pct>=80?'#16a34a':p.pct>=50?'#d97706':'#dc2626');
+    return `<div style="page-break-inside:avoid;margin-bottom:8px;padding:11px 13px;background:#f9fafb;border-left:3px solid ${col};border-radius:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:800;color:#111827">📁 ${esc(p.name)} ${p.completed?'<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 6px;border-radius:20px;margin-left:6px">✓ SHIPPED</span>':''}</span>
+        <span style="font-size:13px;font-weight:800;color:${col}">${p.pct}%</span>
+      </div>
+      <div style="width:100%;height:5px;background:#e5e7eb;border-radius:3px;margin-top:7px;overflow:hidden"><div style="width:${p.pct}%;height:100%;background:${col}"></div></div>
+      <div style="font-size:10px;color:#6b7280;margin-top:5px">${p.done}/${p.total} tasks complete</div>
+    </div>`;
+  }).join('');
+
+  const trendHTML=`<div style="display:flex;align-items:flex-end;gap:14px;height:100px;padding:0 8px">
+    ${stats.monthlyTrend.map(m=>`
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="font-size:11px;font-weight:800;color:#111827">${m.done}</div>
+        <div style="width:100%;max-width:52px;height:${Math.max(6,Math.round(m.done/maxTrend*70))}px;background:linear-gradient(180deg,#0a84ff,#5e5ce6);border-radius:5px 5px 2px 2px"></div>
+        <div style="font-size:10px;color:#6b7280;font-weight:700">${m.label}</div>
+      </div>`).join('')}
+  </div>`;
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>Quarterly Report — ${lbl}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'DM Sans',system-ui,sans-serif;color:#111827;background:#fff}
+      @page{size:A4;margin:14mm 12mm}
+      @media print{body{padding:0}.no-print{display:none!important}}
+      table{width:100%;border-collapse:collapse}
+    </style>
+  </head><body>
+
+    <!-- COVER / HERO -->
+    <div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#0f1420,#1a2138 60%,#221a38);color:#fff;padding:32px 28px;border-radius:10px;margin-bottom:20px">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px">Quarterly Performance Report · BBM-IN · M/MBC-IN</div>
+      <div style="font-size:34px;font-weight:800;letter-spacing:-.02em">${lbl}</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.65);margin-top:4px">${dateRangeLbl} &nbsp;·&nbsp; Prepared ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15);font-size:14px;line-height:1.6;color:rgba(255,255,255,.92)">
+        ${generateHeadline(stats,prevStats,lbl)}
+      </div>
+    </div>
+
+    <!-- STAT STRIP -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px">
+      <div style="text-align:center;padding:14px 8px;background:#eff6ff;border-radius:8px;border:1px solid #dbeafe">
+        <div style="font-size:26px;font-weight:800;color:#1d4ed8;line-height:1">${stats.done}</div>
+        <div style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;opacity:.85">Completed</div>
+        ${doneTrend!==null?`<div style="font-size:9px;font-weight:700;color:${doneTrend>=0?'#16a34a':'#dc2626'};margin-top:3px">${doneTrend>=0?'▲':'▼'} ${Math.abs(doneTrend)}% QoQ</div>`:''}
+      </div>
+      <div style="text-align:center;padding:14px 8px;background:${stats.pct>=80?'#f0fdf4':stats.pct>=50?'#fffbeb':'#fef2f2'};border-radius:8px;border:1px solid ${stats.pct>=80?'#bbf7d0':stats.pct>=50?'#fde68a':'#fecaca'}">
+        <div style="font-size:26px;font-weight:800;color:${stats.pct>=80?'#16a34a':stats.pct>=50?'#d97706':'#dc2626'};line-height:1">${stats.pct}%</div>
+        <div style="font-size:9px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;opacity:.85">Completion Rate</div>
+      </div>
+      <div style="text-align:center;padding:14px 8px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+        <div style="font-size:26px;font-weight:800;color:#16a34a;line-height:1">${stats.onTimeRate!==null?stats.onTimeRate+'%':'—'}</div>
+        <div style="font-size:9px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;opacity:.85">On-Time Delivery</div>
+      </div>
+      <div style="text-align:center;padding:14px 8px;background:${stats.critOpen?'#fef2f2':'#f0fdf4'};border-radius:8px;border:1px solid ${stats.critOpen?'#fecaca':'#bbf7d0'}">
+        <div style="font-size:26px;font-weight:800;color:${stats.critOpen?'#dc2626':'#16a34a'};line-height:1">${stats.critResolved}</div>
+        <div style="font-size:9px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;opacity:.85">Critical Resolved</div>
+      </div>
+    </div>
+
+    <!-- TREND -->
+    <div style="margin-bottom:22px;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e0e7ff">
+        <div style="width:4px;height:16px;background:#5e5ce6;border-radius:2px"></div>
+        <div style="font-size:13px;font-weight:800;color:#111827">Monthly Momentum</div>
+      </div>
+      ${trendHTML}
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div style="margin-bottom:22px;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #dcfce7">
+        <div style="width:4px;height:16px;background:#16a34a;border-radius:2px"></div>
+        <div style="font-size:13px;font-weight:800;color:#111827">Top Performers</div>
+        <div style="font-size:11px;color:#6b7280;margin-left:auto">${stats.leaderboard.length} contributor${stats.leaderboard.length===1?'':'s'}</div>
+      </div>
+      <table><tbody>${leaderboardHTML}</tbody></table>
+    </div>
+
+    <!-- PROJECTS -->
+    <div style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #dbeafe">
+        <div style="width:4px;height:16px;background:#2563eb;border-radius:2px"></div>
+        <div style="font-size:13px;font-weight:800;color:#111827">Project Spotlight</div>
+        <div style="font-size:11px;color:#6b7280;margin-left:auto">${stats.projectsCompletedThisQ}/${stats.projectCount} shipped</div>
+      </div>
+      ${projectHTML}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:24px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between">
+      <span style="font-size:8px;color:#9ca3af">WorkDesk · BBM-IN · MBC-IN Internal Communications</span>
+      <span style="font-size:8px;color:#9ca3af">Generated ${new Date().toLocaleString('en-GB')}</span>
+    </div>
+
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
 };
 
 </script>

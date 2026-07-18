@@ -78,7 +78,8 @@ workdesk-pwa/
 
 ## Design System
 
-**Default theme:** Light / Health (`theme-health`) — `#eef0f6` base + gradient mesh, iOS blue `#007aff` primary  
+**Default theme:** Neumorphism (`theme-neu`) — `#e0e5ec` clay, accent `#2d56d8`. Changed from Light in `js/theme.js`'s `getValidTheme()` — anyone with no `wd_theme` in localStorage (new install, or migrating off the old `'ios'` default) gets Neumorphism. Existing users who already have a saved theme are untouched.  
+**Status bar colour:** `applyTheme()` now also calls `syncStatusBarColor()`, which writes the active theme's `bg` (already defined per-theme for the picker swatch) into `<meta name="theme-color">`. Previously this was a static dark value hardcoded in each page's `<head>`, which looked fine for the old dark-default themes but would clash badly with Neumorphism/Light's bright backgrounds. Don't hardcode `theme-color` in new pages — it's now managed at runtime.
 **CSS variables (from style.css `:root`):**
 - `--bg`, `--bg2`, `--bg3` — background layers
 - `--panel` — card/panel background
@@ -129,6 +130,33 @@ Glass is applied to: `.nav`, `.bottom-nav`, `.panel`, `.prog-wrap`, `.toast`, `.
 Theme-agnostic motion/light effects: progress-bar shine sweep, button sheen on hover (`.send-btn`/`.mark-done-btn`/`.t-go` — these now have `overflow:hidden`, so nothing inside them can poke outside the pill), press-compress physics, stat-pill hover lift, task-detail unfold, nav icon spring, staggered panel entrance, animated gradient on the greeting name (`.g-name`, with `@supports` fallback), sprint 🎯 breathe, and `.just-done` settle (applied by `toggleIndividualDone`, self-removes on animationend). Haptics: `navigator.vibrate` on task-done (12ms) and sprint-add (10ms) — no-ops where unsupported, including all of iOS Safari.
 
 Rules: effects here must only use tokens, white-gradient overlays, and transform/opacity animations (GPU-cheap). Every ambient loop added here must also be switched off in BOTH `prefers-reduced-motion` blocks in style.css. The nav active indicator is `.bn-item.active::after` and carries `translateX(-50%)` — any animation on it must include that transform in its keyframes or the line jumps off-centre.
+
+### Splash screen (index.html only)
+
+Plays once per session on Dashboard load — the app's actual PWA `start_url`, per `manifest.json`. Markup + gating script sit immediately after `<body>`; CSS is in the head `<style>` block (`.splash-screen` etc). Sequence: the existing nav logo (reused from its base64 `<img>`, not redrawn) springs in → a small dot appears → pulses once → **blooms** (`transform:scale(1→120)`) until it fully covers the viewport in the active theme's accent colour → whole overlay fades to reveal the real dashboard, which has been loading/rendering behind it the entire time.
+
+Gating (in the inline script, not CSS, so it never even paints for these cases):
+- `prefers-reduced-motion: reduce` → element is removed outright before first paint.
+- `sessionStorage.wd_splash_shown` → only plays once per session, not on every bottom-nav tap back to Dashboard.
+- Tap anywhere to skip early.
+
+Don't add the splash to other pages — Dashboard is the intentional single entry point. If you touch the nav logo's base64 string, the splash's `<img>` needs updating too (currently duplicated, not derived at runtime).
+
+### Skeleton loading
+
+`.skel-block` (generic shimmer, used inline via `style="width:..;height:.."`) and `.stat-pill.skel` (stat number placeholders) — both in the "SKELETON LOADING" block in index.html's `<style>`. Two call sites:
+- Stat pills start with class `skel` in the static HTML; `renderStats()` removes it from all four on its first real call. Safe to call every render — `classList.remove` no-ops once already cleared.
+- `#my-tasks-list` ships with 3 static skeleton rows as its initial HTML. Nothing removes them explicitly — `renderMyTasks()`'s `innerHTML = ...` wholesale-replaces the container the first time real data renders, so they're just gone.
+
+If you add a new panel that loads async data, follow the same pattern: static skeleton markup as the initial HTML, let the real render's `innerHTML` assignment replace it — don't write extra removal code.
+
+### Tap targets
+
+A few controls were visually small but functionally fine — extended via an invisible `::before`/`::after` hit-area (`position:absolute; inset:-Npx`) rather than inflating the visible element, which would've looked oversized in a compact row. Done: `.trc-expand` (task row chevron, 28px visual → 44px tappable) and `.ann-perm-toggle` (announcement permission switch, 36×20 visual → 44px tappable). If you find another small interactive control, same pattern: add `position:relative` to the base rule, then a pseudo-element with `content:''; position:absolute; inset:-Npx` sized to reach 44px — don't resize the visible element itself.
+
+### Haptics
+
+`navigator.vibrate(ms)` — no-op where unsupported (all of iOS Safari, some Android browsers), so no feature-detection branching needed, just call it. Current touchpoints, all short (8–15ms) and reserved for **state changes**, not routine taps: task marked done (12ms, `toggleIndividualDone`), added to sprint (10ms, `toggleSprintTask`), theme switch (8ms, `js/theme.js` — deliberately on the swatch **click** handler, not inside `applyTheme()` itself, since that also runs on every page load via `initTheme()` and would buzz on every app open), and picking your name on the welcome screen (8ms, `selectWelcomeMember`). Keep new haptics this sparing — vibrating on every tap reads as gimmicky and drains battery; reserve it for moments that deserve a confirmation.
 
 ### Shadow tokens
 
@@ -207,10 +235,22 @@ Status cycles via button in expanded task card:
 - Existing task list below form
 
 ### Report (report.html)
-- Tabs: Monthly / Weekly / My Report
+- Tabs: Monthly / Weekly / **Performance** (formerly "My Report") / **Quarterly** (new)
 - Monthly: ⚙ Filters button (hidden by default), progress ring, 4 Chart.js charts, project sections, Mark Complete, PDF export
 - Weekly: digest + Copy for WhatsApp
-- My Report: period picker + PDF
+- **Performance** — gauges either a member's or a project's completion, across Week / Month / Quarter / Overall:
+  - `perfMode` state ('member'|'project') toggled via `.perf-mode-btn` → `setPerfMode()`. Swaps the dropdown between members and projects (project mode uses the project **name** as the select value, not an id — projects don't have ids the way members do).
+  - `getMyReportTasks(id)` and `renderMyReport()` both branch on `perfMode`. Member mode is unchanged from before; project mode filters `t.project===id` instead of member assignment, and groups results by **contributor** instead of by project (there's only one project in that view).
+  - `isDoneForMember(t, memberName)` — extracted helper, respects per-member status on shared tasks (`t.memberStatus[memberId]`) when present, falling back to `t.status`. **This is reliable in real data** — `js/firebase.js` (`addTask`) always initializes `memberStatus[m.id]='todo'` for every assigned member on creation, and `index.html`'s status-cycling functions keep it in sync — so don't skip populating it if you ever add a new task-creation path.
+  - `exportMyReportPDF()` also branches on `perfMode` via a shared template (`doneCheck`, `byGroup`, `entityName`/`entityIcon`) rather than duplicating the whole function.
+  - Non-admins can only select their own name in member mode (unchanged). Project mode has no such restriction — project completion isn't private the way an individual's performance is, and everyone already sees all tasks/projects on the dashboard.
+- **Quarterly** — the flagship, management-facing report. On-screen magazine-style preview (`.qr-*` CSS classes) plus a separate **Share Report** export.
+  - Convention: a task "belongs" to quarter Q of year Y if its `.month` (YYYY-MM) falls in that quarter's 3 months (`getQuarterMonths`). Only `taskType 'mbc'` counts, matching Monthly/Performance.
+  - `computeQuarterStats(tasks, year, q)` returns: completion %, on-time delivery rate (of *done* tasks that had a due date — tasks with no due date are excluded from that specific rate, not counted against it), critical resolved/open, project count, **leaderboard** (sorted by tasks *done*, not raw %, so a 1/1 person doesn't outrank a 40/45 person), **project spotlight** (completed projects first, via `projectsData[btoa(name)].completedMonth` falling inside the quarter), and a 3-month trend for the bar chart.
+  - `generateHeadline()` auto-writes the magazine's opening sentence by comparing to `getPrevQuarter()` (handles the Q1→Q4-of-previous-year wraparound).
+  - **Share Report** (`exportQuarterlyPDF`) reuses the same `window.open + document.write + window.print()` pattern as the existing Monthly/Performance PDF exports — a fully self-contained inline-styled HTML document (no access to this page's stylesheet, no Chart.js canvas — the trend is hand-drawn as CSS bar divs instead) that the person can Print → Save as PDF and send directly to management.
+  - **Copy Summary** (`copyQuarterlySummary`) writes a short WhatsApp/Slack-ready text blurb via `navigator.clipboard.writeText`, falling back to `window.prompt()` if clipboard access is denied.
+  - report.html has its own local `toast()` (it has no access to index.html's) — reuses the shared `.toast` CSS class from `css/style.css`, which is already linked.
 
 ### Calendar (calendar.html)
 - Fixed monthly grid, 7 event types colour-coded
