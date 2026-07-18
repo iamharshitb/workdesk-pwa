@@ -1,11 +1,10 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
 
 export const THEMES = [
-  { id:'health',     name:'Light',         sub:'iOS Health · Pastel White', dot:'#007aff', bg:'#f2f2f7' },
-  { id:'frosted',    name:'Frosted Glass', sub:'Heavy blur · Translucent',  dot:'#a78bfa', bg:'#0f0720' },
   { id:'editorial',  name:'Editorial',     sub:'Inter · Clean · Minimal',   dot:'#16171A', bg:'#F3F3F5' },
   { id:'neu',        name:'Neumorphism',   sub:'Soft UI · Sculpted light',  dot:'#2d56d8', bg:'#e0e5ec' },
   { id:'glass',      name:'Glassmorphism', sub:'Aurora · Deep frost',       dot:'#22d3ee', bg:'#0b1023' },
+  { id:'skeu',       name:'Skeuomorphism', sub:'Leather · Paper · Tactile', dot:'#8b4a2b', bg:'#e8dcc2' },
 ];
 
 // Default to Neumorphism if no saved theme, or if saved theme no longer exists
