@@ -137,11 +137,12 @@
     }
     .task-card.status-inprog::before {
       content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
       background: linear-gradient(90deg, transparent, var(--amber) 45%, var(--amber) 55%, transparent);
       background-size: 250% 100%;
-      animation: inprog-shimmer 2.6s ease-in-out infinite;
-      opacity: .8;
+      animation: inprog-shimmer 2s ease-in-out infinite;
+      opacity: 1;
+      box-shadow: 0 0 8px var(--amber);
     }
     @keyframes inprog-shimmer {
       0%   { background-position: 200% 0; }
@@ -351,14 +352,13 @@
     }
     .task-row-compact.status-inprog::after {
       content: '';
-      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
       background: var(--amber);
-      box-shadow: 0 0 8px var(--amber);
-      animation: inprog-pulse 1.8s ease-in-out infinite;
+      animation: inprog-pulse 1.4s ease-in-out infinite;
     }
     @keyframes inprog-pulse {
-      0%,100% { opacity: .45; }
-      50%     { opacity: 1; }
+      0%,100% { opacity: .5;  box-shadow: 0 0 4px var(--amber); }
+      50%     { opacity: 1;   box-shadow: 0 0 18px var(--amber), 0 0 6px var(--amber); }
     }
     .task-row-compact.status-onhold { opacity:.75; border-left-color:var(--purple) !important }
     .task-row-compact.status-done { opacity:.5; }
@@ -508,14 +508,13 @@
     }
     .task-row-compact.due-today::after {
       content: '';
-      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
       background: var(--red);
-      box-shadow: 0 0 10px var(--red);
-      animation: due-today-glow 1.6s ease-in-out infinite;
+      animation: due-today-glow 1.3s ease-in-out infinite;
     }
     @keyframes due-today-glow {
-      0%,100% { opacity: .5; }
-      50%     { opacity: 1; }
+      0%,100% { opacity: .45; box-shadow: 0 0 5px var(--red); }
+      50%     { opacity: 1;   box-shadow: 0 0 20px var(--red), 0 0 6px var(--red); }
     }
     .due-today-badge {
       display:inline-flex;align-items:center;gap:3px;
@@ -523,10 +522,10 @@
       font-size:9px;font-weight:800;
       background:rgba(255,58,94,.15);color:var(--red);
       border:1px solid rgba(255,58,94,.3);
-      animation:pulse-badge 1.5s ease-in-out infinite;
+      animation:pulse-badge 1.3s ease-in-out infinite;
     }
     @keyframes pulse-badge {
-      0%,100%{opacity:1} 50%{opacity:.6}
+      0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.55; transform:scale(1.08);}
     }
     .due-soon-badge {
       display:inline-flex;align-items:center;gap:3px;
@@ -2156,6 +2155,11 @@ function renderMyTasks() {
   // reflect your actual sprint capacity regardless of what you're currently
   // searching for. Only which CARDS are shown is filtered.
   const sprintTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status !== 'done');
+  // In-progress tasks bubble to the top of the sprint list — the point of
+  // "This Week" is to know what's actively moving; a stable sort keeps
+  // everything else in its existing relative order, it just pulls inprog
+  // ones to the front.
+  sprintTasks.sort((a, b) => (a.status === 'inprog' ? 0 : 1) - (b.status === 'inprog' ? 0 : 1));
   const sprintTasksVisible = sprintTasks.filter(matchesRefineFilters);
   const sprintDone  = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done').length;
   const sprintCount = sprintTaskIds.size;

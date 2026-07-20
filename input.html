@@ -67,10 +67,25 @@
       border:1px solid var(--border2);background:var(--bg2);
       cursor:pointer;transition:all .15s;
       -webkit-tap-highlight-color:transparent;
+      position:relative;overflow:hidden;
     }
     .task-row-compact:hover{border-color:var(--neon2);background:var(--bg3)}
     .task-row-compact.is-done{opacity:.5}
-    .task-row-compact.status-inprog{background:rgba(245,168,0,.06);border-color:rgba(245,168,0,.28)}
+    /* Matches the same prominent accent-edge treatment used on the Dashboard —
+       this used to be a flat background wash left over from before that
+       redesign, and was never brought in line with it. */
+    .task-row-compact.status-inprog::after{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+      background:var(--amber);
+      animation:inprog-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes inprog-pulse{
+      0%,100%{opacity:.5; box-shadow:0 0 4px var(--amber);}
+      50%    {opacity:1;   box-shadow:0 0 18px var(--amber), 0 0 6px var(--amber);}
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .task-row-compact.status-inprog::after { animation: none !important; }
+    }
     .trc-left{flex:1;min-width:0}
     .trc-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
     .trc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}

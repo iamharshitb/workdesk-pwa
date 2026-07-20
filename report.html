@@ -361,10 +361,10 @@
 <!-- REPORT TABS -->
 <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border2)">
 <div class="rpt-tabs" style="border-bottom:none;flex:1">
-  <button class="rpt-tab active" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
+  <button class="rpt-tab active" id="tab-quarterly" onclick="switchRptTab('quarterly')">Quarterly</button>
+  <button class="rpt-tab" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
   <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
   <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">Performance</button>
-  <button class="rpt-tab" id="tab-quarterly" onclick="switchRptTab('quarterly')">Quarterly</button>
 </div>
 <button id="rpt-filter-btn" onclick="toggleRptFilters()"
   style="display:none;flex-shrink:0;margin-right:12px;padding:5px 12px;
@@ -398,7 +398,7 @@
 </div>
 
 <!-- ═══ MONTHLY PANEL ═══ -->
-<div class="rpt-panel active page" id="panel-monthly" style="padding-top:12px">
+<div class="rpt-panel page" id="panel-monthly" style="padding-top:12px">
   <div id="monthly-content">
     <div class="rpt-empty"><div class="rpt-empty-icon">📊</div>Loading…</div>
   </div>
@@ -444,7 +444,7 @@
      "Share Report" button generates a separate, fully self-contained
      magazine-styled HTML document (window.exportQuarterlyPDF) in a new tab,
      ready to Print → Save as PDF and send on. -->
-<div class="rpt-panel page" id="panel-quarterly" style="padding-top:12px">
+<div class="rpt-panel active page" id="panel-quarterly" style="padding-top:12px">
   <div class="qr-controls">
     <select id="qr-quarter-sel" class="qr-sel" onchange="renderQuarterly()"></select>
     <select id="qr-year-sel" class="qr-sel" onchange="renderQuarterly()"></select>
@@ -482,7 +482,7 @@ let activeFilters={project:'',member:'',priority:'',status:''};
 let chartInstances={};
 let myReportPeriod='month';
 let perfMode='member';           // 'member' | 'project' — drives the Performance tab
-let activeRptTab='monthly';
+let activeRptTab='quarterly';
 let qrChartInstance=null;
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
