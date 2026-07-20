@@ -1060,8 +1060,8 @@ function renderTaskList() {
 
   function taskCard(t, i) {
     const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-    const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-    const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+    const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
+    const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
     const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
     const isDone = t.status === 'done';
     const isInprog = t.status === 'inprog';
@@ -1198,8 +1198,8 @@ window.applyDateRange = () => {
     </div>
     ${filtered.map(t => {
       const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-      const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-      const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+      const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
+      const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
       const isDone = t.status === 'done';
       const memberPills = (t.members||[]).map(m =>
         `<span class="m-pill" style="display:inline-flex"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${m.role ? esc(m.role) : 'Not set'}</span></span>`

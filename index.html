@@ -2110,12 +2110,53 @@ function renderStats() {
   if(pl) pl.textContent = prioCounts.low;
 }
 
+// Search/priority/status/due filters, as one predicate. Previously this logic
+// was inlined only in renderMyTasks()'s main taskList pipeline — the Sprint
+// section built its card list straight from sprintTaskIds with no filtering
+// at all, so searching (or any other filter) left Sprint showing everything
+// regardless of match. That's what made it look like "on-hold tasks aren't
+// showing up when searched": a matching on-hold task that was ALSO pinned to
+// "This Week" would show, unfiltered, up in Sprint, while search correctly
+// hid everything else — so the one visible copy was in the wrong section,
+// displaying regardless of whether it actually matched. Single source of
+// truth now; both call sites below use this.
+function matchesRefineFilters(t) {
+  if (activePriorityFilter && (t.priority || 'medium') !== activePriorityFilter) return false;
+  if (activeStatusFilter && t.status !== activeStatusFilter) return false;
+  if (activeDueFilter) {
+    const _today = new Date();
+    const _pad = n => String(n).padStart(2, '0');
+    const _ts = `${_today.getFullYear()}-${_pad(_today.getMonth() + 1)}-${_pad(_today.getDate())}`;
+    if (t.status === 'done' || !t.taskDueDate) return false;
+    if (activeDueFilter === 'today') {
+      if (t.taskDueDate > _ts) return false;
+    } else {
+      const _cutoff = new Date(_today);
+      _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
+      const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth() + 1)}-${_pad(_cutoff.getDate())}`;
+      if (t.taskDueDate > _cutoffStr) return false;
+    }
+  }
+  if (searchQuery) {
+    const hit = t.label.toLowerCase().includes(searchQuery) ||
+      (t.members || []).some(m => m.name.toLowerCase().includes(searchQuery)) ||
+      (t.priority || '').toLowerCase().includes(searchQuery) ||
+      (t.status || '').toLowerCase().includes(searchQuery);
+    if (!hit) return false;
+  }
+  return true;
+}
+
 // ── MY TASKS ───────────────────────────────────────────────────────────────
 function renderMyTasks() {
   const el = document.getElementById('my-tasks-list');
 
-  // Build sprint section
+  // Build sprint section. sprintCount/sprintDone/donePct intentionally stay
+  // based on the FULL sprint list (not filtered) — "6/10 this week" should
+  // reflect your actual sprint capacity regardless of what you're currently
+  // searching for. Only which CARDS are shown is filtered.
   const sprintTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status !== 'done');
+  const sprintTasksVisible = sprintTasks.filter(matchesRefineFilters);
   const sprintDone  = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done').length;
   const sprintCount = sprintTaskIds.size;
   const isFull = sprintCount >= SPRINT_MAX;
@@ -2143,7 +2184,9 @@ function renderMyTasks() {
       </div>
       ${sprintTasks.length === 0 && sprintDone === 0
         ? '<div class="sprint-empty">No tasks yet — expand any task and tap ＋ This Week to add it</div>'
-        : sprintTasks.map((t,i) => myTaskCard(t, i)).join('')
+        : sprintTasksVisible.length === 0
+          ? `<div class="sprint-empty">No sprint tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`
+          : sprintTasksVisible.map((t,i) => myTaskCard(t, i)).join('')
       }
       ${sprintCount > 0 ? `<div class="sprint-reset">Resets ${resetStr}</div>` : ''}
     </div>
@@ -2182,55 +2225,17 @@ function renderMyTasks() {
     }
   }
 
-  // Apply priority filter
-  if (activePriorityFilter) {
-    taskList = taskList.filter(t => (t.priority || 'medium') === activePriorityFilter);
-  }
-  // Apply status filter
-  if (activeStatusFilter) {
-    taskList = taskList.filter(t => t.status === activeStatusFilter);
-  }
-
-  // Apply due date filter
-  if (activeDueFilter) {
-    const _today = new Date();
-    const _pad   = n => String(n).padStart(2,'0');
-    const _ts    = `${_today.getFullYear()}-${_pad(_today.getMonth()+1)}-${_pad(_today.getDate())}`;
-    if (activeDueFilter === 'today') {
-      // Today + overdue (anything due on or before today)
-      taskList = taskList.filter(t =>
-        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _ts
-      );
-    } else {
-      const _cutoff = new Date(_today);
-      _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
-      const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth()+1)}-${_pad(_cutoff.getDate())}`;
-      taskList = taskList.filter(t =>
-        t.status !== 'done' && t.taskDueDate && t.taskDueDate <= _cutoffStr
-      );
-    }
-  }
-
-  // Apply search filter
-  // Priority filter
-  if (activePriorityFilter) {
-    taskList = taskList.filter(t => (t.priority||'medium') === activePriorityFilter);
-  }
-
-  // Easter egg triggers — navigate after brief delay
+  // Easter egg triggers — navigate after brief delay. Checked before the
+  // shared predicate since it's keyed off the raw searchQuery, not a task match.
   const _easterEggs = { quiz:'quiz.html', snake:'snake.html', space:'space.html' };
   if (_easterEggs[searchQuery]) {
     setTimeout(() => { window.location.href = _easterEggs[searchQuery]; }, 120);
     return;
   }
-  if (searchQuery) {
-    taskList = taskList.filter(t =>
-      t.label.toLowerCase().includes(searchQuery) ||
-      (t.members||[]).some(m => m.name.toLowerCase().includes(searchQuery)) ||
-      (t.priority||'').toLowerCase().includes(searchQuery) ||
-      (t.status||'').toLowerCase().includes(searchQuery)
-    );
-  }
+
+  // Priority / status / due / search — same predicate the Sprint section
+  // above uses, so the two can never drift out of sync again.
+  taskList = taskList.filter(matchesRefineFilters);
 
   // Filter banner
   const filterLabels = { total: 'All Tasks', inprog: 'In Progress', done: 'Done', critical: 'Critical' };
@@ -2449,27 +2454,46 @@ window.toggleDoneMonth = (id) => {
 window.toggleTaskExpand = (id) => {
   if (expandedTasks.has(id)) expandedTasks.delete(id);
   else expandedTasks.add(id);
-  const detail = document.getElementById('trd-' + id);
-  const btn    = document.getElementById('trx-' + id);
-  if (!detail || !btn) return;
   const isOpen = expandedTasks.has(id);
-  detail.classList.toggle('open', isOpen);
-  btn.classList.toggle('open', isOpen);
-  // Load comments when expanded
+
+  // A task can legitimately render more than once — e.g. it's on-hold AND
+  // also pinned to "This Week", so it appears in both the Sprint section and
+  // the On Hold section, sharing the same trc-/trx-/trd- ids. This used to
+  // call getElementById, which always resolves to the FIRST match in the
+  // document (the Sprint copy, since that section renders first) — so
+  // clicking a later copy silently expanded/collapsed the WRONG one; from
+  // the clicker's point of view, nothing happened where they clicked.
+  //
+  // Fix: sync EVERY copy sharing this id to the same open/closed state, not
+  // just one. querySelectorAll (not getElementById) on purpose — this also
+  // prevents two duplicate cards for the same task ending up visually
+  // disagreeing with each other (e.g. clicking the Sprint copy open, then
+  // the On Hold copy, would otherwise leave one open and one closed even
+  // though expandedTasks — the actual source of truth — only tracks one
+  // boolean per task id).
+  document.querySelectorAll('[id="trd-' + id + '"]').forEach(d => d.classList.toggle('open', isOpen));
+  document.querySelectorAll('[id="trx-' + id + '"]').forEach(b => b.classList.toggle('open', isOpen));
+
+  // Load comments into every copy that hasn't loaded them yet.
   if (isOpen) {
-    const commentContainer = document.getElementById('comments-' + id);
-    if (commentContainer && !commentContainer.dataset.loaded) {
-      commentContainer.dataset.loaded = '1';
-      renderCommentSection(id, commentContainer);
-    }
+    document.querySelectorAll('[id="trd-' + id + '"]').forEach(detail => {
+      const commentContainer = detail.querySelector('[id^="comments-"]');
+      if (commentContainer && !commentContainer.dataset.loaded) {
+        commentContainer.dataset.loaded = '1';
+        renderCommentSection(id, commentContainer);
+      }
+    });
   }
 };
 
 function myTaskCard(t, i) {
   const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
   const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[t.status||'todo'];
-  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[t.status||'todo'];
+  // 'onhold' was missing from both these maps — on-hold tasks have always
+  // rendered a literal `<span class="tag undefined">undefined</span>` status
+  // tag as a result (there was never a matching .t-onhold CSS class either).
+  const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
+  const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
   const isDone = t.status === 'done';
   const isInprog = t.status === 'inprog';
   const isOnhold = t.status === 'onhold';
@@ -2774,8 +2798,8 @@ function memberTaskCard(t, member, i) {
   const respTask = mData?.role || '';
   const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
   const memberStatus = getMemberStatus(t, member.id);
-  const stTag = {todo:'t-todo',inprog:'t-ip',done:'t-done'}[memberStatus];
-  const stLbl = {todo:'Todo',inprog:'In Progress',done:'Done'}[memberStatus];
+  const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[memberStatus];
+  const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[memberStatus];
   const isDone = memberStatus === 'done';
   const statusClass = isDone ? 'status-done' : t.status === 'inprog' ? 'status-inprog' : t.status === 'onhold' ? 'status-onhold' : '';
 
