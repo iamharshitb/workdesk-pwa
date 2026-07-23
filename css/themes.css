@@ -1190,3 +1190,319 @@ body.theme-skeu .streak-badge { background: linear-gradient(180deg, #e8c878, #c9
 body.theme-skeu .due-today-badge { background: linear-gradient(180deg, #e8a898, #c9584a); border-color: rgba(161,51,40,.4); color: #4a1810; }
 body.theme-skeu .due-soon-badge { background: linear-gradient(180deg, #ecc888, #c9962c); border-color: rgba(143,95,25,.4); color: #4a3110; }
 body.theme-skeu .overdue-badge { background: linear-gradient(180deg, #e8a898, #c9584a); border-color: rgba(161,51,40,.4); color: #4a1810; }
+
+/* ══════════════════════════════════════════════════════
+   THEME: NEUMORPHISM DARK
+   Same soft-UI physics as Neumorphism — one continuous
+   material, depth from a light-shadow/dark-shadow pair,
+   no hard borders — just built on a dark graphite clay
+   instead of a light one. The "light" shadow direction is
+   a LIGHTER shade of the same dark base (not white), and
+   the "dark" shadow direction goes toward near-black, so
+   the light-source physics stay consistent even though
+   the whole palette inverted.
+══════════════════════════════════════════════════════ */
+body.theme-neudark {
+  --bg:#2a2e37;
+  --bg2:#2a2e37;
+  --bg3:#2f333d;
+  --panel:#2a2e37;
+  --border:transparent;
+  --border2:transparent;
+  --neon:#6a98ff;    /* 4.89:1 on #2a2e37 */
+  --neon2:#34d399;   /* 7.07:1 */
+  --purple:#a78bfa;  /* 5.00:1 */
+  --amber:#fbbf24;   /* 8.15:1 */
+  --red:#f87171;     /* 4.92:1 */
+  --text:#e8eaef;
+  --text2:rgba(232,234,239,.78);  /* 7.54:1 */
+  --text3:rgba(232,234,239,.68);  /* 6.12:1 */
+  --nav-bg:rgba(42,46,55,.85);
+  --grid:transparent;
+  /* The two shadow directions — same idea as light Neumorphism, inverted:
+     "light" edge is a lighter tint of the dark base, "dark" edge goes
+     toward near-black, instead of white/grey. */
+  --neu-out: -6px -6px 14px rgba(68,75,90,.5), 6px 6px 14px rgba(10,11,14,.6);
+  --neu-out-sm: -3px -3px 7px rgba(68,75,90,.45), 3px 3px 7px rgba(10,11,14,.55);
+  --neu-in: inset -4px -4px 9px rgba(68,75,90,.4), inset 4px 4px 9px rgba(10,11,14,.55);
+  --neu-in-sm: inset -2px -2px 5px rgba(68,75,90,.35), inset 2px 2px 5px rgba(10,11,14,.5);
+  --shadow-card: var(--neu-out);
+  --shadow-elevated: -8px -8px 20px rgba(68,75,90,.55), 10px 10px 24px rgba(10,11,14,.65);
+  --shadow-neon:none;
+  --glass-bg:#2a2e37;
+  --glass-blur:none;
+  --glass-edge:none;
+  background-color:#2a2e37;
+  background-image:none;
+}
+body.theme-neudark .nav {
+  background:var(--nav-bg);
+  border-bottom:none;
+  box-shadow:0 4px 12px rgba(10,11,14,.45);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+body.theme-neudark .nav-brand { color:var(--neon);text-shadow:none;filter:none }
+body.theme-neudark .brand-dot { background:var(--neon);box-shadow:0 0 6px rgba(106,152,255,.4) }
+body.theme-neudark .nav-link { color:var(--text2) }
+body.theme-neudark .nav-link.active { color:var(--neon);background:#2a2e37;border:none;border-radius:100px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neudark .btn-theme-toggle { background:#2a2e37;border:none;color:var(--text2);box-shadow:var(--neu-out-sm) }
+body.theme-neudark .btn-theme-toggle:active { box-shadow:var(--neu-in-sm) }
+body.theme-neudark .panel {
+  background:#2a2e37;border:none;border-radius:22px !important;
+  box-shadow:var(--neu-out);
+}
+body.theme-neudark .panel-hd { border-bottom:1px solid rgba(10,11,14,.4) }
+body.theme-neudark .panel-title { color:var(--text);text-shadow:none }
+body.theme-neudark .panel-title::before { background:var(--neon);box-shadow:none }
+body.theme-neudark .stat-pill { background:#2a2e37;border:none;border-radius:18px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neudark .stat-pill.active-filter { box-shadow:var(--neu-in);color:var(--neon) }
+body.theme-neudark .sn-g { color:var(--neon2) !important }
+body.theme-neudark .sn-a { color:var(--amber) !important }
+body.theme-neudark .sn-b { color:var(--neon) !important }
+body.theme-neudark .sn-r { color:var(--red) !important }
+body.theme-neudark .prog-wrap { background:#2a2e37;border:none;border-radius:18px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .prog-track { background:#22252c;box-shadow:var(--neu-in-sm);height:8px;border-radius:8px }
+body.theme-neudark .prog-fill { background:linear-gradient(90deg,var(--neon),var(--purple));box-shadow:none;border-radius:8px }
+body.theme-neudark .prog-pct { color:var(--neon) }
+body.theme-neudark .task-card { background:#2a2e37;border:none;border-radius:18px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .task-card::before { width:0 }
+body.theme-neudark .task-card.pc { border-left:4px solid var(--red) }
+body.theme-neudark .task-card.ph { border-left:4px solid var(--amber) }
+body.theme-neudark .task-card.pm { border-left:4px solid var(--neon) }
+body.theme-neudark .task-card.pl { border-left:4px solid var(--neon2) }
+body.theme-neudark .task-row-compact { background:#2a2e37;border:none;border-radius:14px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .task-row-compact:hover { background:#31353f;box-shadow:var(--neu-out);transform:translateY(-2px) }
+body.theme-neudark .task-row-compact:active { box-shadow:var(--neu-in-sm);transform:none }
+body.theme-neudark .task-detail { background:#24272e;border:none;box-shadow:var(--neu-in-sm);border-radius:14px !important }
+body.theme-neudark .send-btn { background:linear-gradient(145deg,#6a98ff,#4a78e8);border:none;border-radius:16px !important;color:#0c1220;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .send-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neudark .mark-done-btn { background:linear-gradient(145deg,#34d399,#22b381);border:none;border-radius:22px !important;color:#052015;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .mark-done-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neudark .mark-done-btn.undone { background:#2a2e37;color:var(--text2);box-shadow:var(--neu-in-sm) }
+body.theme-neudark .sc-btn { background:#2a2e37;border:none;border-radius:20px !important;color:var(--text2);box-shadow:var(--neu-out-sm) }
+body.theme-neudark .sc-btn:active { box-shadow:var(--neu-in-sm) }
+body.theme-neudark .m-chip { background:#2a2e37;border:none;border-radius:22px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .m-chip.sel { box-shadow:var(--neu-in-sm);color:var(--neon) }
+body.theme-neudark .p-chip { background:#2a2e37;border:none;border-radius:22px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .p-chip.pc { color:var(--red) } body.theme-neudark .p-chip.pc.sel,body.theme-neudark .p-chip.pc:active { box-shadow:var(--neu-in-sm) }
+body.theme-neudark .p-chip.ph { color:var(--amber) }
+body.theme-neudark .p-chip.pm { color:var(--neon) }
+body.theme-neudark .p-chip.pl { color:var(--neon2) }
+body.theme-neudark .task-input,body.theme-neudark .role-input,body.theme-neudark .notes-ta {
+  background:#24272e;border:none;color:var(--text);box-shadow:var(--neu-in-sm);border-radius:14px !important;
+}
+body.theme-neudark .task-input:focus { box-shadow:var(--neu-in-sm),0 0 0 3px rgba(106,152,255,.2) }
+body.theme-neudark .bottom-nav {
+  background:rgba(42,46,55,.9);border-top:none;
+  box-shadow:0 -4px 16px rgba(10,11,14,.5);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+body.theme-neudark .bn-item { color:rgba(232,234,239,.5) }
+body.theme-neudark .bn-item.active { color:var(--neon) }
+body.theme-neudark .bn-item.active::before { background:var(--neon);box-shadow:none }
+body.theme-neudark .toast { background:#2f333d;border:none;color:var(--neon);box-shadow:var(--shadow-elevated) }
+body.theme-neudark .filter-banner { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--neon) }
+body.theme-neudark .member-prog-fill { background:var(--neon) }
+body.theme-neudark .fu-card { background:#2a2e37;border:none;border-radius:16px !important;box-shadow:var(--neu-out-sm) }
+body.theme-neudark .member-hd { background:#2a2e37;border:none;border-radius:14px !important;box-shadow:var(--neu-in-sm) }
+body.theme-neudark .nav-logo { filter:none }
+body.theme-neudark .task-edit-panel { background:#24272e;border:none;box-shadow:var(--neu-in-sm);border-radius:14px !important }
+body.theme-neudark .comment-item { background:#31353f;border:none;box-shadow:var(--neu-in-sm) }
+body.theme-neudark .ideas-fab { background:linear-gradient(145deg,#a78bfa,#8a6de8);box-shadow:var(--neu-out) }
+body.theme-neudark .install-banner { background:#2a2e37;border:none;box-shadow:var(--shadow-elevated);backdrop-filter:none;-webkit-backdrop-filter:none }
+body.theme-neudark .streak-badge { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--amber) }
+body.theme-neudark .due-today-badge { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--red) }
+body.theme-neudark .due-soon-badge { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--amber) }
+body.theme-neudark .overdue-badge { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--red) }
+body.theme-neudark .t-onhold { background:#2a2e37;border:none;box-shadow:var(--neu-in-sm);color:var(--purple) }
+
+/* ══════════════════════════════════════════════════════
+   THEME: INDUSTRIAL
+   Black-and-white hardware aesthetic — exposed-device
+   design language: a dot-matrix speaker-grille texture,
+   monospace "technical readout" labels (stat numbers,
+   badges), hard edges instead of soft shadows/rounding,
+   small screw/rivet details in panel corners, and a
+   camera-lens dot on the nav. Colour exists only as small
+   "indicator light" accents (the way real hardware has a
+   power LED even in an otherwise monochrome housing) —
+   muted/desaturated on purpose, not candy-bright.
+══════════════════════════════════════════════════════ */
+body.theme-industrial {
+  --bg:#0d0d0d;
+  --bg2:#161616;
+  --bg3:#1e1e1e;
+  --panel:#161616;
+  --border:rgba(255,255,255,.1);
+  --border2:rgba(255,255,255,.18);
+  --neon:#ffffff;      /* primary = a backlit white LED, not a hue */
+  --neon2:#7fd99a;     /* muted green indicator light */
+  --purple:#94a3b8;    /* steel blue-grey stands in for "purple" (on-hold) */
+  --amber:#e8a33d;     /* muted amber indicator light */
+  --red:#f0645a;       /* muted red indicator light */
+  --text:#f2f2f2;
+  --text2:rgba(242,242,242,.72);  /* 8.73:1 on panel bg */
+  --text3:rgba(242,242,242,.55);  /* 5.60:1 */
+  --nav-bg:rgba(13,13,13,.92);
+  --grid:transparent;
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.5);
+  --shadow-elevated: 0 1px 0 rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.6);
+  --shadow-neon: 0 0 12px rgba(255,255,255,.15);
+  --glass-bg:#161616;
+  --glass-blur:none;
+  --glass-edge:none;
+  background-color:#0d0d0d;
+  background-image:none;
+}
+/* Dot-matrix speaker-grille texture — reused as a decorative strip, not a
+   full-page texture (would fight body-text legibility at that density). */
+body.theme-industrial .nav,
+body.theme-industrial .bottom-nav {
+  background-image: radial-gradient(circle, rgba(255,255,255,.12) 1px, transparent 1.3px);
+  background-size: 7px 7px;
+  background-position: 0 0;
+}
+body.theme-industrial .nav {
+  background-color:var(--nav-bg);
+  border-bottom:1px solid var(--border2);
+  box-shadow:none;
+  position:relative;
+}
+/* Camera-lens dot, echoing the reference device's top-centre cutout */
+body.theme-industrial .nav::after {
+  content:'';
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:6px; height:6px; border-radius:50%;
+  background:#000; border:1px solid rgba(255,255,255,.25);
+  box-shadow:inset 0 0 2px rgba(255,255,255,.15);
+}
+body.theme-industrial .nav-brand { color:var(--text);text-shadow:none;filter:none }
+body.theme-industrial .brand-dot { background:var(--neon);box-shadow:0 0 5px rgba(255,255,255,.6);border-radius:50% }
+body.theme-industrial .nav-link { color:var(--text2);font-family:var(--mono);letter-spacing:.02em }
+body.theme-industrial .nav-link.active { color:#000;background:var(--neon);border-radius:4px !important }
+body.theme-industrial .btn-theme-toggle {
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text2);
+  border-radius:4px !important;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;font-size:10px;
+}
+body.theme-industrial .btn-theme-toggle:active { background:#000 }
+/* Panels: hard edges, thin border, small rivet dots in the top corners */
+body.theme-industrial .panel {
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px !important;
+  box-shadow:var(--shadow-card);
+  position:relative;
+}
+body.theme-industrial .panel::before,
+body.theme-industrial .panel::after {
+  content:''; position:absolute; top:7px; width:3px; height:3px; border-radius:50%;
+  background:rgba(255,255,255,.18);
+}
+body.theme-industrial .panel::before { left:7px; }
+body.theme-industrial .panel::after  { right:7px; }
+body.theme-industrial .panel-hd { border-bottom:1px solid var(--border); }
+body.theme-industrial .panel-title { color:var(--text);text-shadow:none;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;font-size:12px; }
+body.theme-industrial .panel-title::before { background:var(--neon);box-shadow:0 0 4px rgba(255,255,255,.5) }
+/* Stat pills: LCD-readout look — dark well, monospace, thin border */
+body.theme-industrial .stat-pill {
+  background:#0d0d0d;border:1px solid var(--border2);border-radius:4px !important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.6);
+}
+body.theme-industrial .stat-pill.active-filter { border-color:var(--neon);box-shadow:inset 0 1px 3px rgba(0,0,0,.6),0 0 8px rgba(255,255,255,.15) }
+body.theme-industrial .stat-n { font-family:var(--mono) !important; }
+body.theme-industrial .sn-g { color:var(--neon2) !important;text-shadow:0 0 6px rgba(127,217,154,.4) }
+body.theme-industrial .sn-a { color:var(--amber) !important;text-shadow:0 0 6px rgba(232,163,61,.4) }
+body.theme-industrial .sn-b { color:var(--neon) !important;text-shadow:0 0 6px rgba(255,255,255,.35) }
+body.theme-industrial .sn-r { color:var(--red) !important;text-shadow:0 0 6px rgba(240,100,90,.4) }
+body.theme-industrial .prog-wrap { background:var(--bg2);border:1px solid var(--border);border-radius:6px !important;box-shadow:var(--shadow-card) }
+body.theme-industrial .prog-track { background:#0d0d0d;border:1px solid var(--border);border-radius:2px;box-shadow:inset 0 1px 3px rgba(0,0,0,.6) }
+body.theme-industrial .prog-fill { background:var(--neon);box-shadow:0 0 8px rgba(255,255,255,.4);border-radius:1px }
+body.theme-industrial .prog-pct { color:var(--neon);font-family:var(--mono) }
+/* Task cards: hard vertical accent bar (no rounding on that edge), status in mono */
+body.theme-industrial .task-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:4px !important;
+  box-shadow:var(--shadow-card);
+}
+body.theme-industrial .task-card::before { width:0 }
+body.theme-industrial .task-card.pc { border-left:3px solid var(--red) }
+body.theme-industrial .task-card.ph { border-left:3px solid var(--amber) }
+body.theme-industrial .task-card.pm { border-left:3px solid var(--neon) }
+body.theme-industrial .task-card.pl { border-left:3px solid var(--neon2) }
+body.theme-industrial .task-row-compact {
+  background:var(--bg2);border:1px solid var(--border);border-radius:4px !important;
+  box-shadow:var(--shadow-card);
+}
+body.theme-industrial .task-row-compact:hover { background:var(--bg3);border-color:var(--border2);transform:none }
+body.theme-industrial .task-row-compact:active { background:#0d0d0d }
+body.theme-industrial .task-detail { background:#0d0d0d;border:1px solid var(--border);border-radius:4px !important }
+body.theme-industrial .tag { font-family:var(--mono) !important;text-transform:uppercase;letter-spacing:.03em;border-radius:2px !important }
+body.theme-industrial .send-btn {
+  background:var(--neon);border:none;border-radius:4px !important;color:#000;
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;
+  box-shadow:0 0 10px rgba(255,255,255,.2);
+}
+body.theme-industrial .send-btn:active { background:#d4d4d4 }
+body.theme-industrial .mark-done-btn {
+  background:var(--neon2);border:none;border-radius:4px !important;color:#052014;
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;
+  box-shadow:0 0 10px rgba(127,217,154,.25);
+}
+body.theme-industrial .mark-done-btn.undone { background:var(--bg3);border:1px solid var(--border2);color:var(--text2);box-shadow:none }
+body.theme-industrial .sc-btn {
+  background:var(--bg3);border:1px solid var(--border2);border-radius:4px !important;color:var(--text2);
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.03em;font-size:10px;
+}
+body.theme-industrial .m-chip { background:var(--bg3);border:1px solid var(--border2);border-radius:4px !important;font-family:var(--mono) }
+body.theme-industrial .m-chip.sel { background:var(--neon);border-color:var(--neon);color:#000 }
+body.theme-industrial .p-chip { background:var(--bg3);border:1px solid var(--border2);border-radius:4px !important;font-family:var(--mono);text-transform:uppercase;font-size:10px }
+body.theme-industrial .p-chip.pc { color:var(--red) }
+body.theme-industrial .p-chip.ph { color:var(--amber) }
+body.theme-industrial .p-chip.pm { color:var(--neon) }
+body.theme-industrial .p-chip.pl { color:var(--neon2) }
+body.theme-industrial .p-chip.pc.sel { background:var(--red);color:#000;border-color:var(--red) }
+body.theme-industrial .task-input,body.theme-industrial .role-input,body.theme-industrial .notes-ta {
+  background:#0d0d0d;border:1px solid var(--border2);color:var(--text);border-radius:4px !important;font-family:var(--mono);
+}
+body.theme-industrial .task-input:focus { border-color:var(--neon);box-shadow:0 0 0 2px rgba(255,255,255,.12) }
+body.theme-industrial .bottom-nav {
+  background-color:var(--nav-bg);border-top:1px solid var(--border2);box-shadow:none;
+}
+body.theme-industrial .bn-item { color:rgba(242,242,242,.45);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.03em }
+body.theme-industrial .bn-item.active { color:var(--neon) }
+body.theme-industrial .bn-item.active::before { background:var(--neon);box-shadow:0 0 6px rgba(255,255,255,.5) }
+body.theme-industrial .toast {
+  background:#0d0d0d;border:1px solid var(--border2);color:var(--neon);border-radius:4px !important;
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.03em;font-size:11px;
+}
+body.theme-industrial .filter-banner { background:var(--bg2);border:1px solid var(--border2);color:var(--neon);border-radius:4px !important;font-family:var(--mono) }
+body.theme-industrial .member-prog-fill { background:var(--neon);box-shadow:0 0 6px rgba(255,255,255,.35) }
+body.theme-industrial .fu-card { background:var(--bg2);border:1px solid var(--border);border-radius:4px !important }
+body.theme-industrial .member-hd { background:var(--bg3);border:1px solid var(--border2);border-radius:4px !important }
+body.theme-industrial .nav-logo { filter:none }
+body.theme-industrial .task-edit-panel { background:#0d0d0d;border:1px solid var(--border);border-radius:4px !important }
+body.theme-industrial .comment-item { background:var(--bg3);border:1px solid var(--border) }
+body.theme-industrial .ideas-fab {
+  background:#0d0d0d;border:2px solid var(--neon);box-shadow:0 0 14px rgba(255,255,255,.2);border-radius:50%;
+}
+body.theme-industrial .install-banner {
+  background:var(--bg2);border:1px solid var(--border2);border-radius:6px !important;
+  box-shadow:var(--shadow-elevated);backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+body.theme-industrial .streak-badge { background:#0d0d0d;border:1px solid var(--border2);color:var(--amber);font-family:var(--mono);border-radius:4px !important }
+body.theme-industrial .due-today-badge { background:#0d0d0d;border:1px solid rgba(240,100,90,.4);color:var(--red);font-family:var(--mono);border-radius:4px !important }
+body.theme-industrial .due-soon-badge { background:#0d0d0d;border:1px solid rgba(232,163,61,.4);color:var(--amber);font-family:var(--mono);border-radius:4px !important }
+body.theme-industrial .overdue-badge { background:#0d0d0d;border:1px solid rgba(240,100,90,.4);color:var(--red);font-family:var(--mono);border-radius:4px !important }
+body.theme-industrial .t-onhold { background:#0d0d0d;border:1px solid rgba(148,163,184,.4);color:var(--purple) }
+/* Coordinate-readout flourish — small monospace GPS-style label, purely
+   decorative, echoing the reference image's corner readout. Placed on the
+   greeting bar since that's the one panel everyone sees on every visit.
+   Anchored in the bar's own top padding (14px), which is genuinely empty
+   space regardless of how tall the greeting text/streak badge grow to —
+   safer than the bottom edge, where the streak badge's exact position
+   shifts with content length since it's vertically centred via flexbox. */
+body.theme-industrial .greeting-bar { position:relative; }
+body.theme-industrial .greeting-bar::after {
+  content:'37.3318°N 122.0312°W';
+  position:absolute; top:4px; right:10px;
+  font-family:var(--mono); font-size:8px; letter-spacing:.02em;
+  color:rgba(242,242,242,.3);
+  pointer-events:none;
+}
