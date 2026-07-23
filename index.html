@@ -414,7 +414,6 @@
       transition:all var(--dur-base) var(--ease-out);
     }
     .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
-    .done-week-stat { color:var(--neon); font-weight:800; }
     .done-section-arrow { transition:transform var(--dur-base) var(--ease-spring);font-size:10px }
     .done-section-arrow.open { transform:rotate(180deg) }
     .done-section-body { display:none;margin-top:4px }
@@ -2251,7 +2250,12 @@ function renderMyTasks() {
   // ones to the front.
   sprintTasks.sort((a, b) => (a.status === 'inprog' ? 0 : 1) - (b.status === 'inprog' ? 0 : 1));
   const sprintTasksVisible = sprintTasks.filter(matchesRefineFilters);
-  const sprintDone  = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done').length;
+  // Full task list for done sprint tasks — previously only a count
+  // (sprintDone) existed. Kept sprintDone/sprintCount as plain numbers too
+  // since the header's progress bar still wants them as counts, not arrays.
+  const sprintDoneTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done');
+  const sprintDoneTasksVisible = sprintDoneTasks.filter(matchesRefineFilters);
+  const sprintDone  = sprintDoneTasks.length;
   const sprintCount = sprintTaskIds.size;
   const isFull = sprintCount >= SPRINT_MAX;
   const donePct = sprintCount > 0 ? Math.round(sprintDone / sprintCount * 100) : 0;
@@ -2276,12 +2280,24 @@ function renderMyTasks() {
         </div>
         <div class="sprint-bar-label">${sprintDone}/${sprintCount} done</div>
       </div>
-      ${sprintTasks.length === 0 && sprintDone === 0
-        ? '<div class="sprint-empty">No tasks yet — expand any task and tap ＋ This Week to add it</div>'
-        : sprintTasksVisible.length === 0
-          ? `<div class="sprint-empty">No sprint tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`
-          : sprintTasksVisible.map((t,i) => myTaskCard(t, i)).join('')
+      ${sprintTasks.length === 0
+        ? (sprintDone === 0
+            ? '<div class="sprint-empty">No tasks yet — expand any task and tap ＋ This Week to add it</div>'
+            : '') /* everything in the sprint is done — nothing to show here, the Done sub-section below covers it */
+        : (sprintTasksVisible.length === 0
+            ? `<div class="sprint-empty">No sprint tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`
+            : sprintTasksVisible.map((t,i) => myTaskCard(t, i)).join(''))
       }
+      ${sprintDoneTasks.length ? `
+      <div class="done-section-toggle" onclick="event.stopPropagation();toggleSprintDoneSection()" id="sprint-done-toggle" style="margin-top:10px">
+        <span>✅ Done This Week (${sprintDoneTasks.length})</span>
+        <span class="done-section-arrow" id="sprint-done-arrow">▼</span>
+      </div>
+      <div class="done-section-body" id="sprint-done-body">
+        ${sprintDoneTasksVisible.length
+          ? sprintDoneTasksVisible.map((t,i) => myTaskCard(t, i)).join('')
+          : `<div class="sprint-empty">No done tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`}
+      </div>` : ''}
       ${sprintCount > 0 ? `<div class="sprint-reset">Resets ${resetStr}</div>` : ''}
     </div>
   </div>`;
@@ -2442,7 +2458,7 @@ function renderMyTasks() {
 
   const doneHTML = doneTasks.length ? `
     <div class="done-section-toggle" onclick="toggleDoneSection()" id="done-toggle">
-      <span>✅ Done (${doneTasks.length})${sprintCount > 0 ? ` <span class="done-week-stat">· 🎯 ${sprintDone}/${sprintCount} This Week</span>` : ''}</span>
+      <span>✅ Done (${doneTasks.length})</span>
       <span class="done-section-arrow" id="done-arrow">▼</span>
     </div>
     <div class="done-section-body" id="done-body">
@@ -2535,6 +2551,14 @@ window.toggleDoneSection = () => {
   const arrow = document.getElementById('done-arrow');
   if (body)  body.classList.toggle('open', _doneOpen);
   if (arrow) arrow.classList.toggle('open', _doneOpen);
+};
+let _sprintDoneOpen = false;
+window.toggleSprintDoneSection = () => {
+  _sprintDoneOpen = !_sprintDoneOpen;
+  const body  = document.getElementById('sprint-done-body');
+  const arrow = document.getElementById('sprint-done-arrow');
+  if (body)  body.classList.toggle('open', _sprintDoneOpen);
+  if (arrow) arrow.classList.toggle('open', _sprintDoneOpen);
 };
 const _doneMonthOpen = {};
 window.toggleDoneMonth = (id) => {

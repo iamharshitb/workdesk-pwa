@@ -393,6 +393,8 @@ let sprintOpen = true
 
 The manager (`ADMIN_NAME`, currently `'Harshit'`) can add/remove tasks from **any** teammate's "This Week" list, not just their own — from the **By Member** tab, on a task-by-task basis. Teammates keep the ability to manage their own sprint themselves (unchanged, via `toggleSprintTask` above).
 
+**This is admin-only, not peer-to-peer** — a non-admin teammate cannot do this for anyone but themselves. Gating is `canAct = isMyCard || isAdmin` in `memberTaskCard()`: `isMyCard` lets anyone act on their own card, `isAdmin` (hardcoded to `ADMIN_NAME`) is what additionally unlocks every *other* card. If asked to open this up to all teammates acting on each other, that's a real change (remove/alter the `isAdmin` check), not a config toggle — confirm before making it, since it changes who can see/edit whose sprint.
+
 The core challenge: sprint data lives in each person's own Firestore doc (async to fetch), but `memberTaskCard()` needs to know **synchronously** whether a given task is already in a teammate's sprint, to render the button's correct state. Solved the same way `cachedBadges` solves an analogous problem — fetch once, cache, let the render that's already happening on every task change (`renderAll()` → `renderByMember()`) pick up the resolved data:
 
 ```javascript
@@ -416,9 +418,27 @@ Writes are optimistic (cache updates immediately, UI re-renders, *then* `saveUse
 
 Verified via the jsdom harness end-to-end: admin toggling a teammate's task writes to *that teammate's* mock Firestore doc (not the admin's), the button state flips correctly after re-render, and the admin's own card correctly routes through the pre-existing sprint path instead of the generic one.
 
-### Done section — "This Week" completion stat
+### Done This Week — full sub-section inside the Sprint widget
 
-The Done section header (`renderMyTasks()`, where `doneHTML` is built) now shows `✅ Done (N) · 🎯 X/Y This Week` — reuses `sprintDone`/`sprintCount`, already computed earlier in the same function for the Sprint section's own header, just surfaced a second time where someone reviewing completed work would see it. Only shown when `sprintCount > 0` (no point rendering "0/0" for someone with nothing pinned to this week). `.done-week-stat` CSS is a one-line addition next to `.done-section-toggle`.
+**Superseded the "This Week" stat approach below (kept for history — don't reintroduce it, it was explicitly removed).** ~~The Done section header showed `✅ Done (N) · 🎯 X/Y This Week` as a count-only stat.~~ Replaced with a proper collapsible sub-section, showing full task cards, nested inside the Sprint widget itself rather than referenced from the bottom Done section:
+
+```
+🎯 This Week's Sprint
+  [progress bar — X/Y done, unchanged, pre-existing]
+  [active sprint tasks — sprintTasksVisible, in-progress sorted first]
+  ✅ Done This Week (N)          ← collapsible, collapsed by default
+    [full task cards — sprintDoneTasksVisible]
+  Resets {date}
+```
+
+- `sprintDoneTasks` (full array, not a count) = `tasks.filter(t => sprintTaskIds.has(t.id) && t.status==='done')`; `sprintDoneTasksVisible` applies the same `matchesRefineFilters` predicate the active list and the main task list both use, so search stays consistent here too. `sprintDone`/`sprintCount` are still kept as plain numbers (`sprintDoneTasks.length` / `sprintTaskIds.size`) since the header's progress bar wants counts, not arrays.
+- Toggle (`toggleSprintDoneSection`) mirrors `toggleDoneSection`'s exact pattern — a lightweight DOM class-toggle on `#sprint-done-body`/`#sprint-done-arrow`, not a full re-render.
+- **A completed sprint task now renders in *two* places** — this sub-section, and the main bottom Done section (which was never filtered to exclude sprint tasks, matching how *active* sprint tasks already double-render in both Sprint and Active/On Hold). This is intentional, consistent with the rest of the app's "Sprint is a pinned overlay, not an exclusive move" design — but it does mean every completed-and-pinned task hits the duplicate-id situation documented earlier (`toggleTaskExpand` syncing all copies via `querySelectorAll`). Verified via the jsdom harness: completing a sprint task correctly produces exactly 2 card instances (not more), and clicking either copy opens both.
+- Empty-state logic has 3 distinct cases, not 2 — worth preserving the exact branching if you touch this: truly empty sprint (no active, no done) → "add tasks" prompt; sprint has items but *all* are done (active list would otherwise be empty) → render nothing in the active area, since a misleading "no tasks match this filter" would show even with zero filters active; active items exist but search/filter hides all of them → the actual "no match" message.
+
+### (Removed) Done section "This Week" completion stat
+
+The Done section header (`renderMyTasks()`, where `doneHTML` is built) briefly showed `✅ Done (N) · 🎯 X/Y This Week` — reused `sprintDone`/`sprintCount` computed for the Sprint section's own header. Explicitly removed one turn later in favour of the full sub-section above, which shows the actual tasks rather than just a count. `.done-week-stat` CSS was removed along with it — don't re-add it without checking this isn't wanted back in stat form specifically.
 
 ---
 
