@@ -1,10 +1,12 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
 
 export const THEMES = [
-  { id:'editorial',  name:'Editorial',     sub:'Inter · Clean · Minimal',   dot:'#16171A', bg:'#F3F3F5' },
-  { id:'neu',        name:'Neumorphism',   sub:'Soft UI · Sculpted light',  dot:'#2d56d8', bg:'#e0e5ec' },
-  { id:'glass',      name:'Glassmorphism', sub:'Aurora · Deep frost',       dot:'#22d3ee', bg:'#0b1023' },
-  { id:'skeu',       name:'Skeuomorphism', sub:'Leather · Paper · Tactile', dot:'#8b4a2b', bg:'#e8dcc2' },
+  { id:'editorial',   name:'Editorial',      sub:'Inter · Clean · Minimal',    dot:'#16171A', bg:'#F3F3F5' },
+  { id:'neu',         name:'Neumorphism',    sub:'Soft UI · Sculpted light',   dot:'#2d56d8', bg:'#e0e5ec' },
+  { id:'neudark',     name:'Neumorphism Dark', sub:'Soft UI · Graphite clay',  dot:'#6a98ff', bg:'#2a2e37' },
+  { id:'glass',       name:'Glassmorphism',  sub:'Aurora · Deep frost',        dot:'#22d3ee', bg:'#0b1023' },
+  { id:'skeu',        name:'Skeuomorphism',  sub:'Leather · Paper · Tactile',  dot:'#8b4a2b', bg:'#e8dcc2' },
+  { id:'industrial',  name:'Industrial',     sub:'Hardware · Mono · B&W',      dot:'#ffffff', bg:'#0d0d0d' },
 ];
 
 // Default to Neumorphism if no saved theme, or if saved theme no longer exists
