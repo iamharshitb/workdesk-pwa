@@ -414,6 +414,7 @@
       transition:all var(--dur-base) var(--ease-out);
     }
     .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
+    .done-week-stat { color:var(--neon); font-weight:800; }
     .done-section-arrow { transition:transform var(--dur-base) var(--ease-spring);font-size:10px }
     .done-section-arrow.open { transform:rotate(180deg) }
     .done-section-body { display:none;margin-top:4px }
@@ -1689,6 +1690,95 @@ window.toggleSprintPanel = () => {
   sprintOpen = !sprintOpen;
   renderMyTasks();
 };
+
+// ── ADMIN: manage OTHER people's "This Week" ────────────────────────────────
+// The manager (ADMIN_NAME) can add/remove tasks from any teammate's sprint,
+// not just their own — teammates can still do this for themselves too (see
+// toggleSprintTask above, unchanged). Sprint data lives per-person in
+// Firestore (workspaces/.../users/{name}.sprint), so this reuses the exact
+// same getUserData/saveUserData calls, just parameterised by a target name
+// instead of always MY_NAME.
+//
+// memberTaskCard() needs to know SYNCHRONOUSLY whether a given task is
+// already in a teammate's sprint, to render the button's correct state — but
+// that data lives in Firestore (async). Fixed the same way cachedBadges
+// solves an analogous problem: fetch once when the By Member tab first
+// renders for the admin, cache it, then let the natural re-render (every
+// render already happens via renderAll() on every task change) pick up the
+// resolved data. Refreshed only when stale (see loadMemberSprintCache).
+let memberSprintCache = {};        // { [lowercaseName]: Set(taskIds) }
+let _memberSprintCacheLoaded = false;
+
+async function loadMemberSprintCache() {
+  const wk = getWeekKey();
+  const results = await Promise.all(members.map(async m => {
+    try {
+      const data = await getUserData(m.name);
+      const stored = data?.sprint;
+      const ids = (stored && stored.week === wk) ? (stored.ids || []) : [];
+      return [m.name.toLowerCase(), new Set(ids)];
+    } catch (e) {
+      return [m.name.toLowerCase(), new Set()];
+    }
+  }));
+  memberSprintCache = Object.fromEntries(results);
+  _memberSprintCacheLoaded = true;
+  renderByMember();
+}
+
+window.toggleMemberSprintTask = async (memberId, taskId) => {
+  const member = members.find(m => m.id === memberId);
+  if (!member) return;
+  const memberName = member.name;
+
+  // If the admin is toggling their OWN card, route through the existing
+  // live-synced toggleSprintTask instead of the generic path below — that
+  // one already manages sprintTaskIds/expandedTasks/the live listener
+  // correctly, and duplicating that here would risk the two falling out of
+  // sync with each other.
+  if (MY_NAME && memberName.toLowerCase() === MY_NAME.toLowerCase()) {
+    window.toggleSprintTask(taskId);
+    return;
+  }
+
+  const key = memberName.toLowerCase();
+  const wk = getWeekKey();
+  let current = memberSprintCache[key];
+  if (!current) {
+    // Cache miss (shouldn't normally happen once loadMemberSprintCache has
+    // run, but fetch fresh rather than assume empty) — read-repair.
+    try {
+      const data = await getUserData(memberName);
+      const stored = data?.sprint;
+      current = (stored && stored.week === wk) ? new Set(stored.ids || []) : new Set();
+    } catch (e) {
+      current = new Set();
+    }
+  }
+
+  const wasIn = current.has(taskId);
+  if (wasIn) {
+    current.delete(taskId);
+  } else {
+    if (current.size >= SPRINT_MAX) {
+      toast(memberName + "'s sprint is full — max " + SPRINT_MAX); return;
+    }
+    current.add(taskId);
+  }
+  memberSprintCache[key] = current; // optimistic local update
+  renderByMember();
+
+  try {
+    await saveUserData(memberName, { sprint: { week: wk, ids: [...current] } });
+    toast(wasIn ? `Removed from ${memberName}'s This Week` : `🎯 Added to ${memberName}'s This Week`);
+  } catch (e) {
+    // Roll back the optimistic update if the write actually failed
+    if (wasIn) current.add(taskId); else current.delete(taskId);
+    memberSprintCache[key] = current;
+    renderByMember();
+    toast('Could not update — try again');
+  }
+};
 let activePriorityFilter = null; // 'critical'|'high'|'medium'|'low'|null
 let activeStatusFilter   = null; // 'inprog'|'todo'|null
 
@@ -2352,7 +2442,7 @@ function renderMyTasks() {
 
   const doneHTML = doneTasks.length ? `
     <div class="done-section-toggle" onclick="toggleDoneSection()" id="done-toggle">
-      <span>✅ Done (${doneTasks.length})</span>
+      <span>✅ Done (${doneTasks.length})${sprintCount > 0 ? ` <span class="done-week-stat">· 🎯 ${sprintDone}/${sprintCount} This Week</span>` : ''}</span>
       <span class="done-section-arrow" id="done-arrow">▼</span>
     </div>
     <div class="done-section-body" id="done-body">
@@ -2671,6 +2761,17 @@ function myTaskCard(t, i) {
 function renderByMember() {
   const el = document.getElementById('by-member-list');
   if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet.</div>'; return; }
+
+  // Admin-only: load once, so memberTaskCard() below can synchronously show
+  // whether a task is already in each teammate's "This Week" list. Guarded
+  // exactly like _sprintInitialized elsewhere — this function re-runs on
+  // every task change via renderAll(), so without the guard this would
+  // re-fetch every member's sprint doc on every single sync.
+  const isAdminCache = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
+  if (isAdminCache && !_memberSprintCacheLoaded) {
+    loadMemberSprintCache(); // re-renders itself once resolved
+  }
+
   let html = '';
   // Sort members by completion % — highest first (leaderboard)
   const sortedMembers = [...members].sort((a, b) => {
@@ -2812,6 +2913,20 @@ function memberTaskCard(t, member, i) {
   const isAdmin  = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
   const canAct   = isMyCard || isAdmin;
 
+  // "This Week" toggle — own card uses the live, already-synced sprintTaskIds;
+  // a teammate's card (admin only) uses the pre-fetched memberSprintCache
+  // (see loadMemberSprintCache — undefined until that resolves, treated as
+  // empty in the meantime rather than blocking the render).
+  const memberSprintSet = isMyCard ? sprintTaskIds : (memberSprintCache[member.name.toLowerCase()] || new Set());
+  const inSprint = memberSprintSet.has(t.id);
+  const sprintFull = !inSprint && memberSprintSet.size >= SPRINT_MAX;
+  const sprintBtnHTML = (canAct && !isDone) ? `
+        <button class="sprint-task-btn${inSprint ? ' remove' : (sprintFull ? ' full-disabled' : '')}"
+          onclick="event.stopPropagation();${sprintFull ? '' : `toggleMemberSprintTask('${member.id}','${t.id}')`}"
+          title="${sprintFull ? 'Sprint full (max ' + SPRINT_MAX + ')' : ''}">
+          ${inSprint ? '✕ Remove' : sprintFull ? '🎯 Full' : '🎯 This Week'}
+        </button>` : '';
+
   return `
     <div class="task-card ${pc} ${statusClass}" style="margin-left:12px">
       <div class="tc-title">${esc(t.label)}</div>
@@ -2828,6 +2943,7 @@ function memberTaskCard(t, member, i) {
           onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
           ${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
         </button>
+        ${sprintBtnHTML}
       </div>` : ''}
     </div>`;
 }

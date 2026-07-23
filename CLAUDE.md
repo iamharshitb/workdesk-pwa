@@ -180,14 +180,16 @@ Fires from inside `onTasksChanged`'s existing `type === 'added'` + `assignedToMe
 
 ---
 
-## Themes (4 total)
+## Themes (6 total)
 
 | ID | Name | Description |
 |----|------|-------------|
 | `editorial` | Editorial | Inter font, #F3F3F5 bg, Linear/Notion style |
 | `neu` | Neumorphism | **Default.** Soft UI on #e0e5ec clay; `--neu-out`/`--neu-in` shadow pairs define raised vs pressed — no borders anywhere, `--glass-blur:none` (opaque material), body background MUST stay flat or the light model breaks. Contrast is the style's endemic weakness: text alphas (.85/.8) and accent #2d56d8 are measured AA minimums — don't lighten them |
+| `neudark` | Neumorphism Dark | Same soft-UI physics as `neu`, on a graphite clay base (`#2a2e37`) instead of light. The "light" shadow direction is a *lighter tint of the same dark base* (`rgba(68,75,90,...)`), not white — the "dark" direction goes toward near-black (`rgba(10,11,14,...)`). Same light-source logic, inverted luminosity. Accent palette is brightened versions of `neu`'s (e.g. `--neon:#6a98ff` vs `neu`'s `#2d56d8`) since dark backgrounds need lighter text/accents to hit AA, the opposite adjustment direction from the light version |
 | `glass` | Glassmorphism | Showcase glass: aurora blobs drift on `body::before` (transform-only animation, `position:fixed` for free parallax), panels get a `::after` refraction streak. Task cards deliberately have NO backdrop-filter (per-card blur cost — cards sit ON already-frosted panels, a blur per card stacks up fast on mid-range Android past ~20 tasks) |
-| `skeu` | Skeuomorphism | Leather/paper/brass — digital objects that look like their real-world counterparts, the opposite instinct from Neumorphism despite the similar name (see below). Realistic single-direction drop shadows (`--shadow-card`/`--shadow-elevated`), a dog-eared corner (`::after` triangle) on every `.panel`, dashed-double-border "stitching" on the leather nav/bottom-nav, glossy buttons via a permanent `::after` highlight overlay (deliberately `::after` not `::before` — the shared alive-layer hover-sheen in style.css already owns `::before` on `.send-btn`/`.mark-done-btn`, so both effects layer without conflict). `--glass-blur:none` — paper, no blur anywhere. Text alphas (.78/.68) and the accent palette (esp. `--amber:#8f5f19`, darkened from a "true" brass which failed AA at 2.75:1) are measured minimums on the card bg `#fbf3e0` — don't lighten them. Intentionally the busiest-looking theme of the four; that's the aesthetic |
+| `skeu` | Skeuomorphism | Leather/paper/brass — digital objects that look like their real-world counterparts, the opposite instinct from Neumorphism despite the similar name (see below). Realistic single-direction drop shadows (`--shadow-card`/`--shadow-elevated`), a dog-eared corner (`::after` triangle) on every `.panel`, dashed-double-border "stitching" on the leather nav/bottom-nav, glossy buttons via a permanent `::after` highlight overlay (deliberately `::after` not `::before` — the shared alive-layer hover-sheen in style.css already owns `::before` on `.send-btn`/`.mark-done-btn`, so both effects layer without conflict). `--glass-blur:none` — paper, no blur anywhere. Text alphas (.78/.68) and the accent palette (esp. `--amber:#8f5f19`, darkened from a "true" brass which failed AA at 2.75:1) are measured minimums on the card bg `#fbf3e0` — don't lighten them |
+| `industrial` | Industrial | Black-and-white exposed-hardware aesthetic, built from a reference image of a "concept phone" lock screen (dot-matrix speaker grille, monospace GPS-coordinate readout, camera-cutout dot). Palette is near-monochrome on purpose — `--neon` is literal white (`#ffffff`), not a hue; the only colour is muted "indicator-light" accents for semantic status (`--red`/`--amber`/`--neon2`), deliberately desaturated rather than candy-bright, the way real hardware has a few small LEDs in an otherwise monochrome housing. `--purple` (on-hold) is reassigned to a steel blue-grey (`#94a3b8`) rather than an actual purple hue, keeping the monochrome discipline while preserving the variable's functional role. Distinctive decorative details: `.nav::after`/`.bottom-nav` get a repeating dot-matrix `radial-gradient` texture; `.nav::after` also adds a small camera-lens dot centred at the top (safe zone — horizontally centred between the logo and buttons in a `justify-content:space-between` nav, so it never overlaps either); `.panel::before`/`::after` add small screw-dots in the top corners (sits within `.panel-hd`'s own padding, not overlapping title text); `.greeting-bar::after` adds a decorative coordinates readout, deliberately anchored in the bar's own *top padding* (`top:4px`) rather than the bottom — the streak badge is vertically centred via flexbox, so its exact position shifts with how much greeting text/quote renders, but the top padding is empty space regardless of content height. Hard edges (4-6px radius) and monospace/uppercase labels throughout instead of soft shadows, on purpose — the opposite instinct from Neumorphism/Glassmorphism |
 
 Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as body class e.g. `body.theme-editorial`. Default theme is set in `getValidTheme()` in `js/theme.js` (currently `'neu'`) — that function already falls back gracefully to the default for ANY unrecognized/removed theme id in localStorage, so removing a theme from `THEMES` never needs a matching migration branch.
 
@@ -387,6 +389,37 @@ let sprintOpen = true
 
 **Previously (until [this session]):** sprint data was stored in `localStorage` under `wd_sprint` — per-device, not per-person, and never synced. Migrated to Firestore because tasks marked "This Week" on one device weren't showing up on the same person's other devices.
 
+### Admin control of teammates' sprints
+
+The manager (`ADMIN_NAME`, currently `'Harshit'`) can add/remove tasks from **any** teammate's "This Week" list, not just their own — from the **By Member** tab, on a task-by-task basis. Teammates keep the ability to manage their own sprint themselves (unchanged, via `toggleSprintTask` above).
+
+The core challenge: sprint data lives in each person's own Firestore doc (async to fetch), but `memberTaskCard()` needs to know **synchronously** whether a given task is already in a teammate's sprint, to render the button's correct state. Solved the same way `cachedBadges` solves an analogous problem — fetch once, cache, let the render that's already happening on every task change (`renderAll()` → `renderByMember()`) pick up the resolved data:
+
+```javascript
+let memberSprintCache = {};           // { [lowercaseName]: Set(taskIds) }
+let _memberSprintCacheLoaded = false; // guards it to load once, same pattern as _sprintInitialized
+
+loadMemberSprintCache()               // admin-only, called from renderByMember() the
+                                      // first time it runs; Promise.all over every
+                                      // member's getUserData(), then re-renders itself
+window.toggleMemberSprintTask(memberId, taskId)
+                                      // memberId, not memberName — names can contain
+                                      // apostrophes and would break the inline onclick
+                                      // string; resolves the name internally via
+                                      // members.find(), matching how
+                                      // setMemberStatusWindow() already does this
+```
+
+`toggleMemberSprintTask` special-cases the admin acting on **their own** card: it detects `memberName.toLowerCase() === MY_NAME.toLowerCase()` and delegates straight to the existing `toggleSprintTask()` instead of the generic cache-based path — that one already owns the live `sprintTaskIds`/`expandedTasks`/listener state correctly, and running both paths for the same person would risk them drifting out of sync with each other.
+
+Writes are optimistic (cache updates immediately, UI re-renders, *then* `saveUserData` fires) with a rollback path if the write actually fails — matches the pattern used elsewhere in this app rather than blocking the UI on the network round-trip.
+
+Verified via the jsdom harness end-to-end: admin toggling a teammate's task writes to *that teammate's* mock Firestore doc (not the admin's), the button state flips correctly after re-render, and the admin's own card correctly routes through the pre-existing sprint path instead of the generic one.
+
+### Done section — "This Week" completion stat
+
+The Done section header (`renderMyTasks()`, where `doneHTML` is built) now shows `✅ Done (N) · 🎯 X/Y This Week` — reuses `sprintDone`/`sprintCount`, already computed earlier in the same function for the Sprint section's own header, just surfaced a second time where someone reviewing completed work would see it. Only shown when `sprintCount > 0` (no point rendering "0/0" for someone with nothing pinned to this week). `.done-week-stat` CSS is a one-line addition next to `.done-section-toggle`.
+
 ---
 
 ## Known Issues & Lessons Learned
@@ -417,6 +450,12 @@ let sprintOpen = true
 16. **In-progress/due-today pulse strengthened** — the edge-accent indicators (added when the flat colour washes were removed — see the theme-health/Due-Today-In-Progress redesign history above) were judged too subtle to notice without deliberately looking. Widened the bar (3px→4px), widened the opacity swing (was ~.45–1, now ~.45–.5 trough to 1 peak), and switched from a static `box-shadow` to one that animates in the same keyframe (small glow at the trough, wide glow at the peak) so the *glow itself* pulses, not just the bar's opacity. Sped up slightly too (1.8s/1.6s → 1.4s/1.3s). Same treatment applied to `.due-today-badge`'s `pulse-badge` (added a `scale(1.08)` at the peak, not just opacity) and to `.task-card.status-inprog::before` (the shimmer bar used where `.task-card` renders instead of `.task-row-compact`). **`input.html` had its own separate, outdated copy** of `.task-row-compact.status-inprog` still using the old flat background-wash style from before that redesign — it was never migrated when index.html's was. Brought it in line with the same accent-edge treatment (own local `inprog-pulse` keyframe + reduced-motion guard, since input.html doesn't share index.html's `<style>` block). If a future prominence request comes in for `due-soon-badge` too, note it currently has **no animation at all** (unlike `due-today-badge`) — that was a deliberate original distinction between due-today urgency and due-soon awareness, not an oversight.
 17. **Sprint sort — in-progress bubbles to top** — `renderMyTasks()` sorts `sprintTasks` (stable sort, `status==='inprog'` first) immediately after building it and before `sprintTasksVisible` is derived from it via `matchesRefineFilters`. Verified via the jsdom harness with a real status change through `onTasksChanged`, not just the sort call in isolation.
 18. **Quarterly is now the default/first Report tab** — see the Report section above for the 3 places this required changing in lockstep (`activeRptTab`, the static `active` class on `tab-quarterly`/`panel-quarterly`, and tab button order).
+19. **Industrial theme's decorative pseudo-elements — collision reasoning, not verified in a real browser.** jsdom (used for all the render/click testing elsewhere in this doc) does **not** do real CSS layout — it can't confirm actual pixel positions, only DOM/CSSOM structure. Three absolutely-positioned decorative touches were reasoned through analytically instead:
+    - `.greeting-bar::after` (coordinates readout) is anchored at `top:4px`, not `bottom:6px` — the streak badge sibling is vertically centred via flexbox, so its exact position shifts with how much greeting text/quote renders that day, but the bar's own top padding (14px) is empty space regardless of content height. Don't move this back to the bottom edge without re-checking against the tallest realistic case (greeting + subtitle + quote line).
+    - `.nav::after` (camera-lens dot) is horizontally centred — safe because `.nav` uses `justify-content:space-between` with just the logo (left) and action buttons (right), leaving the true centre empty in the current layout. If a third nav element ever gets added in the middle, re-check this.
+    - `.panel::before`/`::after` (screw-dots) sit at `top:7px` on a panel that itself has zero padding (padding lives on the child `.panel-hd`, which starts its own content 11px in) — reasoned as safe but tighter than the other two; if a panel's header ever has content flush against its own top-right corner, this is the one most likely to need adjusting.
+
+    If asked to touch the Industrial theme's layout, sanity-check these three specifically rather than assuming jsdom-verified — this doc is explicit above about which changes were actually simulated (render + real click events) versus reasoned through, and these are in the latter category.
 
 ---
 
