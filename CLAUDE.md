@@ -389,6 +389,30 @@ let sprintOpen = true
 
 **Previously (until [this session]):** sprint data was stored in `localStorage` under `wd_sprint` — per-device, not per-person, and never synced. Migrated to Firestore because tasks marked "This Week" on one device weren't showing up on the same person's other devices.
 
+### The 10-cap counts active tasks only
+
+**Fixed a real behavioural bug, not just a preference.** Completing a task's id was never removed from the sprint Set (only explicit "✕ Remove" does that — see `toggleSprintTask` above), so `idsSet.size` alone always counted done tasks too. This meant filling all 10 slots, then finishing one, still showed "10/10 full" and blocked adding anything new — the cap behaved like a lifetime-per-week limit rather than a working-capacity limit, which defeats the point of a weekly focus list.
+
+Fixed via one shared helper, used everywhere the cap is checked so it can't drift out of sync across the now-5 places it's enforced:
+
+```javascript
+function activeSprintCount(idsSet) {
+  // counts only ids whose task.status !== 'done'
+}
+```
+
+Call sites: `toggleSprintTask` (your own sprint), `toggleMemberSprintTask` (admin path, on `current`), the sprint header's `isFull`/badge (on `sprintTasks.length`, which is already active-only by construction), `myTaskCard`'s button state (`_mySprintFull`), `memberTaskCard`'s button state (`sprintFull`), and the ported copy in `input.html`.
+
+Two related, deliberate semantic splits — don't collapse them back together:
+- **Capacity badge** ("X / 10" in the header) now shows `sprintTasks.length` (active count) — this is what's actually being capped.
+- **Progress bar** ("X/Y done") still uses `sprintCount = sprintTaskIds.size` (total ever pinned this week, active + done) as its denominator — this is a *different* metric (weekly completion rate), unaffected by the cap logic change, and still meaningful as a historical number even as slots get freed and refilled.
+
+Verified via jsdom: filled 10 active slots, 11th correctly blocked; completed one of the 10; 11th then succeeded; header badge correctly showed "10/10" afterward (t2-t11, t1 now excluded since done).
+
+### Manager's gauge of teammates' This Week (open/done)
+
+In `renderByMember()`, each member card header shows `🎯 This Week: {open} open · {done} done` when they have anything pinned to the current week — computed from the same sprint-data sources the per-task toggle button already uses (live `sprintTaskIds` for your own card, `memberSprintCache` for a teammate's), so no new Firestore reads were needed. Only rendered when `mSprintTotal > 0` — no point showing "0 open · 0 done" for someone with nothing pinned. `.member-sprint-gauge` CSS lives next to `.member-cnt` in `css/style.css`.
+
 ### Admin control of teammates' sprints
 
 The manager (`ADMIN_NAME`, currently `'Harshit'`) can add/remove tasks from **any** teammate's "This Week" list, not just their own — from the **By Member** tab, on a task-by-task basis. Teammates keep the ability to manage their own sprint themselves (unchanged, via `toggleSprintTask` above).
@@ -439,6 +463,45 @@ Verified via the jsdom harness end-to-end: admin toggling a teammate's task writ
 ### (Removed) Done section "This Week" completion stat
 
 The Done section header (`renderMyTasks()`, where `doneHTML` is built) briefly showed `✅ Done (N) · 🎯 X/Y This Week` — reused `sprintDone`/`sprintCount` computed for the Sprint section's own header. Explicitly removed one turn later in favour of the full sub-section above, which shows the actual tasks rather than just a count. `.done-week-stat` CSS was removed along with it — don't re-add it without checking this isn't wanted back in stat form specifically.
+
+### "This Week" toggle ported to input.html
+
+Input's task list had no concept of "who's using this page" at all — no `MY_NAME`, no sprint state, nothing. All of it had to be added, not just a button:
+
+```javascript
+// Near the top of input.html's module script, alongside `let members = [], tasks = [];`
+const MY_NAME = localStorage.getItem('wd_myname') || '';   // one-time read, unlike index.html
+const SPRINT_MAX = 10;
+let sprintTaskIds = new Set();
+let _sprintInitialized = false;
+// + getWeekKey(), activeSprintCount(), initSprint(), saveSprint(), window.toggleSprintTask
+```
+
+Each is a direct port of the index.html versions (same Firestore doc, same field shape, same active-only cap logic) — `initSprint()` is called from inside `onTasksChanged`'s callback (self-guarded, safe to call on every snapshot, same pattern as index.html).
+
+**Deliberately self-service only** — the button only appears on tasks assigned to `MY_NAME`, using `sprintTaskIds` directly. The admin-controls-teammates machinery (`memberSprintCache`, `toggleMemberSprintTask`) was **not** ported here — Input's task list isn't structured per-member the way By Member is (it's one flat list of everyone's tasks), so there was no natural per-member cache-loading trigger the way `renderByMember()` provides in index.html. If admin control from this page is wanted later, port that machinery in rather than rebuilding it — it's a known, tested pattern (see "Admin control of teammates' sprints" above), it just needs a sensible trigger point in Input's render flow.
+
+`.sprint-task-btn` CSS also had to be copied in — it only existed in index.html's own inline `<style>`, not the shared `css/style.css`, so input.html never had access to it despite loading the same shared stylesheet.
+
+Verified via a second jsdom harness built specifically for input.html (separate skeleton/stub setup — its Firebase import list differs from index.html's): button only renders on the current user's own tasks, toggling writes to the correct Firestore-equivalent doc, button state updates correctly after toggle.
+
+### Duplicate-task detection was far too sensitive (real bug, not tuning nitpick)
+
+Reported as "tasks not getting added if a similarly named task is identified." Two separate systems in `input.html`, both affected:
+
+1. **`findDuplicates()`** (blocks submission with a confirmation modal until the user clicks "Save Anyway") — threshold was `0.38`.
+2. **`checkSimilarTasks()`** (live hint list while typing, non-blocking) — threshold was `0.35`, different scoring formula (`similarityScore`, word-overlap + partial-substring credit).
+
+Root cause: both use word/bigram overlap on the **whole title**, and this app's task titles are short and templated ("Review PR for X", "Fix X bug", "Prepare QX report", "Schedule X meeting"). When only 3-4 words total, sharing 3 of 4 is unavoidable when a single word carries all the distinguishing meaning — so "Review PR for login flow" vs "Review PR for **signup** flow" scored 71% "similar" under the old threshold, despite being entirely different tasks. This isn't a threshold typo, it's a structural mismatch between the algorithm (word-overlap) and the data (short, templated titles) — raising the threshold is the correct fix, not a workaround, because there's no clever word-boundary tweak that fixes it (tested stripping stop-words from the bigram calculation specifically — barely moved the numbers).
+
+**Retuned against a real test set** (9 pairs of genuinely different tasks that happen to share a verb/structure, 5 pairs of true near-duplicates — typos, minor rewording, exact repeats):
+
+| System | Old threshold | New threshold | False positives eliminated | True duplicates still caught |
+|---|---|---|---|---|
+| `findDuplicates` (blocking) | 0.38 | **0.72** | 8/9 | 4/5 |
+| `checkSimilarTasks` (hint) | 0.35 | **0.70** | 4/5 | 2/3 |
+
+If retuning either of these again, don't guess — the test pairs are worth reconstructing (or ask for them) and sweeping a threshold range like the fix above did; the two systems use different formulas so a threshold that works for one doesn't transfer to the other. Verified end-to-end via jsdom: submitting a genuinely different task now saves directly with no modal; submitting a near-exact repeat of an existing task still triggers the warning correctly.
 
 ---
 

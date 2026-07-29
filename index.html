@@ -1627,6 +1627,22 @@ let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
 const SPRINT_MAX = 10;
 // sprintTaskIds and sprintOpen declared at top
 
+// The 10-cap counts only ACTIVE (non-done) tasks — completing one frees a
+// slot for a new one, rather than the cap being a lifetime-per-week limit.
+// A task's id stays in the sprint Set after it's marked done (only explicit
+// "Remove" deletes it — see toggleSprintTask), so `idsSet.size` alone always
+// counts done tasks too; this is the one place that distinction is made, and
+// every SPRINT_MAX check below calls this instead of reading .size directly
+// so the cap logic can't drift out of sync across the 4 places it's enforced.
+function activeSprintCount(idsSet) {
+  let n = 0;
+  for (const id of idsSet) {
+    const t = tasks.find(x => x.id === id);
+    if (!t || t.status !== 'done') n++;
+  }
+  return n;
+}
+
 function getWeekKey() {
   // Returns 'YYYY-Www' — unique key per calendar week, resets every Monday
   const d = new Date();
@@ -1675,8 +1691,8 @@ window.toggleSprintTask = (taskId) => {
     expandedTasks.delete(taskId);
     saveSprint(); renderAll(); toast('Removed from This Week');
   } else {
-    if (sprintTaskIds.size >= SPRINT_MAX) {
-      toast('Sprint full — max ' + SPRINT_MAX + ' tasks per week'); return;
+    if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
+      toast('Sprint full — max ' + SPRINT_MAX + ' active tasks per week'); return;
     }
     sprintTaskIds.add(taskId);
     expandedTasks.delete(taskId);
@@ -1759,8 +1775,8 @@ window.toggleMemberSprintTask = async (memberId, taskId) => {
   if (wasIn) {
     current.delete(taskId);
   } else {
-    if (current.size >= SPRINT_MAX) {
-      toast(memberName + "'s sprint is full — max " + SPRINT_MAX); return;
+    if (activeSprintCount(current) >= SPRINT_MAX) {
+      toast(memberName + "'s sprint is full — max " + SPRINT_MAX + " active"); return;
     }
     current.add(taskId);
   }
@@ -2256,8 +2272,8 @@ function renderMyTasks() {
   const sprintDoneTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done');
   const sprintDoneTasksVisible = sprintDoneTasks.filter(matchesRefineFilters);
   const sprintDone  = sprintDoneTasks.length;
-  const sprintCount = sprintTaskIds.size;
-  const isFull = sprintCount >= SPRINT_MAX;
+  const sprintCount = sprintTaskIds.size; // total ever pinned this week (active + done) — used only for the "X/Y done" progress bar below, NOT the capacity cap
+  const isFull = sprintTasks.length >= SPRINT_MAX; // capacity cap counts ACTIVE tasks only — completing one frees a slot
   const donePct = sprintCount > 0 ? Math.round(sprintDone / sprintCount * 100) : 0;
 
   // Monday date for next reset
@@ -2270,7 +2286,7 @@ function renderMyTasks() {
     <div class="sprint-hd" onclick="toggleSprintPanel()">
       <div class="sprint-icon">🎯</div>
       <div class="sprint-title">This Week's Sprint</div>
-      <span class="sprint-count${isFull?' full':''}">${sprintCount} / ${SPRINT_MAX}</span>
+      <span class="sprint-count${isFull?' full':''}">${sprintTasks.length} / ${SPRINT_MAX}</span>
       <span class="sprint-arrow${sprintOpen?' open':''}">▾</span>
     </div>
     <div class="sprint-body${sprintOpen?' open':''}">
@@ -2614,6 +2630,9 @@ function myTaskCard(t, i) {
   const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
   const isDone = t.status === 'done';
   const isInprog = t.status === 'inprog';
+  // Capacity check for the "This Week" button below — active tasks only,
+  // see activeSprintCount().
+  const _mySprintFull = activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
   const isOnhold = t.status === 'onhold';
   const statusClass = isDone ? 'status-done' : isInprog ? 'status-inprog' : isOnhold ? 'status-onhold' : '';
   const isExpanded = expandedTasks.has(t.id);
@@ -2722,10 +2741,10 @@ function myTaskCard(t, i) {
               })() : '🔔 Remind me'}
             </button>`;
           })()}
-          ${!isDone ? `<button class="sprint-task-btn${sprintTaskIds.has(t.id) ? ' remove' : (sprintTaskIds.size >= SPRINT_MAX ? ' full-disabled' : '')}"
-            onclick="event.stopPropagation();${sprintTaskIds.size >= SPRINT_MAX && !sprintTaskIds.has(t.id) ? '' : "toggleSprintTask('" + t.id + "')"}"
-            title="${sprintTaskIds.size >= SPRINT_MAX && !sprintTaskIds.has(t.id) ? 'Sprint full (max 10)' : ''}">
-            ${sprintTaskIds.has(t.id) ? '✕ Remove' : sprintTaskIds.size >= SPRINT_MAX ? '🎯 Full' : '🎯 This Week'}
+          ${!isDone ? `<button class="sprint-task-btn${sprintTaskIds.has(t.id) ? ' remove' : (_mySprintFull ? ' full-disabled' : '')}"
+            onclick="event.stopPropagation();${_mySprintFull && !sprintTaskIds.has(t.id) ? '' : "toggleSprintTask('" + t.id + "')"}"
+            title="${_mySprintFull && !sprintTaskIds.has(t.id) ? 'Sprint full (max 10 active)' : ''}">
+            ${sprintTaskIds.has(t.id) ? '✕ Remove' : _mySprintFull ? '🎯 Full' : '🎯 This Week'}
           </button>` : ''}
           <button class="sc-btn" onclick="event.stopPropagation();openInlineEdit('${t.id}')"
             style="margin-left:auto;border-color:rgba(10,132,255,.25);color:var(--neon)">
@@ -2869,6 +2888,21 @@ function renderByMember() {
     const pct   = total ? Math.round(memberDone / total * 100) : 0;
     const isOpen = expandedMembers.has(m.id);
 
+    // This Week gauge — open vs done, for whoever this section belongs to.
+    // Same sprint-data sources as the per-task toggle button in
+    // memberTaskCard(): the live, already-synced sprintTaskIds for your own
+    // card, memberSprintCache (admin-only, pre-fetched — see
+    // loadMemberSprintCache) for a teammate's.
+    const mIsMyCard = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
+    const mSprintIds = mIsMyCard ? sprintTaskIds : (memberSprintCache[m.name.toLowerCase()] || new Set());
+    let mSprintOpen = 0, mSprintDone = 0;
+    for (const id of mSprintIds) {
+      const st = tasks.find(x => x.id === id);
+      if (!st) continue;
+      if (st.status === 'done') mSprintDone++; else mSprintOpen++;
+    }
+    const mSprintTotal = mSprintOpen + mSprintDone;
+
     // Group done tasks by month
     const doneByMonthBM = {};
     doneTasks.forEach(t => {
@@ -2907,6 +2941,7 @@ function renderByMember() {
             ${(cachedBadges[m.id]||[]).length ? `<span style="display:flex;gap:3px;margin-left:4px">${(cachedBadges[m.id]||[]).map(b=>`<span class="badge-tooltip"><span class="badge">${b.icon}</span><span class="badge-tip">${b.label}</span></span>`).join('')}</span>` : ''}
             <span class="member-cnt">${memberDone}/${total} · ${pct}%</span>
           </div>
+          ${mSprintTotal > 0 ? `<div class="member-sprint-gauge">🎯 This Week: ${mSprintOpen} open · ${mSprintDone} done</div>` : ''}
           <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
         </div>
         <span class="member-card-arrow${isOpen?' open':''}" id="mc-arrow-${m.id}">▼</span>
@@ -2943,7 +2978,7 @@ function memberTaskCard(t, member, i) {
   // empty in the meantime rather than blocking the render).
   const memberSprintSet = isMyCard ? sprintTaskIds : (memberSprintCache[member.name.toLowerCase()] || new Set());
   const inSprint = memberSprintSet.has(t.id);
-  const sprintFull = !inSprint && memberSprintSet.size >= SPRINT_MAX;
+  const sprintFull = !inSprint && activeSprintCount(memberSprintSet) >= SPRINT_MAX;
   const sprintBtnHTML = (canAct && !isDone) ? `
         <button class="sprint-task-btn${inSprint ? ' remove' : (sprintFull ? ' full-disabled' : '')}"
           onclick="event.stopPropagation();${sprintFull ? '' : `toggleMemberSprintTask('${member.id}','${t.id}')`}"

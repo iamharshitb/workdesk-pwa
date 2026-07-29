@@ -60,6 +60,23 @@
       margin-bottom:5px;
     }
     .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
+    /* This Week toggle button — copied from index.html, which only had it in
+       its own inline <style> (not the shared css/style.css), so it never
+       reached this page until now. */
+    .sprint-task-btn {
+      padding:5px 10px;border-radius:8px;
+      border:1px solid rgba(10,132,255,.25);
+      background:rgba(10,132,255,.06);color:var(--neon);
+      font-family:var(--sans);font-size:11px;font-weight:700;
+      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);white-space:nowrap;
+    }
+    .sprint-task-btn:active { transform:scale(.95) }
+    .sprint-task-btn.remove {
+      border-color:rgba(255,69,58,.25);background:rgba(255,69,58,.06);color:var(--red);
+    }
+    .sprint-task-btn.full-disabled {
+      border-color:var(--border);background:none;color:var(--text3);cursor:default;
+    }
     /* Compact task rows for All Tasks */
     .task-row-compact{
       display:flex;align-items:center;gap:10px;
@@ -404,7 +421,7 @@ import {
   onUserReady, getMembers, onTasksChanged, getTasks,
   addMember as fbAddMember, deleteMember as fbDeleteMember,
   addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
-  DELETE_PASSWORD
+  DELETE_PASSWORD, getUserData, saveUserData
 } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { initAudio, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
@@ -418,6 +435,70 @@ let selectedPriority = 'medium';
 let selectedProject = '';
 let editingId = null;
 let pendingDeleteId = null;
+
+// ── IDENTITY + WEEKLY SPRINT (ported from index.html) ───────────────────────
+// Self-service only here — a task assigned to MY_NAME can be toggled into
+// their own "This Week". Admin control of OTHER people's sprints (the
+// memberSprintCache/toggleMemberSprintTask machinery in index.html) was NOT
+// ported over — Input's task list isn't structured per-member the way By
+// Member is, and this covers what was actually asked for. If admin control
+// from this page specifically is wanted later, port that machinery in too
+// rather than rebuilding it from scratch — it's a known, tested pattern.
+const MY_NAME = localStorage.getItem('wd_myname') || '';
+const SPRINT_MAX = 10;
+let sprintTaskIds = new Set();
+let _sprintInitialized = false;
+
+function getWeekKey() {
+  const d = new Date();
+  const day = d.getDay() === 0 ? 6 : d.getDay() - 1;
+  const monday = new Date(d); monday.setDate(d.getDate() - day);
+  const y = monday.getFullYear();
+  const start = new Date(y, 0, 1);
+  const week = Math.ceil(((monday - start) / 86400000 + start.getDay() + 1) / 7);
+  return y + '-W' + String(week).padStart(2, '0');
+}
+// Cap counts ACTIVE (non-done) tasks only, matching index.html's fix —
+// completing a task frees a slot rather than the cap being a lifetime limit.
+function activeSprintCount(idsSet) {
+  let n = 0;
+  for (const id of idsSet) {
+    const t = tasks.find(x => x.id === id);
+    if (!t || t.status !== 'done') n++;
+  }
+  return n;
+}
+function initSprint() {
+  if (!MY_NAME || _sprintInitialized) return;
+  _sprintInitialized = true;
+  const applySprintData = (data) => {
+    const stored = data?.sprint;
+    if (stored && stored.week === getWeekKey()) {
+      sprintTaskIds = new Set(stored.ids || []);
+    } else {
+      sprintTaskIds = new Set();
+    }
+    renderTaskList();
+  };
+  getUserData(MY_NAME).then(applySprintData);
+}
+function saveSprint() {
+  if (!MY_NAME) return;
+  saveUserData(MY_NAME, { sprint: { week: getWeekKey(), ids: [...sprintTaskIds] } });
+}
+window.toggleSprintTask = (taskId) => {
+  if (sprintTaskIds.has(taskId)) {
+    sprintTaskIds.delete(taskId);
+    saveSprint(); renderTaskList(); toast('Removed from This Week');
+  } else {
+    if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
+      toast('Sprint full — max ' + SPRINT_MAX + ' active tasks per week'); return;
+    }
+    sprintTaskIds.add(taskId);
+    if (navigator.vibrate) navigator.vibrate(10);
+    saveSprint(); renderTaskList(); toast('🎯 Added to This Week!');
+  }
+};
 
 // Theme handled by theme.js
 initTheme();
@@ -468,6 +549,7 @@ onUserReady(async () => {
     renderTaskList();
     updateProjectSuggestions();  // refresh project list whenever tasks update
     updateSummary();
+    initSprint(); // loads MY_NAME's own "This Week" list — self-guarded, only actually loads once
 
     const loader = document.getElementById('page-loader');
     if (loader) loader.remove();
@@ -610,7 +692,16 @@ function similarity(a, b) {
 }
 
 function findDuplicates(label, project) {
-  const THRESHOLD = 0.38; // tune: 0 = no match, 1 = exact
+  // Was 0.38 — far too sensitive for short, templated task titles ("Review
+  // PR for X", "Fix X bug", "Prepare QX report"...). With names that short,
+  // sharing 3 of 4 words is unavoidable when only the ONE distinguishing
+  // word differs (e.g. "login" vs "signup"), so token/bigram overlap alone
+  // routinely scored 50-75% between tasks that aren't duplicates at all —
+  // the modal was appearing on most new tasks, not just actual repeats.
+  // Retuned against a real test set: 0.72 clears nearly all of those false
+  // positives while still catching genuine near-duplicates (typos, minor
+  // rewording, exact repeats), which cluster at 75%+.
+  const THRESHOLD = 0.72;
   return tasks
     .filter(t => t.status !== 'done' && t.id !== editingId)
     .map(t => {
@@ -1021,11 +1112,15 @@ window.checkSimilarTasks = (val) => {
   const query = val.trim();
   if (query.length < 4) { wrap.style.display = 'none'; return; }
 
-  // Find similar tasks — threshold 0.35 means ~35% word overlap
+  // Find similar tasks — was 0.35, retuned to 0.70 for the same reason
+  // findDuplicates() above was retuned: short templated titles routinely
+  // scored 60-100% "similar" under this word-overlap formula even when
+  // completely unrelated (e.g. "Prepare Q3 report" vs "Prepare Q4 report"
+  // hit 100%), making this live hint fire on most typing, not just repeats.
   const similar = tasks
     .filter(t => {
       if (editingId && t.id === editingId) return false; // skip self when editing
-      return similarityScore(query, t.label) >= 0.35;
+      return similarityScore(query, t.label) >= 0.70;
     })
     .sort((a,b) => similarityScore(query, b.label) - similarityScore(query, a.label))
     .slice(0, 4);
@@ -1090,6 +1185,17 @@ function renderTaskList() {
         <span class="m-pill-role">${m.role ? esc(m.role) : 'No task set'}</span>
       </span>`
     ).join('');
+    // This Week toggle — self-service only (see the state block near the top
+    // of this file for why admin-for-others wasn't ported here).
+    const isMyTask = MY_NAME && (t.members||[]).some(m => m.name && m.name.toLowerCase() === MY_NAME.toLowerCase());
+    const inSprint = sprintTaskIds.has(t.id);
+    const sprintFull = !inSprint && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
+    const sprintBtnHTML = (isMyTask && !isDone) ? `
+            <button class="sprint-task-btn${inSprint ? ' remove' : (sprintFull ? ' full-disabled' : '')}"
+              onclick="event.stopPropagation();${sprintFull ? '' : `toggleSprintTask('${t.id}')`}"
+              title="${sprintFull ? 'Sprint full (max ' + SPRINT_MAX + ' active)' : ''}">
+              ${inSprint ? '✕ Remove' : sprintFull ? '🎯 Full' : '🎯 This Week'}
+            </button>` : '';
     return `
       <div class="fi" style="animation-delay:${i*.03}s">
         <!-- COMPACT ROW -->
@@ -1117,6 +1223,7 @@ function renderTaskList() {
             <button class="mark-done-btn${isDone?' undone':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">
               ${isDone ? '↩ Reopen' : '✓ Mark Done'}
             </button>
+            ${sprintBtnHTML}
             <button class="del-btn" onclick="event.stopPropagation();editTask('${t.id}')" title="Edit" style="font-size:17px">✎</button>
             <button class="del-btn" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete" style="font-size:17px">✕</button>
           </div>
