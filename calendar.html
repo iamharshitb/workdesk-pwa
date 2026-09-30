@@ -273,6 +273,95 @@
   font-size:11px;font-weight:700;color:var(--text2);
 }
 .legend-dot { width:8px;height:8px;border-radius:2px }
+
+/* ── VIEW TOGGLE ── */
+.cal-view-toggle {
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg2);border:1.5px solid var(--border2);
+  border-radius:20px;padding:3px;
+}
+.cal-view-btn {
+  padding:5px 10px;border-radius:16px;
+  font-size:11px;font-weight:700;
+  border:none;background:transparent;
+  color:var(--text2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+  display:flex;align-items:center;gap:4px;
+}
+.cal-view-btn.active {
+  background:var(--panel);color:var(--neon);
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.cal-view-btn:hover:not(.active) { color:var(--text) }
+
+/* ── FILTER BAR ── */
+.cal-filter-bar {
+  display:flex;flex-wrap:wrap;gap:6px;
+  padding:10px 14px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:12px;
+  box-shadow:var(--shadow-card);
+  align-items:center;
+}
+.cal-filter-label {
+  font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;
+  margin-right:2px;flex-shrink:0;
+}
+.filter-chip {
+  padding:5px 11px;border-radius:20px;
+  font-size:11px;font-weight:700;
+  border:1.5px solid var(--border2);background:var(--bg2);
+  color:var(--text2);cursor:pointer;
+  transition:all .15s;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.filter-chip.active {
+  border-color:var(--neon);background:rgba(0,229,184,.08);color:var(--neon);
+}
+.filter-chip[data-type="Video"].active    { border-color:#f87171;background:rgba(248,113,113,.10);color:#f87171; }
+.filter-chip[data-type="Blog"].active     { border-color:#60a5fa;background:rgba(96,165,250,.10);color:#60a5fa; }
+.filter-chip[data-type="Email"].active    { border-color:#fbbf24;background:rgba(251,191,36,.10);color:#fbbf24; }
+.filter-chip[data-type="Event"].active    { border-color:#34d399;background:rgba(52,211,153,.10);color:#34d399; }
+.filter-chip[data-type="Social"].active   { border-color:#a78bfa;background:rgba(167,139,250,.10);color:#a78bfa; }
+.filter-chip[data-type="Livestream"].active { border-color:#f97316;background:rgba(249,115,22,.10);color:#f97316; }
+.filter-chip[data-type="Other"].active    { border-color:#9ca3af;background:rgba(107,114,128,.10);color:#9ca3af; }
+
+/* ── LANDSCAPE MODE ── */
+body.cal-landscape .page {
+  max-width: 100%;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+body.cal-landscape .cal-grid {
+  /* wider cells for desktop view */
+}
+body.cal-landscape .cal-day {
+  min-height: 140px !important;
+  height: 140px !important;
+  padding: 8px 7px;
+}
+body.cal-landscape .cal-day-num {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+body.cal-landscape .cal-event-dot {
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+body.cal-landscape .cal-events-wrap {
+  gap: 3px;
+}
+/* Show up to 4 events in landscape (instead of 2) */
+body.cal-landscape .cal-day .cal-event-dot:nth-child(n+5) { display:none }
+
+/* Filtered-out days look muted */
+.cal-day.filter-muted {
+  opacity: 0.3;
+  cursor: default;
+}
+.cal-day.filter-muted:hover { background: transparent }
 </style>
 </head>
 <body>
@@ -294,7 +383,14 @@
       <div class="cal-month-label" id="cal-month-label">—</div>
       <div style="font-size:11px;color:var(--text2);font-weight:600;margin-top:2px" id="cal-sub-label"></div>
     </div>
-    <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <!-- View toggle: Portrait ↔ Landscape -->
+      <div class="cal-view-toggle" id="cal-view-toggle">
+        <button class="cal-view-btn active" id="view-portrait" onclick="setCalView('portrait')" title="Mobile portrait view">☰ Portrait</button>
+        <button class="cal-view-btn" id="view-landscape" onclick="setCalView('landscape')" title="Full desktop view">⊞ Landscape</button>
+      </div>
+      <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+    </div>
   </div>
 
   <!-- LEGEND -->
@@ -306,6 +402,19 @@
     <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Social</div>
     <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Livestream</div>
     <div class="legend-item"><div class="legend-dot" style="background:#9ca3af"></div>Other</div>
+  </div>
+
+  <!-- EVENT-TYPE FILTER BAR -->
+  <div class="cal-filter-bar fi" style="animation-delay:.04s">
+    <span class="cal-filter-label">Filter:</span>
+    <div class="filter-chip active" data-type="All" onclick="setFilter(this)">All</div>
+    <div class="filter-chip" data-type="Video" onclick="setFilter(this)">🎬 Video</div>
+    <div class="filter-chip" data-type="Blog" onclick="setFilter(this)">✍️ Blog</div>
+    <div class="filter-chip" data-type="Email" onclick="setFilter(this)">📧 Email</div>
+    <div class="filter-chip" data-type="Event" onclick="setFilter(this)">📅 Event</div>
+    <div class="filter-chip" data-type="Social" onclick="setFilter(this)">📲 Social</div>
+    <div class="filter-chip" data-type="Livestream" onclick="setFilter(this)">📡 Livestream</div>
+    <div class="filter-chip" data-type="Other" onclick="setFilter(this)">💬 Other</div>
   </div>
 
   <!-- CALENDAR GRID -->
@@ -384,6 +493,17 @@ function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.text
 window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
 updateMuteBtn();
 
+// Restore saved view preference
+try {
+  const saved = localStorage.getItem('calView');
+  if (saved === 'landscape') {
+    calView = 'landscape';
+    document.body.classList.add('cal-landscape');
+    document.getElementById('view-portrait').classList.remove('active');
+    document.getElementById('view-landscape').classList.add('active');
+  }
+} catch(e) {}
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 let viewYear  = new Date().getFullYear();
 let viewMonth = new Date().getMonth(); // 0-indexed
@@ -391,6 +511,8 @@ let events    = {}; // { 'YYYY-MM-DD': [ { subject, type, people, id } ] }
 let selectedDate = null;
 let selectedType = null;
 let calMembers = []; // loaded on init for auto-task creation
+let activeFilter = 'All';     // 'All' or any TYPE key
+let calView = 'portrait';     // 'portrait' | 'landscape'
 
 const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TYPE_COLORS = {
@@ -482,11 +604,23 @@ function renderCalendar() {
     const todayStr = now.toISOString().slice(0,10);
     if (dateStr === todayStr) cell.classList.add('today');
 
-    const dayEvents = events[dateStr] || [];
-    if (dayEvents.length) cell.classList.add('has-events');
+    const allDayEvents = events[dateStr] || [];
+    // Apply type filter
+    const dayEvents = activeFilter === 'All'
+      ? allDayEvents
+      : allDayEvents.filter(ev => ev.type === activeFilter);
+
+    if (allDayEvents.length) cell.classList.add('has-events');
+
+    // Mute days with no matching events when a filter is active
+    if (activeFilter !== 'All' && dayEvents.length === 0 && !isOther) {
+      cell.classList.add('filter-muted');
+    }
 
     const STATUS_DOT = { Planned:'', Sent:' ✓', Delayed:' ⚠' };
-    const visibleEvents = dayEvents.slice(0, 2);
+    // Show 2 events portrait, 4 events landscape
+    const maxVisible = calView === 'landscape' ? 4 : 2;
+    const visibleEvents = dayEvents.slice(0, maxVisible);
     const hiddenCount   = dayEvents.length - visibleEvents.length;
     const eventsHTML = visibleEvents.map(ev =>
       `<span class="cal-event-dot ${TYPE_COLORS[ev.type]||'dot-other'}">${esc(ev.subject)}${STATUS_DOT[ev.status||'Planned']}</span>`
@@ -497,7 +631,9 @@ function renderCalendar() {
       <div class="cal-day-num">${dayNum}</div>
       <div class="cal-events-wrap">${eventsHTML}${moreHTML}</div>`;
 
-    cell.onclick = () => openModal(dateStr);
+    if (!cell.classList.contains('filter-muted')) {
+      cell.onclick = () => openModal(dateStr);
+    }
     grid.appendChild(cell);
   }
   updateHistoryCount();
@@ -513,6 +649,30 @@ window.nextMonth = () => {
   if (viewMonth === 11) { viewMonth = 0; viewYear++; }
   else viewMonth++;
   renderCalendar();
+};
+
+// ── VIEW TOGGLE (portrait ↔ landscape) ────────────────────────────────────
+window.setCalView = (mode) => {
+  calView = mode;
+  document.body.classList.toggle('cal-landscape', mode === 'landscape');
+  document.getElementById('view-portrait').classList.toggle('active', mode === 'portrait');
+  document.getElementById('view-landscape').classList.toggle('active', mode === 'landscape');
+  // Persist across page reloads
+  try { localStorage.setItem('calView', mode); } catch(e) {}
+  renderCalendar();
+  // Light haptic
+  if (navigator.vibrate) navigator.vibrate(6);
+};
+
+// ── EVENT-TYPE FILTER ──────────────────────────────────────────────────────
+window.setFilter = (chip) => {
+  activeFilter = chip.dataset.type;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.type === activeFilter);
+  });
+  renderCalendar();
+  // Light haptic
+  if (navigator.vibrate) navigator.vibrate(4);
 };
 
 // ── MODAL ──────────────────────────────────────────────────────────────────
