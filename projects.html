@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkDesk — Projects</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/themes.css">
+<style>
+/* ── TOOLBAR ── */
+.proj-toolbar {
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:12px;
+}
+.proj-toolbar-title { font-size:19px;font-weight:800;color:var(--text);letter-spacing:-.01em; }
+.proj-toolbar-sub { font-size:11px;color:var(--text2);font-weight:600;margin-top:2px; }
+.proj-new-btn {
+  flex-shrink:0;display:flex;align-items:center;gap:5px;
+  padding:9px 14px;border-radius:20px;border:none;
+  background:var(--neon);color:var(--bg);
+  font-family:var(--sans);font-size:12px;font-weight:800;
+  cursor:pointer;transition:all .15s;
+  box-shadow:0 3px 0 rgba(0,0,0,.18),0 2px 10px rgba(10,132,255,.25);
+}
+.proj-new-btn:hover { filter:brightness(1.08);transform:translateY(-1px) }
+.proj-new-btn:active { transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18) }
+
+/* ── TAB STRIP ── */
+.proj-tabs-scroll {
+  display:flex;align-items:flex-end;gap:4px;
+  overflow-x:auto;padding:0 2px;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.proj-tabs-scroll::-webkit-scrollbar { display:none }
+.proj-tab {
+  flex-shrink:0;display:flex;align-items:center;gap:7px;
+  padding:10px 14px 9px;
+  background:var(--bg2);border:1.5px solid var(--border2);border-bottom:none;
+  border-radius:13px 13px 0 0;
+  font-size:12px;font-weight:700;color:var(--text2);
+  cursor:pointer;position:relative;top:1.5px;
+  transition:all .15s;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+  min-height:44px;
+}
+.proj-tab:hover { color:var(--text) }
+.proj-tab.active {
+  background:var(--panel);color:var(--text);
+  border-color:var(--border2);
+  box-shadow:0 -3px 10px rgba(0,0,0,.06);
+  z-index:2;
+}
+.proj-tab-name { max-width:130px;overflow:hidden;text-overflow:ellipsis; }
+.health-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+.proj-tab-add {
+  flex-shrink:0;width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg2);border:1.5px dashed var(--border2);
+  color:var(--text2);font-size:16px;font-weight:800;cursor:pointer;
+  margin-bottom:2px;margin-left:2px;
+  transition:all .15s;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.proj-tab-add:hover { border-color:var(--neon);color:var(--neon) }
+
+.proj-panel-shell {
+  background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:0 var(--rr) var(--rr) var(--rr);
+  padding:16px;box-shadow:var(--shadow-card);
+  margin-bottom:14px;min-height:120px;
+}
+
+/* ── COMPLETED GROUP (collapsible) ── */
+.proj-completed-toggle {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--rr);margin-bottom:12px;
+  cursor:pointer;transition:all .15s;
+  box-shadow:var(--shadow-card);user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.proj-completed-toggle:hover { border-color:var(--neon2) }
+.proj-completed-label {
+  font-size:12px;font-weight:700;color:var(--text2);
+  display:flex;align-items:center;gap:8px;
+}
+.proj-completed-count {
+  font-size:11px;padding:2px 8px;border-radius:20px;
+  background:rgba(52,199,89,.1);color:var(--green);
+  border:1px solid rgba(52,199,89,.22);font-weight:700;
+}
+.proj-completed-arrow { font-size:12px;color:var(--text3);transition:transform .2s }
+.proj-completed-arrow.open { transform:rotate(180deg) }
+.proj-completed-body {
+  display:none;
+  background:var(--panel);border:1px solid var(--border2);
+  border-top:none;border-radius:0 0 var(--rr) var(--rr);
+  margin-top:-4px;margin-bottom:16px;overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.proj-completed-body.open { display:block;margin-bottom:20px }
+.proj-completed-item {
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+}
+.proj-completed-item:last-child { border-bottom:none }
+.proj-completed-item:hover { background:var(--bg3) }
+.proj-completed-item-name { flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text); }
+.proj-completed-item-month { font-size:10px;color:var(--text3);font-weight:600;flex-shrink:0; }
+
+/* ── PANEL HEADER ── */
+.proj-hd { display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px; }
+.proj-hd-name { font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.01em; }
+.proj-color-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+.proj-hd-desc { font-size:12px;color:var(--text2);margin-top:5px;line-height:1.4; }
+.proj-hd-meta { font-size:11px;color:var(--text3);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center; }
+.proj-hd-actions { display:flex;gap:6px;flex-shrink:0; }
+.proj-icon-btn {
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--border2);background:var(--bg2);
+  color:var(--text2);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.proj-icon-btn:hover { border-color:var(--neon);color:var(--neon) }
+.proj-icon-btn.complete-btn:hover { border-color:var(--green);color:var(--green) }
+
+/* ── STAT GRID ── */
+.proj-stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px; }
+.proj-stat { background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 6px;text-align:center; }
+.proj-stat-n { font-family:var(--mono);font-size:22px;font-weight:500;line-height:1;margin-bottom:3px; }
+.proj-stat-l { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em; }
+
+/* ── RING ── */
+.proj-ring-wrap { display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px 4px;border-top:1px solid var(--border);border-bottom:1px solid var(--border); }
+.proj-ring-pct { font-family:var(--mono);font-size:22px;font-weight:500;line-height:1;margin-bottom:2px; }
+.proj-ring-sub { font-size:11px;color:var(--text2); }
+
+/* ── SECTION LABEL ── */
+.proj-section-label {
+  font-size:11px;font-weight:800;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.07em;
+  margin-bottom:8px;margin-top:4px;
+}
+
+/* ── MEMBER GAUGES ── */
+.proj-members { display:flex;flex-direction:column;gap:9px;margin-bottom:18px; }
+.proj-member-row { display:flex;align-items:center;gap:10px; }
+.proj-member-avatar {
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:var(--bg3);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:var(--purple);
+}
+.proj-member-info { flex:1;min-width:0; }
+.proj-member-name { font-size:12px;font-weight:700;color:var(--text); }
+.proj-member-bar-bg { height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:4px; }
+.proj-member-bar-fill { height:100%;border-radius:3px;transition:width .4s; }
+.proj-member-stat { font-size:10px;color:var(--text2);font-weight:700;flex-shrink:0; }
+
+/* ── TASK GROUPS ── */
+.proj-task-group { margin-bottom:6px; }
+.proj-task-group-hd {
+  display:flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:800;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.05em;
+  padding:8px 2px;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  min-height:32px;
+}
+.proj-task-group-count {
+  font-size:10px;padding:1px 7px;border-radius:10px;
+  background:var(--bg3);color:var(--text3);font-weight:700;
+}
+.proj-task-group-body { display:flex;flex-direction:column;gap:6px;padding-bottom:6px; }
+.proj-task-row {
+  display:flex;align-items:center;gap:8px;
+  padding:9px 11px;background:var(--bg2);
+  border:1px solid var(--border2);border-left:3px solid var(--border2);
+  border-radius:10px;
+}
+.proj-task-row-label {
+  flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.proj-task-row-meta { font-size:10px;color:var(--text3);flex-shrink:0;display:flex;gap:6px;align-items:center; }
+.proj-due-badge {
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:20px;
+  font-size:9px;font-weight:800;
+}
+.proj-due-overdue { background:rgba(255,58,94,.15);color:var(--red); }
+.proj-due-soon { background:rgba(245,168,0,.12);color:var(--amber); }
+.proj-empty-tasks {
+  padding:24px 10px;text-align:center;
+  font-size:13px;color:var(--text3);font-weight:600;
+}
+
+/* ── EMPTY STATE (no projects at all) ── */
+.proj-empty-state {
+  background:var(--panel);border:1.5px dashed var(--border2);
+  border-radius:var(--rr);padding:40px 20px;text-align:center;
+}
+.proj-empty-icon { font-size:40px;margin-bottom:12px; }
+.proj-empty-title { font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px; }
+.proj-empty-sub { font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.5; }
+
+/* ── MODAL (new/edit project) ── */
+.proj-modal-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:200;display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.proj-modal-overlay.open { display:flex }
+.proj-modal {
+  background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:20px 20px 0 0;padding:20px 16px 36px;
+  width:100%;max-width:500px;
+  box-shadow:0 -8px 40px rgba(0,0,0,.4);
+  max-height:88vh;overflow-y:auto;
+  animation:proj-slide-up .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes proj-slide-up { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.proj-modal-drag { width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px; }
+.proj-modal-title { font-size:15px;font-weight:800;color:var(--text);margin-bottom:18px; }
+.proj-form-label {
+  font-size:11px;font-weight:700;color:var(--text2);
+  letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:6px;margin-top:14px;
+}
+.proj-form-input {
+  width:100%;background:var(--bg2);border:1.5px solid var(--border2);
+  border-radius:10px;padding:10px 12px;color:var(--text);
+  font-family:var(--sans);font-size:14px;font-weight:500;
+  outline:none;transition:border-color .15s;
+}
+.proj-form-input:focus { border-color:var(--neon) }
+.proj-form-input::placeholder { color:var(--text3) }
+.proj-form-input:disabled { opacity:.55;cursor:not-allowed; }
+textarea.proj-form-input { resize:vertical;min-height:64px;font-family:var(--sans); }
+.proj-color-row { display:flex;flex-wrap:wrap;gap:9px; }
+.proj-color-swatch {
+  width:32px;height:32px;border-radius:50%;cursor:pointer;
+  border:2.5px solid transparent;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:13px;font-weight:800;
+  -webkit-tap-highlight-color:transparent;
+}
+.proj-color-swatch.selected { border-color:var(--text);transform:scale(1.1); }
+.proj-modal-save {
+  width:100%;padding:12px;border-radius:12px;border:none;
+  background:var(--neon);color:var(--bg);
+  font-family:var(--sans);font-size:14px;font-weight:800;
+  cursor:pointer;margin-top:18px;
+  box-shadow:0 4px 0 rgba(0,0,0,.2),0 2px 12px rgba(10,132,255,.2);
+  transition:all .15s;
+}
+.proj-modal-save:hover { filter:brightness(1.08);transform:translateY(-1px) }
+.proj-modal-save:active { transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2) }
+.proj-modal-cancel {
+  width:100%;padding:11px;border-radius:12px;
+  border:1.5px solid var(--border2);background:none;color:var(--text2);
+  font-family:var(--sans);font-size:13px;font-weight:700;
+  cursor:pointer;margin-top:8px;transition:all .15s;
+}
+.proj-modal-cancel:hover { border-color:var(--text3);color:var(--text) }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="32" style="display:block"></a>
+  <div class="nav-right">
+    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
+    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
+  </div>
+</nav>
+
+<div class="page" style="padding-bottom:140px">
+
+  <!-- TOOLBAR -->
+  <div class="proj-toolbar fi">
+    <div>
+      <div class="proj-toolbar-title">Projects</div>
+      <div class="proj-toolbar-sub" id="proj-toolbar-sub">—</div>
+    </div>
+    <button class="proj-new-btn" onclick="openProjectModal()">＋ New Project</button>
+  </div>
+
+  <!-- TAB STRIP -->
+  <div class="proj-tabs-scroll fi" id="proj-tabs-scroll" style="animation-delay:.03s"></div>
+
+  <!-- ACTIVE PROJECT PANEL -->
+  <div class="proj-panel-shell fi" id="proj-panel-shell" style="animation-delay:.05s"></div>
+
+  <!-- COMPLETED PROJECTS — collapsible -->
+  <div class="proj-completed-toggle fi" id="proj-completed-wrap" onclick="toggleCompletedGroup()" style="animation-delay:.07s;display:none">
+    <div class="proj-completed-label">
+      <span>✅</span>
+      <span>Completed Projects</span>
+      <span class="proj-completed-count" id="proj-completed-count">0</span>
+    </div>
+    <span class="proj-completed-arrow" id="proj-completed-arrow">▼</span>
+  </div>
+  <div class="proj-completed-body" id="proj-completed-body"></div>
+
+  <!-- EMPTY STATE -->
+  <div class="proj-empty-state fi" id="proj-empty-state" style="display:none">
+    <div class="proj-empty-icon">🗂</div>
+    <div class="proj-empty-title">No projects yet</div>
+    <div class="proj-empty-sub">Projects group your tasks together so you can track their status<br>as a whole. Create one, or just type a project name<br>the next time you add a task.</div>
+    <button class="proj-new-btn" style="margin:0 auto" onclick="openProjectModal()">＋ Create your first project</button>
+  </div>
+
+</div>
+
+<!-- NEW / EDIT PROJECT MODAL -->
+<div class="proj-modal-overlay" id="proj-modal" onclick="handleProjModalClick(event)">
+  <div class="proj-modal">
+    <div class="proj-modal-drag"></div>
+    <div class="proj-modal-title" id="proj-modal-title">New Project</div>
+
+    <div class="proj-form-label">Name</div>
+    <input class="proj-form-input" id="pf-name" placeholder="e.g. Q4 Town Hall Series" maxlength="80">
+
+    <div class="proj-form-label">Colour</div>
+    <div class="proj-color-row" id="pf-color-row"></div>
+
+    <div class="proj-form-label">Description <span style="text-transform:none;font-weight:500;color:var(--text3)">(optional)</span></div>
+    <textarea class="proj-form-input" id="pf-desc" placeholder="What is this project about?" maxlength="240"></textarea>
+
+    <div class="proj-form-label">Target completion date <span style="text-transform:none;font-weight:500;color:var(--text3)">(optional)</span></div>
+    <input class="proj-form-input" type="date" id="pf-target">
+
+    <button class="proj-modal-save" onclick="saveProjectModal()">Save Project</button>
+    <button class="proj-modal-cancel" onclick="closeProjectModal()">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
+  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
+  <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
+  <a href="projects.html" class="bn-item active"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
+  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+</nav>
+
+<script type="module">
+import { initTheme, toggleThemePanel } from './js/theme.js';
+import { getMuted, toggleMute, initAudio } from './js/sounds.js';
+import {
+  onUserReady, WORKSPACE_ID,
+  onTasksChanged, getMembers,
+  getProjects, setProjectComplete, reopenProject
+} from './js/firebase.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, doc, setDoc, deleteDoc, getDocs, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+initTheme(); window.toggleThemePanel = toggleThemePanel;
+initAudio();
+function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.textContent=getMuted()?'🔇':'🔊';}
+window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
+updateMuteBtn();
+
+// Reuse the existing Firebase app instance (already initialised by firebase.js)
+const db = getFirestore(getApps()[0]);
+
+// Lightweight, additive collection — holds only what projects don't already
+// have a home for (colour / description / target date). Task↔project linkage
+// and completion state stay exactly where they already lived (t.project on
+// each task, and the existing getProjects()/setProjectComplete()/
+// reopenProject() completion flags) — nothing about that model changes.
+function metaCol() { return collection(db, 'workspaces', WORKSPACE_ID, 'projectMeta'); }
+function metaDoc(key) { return doc(db, 'workspaces', WORKSPACE_ID, 'projectMeta', key); }
+
+const PROJECT_COLORS = ['#0a84ff','#34c759','#ff9f0a','#ff453a','#5e5ce6','#ff375f','#64d2ff','#ac8e68'];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let allTasks = [];
+let allMembers = [];
+let projectsData = {};   // completion flags, from getProjects() — keyed by btoa(name)
+let projectMeta = {};    // colour/description/targetDate, from projectMeta collection — keyed by btoa(name)
+let activeProjectName = null;
+let completedOpen = false;
+let collapsedGroups = new Set(['done']); // task-status groups collapsed by default within a project panel
+let editingProjectName = null; // set when the modal is editing rather than creating
+let selectedColor = PROJECT_COLORS[0];
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────────
+onUserReady(async () => {
+  try { allMembers = await getMembers(); } catch(e) { allMembers = []; }
+  try { projectsData = await getProjects(); } catch(e) { projectsData = {}; }
+  try { await loadProjectMeta(); } catch(e) { projectMeta = {}; }
+
+  renderAll();
+
+  onTasksChanged(({ tasks: liveTasks }) => {
+    allTasks = liveTasks || [];
+    renderAll();
+  });
+});
+
+async function loadProjectMeta() {
+  const snap = await getDocs(metaCol());
+  const out = {};
+  snap.forEach(d => { out[d.id] = d.data(); });
+  projectMeta = out;
+}
+
+// ── AGGREGATION ────────────────────────────────────────────────────────────
+function computeProjectList() {
+  const names = new Set();
+  allTasks.forEach(t => { if (t.project) names.add(t.project); });
+  Object.values(projectMeta).forEach(p => { if (p && p.name) names.add(p.name); });
+  Object.values(projectsData).forEach(p => { if (p && p.name) names.add(p.name); });
+  return [...names].sort((a,b) => a.localeCompare(b));
+}
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+function projectStats(name) {
+  const pt = allTasks.filter(t => t.project === name);
+  const today = todayISO();
+  const total = pt.length;
+  const done = pt.filter(t => t.status === 'done').length;
+  const inprog = pt.filter(t => t.status === 'inprog').length;
+  const onhold = pt.filter(t => t.status === 'onhold').length;
+  const todo = pt.filter(t => (t.status||'todo') === 'todo').length;
+  const overdue = pt.filter(t => t.status !== 'done' && t.taskDueDate && t.taskDueDate < today).length;
+  const dueSoon = pt.filter(t => {
+    if (t.status === 'done' || !t.taskDueDate || t.taskDueDate < today) return false;
+    const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(today)) / 86400000);
+    return daysLeft <= 3;
+  }).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  return { tasks: pt, total, done, inprog, onhold, todo, overdue, dueSoon, pct };
+}
+
+function projectHealth(stats, isCompleted) {
+  if (isCompleted) return { key:'done', label:'Completed', color:'var(--text3)' };
+  if (stats.total === 0) return { key:'empty', label:'No tasks yet', color:'var(--text3)' };
+  if (stats.overdue > 0) return { key:'attention', label: stats.overdue + ' overdue', color:'var(--red)' };
+  if (stats.dueSoon > 0) return { key:'soon', label: stats.dueSoon + ' due soon', color:'var(--amber)' };
+  return { key:'ontrack', label:'On track', color:'var(--green)' };
+}
+
+function computeMemberBreakdown(tasks) {
+  const map = {};
+  tasks.forEach(t => {
+    (t.members||[]).forEach(m => {
+      const key = m.id || m.name;
+      if (!map[key]) map[key] = { name: m.name, done:0, total:0 };
+      map[key].total++;
+      const st = (t.memberStatus && m.id && t.memberStatus[m.id] !== undefined) ? t.memberStatus[m.id] : t.status;
+      if (st === 'done') map[key].done++;
+    });
+  });
+  return Object.values(map)
+    .map(m => ({ ...m, pct: m.total ? Math.round(m.done/m.total*100) : 0 }))
+    .sort((a,b) => b.total - a.total);
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function renderAll() {
+  const names = computeProjectList();
+  const emptyState = document.getElementById('proj-empty-state');
+  const tabsEl = document.getElementById('proj-tabs-scroll');
+  const shell = document.getElementById('proj-panel-shell');
+  const compWrap = document.getElementById('proj-completed-wrap');
+  const compBody = document.getElementById('proj-completed-body');
+
+  if (!names.length) {
+    emptyState.style.display = '';
+    tabsEl.style.display = 'none';
+    shell.style.display = 'none';
+    compWrap.style.display = 'none';
+    compBody.classList.remove('open');
+    document.getElementById('proj-toolbar-sub').textContent = 'No projects tracked yet';
+    return;
+  }
+  emptyState.style.display = 'none';
+  tabsEl.style.display = '';
+  shell.style.display = '';
+
+  const active = [], completed = [];
+  names.forEach(n => (projectsData[keyFor(n)] ? completed : active).push(n));
+
+  document.getElementById('proj-toolbar-sub').textContent =
+    active.length + ' active · ' + completed.length + ' completed';
+
+  if (!activeProjectName || !active.includes(activeProjectName)) {
+    activeProjectName = active[0] || completed[0] || null;
+  }
+
+  tabsEl.innerHTML = active.map(n => tabHtml(n, false)).join('') +
+    `<div class="proj-tab-add" data-newtab="1" title="New project">＋</div>`;
+
+  if (completed.length) {
+    compWrap.style.display = '';
+    document.getElementById('proj-completed-count').textContent = completed.length;
+    compBody.innerHTML = completed.map(n => completedItemHtml(n)).join('');
+  } else {
+    compWrap.style.display = 'none';
+    compBody.classList.remove('open');
+    completedOpen = false;
+  }
+
+  renderActivePanel();
+}
+
+// Matches the plain btoa(name) keying report.html already uses for
+// projectsData (getProjects()/setProjectComplete()/reopenProject()) — must
+// stay identical or completion state silently stops lining up with existing
+// completed projects. Wrapped only so a name with characters outside Latin1
+// (which the existing functions can't key either) degrades to a local-only
+// fallback instead of crashing this page.
+function keyFor(name) {
+  try { return btoa(name); }
+  catch(e) { return 'x_' + encodeURIComponent(name); }
+}
+
+function tabHtml(name, isCompleted) {
+  const stats = projectStats(name);
+  const health = projectHealth(stats, isCompleted);
+  const meta = projectMeta[keyFor(name)] || {};
+  const color = meta.color || PROJECT_COLORS[0];
+  const isActive = name === activeProjectName;
+  return `<div class="proj-tab${isActive?' active':''}" data-proj="${escAttr(name)}"
+    style="${isActive?`box-shadow:inset 0 2px 0 ${color},0 -3px 10px rgba(0,0,0,.06)`:''}">
+    <span class="health-dot" style="background:${health.color}"></span>
+    <span class="proj-tab-name">${esc(name)}</span>
+  </div>`;
+}
+
+function completedItemHtml(name) {
+  const meta = projectMeta[keyFor(name)] || {};
+  const pd = projectsData[keyFor(name)] || {};
+  return `<div class="proj-completed-item" data-proj="${escAttr(name)}">
+    <span style="width:8px;height:8px;border-radius:50%;background:${meta.color||'var(--green)'};flex-shrink:0"></span>
+    <span class="proj-completed-item-name">${esc(name)}</span>
+    <span class="proj-completed-item-month">${pd.completedMonth ? 'Completed ' + monthLabel(pd.completedMonth) : ''}</span>
+  </div>`;
+}
+
+function monthLabel(m) {
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [y,mo] = m.split('-');
+  return MONTHS[parseInt(mo)-1] + ' ' + y;
+}
+
+function renderActivePanel() {
+  const shell = document.getElementById('proj-panel-shell');
+  const name = activeProjectName;
+  if (!name) { shell.innerHTML = ''; return; }
+
+  const stats = projectStats(name);
+  const isCompleted = !!projectsData[keyFor(name)];
+  const health = projectHealth(stats, isCompleted);
+  const meta = projectMeta[keyFor(name)] || {};
+  const color = meta.color || PROJECT_COLORS[0];
+
+  const R = 32, C = 2*Math.PI*R, off = C - (stats.pct/100)*C;
+  const ringColor = stats.pct>=80?'var(--green)':stats.pct>=50?'var(--amber)':'var(--red)';
+
+  const members = computeMemberBreakdown(stats.tasks);
+
+  shell.innerHTML = `
+    <div class="proj-hd">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="proj-color-dot" style="background:${color}"></span>
+          <span class="proj-hd-name">${esc(name)}</span>
+          ${isCompleted ? `<span class="tag t-done" style="font-size:10px">Completed</span>` : ''}
+        </div>
+        ${meta.description ? `<div class="proj-hd-desc">${esc(meta.description)}</div>` : ''}
+        <div class="proj-hd-meta">
+          <span style="color:${health.color};font-weight:700">● ${health.label}</span>
+          ${meta.targetDate ? `<span>🎯 Target: ${fmtDate(meta.targetDate)}</span>` : ''}
+        </div>
+      </div>
+      <div class="proj-hd-actions">
+        <button class="proj-icon-btn" data-addtask="${escAttr(name)}" title="Add task to this project">＋</button>
+        <button class="proj-icon-btn" data-editproj="${escAttr(name)}" title="Edit project">✎</button>
+        <button class="proj-icon-btn complete-btn" data-toggledone="${escAttr(name)}" title="${isCompleted?'Reopen project':'Mark project complete'}">${isCompleted?'↩':'✓'}</button>
+      </div>
+    </div>
+
+    <div class="proj-stat-grid">
+      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--neon)">${stats.total}</div><div class="proj-stat-l">Total</div></div>
+      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--green)">${stats.done}</div><div class="proj-stat-l">Done</div></div>
+      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--amber)">${stats.inprog}</div><div class="proj-stat-l">In Prog</div></div>
+      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--red)">${stats.overdue}</div><div class="proj-stat-l">Overdue</div></div>
+    </div>
+
+    <div class="proj-ring-wrap">
+      <svg width="68" height="68" viewBox="0 0 80 80" style="flex-shrink:0">
+        <circle cx="40" cy="40" r="${R}" fill="none" stroke="var(--bg3)" stroke-width="6"/>
+        <circle cx="40" cy="40" r="${R}" fill="none" stroke="${ringColor}" stroke-width="6"
+          stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .6s"/>
+        <text x="40" y="45" text-anchor="middle" font-family="var(--mono)" font-size="13" font-weight="500" fill="${ringColor}">${stats.pct}%</text>
+      </svg>
+      <div style="flex:1">
+        <div class="proj-ring-pct" style="color:${ringColor}">${stats.pct}% complete</div>
+        <div class="proj-ring-sub">${stats.done} of ${stats.total} task${stats.total===1?'':'s'} done</div>
+      </div>
+    </div>
+
+    ${members.length ? `
+    <div class="proj-section-label">Team on this project</div>
+    <div class="proj-members">
+      ${members.map(m => `
+        <div class="proj-member-row">
+          <div class="proj-member-avatar">${initials(m.name)}</div>
+          <div class="proj-member-info">
+            <div class="proj-member-name">${esc(m.name)}</div>
+            <div class="proj-member-bar-bg"><div class="proj-member-bar-fill" style="width:${m.pct}%;background:${color}"></div></div>
+          </div>
+          <div class="proj-member-stat">${m.done}/${m.total}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div class="proj-section-label">Tasks</div>
+    ${renderTaskGroups(stats.tasks)}
+  `;
+}
+
+function renderTaskGroups(tasks) {
+  const groups = [
+    { key:'inprog', label:'In Progress', icon:'▶' },
+    { key:'todo',   label:'To Do',       icon:'○' },
+    { key:'onhold', label:'On Hold',     icon:'⏸' },
+    { key:'done',   label:'Done',        icon:'✓' },
+  ];
+  const html = groups.map(g => {
+    const items = tasks.filter(t => (t.status||'todo') === g.key);
+    if (!items.length) return '';
+    const collapsed = collapsedGroups.has(g.key);
+    return `
+    <div class="proj-task-group">
+      <div class="proj-task-group-hd" data-togglegroup="${g.key}">
+        <span>${collapsed?'▸':'▾'}</span>
+        <span>${g.icon} ${g.label}</span>
+        <span class="proj-task-group-count">${items.length}</span>
+      </div>
+      <div class="proj-task-group-body" style="${collapsed?'display:none':''}">
+        ${items.map(t => taskRowHtml(t)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  return html || `<div class="proj-empty-tasks">No tasks in this project yet.</div>`;
+}
+
+function taskRowHtml(t) {
+  const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
+  const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
+  const today = todayISO();
+  let dueBadge = '';
+  if (t.taskDueDate && t.status !== 'done') {
+    const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(today)) / 86400000);
+    if (daysLeft < 0) dueBadge = '<span class="proj-due-badge proj-due-overdue">⚠ Overdue</span>';
+    else if (daysLeft === 0) dueBadge = '<span class="proj-due-badge proj-due-overdue">🔴 Today</span>';
+    else if (daysLeft <= 3) dueBadge = `<span class="proj-due-badge proj-due-soon">⏰ ${daysLeft}d</span>`;
+  }
+  const names = (t.members||[]).map(m => esc(m.name)).join(', ');
+  return `<div class="proj-task-row" style="border-left-color:${accentColor}">
+    <span class="proj-task-row-label">${esc(t.label)}</span>
+    <span class="proj-task-row-meta">
+      ${dueBadge}
+      <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
+      ${names ? `<span>${names}</span>` : ''}
+    </span>
+  </div>`;
+}
+
+// ── EVENT DELEGATION (tab clicks, action buttons, group toggles) ──────────
+document.getElementById('proj-tabs-scroll').addEventListener('click', (e) => {
+  const addBtn = e.target.closest('[data-newtab]');
+  if (addBtn) { openProjectModal(); return; }
+  const tab = e.target.closest('[data-proj]');
+  if (tab) selectProject(tab.dataset.proj);
+});
+
+document.getElementById('proj-completed-body').addEventListener('click', (e) => {
+  const item = e.target.closest('[data-proj]');
+  if (item) selectProject(item.dataset.proj);
+});
+
+document.getElementById('proj-panel-shell').addEventListener('click', (e) => {
+  const addTask = e.target.closest('[data-addtask]');
+  if (addTask) { location.href = 'input.html?project=' + encodeURIComponent(addTask.dataset.addtask); return; }
+
+  const editBtn = e.target.closest('[data-editproj]');
+  if (editBtn) { openProjectModal(editBtn.dataset.editproj); return; }
+
+  const toggleBtn = e.target.closest('[data-toggledone]');
+  if (toggleBtn) { toggleProjComplete(toggleBtn.dataset.toggledone); return; }
+
+  const groupHd = e.target.closest('[data-togglegroup]');
+  if (groupHd) {
+    const key = groupHd.dataset.togglegroup;
+    if (collapsedGroups.has(key)) collapsedGroups.delete(key); else collapsedGroups.add(key);
+    renderActivePanel();
+  }
+});
+
+function selectProject(name) {
+  activeProjectName = name;
+  document.querySelectorAll('.proj-tab[data-proj]').forEach(el => {
+    el.classList.toggle('active', el.dataset.proj === name);
+  });
+  renderActivePanel();
+  if (navigator.vibrate) navigator.vibrate(4);
+}
+
+window.toggleCompletedGroup = () => {
+  completedOpen = !completedOpen;
+  document.getElementById('proj-completed-body').classList.toggle('open', completedOpen);
+  document.getElementById('proj-completed-arrow').classList.toggle('open', completedOpen);
+};
+
+async function toggleProjComplete(name) {
+  const k = keyFor(name);
+  const isComp = !!projectsData[k];
+  try {
+    if (isComp) {
+      await reopenProject(name);
+      delete projectsData[k];
+      toast('Reopened "' + name + '"');
+    } else {
+      const nowMonth = new Date().toISOString().slice(0,7);
+      await setProjectComplete(name, nowMonth);
+      projectsData[k] = { name, completedMonth: nowMonth };
+      toast('🎉 "' + name + '" marked complete');
+      if (navigator.vibrate) navigator.vibrate([10,30,10]);
+    }
+  } catch(e) {
+    toast('Update failed: ' + e.message, 'err');
+    return;
+  }
+  renderAll();
+}
+
+// ── NEW / EDIT PROJECT MODAL ────────────────────────────────────────────────
+window.openProjectModal = (name) => {
+  editingProjectName = name || null;
+  const isEdit = !!name;
+  document.getElementById('proj-modal-title').textContent = isEdit ? 'Edit Project' : 'New Project';
+
+  const nameInp = document.getElementById('pf-name');
+  nameInp.value = name || '';
+  nameInp.disabled = isEdit; // renaming would require rewriting every task's project field — not supported yet
+
+  const meta = isEdit ? (projectMeta[keyFor(name)] || {}) : {};
+  selectedColor = meta.color || PROJECT_COLORS[0];
+  document.getElementById('pf-desc').value = meta.description || '';
+  document.getElementById('pf-target').value = meta.targetDate || '';
+
+  renderColorRow();
+
+  document.getElementById('proj-modal').classList.add('open');
+  setTimeout(() => { if (!isEdit) nameInp.focus(); }, 300);
+};
+
+function renderColorRow() {
+  const row = document.getElementById('pf-color-row');
+  row.innerHTML = PROJECT_COLORS.map(c =>
+    `<div class="proj-color-swatch${c===selectedColor?' selected':''}" data-color="${c}" style="background:${c}">${c===selectedColor?'✓':''}</div>`
+  ).join('');
+  row.querySelectorAll('[data-color]').forEach(el => {
+    el.onclick = () => { selectedColor = el.dataset.color; renderColorRow(); };
+  });
+}
+
+window.handleProjModalClick = (e) => {
+  if (e.target === document.getElementById('proj-modal')) closeProjectModal();
+};
+window.closeProjectModal = () => {
+  document.getElementById('proj-modal').classList.remove('open');
+  editingProjectName = null;
+};
+
+window.saveProjectModal = async () => {
+  const name = document.getElementById('pf-name').value.trim();
+  const description = document.getElementById('pf-desc').value.trim();
+  const targetDate = document.getElementById('pf-target').value;
+
+  if (!editingProjectName && !name) { toast('Enter a project name', 'err'); return; }
+
+  const finalName = editingProjectName || name;
+  const k = keyFor(finalName);
+
+  try {
+    await setDoc(metaDoc(k), {
+      name: finalName,
+      color: selectedColor,
+      description,
+      targetDate: targetDate || null,
+      updatedAt: serverTimestamp(),
+      ...(editingProjectName ? {} : { createdAt: serverTimestamp() }),
+    }, { merge: true });
+
+    projectMeta[k] = { ...(projectMeta[k]||{}), name: finalName, color: selectedColor, description, targetDate: targetDate || null };
+    toast(editingProjectName ? 'Project updated ✓' : 'Project created ✓');
+    if (navigator.vibrate) navigator.vibrate(8);
+    activeProjectName = finalName;
+    closeProjectModal();
+    renderAll();
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'err');
+  }
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function initials(name){ return String(name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function fmtDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return day+' '+MONTHS[parseInt(m)-1]+' '+y; }
+
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast '+type;
+  void el.offsetWidth;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2400);
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
+  });
+}
+</script>
+</body>
+</html>

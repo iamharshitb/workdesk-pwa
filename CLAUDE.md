@@ -56,6 +56,7 @@ workdesk-pwa/
 ├── input.html          — Task input with duplicate detection
 ├── report.html         — Reports (Monthly / Weekly / My Report)
 ├── calendar.html       — Communications calendar
+├── projects.html       — Projects tab-view (browser-tab-style project tracker)
 ├── ideas.html          — Ideas management
 ├── backup.html         — Backup & restore
 ├── cards.html          — Player Cards (easter egg)
@@ -245,6 +246,7 @@ Status cycles via button in expanded task card:
 ### Input (input.html)
 - MBC / Individual task toggle with blue info box explanation
 - Project field — smart dropdown with existing projects, type to filter, create new
+- `?project=<name>` query param pre-fills the Project field on load — used by projects.html's "＋ Add task to this project" action
 - Member chips + role per member
 - Priority chips: Critical / High / Medium / Low
 - Start date + due date pickers
@@ -271,8 +273,25 @@ Status cycles via button in expanded task card:
   - report.html has its own local `toast()` (it has no access to index.html's) — reuses the shared `.toast` CSS class from `css/style.css`, which is already linked.
 
 ### Calendar (calendar.html)
-- Fixed monthly grid, 7 event types colour-coded
+- Monthly grid, 7 event types colour-coded
 - Auto-task checkbox (assigns Harshit + Godly)
+- **View toggle** — Portrait (default, 80px cells) ↔ Landscape (140px cells, up to 4 events/day instead of 2) via `setCalView()`. Persisted in `localStorage['calView']` and restored on load.
+- **Event-type filter bar** — chip row (`setFilter()`) between the legend and grid; filtering to one type mutes (dims, disables click) days with no matching events via `.filter-muted`. `activeFilter` defaults to `'All'`.
+
+### Projects (projects.html)
+- Browser-tab-style navigation: one tab per project name pulled from `t.project` on tasks. No project IDs — a project **is** its name string, matching how `project` has always worked everywhere else in the app (Input's dropdown, the purple task-card pill, Monthly's project sections, Performance's By Project mode).
+- **Data model — deliberately additive, nothing existing was touched:**
+  - Task↔project linkage: unchanged (`t.project` string field).
+  - Completion state: unchanged — reuses the existing `getProjects()` / `setProjectComplete(name, month)` / `reopenProject(name)` from `firebase.js`. A project counts as completed if `projectsData[btoa(name)]` exists (same convention report.html's Monthly tab already used). Marking complete from this page stamps the *current* month, since there's no "viewed month" context here the way Monthly has one.
+  - **New:** a lightweight `projectMeta` Firestore collection (`workspaces/{WORKSPACE_ID}/projectMeta/{btoa(name)}`) holds only what didn't already have a home — `color`, `description`, `targetDate`. Read/written directly with the Firebase v10.12 modular SDK inside projects.html itself (same pattern as `ideas.html`'s own `ideas` collection) — **firebase.js was not modified.**
+  - `keyFor(name)` = plain `btoa(name)`, matching report.html's existing `projectsData[btoa(projName)]` key convention exactly — this must stay identical or completion state silently stops lining up with projects already marked complete from Monthly.
+- **Tab strip** — active projects only; each tab shows a health dot. Completed projects move into a separate collapsed "Completed Projects" section below (same collapsible pattern as Calendar's Year History), not shown in the main strip.
+- **Health** is purely due-date-driven off the tasks already in memory (no reliance on any activity/updatedAt timestamp, which isn't guaranteed to exist on every task): Completed → grey · any overdue task → red "N overdue" · else any task due ≤3 days → amber "N due soon" · 0 tasks → grey "No tasks yet" · else → green "On track".
+- **Per-project panel** (rich, per the build brief): completion ring + 4-stat row (Total/Done/In Prog/Overdue), a member-gauge row (per-member done/total within *this* project only, respecting `t.memberStatus` the same way report.html's Performance tab does), and tasks grouped by status (In Progress / To Do / On Hold / Done) — each group collapsible, Done collapsed by default.
+- **New/Edit Project modal** — name (locked once created — renaming isn't supported, since it would require rewriting `project` on every task that references it), one of 8 preset colours, optional description, optional target date. Colour currently only accents this page (tab underline, panel dot, member bars) — it does **not** retint the purple project pill used elsewhere in the app; extending it app-wide would be a separate follow-up.
+- No delete action for a project — only complete/reopen — to avoid the ambiguity of whether deleting a project should also delete its tasks.
+- **Add Task quick action** jumps to `input.html?project=<name>`, which now pre-fills the Project field on load (see Input section below).
+- Added as a 5th bottom-nav icon (🗂) on every page that has a bottom nav: index, input, calendar, projects, report, ideas, help, backup.
 
 ### Ideas (ideas.html)
 - Quick capture bar at top (type + Enter → instant Ideation status)
@@ -336,6 +355,7 @@ workspaces/
     calendar/           — Calendar events (single doc)
     announcements/      — Broadcast announcements
     userData/           — Per-user data (streaks, prefs)
+    projectMeta/         — Per-project colour/description/targetDate, keyed by btoa(name) — added for projects.html, read/written directly there via the modular SDK (not through firebase.js)
 ```
 
 **Deprecated:** `timeline_projects/` (and its `tasks/`/`notes/` subcollections) is orphaned data left over from the removed Timeline page. Nothing in the app reads or writes it anymore — safe to ignore, or delete manually in the Firebase Console if you want to tidy up.
