@@ -16,7 +16,7 @@
 /* ── TOOLBAR ── */
 .proj-toolbar {
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  margin-bottom:12px;
+  margin-bottom:12px;flex-wrap:wrap;
 }
 .proj-toolbar-title { font-size:19px;font-weight:800;color:var(--text);letter-spacing:-.01em; }
 .proj-toolbar-sub { font-size:11px;color:var(--text2);font-weight:600;margin-top:2px; }
@@ -30,6 +30,46 @@
 }
 .proj-new-btn:hover { filter:brightness(1.08);transform:translateY(-1px) }
 .proj-new-btn:active { transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18) }
+
+/* ── VIEW TOGGLE (portrait ↔ landscape) — same pattern as calendar.html ── */
+.proj-view-toggle {
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg2);border:1.5px solid var(--border2);
+  border-radius:20px;padding:3px;flex-shrink:0;
+}
+.proj-view-btn {
+  padding:5px 10px;border-radius:16px;
+  font-size:11px;font-weight:700;
+  border:none;background:transparent;
+  color:var(--text2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+  display:flex;align-items:center;gap:4px;
+}
+.proj-view-btn.active {
+  background:var(--panel);color:var(--neon);
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.proj-view-btn:hover:not(.active) { color:var(--text) }
+
+/* ── LANDSCAPE MODE — wider page, two-column project panel ── */
+body.proj-landscape .page {
+  max-width:100%;
+  padding-left:12px;padding-right:12px;
+}
+body.proj-landscape .proj-panel-shell {
+  display:grid;
+  grid-template-columns:minmax(260px,320px) 1fr;
+  gap:22px;
+  align-items:start;
+}
+body.proj-landscape .proj-panel-left { min-width:0; }
+body.proj-landscape .proj-panel-right { min-width:0; }
+/* Ring row reads better stacked (not side-by-side with its own labels) inside
+   the narrower landscape sidebar column, so drop the flex-row back to a
+   simple block there. */
+body.proj-landscape .proj-ring-wrap { flex-direction:column;align-items:flex-start;gap:8px; }
+/* Landscape has room to show two task cards per row instead of one */
+body.proj-landscape .proj-task-group-body { display:grid;grid-template-columns:1fr 1fr;gap:6px; }
 
 /* ── TAB STRIP ── */
 .proj-tabs-scroll {
@@ -293,7 +333,14 @@ textarea.proj-form-input { resize:vertical;min-height:64px;font-family:var(--san
       <div class="proj-toolbar-title">Projects</div>
       <div class="proj-toolbar-sub" id="proj-toolbar-sub">—</div>
     </div>
-    <button class="proj-new-btn" onclick="openProjectModal()">＋ New Project</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <!-- View toggle: Portrait ↔ Landscape -->
+      <div class="proj-view-toggle" id="proj-view-toggle">
+        <button class="proj-view-btn active" id="pview-portrait" onclick="setProjView('portrait')" title="Mobile portrait view">☰ Portrait</button>
+        <button class="proj-view-btn" id="pview-landscape" onclick="setProjView('landscape')" title="Full desktop view">⊞ Landscape</button>
+      </div>
+      <button class="proj-new-btn" onclick="openProjectModal()">＋ New Project</button>
+    </div>
   </div>
 
   <!-- TAB STRIP -->
@@ -375,6 +422,17 @@ function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.text
 window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
 updateMuteBtn();
 
+// Restore saved view preference (own key — independent of calendar.html's)
+try {
+  const savedView = localStorage.getItem('projView');
+  if (savedView === 'landscape') {
+    projView = 'landscape';
+    document.body.classList.add('proj-landscape');
+    document.getElementById('pview-portrait').classList.remove('active');
+    document.getElementById('pview-landscape').classList.add('active');
+  }
+} catch(e) {}
+
 // Reuse the existing Firebase app instance (already initialised by firebase.js)
 const db = getFirestore(getApps()[0]);
 
@@ -398,6 +456,7 @@ let completedOpen = false;
 let collapsedGroups = new Set(['done']); // task-status groups collapsed by default within a project panel
 let editingProjectName = null; // set when the modal is editing rather than creating
 let selectedColor = PROJECT_COLORS[0];
+let projView = 'portrait'; // 'portrait' | 'landscape' — same toggle pattern as calendar.html
 
 // ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 onUserReady(async () => {
@@ -577,64 +636,71 @@ function renderActivePanel() {
 
   const members = computeMemberBreakdown(stats.tasks);
 
+  // Split into a left column (identity/stats/ring/members) and a right column
+  // (task list). In portrait these two divs just stack normally — the grid
+  // split only kicks in under body.proj-landscape (see CSS).
   shell.innerHTML = `
-    <div class="proj-hd">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="proj-color-dot" style="background:${color}"></span>
-          <span class="proj-hd-name">${esc(name)}</span>
-          ${isCompleted ? `<span class="tag t-done" style="font-size:10px">Completed</span>` : ''}
-        </div>
-        ${meta.description ? `<div class="proj-hd-desc">${esc(meta.description)}</div>` : ''}
-        <div class="proj-hd-meta">
-          <span style="color:${health.color};font-weight:700">● ${health.label}</span>
-          ${meta.targetDate ? `<span>🎯 Target: ${fmtDate(meta.targetDate)}</span>` : ''}
-        </div>
-      </div>
-      <div class="proj-hd-actions">
-        <button class="proj-icon-btn" data-addtask="${escAttr(name)}" title="Add task to this project">＋</button>
-        <button class="proj-icon-btn" data-editproj="${escAttr(name)}" title="Edit project">✎</button>
-        <button class="proj-icon-btn complete-btn" data-toggledone="${escAttr(name)}" title="${isCompleted?'Reopen project':'Mark project complete'}">${isCompleted?'↩':'✓'}</button>
-      </div>
-    </div>
-
-    <div class="proj-stat-grid">
-      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--neon)">${stats.total}</div><div class="proj-stat-l">Total</div></div>
-      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--green)">${stats.done}</div><div class="proj-stat-l">Done</div></div>
-      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--amber)">${stats.inprog}</div><div class="proj-stat-l">In Prog</div></div>
-      <div class="proj-stat"><div class="proj-stat-n" style="color:var(--red)">${stats.overdue}</div><div class="proj-stat-l">Overdue</div></div>
-    </div>
-
-    <div class="proj-ring-wrap">
-      <svg width="68" height="68" viewBox="0 0 80 80" style="flex-shrink:0">
-        <circle cx="40" cy="40" r="${R}" fill="none" stroke="var(--bg3)" stroke-width="6"/>
-        <circle cx="40" cy="40" r="${R}" fill="none" stroke="${ringColor}" stroke-width="6"
-          stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-          stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .6s"/>
-        <text x="40" y="45" text-anchor="middle" font-family="var(--mono)" font-size="13" font-weight="500" fill="${ringColor}">${stats.pct}%</text>
-      </svg>
-      <div style="flex:1">
-        <div class="proj-ring-pct" style="color:${ringColor}">${stats.pct}% complete</div>
-        <div class="proj-ring-sub">${stats.done} of ${stats.total} task${stats.total===1?'':'s'} done</div>
-      </div>
-    </div>
-
-    ${members.length ? `
-    <div class="proj-section-label">Team on this project</div>
-    <div class="proj-members">
-      ${members.map(m => `
-        <div class="proj-member-row">
-          <div class="proj-member-avatar">${initials(m.name)}</div>
-          <div class="proj-member-info">
-            <div class="proj-member-name">${esc(m.name)}</div>
-            <div class="proj-member-bar-bg"><div class="proj-member-bar-fill" style="width:${m.pct}%;background:${color}"></div></div>
+    <div class="proj-panel-left">
+      <div class="proj-hd">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="proj-color-dot" style="background:${color}"></span>
+            <span class="proj-hd-name">${esc(name)}</span>
+            ${isCompleted ? `<span class="tag t-done" style="font-size:10px">Completed</span>` : ''}
           </div>
-          <div class="proj-member-stat">${m.done}/${m.total}</div>
-        </div>`).join('')}
-    </div>` : ''}
+          ${meta.description ? `<div class="proj-hd-desc">${esc(meta.description)}</div>` : ''}
+          <div class="proj-hd-meta">
+            <span style="color:${health.color};font-weight:700">● ${health.label}</span>
+            ${meta.targetDate ? `<span>🎯 Target: ${fmtDate(meta.targetDate)}</span>` : ''}
+          </div>
+        </div>
+        <div class="proj-hd-actions">
+          <button class="proj-icon-btn" data-addtask="${escAttr(name)}" title="Add task to this project">＋</button>
+          <button class="proj-icon-btn" data-editproj="${escAttr(name)}" title="Edit project">✎</button>
+          <button class="proj-icon-btn complete-btn" data-toggledone="${escAttr(name)}" title="${isCompleted?'Reopen project':'Mark project complete'}">${isCompleted?'↩':'✓'}</button>
+        </div>
+      </div>
 
-    <div class="proj-section-label">Tasks</div>
-    ${renderTaskGroups(stats.tasks)}
+      <div class="proj-stat-grid">
+        <div class="proj-stat"><div class="proj-stat-n" style="color:var(--neon)">${stats.total}</div><div class="proj-stat-l">Total</div></div>
+        <div class="proj-stat"><div class="proj-stat-n" style="color:var(--green)">${stats.done}</div><div class="proj-stat-l">Done</div></div>
+        <div class="proj-stat"><div class="proj-stat-n" style="color:var(--amber)">${stats.inprog}</div><div class="proj-stat-l">In Prog</div></div>
+        <div class="proj-stat"><div class="proj-stat-n" style="color:var(--red)">${stats.overdue}</div><div class="proj-stat-l">Overdue</div></div>
+      </div>
+
+      <div class="proj-ring-wrap">
+        <svg width="68" height="68" viewBox="0 0 80 80" style="flex-shrink:0">
+          <circle cx="40" cy="40" r="${R}" fill="none" stroke="var(--bg3)" stroke-width="6"/>
+          <circle cx="40" cy="40" r="${R}" fill="none" stroke="${ringColor}" stroke-width="6"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .6s"/>
+          <text x="40" y="45" text-anchor="middle" font-family="var(--mono)" font-size="13" font-weight="500" fill="${ringColor}">${stats.pct}%</text>
+        </svg>
+        <div style="flex:1">
+          <div class="proj-ring-pct" style="color:${ringColor}">${stats.pct}% complete</div>
+          <div class="proj-ring-sub">${stats.done} of ${stats.total} task${stats.total===1?'':'s'} done</div>
+        </div>
+      </div>
+
+      ${members.length ? `
+      <div class="proj-section-label">Team on this project</div>
+      <div class="proj-members">
+        ${members.map(m => `
+          <div class="proj-member-row">
+            <div class="proj-member-avatar">${initials(m.name)}</div>
+            <div class="proj-member-info">
+              <div class="proj-member-name">${esc(m.name)}</div>
+              <div class="proj-member-bar-bg"><div class="proj-member-bar-fill" style="width:${m.pct}%;background:${color}"></div></div>
+            </div>
+            <div class="proj-member-stat">${m.done}/${m.total}</div>
+          </div>`).join('')}
+      </div>` : ''}
+    </div>
+
+    <div class="proj-panel-right">
+      <div class="proj-section-label">Tasks</div>
+      ${renderTaskGroups(stats.tasks)}
+    </div>
   `;
 }
 
@@ -730,6 +796,16 @@ window.toggleCompletedGroup = () => {
   completedOpen = !completedOpen;
   document.getElementById('proj-completed-body').classList.toggle('open', completedOpen);
   document.getElementById('proj-completed-arrow').classList.toggle('open', completedOpen);
+};
+
+// ── VIEW TOGGLE (portrait ↔ landscape) ─────────────────────────────────────
+window.setProjView = (mode) => {
+  projView = mode;
+  document.body.classList.toggle('proj-landscape', mode === 'landscape');
+  document.getElementById('pview-portrait').classList.toggle('active', mode === 'portrait');
+  document.getElementById('pview-landscape').classList.toggle('active', mode === 'landscape');
+  try { localStorage.setItem('projView', mode); } catch(e) {}
+  if (navigator.vibrate) navigator.vibrate(6);
 };
 
 async function toggleProjComplete(name) {
