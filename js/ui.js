@@ -66,6 +66,12 @@ export function ringHTML(pct, size = 46, stroke = 4, label = '') {
 // ── bottom sheets ─────────────────────────────────────────────────────────
 // One scrim host per sheet id. The sheet's content is replaced on every open.
 const openStack = [];
+// names for sheets that have no visible title of their own
+const SHEET_NAMES = {
+  'wd-profile': 'Profile and settings', 'task-sheet': 'Task', 'add-sheet': 'Task', 'cal-day': 'Day',
+  'prj-form': 'Project', 'prj-grp': 'Project group', 'prj-org': 'Organise projects',
+  'rpt-share': 'Share report', 'bk-confirm': 'Restore backup', 'idea-form': 'Idea', 'idea-del': 'Delete idea',
+};
 export function openSheet(id, html, { onClose } = {}) {
   let scrim = document.getElementById(id);
   if (!scrim) {
@@ -80,8 +86,14 @@ export function openSheet(id, html, { onClose } = {}) {
   const sheet = scrim.querySelector('.wd-sheet');
   sheet.innerHTML = '<div class="wd-grab"></div>' + html;
   sheet.scrollTop = 0;
+  // the dialog is named by its title, and keyboard focus moves into it
+  const title = sheet.querySelector('.wd-sheet-title');
+  if (title) { title.id = title.id || id + '-title'; sheet.setAttribute('aria-labelledby', title.id); sheet.removeAttribute('aria-label'); }
+  else sheet.setAttribute('aria-label', SHEET_NAMES[id] || 'Dialog');
+  sheet.tabIndex = -1;
+  if (!scrim.classList.contains('open')) scrim._opener = document.activeElement;
   // two frames so the transition runs from the closed state
-  requestAnimationFrame(() => requestAnimationFrame(() => scrim.classList.add('open')));
+  requestAnimationFrame(() => requestAnimationFrame(() => { scrim.classList.add('open'); sheet.focus({ preventScroll: true }); }));
   if (!openStack.includes(id)) openStack.push(id);
   return sheet;
 }
@@ -91,11 +103,25 @@ export function closeSheet(id) {
   scrim.classList.remove('open');
   const i = openStack.indexOf(id); if (i >= 0) openStack.splice(i, 1);
   const cb = scrim._onClose; scrim._onClose = null;
+  const back = scrim._opener; scrim._opener = null;
+  if (back && back.isConnected && back.focus) back.focus({ preventScroll: true });
   if (cb) cb();
 }
 export function sheetBody(id) { return document.querySelector('#' + id + ' .wd-sheet'); }
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && openStack.length) closeSheet(openStack[openStack.length - 1]);
+  if (!openStack.length) return;
+  if (e.key === 'Escape') { closeSheet(openStack[openStack.length - 1]); return; }
+  if (e.key !== 'Tab') return;
+  // keep Tab inside the open sheet
+  const sheet = sheetBody(openStack[openStack.length - 1]);
+  if (!sheet) return;
+  const f = [...sheet.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+  if (!f.length) { e.preventDefault(); sheet.focus(); return; }
+  const first = f[0], last = f[f.length - 1], a = document.activeElement;
+  if (!sheet.contains(a)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && (a === first || a === sheet)) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
 });
 
 // ── undo toast ────────────────────────────────────────────────────────────
