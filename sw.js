@@ -1,9 +1,9 @@
-// Service worker v11 — unregister old caches, pass through all requests,
+// Service worker v12 — unregister old caches, pass through all requests,
 // handle taps on local task notifications (see maybeShowTaskNotification()
 // in index.html — notifications are shown via this SW's showNotification(),
 // not the plain Notification() constructor, which throws on nearly all
 // mobile browsers including Android Chrome).
-const CACHE = 'workdesk-v11';
+const CACHE = 'workdesk-v12';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

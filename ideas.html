@@ -7,646 +7,341 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<style>
-/* ── IDEAS PAGE SPECIFIC ── */
-.idea-fab {
-  position:fixed;bottom:76px;right:16px;z-index:50;
-  width:52px;height:52px;border-radius:50%;border:none;
-  background:var(--neon);color:#fff;
-  font-size:24px;cursor:pointer;
-  box-shadow:0 4px 20px rgba(10,132,255,.4);
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s cubic-bezier(.34,1.56,.64,1);
-  -webkit-tap-highlight-color:transparent;
-}
-.idea-fab:hover { transform:scale(1.1) }
-.idea-fab:active { transform:scale(.95) }
-
-/* Status tabs */
-.status-tabs {
-  display:flex;gap:0;
-  background:var(--bg2);border-bottom:1px solid var(--border2);
-  overflow-x:auto;-webkit-overflow-scrolling:touch;
-}
-.status-tabs::-webkit-scrollbar { display:none }
-.status-tab {
-  padding:10px 16px;font-size:11px;font-weight:700;
-  color:var(--text3);cursor:pointer;border:none;background:none;
-  font-family:var(--sans);white-space:nowrap;
-  border-bottom:2px solid transparent;transition:all .15s;
-  letter-spacing:.04em;text-transform:uppercase;
-  -webkit-tap-highlight-color:transparent;
-}
-.status-tab:hover { color:var(--text2) }
-.status-tab.active { color:var(--neon);border-bottom-color:var(--neon) }
-
-/* Idea card */
-.idea-card {
-  background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--rr);margin-bottom:10px;
-  overflow:hidden;box-shadow:var(--shadow-card);
-  transition:border-color .15s;
-  border-left:3px solid;
-}
-.idea-card:hover { border-color:var(--border3) }
-.idea-card-hd {
-  display:flex;align-items:flex-start;gap:10px;
-  padding:13px 14px;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-.idea-card-icon {
-  font-size:22px;flex-shrink:0;margin-top:1px;
-  width:36px;height:36px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-}
-.idea-card-main { flex:1;min-width:0 }
-.idea-card-title {
-  font-size:14px;font-weight:700;color:var(--text);
-  line-height:1.3;margin-bottom:4px;
-}
-.idea-card-meta {
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
-}
-.idea-status-pill {
-  font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;
-  border:1px solid;text-transform:uppercase;letter-spacing:.04em;
-}
-.idea-cat-badge {
-  font-size:9px;font-weight:700;color:var(--text3);
-  background:var(--bg3);padding:2px 7px;border-radius:8px;
-}
-.idea-date { font-size:10px;color:var(--text3) }
-.idea-expand-arrow {
-  font-size:10px;color:var(--text3);flex-shrink:0;
-  transition:transform .2s;margin-top:4px;
-}
-.idea-expand-arrow.open { transform:rotate(180deg);color:var(--neon) }
-
-/* Idea detail */
-.idea-detail {
-  display:none;padding:0 14px 14px;
-  border-top:1px solid var(--border);
-}
-.idea-detail.open { display:block }
-.idea-desc {
-  font-size:13px;color:var(--text2);line-height:1.6;
-  margin:10px 0;white-space:pre-wrap;
-}
-
-/* Notes thread */
-.idea-notes { margin-top:10px }
-.idea-note {
-  display:flex;gap:8px;padding:8px 0;
-  border-bottom:1px solid var(--border);
-}
-.idea-note:last-child { border-bottom:none }
-.idea-note-av {
-  width:26px;height:26px;border-radius:50%;flex-shrink:0;
-  background:rgba(94,92,230,.1);border:1px solid rgba(94,92,230,.2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-weight:700;color:var(--purple);
-}
-.idea-note-body { flex:1;min-width:0 }
-.idea-note-author { font-size:10px;font-weight:700;color:var(--purple);margin-bottom:2px }
-.idea-note-text { font-size:12px;color:var(--text2);line-height:1.5;white-space:pre-wrap }
-.idea-note-time { font-size:9px;color:var(--text3);margin-top:2px }
-
-/* Add note */
-.idea-add-note {
-  display:flex;gap:8px;margin-top:10px;align-items:flex-end;
-}
-.idea-note-inp {
-  flex:1;background:var(--bg3);border:1px solid var(--border2);
-  border-radius:10px;padding:9px 12px;color:var(--text);
-  font-family:var(--sans);font-size:13px;resize:none;
-  outline:none;min-height:38px;max-height:100px;
-  transition:border-color .15s;line-height:1.4;
-}
-.idea-note-inp:focus { border-color:rgba(10,132,255,.4) }
-.idea-note-btn {
-  width:36px;height:36px;border-radius:10px;border:none;
-  background:var(--neon);color:#fff;font-size:16px;
-  cursor:pointer;flex-shrink:0;display:flex;
-  align-items:center;justify-content:center;
-  transition:all .15s;
-}
-.idea-note-btn:active { transform:scale(.95) }
-
-/* Idea actions */
-.idea-actions {
-  display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;
-}
-.idea-action-btn {
-  padding:7px 12px;border-radius:9px;border:1px solid var(--border2);
-  background:var(--bg3);color:var(--text2);font-family:var(--sans);
-  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
-  -webkit-tap-highlight-color:transparent;
-}
-.idea-action-btn:active { transform:scale(.96) }
-
-/* New Idea Modal */
-.idea-modal {
-  position:fixed;inset:0;z-index:200;
-  display:none;align-items:flex-end;justify-content:center;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
-}
-.idea-modal.open { display:flex }
-.idea-modal-box {
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr) var(--rr) 0 0;
-  padding:20px 16px calc(env(safe-area-inset-bottom,0px) + 20px);
-  width:100%;max-width:500px;
-  max-height:90vh;overflow-y:auto;
-  animation:sheet-up .25s ease-out;
-}
-@keyframes sheet-up {
-  from { transform:translateY(40px);opacity:0 }
-  to   { transform:translateY(0);opacity:1 }
-}
-.idea-modal-title {
-  font-size:16px;font-weight:800;color:var(--text);
-  margin-bottom:16px;display:flex;align-items:center;
-  justify-content:space-between;
-}
-.idea-field-label {
-  font-size:10px;font-weight:700;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;margin-top:14px;
-}
-.idea-field-inp {
-  width:100%;background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--r);padding:11px 13px;color:var(--text);
-  font-family:var(--sans);font-size:14px;outline:none;
-  transition:border-color .15s;
-}
-.idea-field-inp:focus { border-color:rgba(10,132,255,.4) }
-.idea-field-ta {
-  width:100%;background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--r);padding:11px 13px;color:var(--text);
-  font-family:var(--sans);font-size:13px;outline:none;
-  resize:none;min-height:90px;line-height:1.6;
-  transition:border-color .15s;
-}
-.idea-field-ta:focus { border-color:rgba(10,132,255,.4) }
-.idea-cat-row { display:flex;gap:6px;flex-wrap:wrap;margin-top:6px }
-.idea-cat-chip {
-  padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
-  background:var(--bg2);color:var(--text2);font-family:var(--sans);
-  font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
-}
-.idea-cat-chip.sel {
-  background:rgba(10,132,255,.1);border-color:rgba(10,132,255,.35);color:var(--neon);
-}
-.idea-modal-btns {
-  display:flex;gap:8px;margin-top:18px;
-}
-.idea-modal-save {
-  flex:1;padding:12px;border-radius:var(--r);border:none;
-  background:var(--neon);color:#0c0c0f;
-  font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;
-}
-.idea-modal-cancel {
-  padding:12px 18px;border-radius:var(--r);
-  border:1px solid var(--border2);background:none;
-  color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;
-}
-
-/* Empty state */
-.ideas-empty { text-align:center;padding:40px 16px;color:var(--text3) }
-.ideas-empty-icon { font-size:36px;margin-bottom:10px;opacity:.3 }
-</style>
+<link rel="stylesheet" href="css/ui.css">
 </head>
 <body>
+<div class="wd-page" id="main">
+  <header class="wd-appbar">
+    <a href="index.html" class="nav-brand" aria-label="WorkDesk"><img class="wd-logo" src="data:image/png;base64,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" alt="Workdesk" height="30"></a>
+    <button type="button" class="wd-av" id="me-btn" aria-label="Your profile and settings">·</button>
+  </header>
 
-<nav class="nav">
-  <a class="nav-brand" href="index.html">
-    <span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span>
-    <span class="brand-dot"></span>
-  </a>
-  <div class="nav-right">
-    <button class="theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
+  <div class="wd-title">
+    <h1 class="wd-h1">Ideas</h1>
+    <button type="button" class="rpt-share" onclick="openIdeaForm()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New idea</button>
   </div>
-</nav>
+  <div class="wd-sub"><span id="ideas-sub">&nbsp;</span></div>
 
-<!-- Status filter tabs -->
-<div class="status-tabs" id="status-tabs">
-  <button class="status-tab active" data-status="all"          onclick="filterIdeas('all',this)">💡 All</button>
-  <button class="status-tab"        data-status="ideation"     onclick="filterIdeas('ideation',this)">🌱 Ideation</button>
-  <button class="status-tab"        data-status="in-progress"  onclick="filterIdeas('in-progress',this)">🔄 In Progress</button>
-  <button class="status-tab"        data-status="implemented"  onclick="filterIdeas('implemented',this)">✅ Implemented</button>
-  <button class="status-tab"        data-status="parked"       onclick="filterIdeas('parked',this)">🅿 Parked</button>
-</div>
-
-<div style="padding:10px 16px 0;background:var(--bg2);border-bottom:1px solid var(--border2)">
-  <div style="display:flex;gap:8px;align-items:center">
-    <input id="quick-idea-inp" type="text"
-      placeholder="⚡ Quick capture — type an idea and press Enter…"
-      style="flex:1;background:var(--bg3);border:1.5px solid var(--border2);
-        border-radius:20px;padding:9px 16px;color:var(--text);
-        font-family:var(--sans);font-size:13px;outline:none;
-        transition:border-color .15s;"
-      onfocus="this.style.borderColor='rgba(10,132,255,.4)'"
-      onblur="this.style.borderColor=''"
-      onkeydown="if(event.key==='Enter'&&this.value.trim())quickCaptureIdea(this)">
-    <button onclick="quickCaptureIdea(document.getElementById('quick-idea-inp'))"
-      style="padding:9px 16px;border-radius:20px;border:none;
-        background:var(--neon);color:#0c0c0f;font-family:var(--sans);
-        font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
-      ＋ Add
-    </button>
-  </div>
-  <div style="font-size:10px;color:var(--text3);padding:5px 4px 10px">
-    Quick capture adds to Ideation. Tap any idea to fill in details.
-  </div>
-</div>
-
-<div class="page" style="padding-top:14px" id="ideas-list">
-  <div id="page-loader" class="empty">
-    <div class="loader"></div>
-  </div>
-</div>
-
-<!-- FAB -->
-<button class="idea-fab" onclick="openNewIdeaModal()" title="Add Idea">💡</button>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="projects.html" class="bn-item"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
-  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-</nav>
-
-<!-- NEW IDEA MODAL -->
-<div class="idea-modal" id="idea-modal" onclick="if(event.target===this)closeIdeaModal()">
-  <div class="idea-modal-box">
-    <div class="idea-modal-title">
-      <span id="idea-modal-title-text">💡 New Idea</span>
-      <button onclick="closeIdeaModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+  <div class="ideas-quick">
+    <label class="wd-lab" for="quick-inp">Quick capture</label>
+    <div class="wd-addrow">
+      <input class="wd-field" id="quick-inp" placeholder="Write an idea and press Enter" maxlength="160" enterkeyhint="done" autocomplete="off">
+      <button type="button" class="wd-btn s" id="quick-btn">Add</button>
     </div>
+    <p class="wd-hint">It goes to Ideation. Open it later to add details.</p>
+  </div>
 
-    <div class="idea-field-label">Title *</div>
-    <input class="idea-field-inp" id="idea-title" placeholder="What's the idea?">
+  <div class="wd-filter-chips ideas-chips" id="ideas-chips" role="group" aria-label="Filter by status"></div>
 
-    <div class="idea-field-label">Category</div>
-    <div class="idea-cat-row" id="idea-cat-row">
-      <button class="idea-cat-chip sel" onclick="selectCat(this,'Content')">📝 Content</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Campaign')">🎯 Campaign</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Process')">⚙️ Process</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Tool')">🔧 Tool</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Event')">🎪 Event</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Brand')">✨ Brand</button>
-      <button class="idea-cat-chip" onclick="selectCat(this,'Other')">💭 Other</button>
-    </div>
-
-    <div class="idea-field-label">Description / Context</div>
-    <textarea class="idea-field-ta" id="idea-desc" placeholder="Describe the idea, why it matters, how it could work..."></textarea>
-
-    <div class="idea-field-label">Initial Status</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="idea-cat-chip sel" id="ist-ideation"    onclick="selectInitStatus('ideation',this)">🌱 Ideation</button>
-      <button class="idea-cat-chip"     id="ist-in-progress" onclick="selectInitStatus('in-progress',this)">🔄 In Progress</button>
-    </div>
-
-    <div class="idea-modal-btns">
-      <button class="idea-modal-cancel" onclick="closeIdeaModal()">Cancel</button>
-      <button class="idea-modal-save" onclick="saveIdea()">✓ Add Idea</button>
+  <div id="ideas-list" class="ideas-list">
+    <div class="wd-skel" aria-hidden="true">
+      <div class="wd-skel-row"><b></b><div><i style="width:62%"></i><i style="width:40%;height:11px"></i></div></div>
+      <div class="wd-skel-row"><b></b><div><i style="width:52%"></i><i style="width:34%;height:11px"></i></div></div>
+      <div class="wd-skel-row"><b></b><div><i style="width:66%"></i><i style="width:38%;height:11px"></i></div></div>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { onUserReady, WORKSPACE_ID } from './js/firebase.js';
-import { initTheme, toggleThemePanel } from './js/theme.js';
-import { initAudio } from './js/sounds.js';
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
   onSnapshot, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initShell } from './js/shell.js';
+import { esc, initials, ICON, glyphSVG, openSheet, closeSheet, showNote } from './js/ui.js';
 
-// Reuse existing Firebase app instance
-const db = getFirestore(getApps()[0]);
-
-initTheme();
-window.toggleThemePanel = toggleThemePanel;
-initAudio();
-
-// ── STATE ──────────────────────────────────────────────────────────────────
-let ideas = [];
-let activeFilter = 'all';
-let selectedCat = 'Content';
-let selectedInitStatus = 'ideation';
-let expandedIdeas = new Set();
-let editingIdeaId = null;
+const $ = id => document.getElementById(id);
+const haptic = n => { try { navigator.vibrate && navigator.vibrate(n); } catch (e) {} };
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+const CHEV = ICON.chevron.replace('width="22" height="22"', 'width="20" height="20"');
 const MY_NAME = localStorage.getItem('wd_myname') || 'Team';
+initShell();
 
-function ideasCol() { return collection(db, 'workspaces', WORKSPACE_ID, 'ideas'); }
-function ideaDoc(id){ return doc(db, 'workspaces', WORKSPACE_ID, 'ideas', id); }
-function notesCol(id){ return collection(db, 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes'); }
+// Reuse the Firebase app that firebase.js already started.
+const db = getFirestore(getApps()[0]);
+const ideasCol = () => collection(db, 'workspaces', WORKSPACE_ID, 'ideas');
+const ideaDoc = id => doc(db, 'workspaces', WORKSPACE_ID, 'ideas', id);
+const notesCol = id => collection(db, 'workspaces', WORKSPACE_ID, 'ideas', id, 'notes');
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function fmtDate(ts){
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-}
-function fmtTime(ts){
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' +
-         d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-}
-
-// ── STATUS CONFIG ─────────────────────────────────────────────────────────
+// An idea's status uses the same four shapes as a task's.
 const STATUS = {
-  'ideation':    { label:'Ideation',    color:'var(--purple)', bg:'rgba(94,92,230,.1)',  border:'rgba(94,92,230,.25)', icon:'🌱', left:'var(--purple)' },
-  'in-progress': { label:'In Progress', color:'var(--amber)',  bg:'rgba(255,159,10,.1)', border:'rgba(255,159,10,.3)', icon:'🔄', left:'var(--amber)' },
-  'implemented': { label:'Implemented', color:'var(--green)',  bg:'rgba(52,199,89,.1)',  border:'rgba(52,199,89,.25)', icon:'✅', left:'var(--green)' },
-  'parked':      { label:'Parked',      color:'var(--text3)',  bg:'var(--bg3)',           border:'var(--border)',       icon:'🅿', left:'var(--border2)' },
+  'ideation':    { label: 'Ideation',    glyph: 'todo' },
+  'in-progress': { label: 'In progress', glyph: 'inprog' },
+  'implemented': { label: 'Implemented', glyph: 'done' },
+  'parked':      { label: 'Parked',      glyph: 'onhold' },
 };
-const CAT_ICONS = { Content:'📝', Campaign:'🎯', Process:'⚙️', Tool:'🔧', Event:'🎪', Brand:'✨', Other:'💭' };
+const CATS = ['Content', 'Campaign', 'Process', 'Tool', 'Event', 'Brand', 'Other'];
 
-// ── LOAD IDEAS ────────────────────────────────────────────────────────────
+// ── state ──────────────────────────────────────────────────────────────────
+let ideas = [];
+let loaded = false;
+let activeFilter = 'all';
+const expanded = new Set();
+const drafts = {};                 // unsent note text per idea, kept across live re-renders
+const notesByIdea = {};            // live notes, subscribed once when an idea is first opened
+const noteUnsubs = {};
+let editingId = null, formCat = 'Content', formStatus = 'ideation';
+
+const toDate = ts => (ts ? (ts.toDate ? ts.toDate() : new Date(ts)) : null);
+function fmtDate(ts) {
+  const d = toDate(ts);
+  return d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+}
+function fmtTime(ts) {
+  const d = toDate(ts);
+  return d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+}
+
+// ── load ───────────────────────────────────────────────────────────────────
 onUserReady(() => {
-  const q = query(ideasCol(), orderBy('createdAt','desc'));
-  onSnapshot(q, snap => {
+  onSnapshot(query(ideasCol(), orderBy('createdAt', 'desc')), snap => {
     ideas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderIdeas();
-    document.getElementById('page-loader')?.remove();
-  });
+    loaded = true;
+    render();
+  }, err => { console.error('Ideas listener failed:', err); loaded = true; render(); });
 });
 
-// ── RENDER ────────────────────────────────────────────────────────────────
-function renderIdeas() {
-  const el = document.getElementById('ideas-list');
-  let list = activeFilter === 'all' ? ideas : ideas.filter(i => i.status === activeFilter);
+// ── render ─────────────────────────────────────────────────────────────────
+function renderChips() {
+  const count = s => (s === 'all' ? ideas.length : ideas.filter(i => i.status === s).length);
+  $('ideas-chips').innerHTML = [['all', 'All'], ...Object.entries(STATUS).map(([k, v]) => [k, v.label])].map(([k, label]) =>
+    `<button type="button" class="wd-chip${activeFilter === k ? ' on' : ''}" aria-pressed="${activeFilter === k}" data-status="${k}">${label}${count(k) ? ` <span class="ct">${count(k)}</span>` : ''}</button>`
+  ).join('');
+}
 
-  // Update tab counts
-  document.querySelectorAll('.status-tab').forEach(tab => {
-    const st = tab.dataset.status;
-    const cnt = st === 'all' ? ideas.length : ideas.filter(i => i.status === st).length;
-    tab.textContent = tab.textContent.replace(/\s*\(\d+\)/,'');
-    if (cnt > 0) tab.textContent += ` (${cnt})`;
-  });
+function ideaHTML(idea) {
+  const st = STATUS[idea.status] || STATUS.ideation;
+  const open = expanded.has(idea.id);
+  const n = idea.noteCount || 0;
+  const meta = [st.label, idea.category || 'Other', fmtDate(idea.createdAt), n ? plural(n, 'note', 'notes') : ''].filter(Boolean).map(esc).join(' · ');
+  const others = Object.entries(STATUS).filter(([k]) => k !== (idea.status || 'ideation'));
+  return `<div class="idea" data-id="${esc(idea.id)}">
+    <button type="button" class="idea-hd" aria-expanded="${open}" aria-controls="idea-b-${esc(idea.id)}" data-act="toggle">
+      <span class="g">${glyphSVG(st.glyph, 20)}</span>
+      <span class="idea-t"><b>${esc(idea.title)}</b><span>${meta}</span></span>${CHEV}
+    </button>
+    <div class="idea-b" id="idea-b-${esc(idea.id)}"${open ? '' : ' hidden'}>
+      ${idea.description ? `<p class="idea-desc">${esc(idea.description)}</p>` : '<p class="idea-desc none">No description yet.</p>'}
+      <div class="wd-lab">Notes</div>
+      <div class="idea-notes" id="idea-notes-${esc(idea.id)}"></div>
+      <div class="wd-addrow">
+        <input class="wd-field" id="note-inp-${esc(idea.id)}" placeholder="Add a note" maxlength="500" enterkeyhint="send" autocomplete="off" aria-label="Add a note" value="${esc(drafts[idea.id] || '')}">
+        <button type="button" class="wd-btn s" data-act="note">Add</button>
+      </div>
+      <div class="wd-lab">Move to</div>
+      <div class="wd-chips">${others.map(([k, v]) => `<button type="button" class="wd-chip" data-act="status" data-status="${k}"><span class="mg">${glyphSVG(v.glyph, 16)}</span>${v.label}</button>`).join('')}</div>
+      <div class="wd-btns">
+        <button type="button" class="wd-btn s" data-act="edit">Edit</button>
+        <button type="button" class="wd-btn s danger" data-act="delete">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
 
+function render() {
+  renderChips();
+  $('ideas-sub').textContent = !loaded ? '' : ideas.length ? plural(ideas.length, 'idea', 'ideas') : 'Nothing captured yet';
+  const el = $('ideas-list');
+  if (!loaded) return;
+  const list = activeFilter === 'all' ? ideas : ideas.filter(i => (i.status || 'ideation') === activeFilter);
   if (!list.length) {
-    el.innerHTML = `<div class="ideas-empty">
-      <div class="ideas-empty-icon">💡</div>
-      <div>${activeFilter === 'all' ? 'No ideas yet — tap 💡 to add one' : 'No ideas in this status'}</div>
-    </div>`;
+    el.innerHTML = ideas.length
+      ? '<div class="wd-empty"><b>Nothing here</b>No ideas have this status.</div>'
+      : '<div class="wd-empty"><b>No ideas yet</b>Use Quick capture above, or New idea to add details straight away.</div>';
     return;
   }
-
-  el.innerHTML = list.map(idea => {
-    const st  = STATUS[idea.status] || STATUS.ideation;
-    const isOpen = expandedIdeas.has(idea.id);
-    const catIcon = CAT_ICONS[idea.category] || '💭';
-    const noteCount = idea.noteCount || 0;
-
-    return `<div class="idea-card" style="border-left-color:${st.left}">
-      <div class="idea-card-hd" onclick="toggleIdea('${idea.id}')">
-        <div class="idea-card-icon" style="background:${st.bg}">${catIcon}</div>
-        <div class="idea-card-main">
-          <div class="idea-card-title">${esc(idea.title)}</div>
-          <div class="idea-card-meta">
-            <span class="idea-status-pill" style="color:${st.color};background:${st.bg};border-color:${st.border}">${st.icon} ${st.label}</span>
-            <span class="idea-cat-badge">${esc(idea.category||'Other')}</span>
-            ${noteCount ? `<span style="font-size:10px;color:var(--text3)">💬 ${noteCount}</span>` : ''}
-            <span class="idea-date">${fmtDate(idea.createdAt)}</span>
-          </div>
-        </div>
-        <div class="idea-expand-arrow${isOpen?' open':''}">▾</div>
-      </div>
-      <div class="idea-detail${isOpen?' open':''}" id="idea-det-${idea.id}">
-        ${idea.description ? `<div class="idea-desc">${esc(idea.description)}</div>` : '<div style="font-size:12px;color:var(--text3);margin:10px 0;font-style:italic">No description yet</div>'}
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">
-          Ideation Notes
-        </div>
-        <div id="idea-notes-${idea.id}"><div style="font-size:12px;color:var(--text3)">Loading…</div></div>
-        <div class="idea-add-note">
-          <textarea class="idea-note-inp" id="note-inp-${idea.id}"
-            placeholder="Add a note, thought, or update…"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote('${idea.id}')}"
-            rows="1"></textarea>
-          <button class="idea-note-btn" onclick="addNote('${idea.id}')">↑</button>
-        </div>
-        <div class="idea-actions">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1">
-            ${Object.entries(STATUS).filter(([k])=>k!==idea.status).map(([k,v])=>`
-              <button class="idea-action-btn" onclick="changeStatus('${idea.id}','${k}')"
-                style="color:${v.color};border-color:${v.border}">${v.icon} ${v.label}</button>
-            `).join('')}
-          </div>
-          <button class="idea-action-btn" onclick="editIdea('${idea.id}')"
-            style="color:var(--neon);border-color:rgba(10,132,255,.25)">✎ Edit</button>
-          <button class="idea-action-btn" onclick="deleteIdea('${idea.id}')"
-            style="color:var(--red);border-color:rgba(255,69,58,.25)">✕</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Load notes for expanded ideas
-  expandedIdeas.forEach(id => loadNotes(id));
+  el.innerHTML = `<div class="rpt-list">${list.map(ideaHTML).join('')}</div>`;
+  expanded.forEach(id => { if (el.querySelector(`.idea[data-id="${CSS.escape(id)}"]`)) loadNotes(id); });
 }
 
-// ── EXPAND / COLLAPSE ─────────────────────────────────────────────────────
-window.toggleIdea = (id) => {
-  if (expandedIdeas.has(id)) {
-    expandedIdeas.delete(id);
-  } else {
-    expandedIdeas.add(id);
-    loadNotes(id);
-  }
-  renderIdeas();
-};
-
-// ── NOTES ─────────────────────────────────────────────────────────────────
-const _notesCache = {};
-function loadNotes(ideaId) {
-  const el = document.getElementById('idea-notes-' + ideaId);
-  if (!el) return;
-
-  if (_notesCache[ideaId]) { renderNotes(ideaId, _notesCache[ideaId]); return; }
-
-  const q = query(notesCol(ideaId), orderBy('createdAt','asc'));
-  onSnapshot(q, snap => {
-    const notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    _notesCache[ideaId] = notes;
-    renderNotes(ideaId, notes);
+// ── notes ──────────────────────────────────────────────────────────────────
+function loadNotes(id) {
+  if (notesByIdea[id]) { renderNotes(id); return; }
+  renderNotes(id);                                  // "No notes yet" / loading state while the first snapshot arrives
+  noteUnsubs[id] = onSnapshot(query(notesCol(id), orderBy('createdAt', 'asc')), snap => {
+    notesByIdea[id] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderNotes(id);
   });
 }
-
-function renderNotes(ideaId, notes) {
-  const el = document.getElementById('idea-notes-' + ideaId);
+function renderNotes(id) {
+  const el = $('idea-notes-' + id);
   if (!el) return;
-  if (!notes.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:4px 0 8px;font-style:italic">No notes yet — be the first to add one</div>';
-    return;
-  }
-  el.innerHTML = notes.map(n => {
-    const initials = (n.author||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return `<div class="idea-note">
-      <div class="idea-note-av">${initials}</div>
-      <div class="idea-note-body">
-        <div class="idea-note-author">${esc(n.author||'Team')}</div>
-        <div class="idea-note-text">${esc(n.text)}</div>
-        <div class="idea-note-time">${fmtTime(n.createdAt)}</div>
-      </div>
-    </div>`;
-  }).join('');
+  const notes = notesByIdea[id];
+  if (!notes) { el.innerHTML = '<p class="idea-none">Loading notes…</p>'; return; }
+  if (!notes.length) { el.innerHTML = '<p class="idea-none">No notes yet. Add the first one.</p>'; return; }
+  el.innerHTML = notes.map(n => `<div class="idea-note"><span class="wd-av sm quiet">${esc(initials(n.author || 'Team'))}</span><div><b>${esc(n.author || 'Team')}<i>${esc(fmtTime(n.createdAt))}</i></b><span>${esc(n.text)}</span></div></div>`).join('');
 }
 
-window.addNote = async (ideaId) => {
-  const inp = document.getElementById('note-inp-' + ideaId);
-  const text = inp?.value.trim();
+async function addNote(id) {
+  const inp = $('note-inp-' + id);
+  const text = inp && inp.value.trim();
   if (!text) return;
-  inp.value = '';
-  inp.style.height = 'auto';
-
-  await addDoc(notesCol(ideaId), {
-    text,
-    author: MY_NAME,
-    createdAt: serverTimestamp(),
-  });
-  // Update note count on idea
-  const idea = ideas.find(i => i.id === ideaId);
-  const newCount = (idea?.noteCount || 0) + 1;
-  await updateDoc(ideaDoc(ideaId), { noteCount: newCount });
-  toast('Note added');
-};
-
-// ── STATUS CHANGE ─────────────────────────────────────────────────────────
-window.changeStatus = async (id, status) => {
-  await updateDoc(ideaDoc(id), { status, updatedAt: serverTimestamp() });
-  const st = STATUS[status];
-  toast(`${st.icon} Marked as ${st.label}`);
-};
-
-// ── FILTER ────────────────────────────────────────────────────────────────
-window.filterIdeas = (status, btn) => {
-  activeFilter = status;
-  document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  renderIdeas();
-};
-
-// ── NEW IDEA MODAL ────────────────────────────────────────────────────────
-window.openNewIdeaModal = () => {
-  editingIdeaId = null;
-  document.getElementById('idea-modal-title-text').textContent = '💡 New Idea';
-  document.getElementById('idea-title').value = '';
-  document.getElementById('idea-desc').value  = '';
-  selectedCat = 'Content';
-  selectedInitStatus = 'ideation';
-  document.querySelectorAll('.idea-cat-chip').forEach(b => b.classList.remove('sel'));
-  document.querySelector(`.idea-cat-chip`)?.classList.add('sel');
-  document.getElementById('ist-ideation').classList.add('sel');
-  document.getElementById('ist-in-progress').classList.remove('sel');
-  document.getElementById('idea-modal').classList.add('open');
-  setTimeout(() => document.getElementById('idea-title').focus(), 200);
-};
-
-window.closeIdeaModal = () => {
-  document.getElementById('idea-modal').classList.remove('open');
-  editingIdeaId = null;
-};
-
-window.selectCat = (btn, cat) => {
-  selectedCat = cat;
-  document.querySelectorAll('.idea-cat-chip[onclick^="selectCat"]').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-};
-
-window.selectInitStatus = (status, btn) => {
-  selectedInitStatus = status;
-  document.getElementById('ist-ideation').classList.toggle('sel', status === 'ideation');
-  document.getElementById('ist-in-progress').classList.toggle('sel', status === 'in-progress');
-};
-
-window.saveIdea = async () => {
-  const title = document.getElementById('idea-title').value.trim();
-  const desc  = document.getElementById('idea-desc').value.trim();
-  if (!title) { document.getElementById('idea-title').style.borderColor = 'var(--red)'; return; }
-
-  if (editingIdeaId) {
-    // Update existing
-    await updateDoc(ideaDoc(editingIdeaId), {
-      title, description: desc, category: selectedCat, updatedAt: serverTimestamp(),
-    });
-    toast('✓ Idea updated');
-  } else {
-    // Create new
-    await addDoc(ideasCol(), {
-      title, description: desc,
-      category:   selectedCat,
-      status:     selectedInitStatus,
-      author:     MY_NAME,
-      noteCount:  0,
-      createdAt:  serverTimestamp(),
-      updatedAt:  serverTimestamp(),
-    });
-    toast('💡 Idea added!');
+  inp.value = ''; delete drafts[id];
+  try {
+    await addDoc(notesCol(id), { text, author: MY_NAME, createdAt: serverTimestamp() });
+    const idea = ideas.find(i => i.id === id);
+    await updateDoc(ideaDoc(id), { noteCount: (idea?.noteCount || 0) + 1 });
+    haptic(6);
+  } catch (e) {
+    console.error('Note failed:', e);
+    inp.value = text; drafts[id] = text;
+    showNote('Could not add the note. Check your connection and try again.');
   }
-  closeIdeaModal();
-};
+}
 
-window.editIdea = (id) => {
-  const idea = ideas.find(i => i.id === id);
-  if (!idea) return;
-  editingIdeaId = id;
-  document.getElementById('idea-modal-title-text').textContent = '✎ Edit Idea';
-  document.getElementById('idea-title').value = idea.title || '';
-  document.getElementById('idea-desc').value  = idea.description || '';
-  selectedCat = idea.category || 'Content';
-  // Select the right category chip
-  document.querySelectorAll('.idea-cat-chip[onclick^="selectCat"]').forEach(b => {
-    b.classList.toggle('sel', b.textContent.trim().includes(selectedCat));
-  });
-  document.getElementById('idea-modal').classList.add('open');
-};
+async function setStatus(id, status) {
+  try {
+    await updateDoc(ideaDoc(id), { status, updatedAt: serverTimestamp() });
+    showNote('Moved to ' + STATUS[status].label);
+    haptic(6);
+  } catch (e) { console.error(e); showNote('Could not update the idea. Try again.'); }
+}
 
-window.deleteIdea = async (id) => {
-  if (!confirm('Delete this idea? This cannot be undone.')) return;
-  await deleteDoc(ideaDoc(id));
-  expandedIdeas.delete(id);
-  toast('Idea deleted');
-};
+// ── list interaction ───────────────────────────────────────────────────────
+$('ideas-chips').addEventListener('click', e => {
+  const chip = e.target.closest('[data-status]');
+  if (!chip) return;
+  activeFilter = chip.dataset.status;
+  render();
+});
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
-window.quickCaptureIdea = async (inp) => {
+$('ideas-list').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  const card = e.target.closest('.idea');
+  if (!btn || !card) return;
+  const id = card.dataset.id;
+  switch (btn.dataset.act) {
+    case 'toggle': {
+      const open = !expanded.has(id);
+      if (open) { expanded.add(id); loadNotes(id); } else expanded.delete(id);
+      btn.setAttribute('aria-expanded', open);
+      $('idea-b-' + id).hidden = !open;
+      break;
+    }
+    case 'note': addNote(id); break;
+    case 'status': setStatus(id, btn.dataset.status); break;
+    case 'edit': openIdeaForm(id); break;
+    case 'delete': confirmDelete(id); break;
+  }
+});
+$('ideas-list').addEventListener('input', e => {
+  if (e.target.id && e.target.id.startsWith('note-inp-')) drafts[e.target.id.slice(9)] = e.target.value;
+});
+$('ideas-list').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('note-inp-')) { e.preventDefault(); addNote(e.target.id.slice(9)); }
+});
+
+// ── quick capture ──────────────────────────────────────────────────────────
+async function quickCapture() {
+  const inp = $('quick-inp');
   const title = inp.value.trim();
   if (!title) return;
   inp.value = '';
-  await addDoc(ideasCol(), {
-    title,
-    description: '',
-    category:   'Other',
-    status:     'ideation',
-    author:     MY_NAME,
-    noteCount:  0,
-    createdAt:  serverTimestamp(),
-    updatedAt:  serverTimestamp(),
+  try {
+    await addDoc(ideasCol(), { title, description: '', category: 'Other', status: 'ideation', author: MY_NAME, noteCount: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    showNote('Idea captured'); haptic(8);
+  } catch (e) { console.error(e); inp.value = title; showNote('Could not save the idea. Try again.'); }
+}
+$('quick-btn').addEventListener('click', quickCapture);
+$('quick-inp').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); quickCapture(); } });
+
+// ── new / edit sheet ───────────────────────────────────────────────────────
+window.openIdeaForm = (id) => {
+  const idea = id ? ideas.find(i => i.id === id) : null;
+  editingId = idea ? idea.id : null;
+  formCat = idea ? (idea.category || 'Other') : 'Content';
+  formStatus = 'ideation';
+  const sheet = openSheet('idea-form', `
+    <h2 class="wd-sheet-title">${idea ? 'Edit idea' : 'New idea'}</h2>
+    <div class="idea-form">
+      <div class="wd-lab">Title</div>
+      <input class="wd-field" id="if-title" placeholder="What is the idea?" maxlength="160" autocomplete="off" value="${esc(idea ? idea.title : '')}">
+      <p class="wd-err" id="if-err" role="alert" hidden>Give the idea a title.</p>
+      <div class="wd-lab">Category</div>
+      <div class="wd-chips" id="if-cats">${CATS.map(c => `<button type="button" class="wd-chip${c === formCat ? ' on' : ''}" aria-pressed="${c === formCat}" data-cat="${c}">${c}</button>`).join('')}</div>
+      <div class="wd-lab">Description<span class="opt">optional</span></div>
+      <textarea class="wd-field" id="if-desc" rows="4" maxlength="800" placeholder="Why it matters and how it could work">${esc(idea ? idea.description || '' : '')}</textarea>
+      ${idea ? '' : `<div class="wd-lab">Start as</div>
+      <div class="wd-chips" id="if-status">${['ideation', 'in-progress'].map(k => `<button type="button" class="wd-chip${k === formStatus ? ' on' : ''}" aria-pressed="${k === formStatus}" data-st="${k}"><span class="mg">${glyphSVG(STATUS[k].glyph, 16)}</span>${STATUS[k].label}</button>`).join('')}</div>`}
+      <button type="button" class="wd-btn p" id="if-save">${idea ? 'Save changes' : 'Add idea'}</button>
+      <button type="button" class="wd-btn s" id="if-cancel">Cancel</button>
+    </div>`);
+  const pick = (box, attr, set) => box && box.addEventListener('click', e => {
+    const b = e.target.closest('[' + attr + ']'); if (!b) return;
+    set(b.getAttribute(attr));
+    box.querySelectorAll('.wd-chip').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
   });
-  toast('💡 Idea captured!');
+  pick(sheet.querySelector('#if-cats'), 'data-cat', v => { formCat = v; });
+  pick(sheet.querySelector('#if-status'), 'data-st', v => { formStatus = v; });
+  sheet.querySelector('#if-title').addEventListener('input', () => { sheet.querySelector('#if-err').hidden = true; sheet.querySelector('#if-title').classList.remove('bad'); });
+  sheet.querySelector('#if-cancel').onclick = () => closeSheet('idea-form');
+  sheet.querySelector('#if-save').onclick = saveIdea;
+  if (!idea) setTimeout(() => { const f = $('if-title'); if (f) f.focus(); }, 320);
 };
 
-function toast(msg) {
-  let el = document.getElementById('toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast';
-    el.className = 'toast';
-    document.body.appendChild(el);
+async function saveIdea() {
+  const title = $('if-title').value.trim();
+  const description = $('if-desc').value.trim();
+  if (!title) { $('if-err').hidden = false; $('if-title').classList.add('bad'); $('if-title').focus(); return; }
+  const btn = $('if-save');
+  btn.disabled = true;
+  try {
+    if (editingId) {
+      await updateDoc(ideaDoc(editingId), { title, description, category: formCat, updatedAt: serverTimestamp() });
+      showNote('Idea updated');
+    } else {
+      await addDoc(ideasCol(), { title, description, category: formCat, status: formStatus, author: MY_NAME, noteCount: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      showNote('Idea added');
+    }
+    haptic(8);
+    closeSheet('idea-form');
+  } catch (e) {
+    console.error('Idea save failed:', e);
+    btn.disabled = false;
+    showNote('Could not save the idea. Check your connection and try again.');
   }
-  el.textContent = msg;
-  el.className = 'toast show';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function confirmDelete(id) {
+  const idea = ideas.find(i => i.id === id);
+  if (!idea) return;
+  const sheet = openSheet('idea-del', `
+    <h2 class="wd-sheet-title">Delete this idea?</h2>
+    <p class="wd-sheet-note">“${esc(idea.title)}” will be removed for everyone. This can’t be undone.</p>
+    <button type="button" class="wd-btn p" id="id-go" style="margin-top:22px">Delete idea</button>
+    <button type="button" class="wd-btn s" id="id-no">Cancel</button>`);
+  sheet.querySelector('#id-no').onclick = () => closeSheet('idea-del');
+  sheet.querySelector('#id-go').onclick = async () => {
+    closeSheet('idea-del');
+    try {
+      await deleteDoc(ideaDoc(id));
+      expanded.delete(id); delete drafts[id];
+      if (noteUnsubs[id]) { try { noteUnsubs[id](); } catch (e) {} delete noteUnsubs[id]; delete notesByIdea[id]; }
+      showNote('Idea deleted');
+    } catch (e) { console.error(e); showNote('Could not delete the idea. Try again.'); }
+  };
 }
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
+  });
+}
+</script>
+
+<div class="wd-nav-fade"></div>
+<nav class="wd-nav" aria-label="Main">
+  <a href="index.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/></svg>Home</a>
+  <a href="input.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>Add</a>
+  <a href="calendar.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</a>
+  <a href="projects.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5a2.5 2.5 0 0 1 2.5-2.5h3.6l2 2.2H18a2.5 2.5 0 0 1 2.5 2.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>Projects</a>
+  <a href="report.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 20V12M12 20V4.5M18.5 20v-6.5"/></svg>Report</a>
+</nav>
 </body>
 </html>

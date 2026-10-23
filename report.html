@@ -8,558 +8,239 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/ui.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-/* ── REPORT PAGE STYLES ── */
-.rpt-tabs { display:flex; border-bottom:1px solid var(--border2); background:var(--bg2); }
-.rpt-tab {
-  flex:1; padding:12px 4px; text-align:center;
-  font-family:var(--sans); font-size:11px; font-weight:700;
-  color:var(--text3); cursor:pointer; border:none; background:none;
-  border-bottom:2px solid transparent; transition:all .15s;
-  margin-bottom:-1px; letter-spacing:.04em; text-transform:uppercase;
-  -webkit-tap-highlight-color:transparent;
-}
-.rpt-tab:hover { color:var(--text2) }
-.rpt-tab.active { color:var(--neon); border-bottom-color:var(--neon) }
-
-.rpt-panel { display:none }
-.rpt-panel.active { display:block }
-
-/* ── STAT GRID ── */
-.rpt-stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px }
-.rpt-stat {
-  background:var(--bg2); border:1px solid var(--border2);
-  border-radius:var(--rr); padding:14px 12px; text-align:center;
-  box-shadow:var(--shadow-card);
-}
-.rpt-stat-n { font-family:var(--mono); font-size:26px; font-weight:500; line-height:1; margin-bottom:4px }
-.rpt-stat-l { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.08em }
-
-/* ── SECTION HEADERS ── */
-.rpt-sec-hd {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:10px; margin-top:16px;
-}
-.rpt-sec-title {
-  font-size:11px; font-weight:700; color:var(--text2);
-  text-transform:uppercase; letter-spacing:.1em;
-  display:flex; align-items:center; gap:7px;
-}
-.rpt-sec-title::before {
-  content:''; width:3px; height:11px; border-radius:2px;
-  background:var(--neon); box-shadow:0 0 6px rgba(10,132,255,.4);
-}
-.rpt-sec-count { font-size:11px; color:var(--text3); font-weight:600 }
-
-/* ── TASK ROWS ── */
-.rpt-task {
-  display:flex; align-items:flex-start; gap:10px;
-  padding:10px 13px; background:var(--bg2);
-  border:1px solid var(--border); border-radius:var(--r);
-  margin-bottom:6px; border-left-width:3px;
-}
-.rpt-task-body { flex:1; min-width:0 }
-.rpt-task-name { font-size:13px; font-weight:500; color:var(--text); line-height:1.4; margin-bottom:5px }
-.rpt-task-meta { display:flex; flex-wrap:wrap; gap:4px; align-items:center }
-.rpt-task-members { font-size:10px; color:var(--text3); margin-top:3px }
-
-/* ── PROJECT BLOCK ── */
-.rpt-project {
-  background:var(--bg2); border:1px solid var(--border2);
-  border-radius:var(--rr); margin-bottom:8px;
-  overflow:hidden; box-shadow:var(--shadow-card);
-}
-.rpt-project-hd {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:11px 14px; cursor:pointer; -webkit-tap-highlight-color:transparent;
-  transition:background .12s;
-}
-.rpt-project-hd:hover { background:var(--bg3) }
-.rpt-project-name { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px }
-.rpt-project-meta { display:flex; align-items:center; gap:8px }
-.rpt-project-pct { font-family:var(--mono); font-size:12px; font-weight:500 }
-.rpt-project-bar-wrap {
-  width:60px; height:3px; background:var(--bg4); border-radius:2px; overflow:hidden;
-}
-.rpt-project-bar { height:100%; border-radius:2px; transition:width .4s }
-.rpt-project-body { padding:0 14px 12px; border-top:1px solid var(--border) }
-.rpt-project-arrow { font-size:10px; color:var(--text3); transition:transform .2s; flex-shrink:0 }
-.rpt-project-arrow.open { transform:rotate(180deg) }
-
-/* ── PROGRESS RING (compact) ── */
-.rpt-ring-wrap { display:flex; align-items:center; gap:14px; margin-bottom:14px }
-.rpt-ring-labels { flex:1 }
-.rpt-ring-pct { font-family:var(--mono); font-size:28px; font-weight:500; line-height:1; margin-bottom:2px }
-.rpt-ring-sub { font-size:11px; color:var(--text2) }
-
-/* ── FILTER ROW ── */
-.rpt-filter-row {
-  display:flex; gap:6px; padding:10px 16px;
-  background:var(--bg2); border-bottom:1px solid var(--border2);
-  overflow-x:auto; -webkit-overflow-scrolling:touch;
-}
-.rpt-filter-row::-webkit-scrollbar { display:none }
-.rpt-filter-sel {
-  background:var(--bg3); border:1px solid var(--border2);
-  border-radius:8px; padding:6px 10px; color:var(--text2);
-  font-family:var(--sans); font-size:11px; font-weight:600;
-  outline:none; cursor:pointer; white-space:nowrap; flex-shrink:0;
-  -webkit-appearance:none; appearance:none;
-}
-.rpt-filter-sel:focus { border-color:var(--neon) }
-.rpt-clear-btn {
-  background:none; border:1px solid var(--border2);
-  border-radius:8px; padding:6px 10px; color:var(--text3);
-  font-family:var(--sans); font-size:11px; font-weight:700;
-  cursor:pointer; white-space:nowrap; flex-shrink:0;
-}
-.rpt-clear-btn:hover { border-color:var(--red); color:var(--red) }
-.rpt-filter-count { font-size:11px; color:var(--text3); padding:6px 4px; flex-shrink:0; white-space:nowrap }
-
-/* ── CHART CARD ── */
-.rpt-chart-card {
-  background:var(--bg2); border:1px solid var(--border2);
-  border-radius:var(--rr); padding:14px; margin-bottom:8px;
-  box-shadow:var(--shadow-card);
-}
-.rpt-chart-title { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px }
-.rpt-chart-wrap { position:relative; height:180px; width:100%; overflow:hidden }
-.rpt-charts-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:12px }
-
-/* ── MY REPORT PERIOD PILLS ── */
-.rpt-period-row { display:flex; gap:6px; padding:10px 0; flex-wrap:wrap }
-.rpt-period-btn {
-  padding:6px 14px; border-radius:20px; border:1px solid var(--border2);
-  background:var(--bg3); color:var(--text2); font-family:var(--sans);
-  font-size:11px; font-weight:700; cursor:pointer; transition:all .15s;
-  -webkit-tap-highlight-color:transparent;
-}
-.rpt-period-btn.active {
-  background:var(--neon); color:#0c0c0f; border-color:var(--neon);
-}
-.rpt-period-btn:active { transform:scale(.96) }
-
-/* ── EXPORT BUTTON ── */
-.rpt-export-btn {
-  display:flex; align-items:center; gap:6px;
-  padding:8px 16px; border-radius:10px; border:none;
-  background:var(--neon); color:#0c0c0f;
-  font-family:var(--sans); font-size:12px; font-weight:700;
-  cursor:pointer; transition:all .15s; white-space:nowrap;
-}
-.rpt-export-btn:hover { filter:brightness(1.08) }
-.rpt-export-btn:active { transform:scale(.97) }
-
-/* ── MEMBER ROW ── */
-.rpt-member-row {
-  display:flex; align-items:center; gap:10px;
-  padding:11px 13px; background:var(--bg2);
-  border:1px solid var(--border2); border-radius:var(--r);
-  margin-bottom:6px;
-}
-.rpt-member-av {
-  width:32px; height:32px; border-radius:50%; flex-shrink:0;
-  background:rgba(94,92,230,.08); border:1px solid rgba(94,92,230,.2);
-  display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:700; color:var(--purple);
-}
-.rpt-member-info { flex:1; min-width:0 }
-.rpt-member-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px }
-.rpt-member-bar-bg { height:3px; background:var(--bg4); border-radius:2px; overflow:hidden }
-.rpt-member-bar-fill { height:100%; background:var(--neon2); border-radius:2px; transition:width .4s }
-.rpt-member-pct { font-family:var(--mono); font-size:13px; font-weight:500; color:var(--neon2); flex-shrink:0 }
-
-/* ── EMPTY STATE ── */
-.rpt-empty { text-align:center; padding:32px 16px; color:var(--text3); font-size:13px }
-.rpt-empty-icon { font-size:28px; margin-bottom:8px; opacity:.3 }
-
-/* ── WEEKLY DIGEST ── */
-.digest-stat { flex:1; text-align:center; padding:10px 6px; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--r) }
-.digest-stat-n { font-family:var(--mono); font-size:22px; font-weight:500; line-height:1; margin-bottom:3px }
-.digest-stat-l { font-size:9px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.08em }
-
-/* ── TAGS ── (reuse from style.css pattern) */
-.rt { font-size:9px; font-weight:700; padding:2px 7px; border-radius:10px; border:1px solid; text-transform:uppercase; letter-spacing:.04em }
-.rt-done  { color:#34c759; background:rgba(52,199,89,.08);  border-color:rgba(52,199,89,.2) }
-.rt-ip    { color:var(--amber); background:rgba(255,159,10,.08); border-color:rgba(255,159,10,.2) }
-.rt-todo  { color:var(--text2); background:var(--bg3); border-color:var(--border2) }
-.rt-crit  { color:var(--red); background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.2) }
-.rt-high  { color:var(--amber); background:rgba(255,159,10,.08); border-color:rgba(255,159,10,.2) }
-.rt-med   { color:var(--neon); background:rgba(10,132,255,.08); border-color:rgba(10,132,255,.2) }
-.rt-low   { color:var(--text3); background:var(--bg3); border-color:var(--border) }
-.rt-proj  { color:var(--purple); background:rgba(94,92,230,.08); border-color:rgba(94,92,230,.2) }
-
-/* ── PRINT / PDF ── */
-@media print {
-  nav, .rpt-tabs, .rpt-filter-row, .rpt-period-row,
-  .rpt-export-btn, .bottom-nav { display:none !important }
-  body { background:#fff !important; color:#111 !important }
-  .rpt-panel { display:block !important }
-  .rpt-chart-card, .rpt-project, .rpt-stat, .rpt-task { break-inside:avoid }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   QUARTERLY REPORT — magazine-style on-screen preview.
-   The exported/shared version is a SEPARATE hand-built HTML document (see
-   window.exportQuarterlyPDF) using inline styles so it survives being
-   printed/PDF'd in a blank popup window with no access to this stylesheet.
-   This on-screen version reuses theme tokens so it matches whichever theme
-   the person has active.
-   ═══════════════════════════════════════════════════════════════════════ */
-.qr-controls {
-  display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;
-}
-.qr-sel {
-  background:var(--bg2); border:1px solid var(--border2); border-radius:9px;
-  padding:7px 11px; color:var(--text); font-family:var(--sans); font-size:13px;
-  font-weight:600; outline:none; cursor:pointer; -webkit-appearance:none;
-}
-.qr-share-btn {
-  margin-left:auto; flex-shrink:0;
-  background:linear-gradient(135deg,var(--neon),var(--purple)); color:#fff;
-  border:none; border-radius:10px; padding:8px 16px;
-  font-family:var(--sans); font-size:12px; font-weight:800; cursor:pointer;
-  box-shadow:0 4px 16px rgba(10,132,255,.3);
-  transition:transform var(--dur-fast) var(--ease-spring);
-}
-.qr-share-btn:active { transform:scale(.95) }
-.qr-copy-btn {
-  flex-shrink:0; background:var(--bg2); border:1px solid var(--border2);
-  border-radius:10px; padding:8px 14px; color:var(--text2);
-  font-family:var(--sans); font-size:12px; font-weight:700; cursor:pointer;
-}
-
-/* Hero */
-.qr-hero {
-  position:relative; overflow:hidden;
-  background:linear-gradient(135deg,#0f1420,#1a2138 60%,#221a38);
-  border-radius:var(--rrr); padding:24px 20px; margin-bottom:14px;
-  color:#fff;
-}
-.qr-hero::before {
-  content:''; position:absolute; inset:0;
-  background:
-    radial-gradient(ellipse 60% 50% at 15% 0%, rgba(34,211,238,.25) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 50% at 100% 100%, rgba(167,139,250,.22) 0%, transparent 60%);
-}
-.qr-hero-eyebrow {
-  position:relative; font-size:10px; font-weight:800; letter-spacing:.12em;
-  text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:6px;
-}
-.qr-hero-title {
-  position:relative; font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.1;
-}
-.qr-hero-sub { position:relative; font-size:13px; color:rgba(255,255,255,.65); margin-top:4px }
-.qr-hero-headline {
-  position:relative; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.14);
-  font-size:14px; line-height:1.55; color:rgba(255,255,255,.92);
-}
-.qr-hero-headline b { color:#fff }
-
-/* Stat strip */
-.qr-stat-strip { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px }
-.qr-stat-card {
-  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--rr);
-  padding:14px; box-shadow:var(--shadow-card);
-}
-.qr-stat-card-n { font-family:var(--mono); font-size:24px; font-weight:600; line-height:1 }
-.qr-stat-card-l { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.07em; margin-top:5px }
-.qr-stat-card-trend { font-size:10px; font-weight:700; margin-top:4px }
-.qr-stat-card-trend.up { color:var(--green) }
-.qr-stat-card-trend.down { color:var(--red) }
-
-/* Section header, magazine-style rule */
-.qr-sec { margin-top:22px; margin-bottom:12px }
-.qr-sec-eyebrow {
-  font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--neon); margin-bottom:2px;
-}
-.qr-sec-title { font-size:17px; font-weight:800; color:var(--text); letter-spacing:-.01em }
-.qr-sec-rule { height:2px; background:linear-gradient(90deg,var(--neon),transparent); margin-top:8px; border-radius:1px }
-
-/* Leaderboard */
-.qr-lb-row {
-  display:flex; align-items:center; gap:11px;
-  padding:11px 12px; background:var(--bg2); border:1px solid var(--border2);
-  border-radius:var(--rr); margin-bottom:7px;
-}
-.qr-lb-rank {
-  flex-shrink:0; width:26px; height:26px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--mono); font-size:12px; font-weight:700;
-  background:var(--bg3); color:var(--text2);
-}
-.qr-lb-rank.r1 { background:linear-gradient(135deg,#ffd76a,#f5a623); color:#5a3d00 }
-.qr-lb-rank.r2 { background:linear-gradient(135deg,#e2e8f0,#b8c2cf); color:#2d3748 }
-.qr-lb-rank.r3 { background:linear-gradient(135deg,#e8b088,#c47a4f); color:#3d1f0a }
-.qr-lb-body { flex:1; min-width:0 }
-.qr-lb-name { font-size:13px; font-weight:700; color:var(--text) }
-.qr-lb-meta { font-size:11px; color:var(--text3); margin-top:1px }
-.qr-lb-bar-wrap { width:100%; height:5px; background:var(--bg3); border-radius:3px; margin-top:6px; overflow:hidden }
-.qr-lb-bar { height:100%; border-radius:3px; transition:width var(--dur-slow) var(--ease-out) }
-.qr-lb-pct { flex-shrink:0; font-family:var(--mono); font-size:15px; font-weight:600 }
-
-/* Project spotlight cards */
-.qr-proj-grid { display:flex; flex-direction:column; gap:8px }
-.qr-proj-card {
-  background:var(--bg2); border:1px solid var(--border2); border-left:3px solid var(--neon);
-  border-radius:var(--rr); padding:12px 13px;
-}
-.qr-proj-card.done { border-left-color:var(--green) }
-.qr-proj-top { display:flex; align-items:center; justify-content:space-between; gap:8px }
-.qr-proj-name { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px }
-.qr-proj-badge {
-  font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
-  padding:2px 7px; border-radius:20px; background:rgba(48,209,88,.14); color:var(--green);
-}
-.qr-proj-pct { font-family:var(--mono); font-size:15px; font-weight:600 }
-.qr-proj-bar-wrap { width:100%; height:5px; background:var(--bg3); border-radius:3px; margin-top:8px; overflow:hidden }
-.qr-proj-bar { height:100%; border-radius:3px }
-.qr-proj-meta { font-size:11px; color:var(--text3); margin-top:6px }
-
-/* Trend chart card */
-.qr-chart-card {
-  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--rr);
-  padding:14px; height:170px;
-}
-
-/* ── PERFORMANCE MODE TOGGLE (My Report tab) ── */
-.perf-mode-row { display:flex; gap:6px; margin-bottom:8px }
-.perf-mode-btn {
-  flex:1; padding:7px; border-radius:9px; border:1px solid var(--border2);
-  background:var(--bg2); color:var(--text2); font-family:var(--sans);
-  font-size:11px; font-weight:700; cursor:pointer; transition:all var(--dur-fast) var(--ease-out);
-}
-.perf-mode-btn.active { background:var(--neon); color:#fff; border-color:var(--neon) }
-</style>
 </head>
 <body>
+<div class="wd-page" id="main">
+  <header class="wd-appbar">
+    <a href="index.html" class="nav-brand" aria-label="WorkDesk"><img class="wd-logo" src="data:image/png;base64,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" alt="Workdesk" height="30"></a>
+    <button type="button" class="wd-av" id="me-btn" aria-label="Your profile and settings">·</button>
+  </header>
 
-<div class="toast" id="toast"></div>
-
-<nav class="nav">
-  <a class="nav-brand" href="index.html">
-    <span class="brand-word"><span class="brand-work">Work</span><span class="brand-desk">desk</span></span>
-    <span class="brand-dot"></span>
-  </a>
-  <div class="nav-right">
-    <button class="theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
-    <button class="theme-toggle" id="mute-btn" onclick="handleMuteToggle()">🔊</button>
+  <div class="wd-title">
+    <h1 class="wd-h1">Report</h1>
+    <button type="button" class="rpt-share" onclick="openShare()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 7.5l4-4 4 4M5 12v7.5h14V12"/></svg>Share</button>
   </div>
-</nav>
 
-<!-- TOP CONTROLS -->
-<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border2)">
-  <select id="month-sel" onchange="loadReport()"
-    style="background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;outline:none;cursor:pointer;flex:1;-webkit-appearance:none"></select>
-  <button onclick="exportPDF()" class="rpt-export-btn">⬇ PDF</button>
-</div>
+  <div class="wd-tabs rpt-tabs" role="tablist" aria-label="Report type">
+    <button type="button" class="on" id="tab-quarterly" role="tab" aria-selected="true" onclick="switchRptTab('quarterly')">Quarterly</button>
+    <button type="button" id="tab-monthly" role="tab" aria-selected="false" onclick="switchRptTab('monthly')">Monthly</button>
+    <button type="button" id="tab-weekly" role="tab" aria-selected="false" onclick="switchRptTab('weekly')">Weekly</button>
+    <button type="button" id="tab-myreport" role="tab" aria-selected="false" onclick="switchRptTab('myreport')">Performance</button>
+  </div>
 
-<!-- REPORT TABS -->
-<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-bottom:1px solid var(--border2)">
-<div class="rpt-tabs" style="border-bottom:none;flex:1">
-  <button class="rpt-tab active" id="tab-quarterly" onclick="switchRptTab('quarterly')">Quarterly</button>
-  <button class="rpt-tab" id="tab-monthly" onclick="switchRptTab('monthly')">Monthly</button>
-  <button class="rpt-tab" id="tab-weekly" onclick="switchRptTab('weekly')">Weekly</button>
-  <button class="rpt-tab" id="tab-myreport" onclick="switchRptTab('myreport')">Performance</button>
-</div>
-<button id="rpt-filter-btn" onclick="toggleRptFilters()"
-  style="display:none;flex-shrink:0;margin-right:12px;padding:5px 12px;
-    border-radius:20px;border:1px solid var(--border2);background:var(--bg2);
-    color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">
-  ⚙ Filters
-</button>
-</div>
+  <!-- QUARTERLY -->
+  <section class="rpt-panel on" id="panel-quarterly">
+    <div class="rpt-ctl">
+      <select class="wd-select" id="qr-quarter-sel" aria-label="Quarter" onchange="renderQuarterly()"></select>
+      <select class="wd-select" id="qr-year-sel" aria-label="Year" onchange="renderQuarterly()"></select>
+    </div>
+    <div id="quarterly-content"><div class="wd-empty">Loading…</div></div>
+  </section>
 
-<!-- FILTER ROW (monthly only) -->
-<div style="padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border2);display:none" id="filter-row-wrap">
-<div class="rpt-filter-row" id="filter-row">
-  <select id="filter-project" class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Projects</option></select>
-  <select id="filter-member"  class="rpt-filter-sel" onchange="applyFilters()"><option value="">All Members</option></select>
-  <select id="filter-priority" class="rpt-filter-sel" onchange="applyFilters()">
-    <option value="">All Priorities</option>
-    <option value="critical">Critical</option>
-    <option value="high">High</option>
-    <option value="medium">Medium</option>
-    <option value="low">Low</option>
-  </select>
-  <select id="filter-status" class="rpt-filter-sel" onchange="applyFilters()">
-    <option value="">All Status</option>
-    <option value="done">Done</option>
-    <option value="inprog">In Progress</option>
-    <option value="todo">Todo</option>
-  </select>
-  <button class="rpt-clear-btn" onclick="clearFilters()">✕</button>
-  <span class="rpt-filter-count" id="filter-count"></span>
-</div>
-</div>
+  <!-- MONTHLY -->
+  <section class="rpt-panel" id="panel-monthly">
+    <div id="month-host-monthly">
+      <div class="rpt-ctl" id="ctl-month">
+        <select class="wd-select" id="month-sel" aria-label="Month" onchange="loadReport()"></select>
+        <button type="button" class="wd-chip" id="rpt-filter-btn" aria-expanded="false" aria-controls="filter-row-wrap" onclick="toggleRptFilters()">Filters<span class="n" id="filter-n"></span></button>
+      </div>
+    </div>
+    <div class="rpt-filters" id="filter-row-wrap" hidden>
+      <select class="wd-select" id="filter-project" aria-label="Project" onchange="applyFilters()"><option value="">All projects</option></select>
+      <select class="wd-select" id="filter-member" aria-label="Member" onchange="applyFilters()"><option value="">All members</option></select>
+      <select class="wd-select" id="filter-priority" aria-label="Priority" onchange="applyFilters()">
+        <option value="">All priorities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select class="wd-select" id="filter-status" aria-label="Status" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option value="done">Done</option>
+        <option value="inprog">In progress</option>
+        <option value="todo">To do</option>
+      </select>
+      <div class="rpt-filters-foot"><span id="filter-count"></span><button type="button" class="wd-link" onclick="clearFilters()">Clear filters</button></div>
+    </div>
+    <div id="monthly-content"><div class="wd-empty">Loading…</div></div>
+  </section>
 
-<!-- ═══ MONTHLY PANEL ═══ -->
-<div class="rpt-panel page" id="panel-monthly" style="padding-top:12px">
-  <div id="monthly-content">
-    <div class="rpt-empty"><div class="rpt-empty-icon">📊</div>Loading…</div>
-  </div>
-</div>
+  <!-- WEEKLY -->
+  <section class="rpt-panel" id="panel-weekly">
+    <div id="weekly-content"><div class="wd-empty">Loading…</div></div>
+  </section>
 
-<!-- ═══ PERFORMANCE PANEL (formerly "My Report") ═══
-     Gauges either a member's or a project's completion performance across
-     Week / Month / Quarter / Overall. Mode toggle swaps the dropdown between
-     members and projects; getMyReportTasks()/renderMyReport() branch on
-     perfMode to filter accordingly (project mode = all tasks under that
-     project regardless of assignee, rather than one person's tasks). -->
-<div class="rpt-panel page" id="panel-myreport" style="padding-top:12px">
-  <div class="perf-mode-row">
-    <button class="perf-mode-btn active" data-mode="member" onclick="setPerfMode('member',this)">👤 By Member</button>
-    <button class="perf-mode-btn" data-mode="project" onclick="setPerfMode('project',this)">📁 By Project</button>
-  </div>
-  <!-- Member/project selector + period + export -->
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <select id="my-report-member" onchange="renderMyReport()"
-      style="background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;flex:1;-webkit-appearance:none"></select>
-    <button onclick="exportMyReportPDF()" class="rpt-export-btn" style="flex-shrink:0">⬇ PDF</button>
-  </div>
-  <div class="rpt-period-row">
-    <button class="rpt-period-btn" data-period="week" onclick="setMyReportPeriod('week',this)">Last Week</button>
-    <button class="rpt-period-btn active" data-period="month" onclick="setMyReportPeriod('month',this)">This Month</button>
-    <button class="rpt-period-btn" data-period="quarter" onclick="setMyReportPeriod('quarter',this)">Last Quarter</button>
-    <button class="rpt-period-btn" data-period="overall" onclick="setMyReportPeriod('overall',this)">Overall</button>
-  </div>
-  <div id="my-report-content" style="margin-top:4px">
-    <div class="rpt-empty"><div class="rpt-empty-icon">👤</div>Select a period above</div>
-  </div>
+  <!-- PERFORMANCE (one person or one project) -->
+  <section class="rpt-panel" id="panel-myreport">
+    <div class="wd-seg rpt-mode" role="group" aria-label="Report on">
+      <button type="button" class="on" data-mode="member" onclick="setPerfMode('member',this)">By member</button>
+      <button type="button" data-mode="project" onclick="setPerfMode('project',this)">By project</button>
+    </div>
+    <div class="rpt-ctl"><select class="wd-select block" id="my-report-member" aria-label="Member or project" onchange="renderMyReport()"></select></div>
+    <div class="wd-seg four rpt-periods" role="group" aria-label="Period">
+      <button type="button" data-period="week" onclick="setMyReportPeriod('week',this)">Last week</button>
+      <button type="button" class="on" data-period="month" onclick="setMyReportPeriod('month',this)">This month</button>
+      <button type="button" data-period="quarter" onclick="setMyReportPeriod('quarter',this)">Last quarter</button>
+      <button type="button" data-period="overall" onclick="setMyReportPeriod('overall',this)">Overall</button>
+    </div>
+    <div id="month-host-perf"></div>
+    <div id="my-report-content"><div class="wd-empty">Loading…</div></div>
+  </section>
 </div>
-
-<!-- ═══ WEEKLY DIGEST PANEL ═══ -->
-<div class="rpt-panel page" id="panel-weekly" style="padding-top:12px">
-  <div id="weekly-content">
-    <div class="rpt-empty"><div class="rpt-empty-icon">📅</div>Loading…</div>
-  </div>
-</div>
-
-<!-- ═══ QUARTERLY REPORT PANEL ═══
-     The flagship, management-facing report. On-screen preview here; the
-     "Share Report" button generates a separate, fully self-contained
-     magazine-styled HTML document (window.exportQuarterlyPDF) in a new tab,
-     ready to Print → Save as PDF and send on. -->
-<div class="rpt-panel active page" id="panel-quarterly" style="padding-top:12px">
-  <div class="qr-controls">
-    <select id="qr-quarter-sel" class="qr-sel" onchange="renderQuarterly()"></select>
-    <select id="qr-year-sel" class="qr-sel" onchange="renderQuarterly()"></select>
-    <button class="qr-copy-btn" onclick="copyQuarterlySummary()">📋 Copy Summary</button>
-    <button class="qr-share-btn" onclick="exportQuarterlyPDF()">📤 Share Report</button>
-  </div>
-  <div id="quarterly-content">
-    <div class="rpt-empty"><div class="rpt-empty-icon">🏆</div>Loading…</div>
-  </div>
-</div>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="projects.html" class="bn-item"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
-  <a href="report.html" class="bn-item active"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-</nav>
 
 <script type="module">
 import { onUserReady, getTasks, getMembers, getCalendarEvents, getProjects, setProjectComplete, reopenProject } from './js/firebase.js';
-import { initTheme, toggleThemePanel } from './js/theme.js';
-import { initAudio, getMuted, toggleMute } from './js/sounds.js';
-initTheme();
-window.toggleThemePanel = toggleThemePanel;
-initAudio();
-function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.textContent=getMuted()?'🔇':'🔊';}
-window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
-updateMuteBtn();
+import { initShell } from './js/shell.js';
+import { esc, initials, ICON, glyphSVG, STATUS_LABEL, ringHTML, openSheet, closeSheet, showNote, projHue } from './js/ui.js';
+
+const $ = id => document.getElementById(id);
+const toast = m => showNote(m);
+window.closeSheet = closeSheet;
 
 // ── STATE ──────────────────────────────────────────────────────────────────
-let allTasks=[], allMembers=[], calendarEvents={}, projectsData={};
-let selMonth='';
-let activeFilters={project:'',member:'',priority:'',status:''};
-let chartInstances={};
-let myReportPeriod='month';
-let perfMode='member';           // 'member' | 'project' — drives the Performance tab
-let activeRptTab='quarterly';
-let qrChartInstance=null;
+let allTasks = [], allMembers = [], calendarEvents = {}, projectsData = {};
+let selMonth = '';
+let activeFilters = { project: '', member: '', priority: '', status: '' };
+let filtersOpen = false;
+let chartsOpen = false;
+let chartInstances = {};
+let myReportPeriod = 'month';
+let perfMode = 'member';           // 'member' | 'project' — drives the Performance tab
+let activeRptTab = 'quarterly';
+let qrChartInstance = null;
+let lastMonthly = [];              // the tasks behind the Monthly charts
+let blockSeq = 0;
 
-const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const pad=n=>String(n).padStart(2,'0');
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const pad = n => String(n).padStart(2, '0');
+const PRIO = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+const CHEV = ICON.chevron.replace('width="22" height="22"', 'width="20" height="20"');
 
-// ── INIT MONTH SELECTOR ────────────────────────────────────────────────────
-(function initMonths(){
-  const sel=document.getElementById('month-sel');
-  const now=new Date();
-  let opts='';
-  for(let i=0;i<12;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const val=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
-    const lbl=MONTHS[d.getMonth()]+' '+d.getFullYear();
-    opts+=`<option value="${val}"${i===0?' selected':''}>${lbl}</option>`;
+function fmtDate(d) { if (!d) return ''; const [y, m, day] = d.split('-'); return `${day} ${MONTHS[parseInt(m) - 1]}`; }
+function monthLabel(m) { const [y, mo] = m.split('-'); return MONTHS[parseInt(mo) - 1] + ' ' + y; }
+
+// ── SMALL BUILDING BLOCKS ──────────────────────────────────────────────────
+const emptyHTML = (msg, sub = '') => `<div class="wd-empty">${esc(msg)}${sub ? '<br>' + esc(sub) : ''}</div>`;
+const h2 = (t, n) => `<div class="rpt-h2"><span>${t}</span>${n != null && n !== '' ? `<span class="n">${n}</span>` : ''}</div>`;
+const statsHTML = items => `<div class="rpt-stats c${items.length}">${items.map(([n, l, tr]) => `<div><b>${n}</b><span>${l}</span>${tr ? `<i>${tr}</i>` : ''}</div>`).join('')}</div>`;
+const summaryHTML = (pct, title, sub) => `<div class="rpt-sum">${ringHTML(pct, 76, 6, pct + '%')}<div class="rs"><b>${title}</b><span>${sub}</span></div></div>`;
+const bar = pct => `<span class="rpt-bar"><i style="width:${pct}%"></i></span>`;
+const listHTML = inner => `<div class="rpt-list">${inner}</div>`;
+
+function foldHTML(label, n, inner) {
+  const id = 'fb' + (++blockSeq);
+  return `<div class="rpt-fold"><button type="button" class="wd-disc" aria-expanded="false" aria-controls="${id}" onclick="toggleBlock(this)"><span>${label}</span><span class="n">${n}</span>${CHEV}</button><div id="${id}" class="rpt-fold-body" hidden>${inner}</div></div>`;
+}
+window.toggleBlock = (btn) => {
+  const body = document.getElementById(btn.getAttribute('aria-controls'));
+  if (!body) return;
+  const open = body.hidden;
+  body.hidden = !open;
+  btn.setAttribute('aria-expanded', open);
+};
+
+function taskRowHTML(t) {
+  const st = ['todo', 'inprog', 'onhold', 'done'].includes(t.status) ? t.status : 'todo';
+  const members = (t.members || []).map(m => m.name).filter(Boolean).join(', ');
+  const bits = [
+    esc(STATUS_LABEL[st]),
+    esc(PRIO[t.priority || 'medium']),
+    t.project ? esc(t.project) : '',
+    t.taskDueDate && st !== 'done' ? 'due ' + fmtDate(t.taskDueDate) : '',
+    members ? 'with ' + esc(members) : '',
+  ].filter(Boolean).join(' · ');
+  return `<div class="rpt-task${st === 'done' ? ' is-done' : ''}"><span class="g" style="--proj:${projHue(t.project)}">${glyphSVG(st, 20)}</span><div><b>${esc(t.label)}</b><span>${bits}</span></div></div>`;
+}
+
+function memberRowHTML(name, text, pct) {
+  return `<div class="rpt-member"><span class="wd-av sm quiet">${esc(initials(name))}</span><div class="rpt-member-b"><b>${esc(name)}</b>${bar(pct)}</div><span class="rpt-member-pct">${text}</span></div>`;
+}
+
+// a project (or contributor) as a row that opens to its tasks
+function projectBlockHTML(name, tasks, doneCount, { complete = null } = {}) {
+  const pct = tasks.length ? Math.round(doneCount / tasks.length * 100) : 0;
+  const id = 'fb' + (++blockSeq);
+  const act = complete === null ? '' : `<div class="rpt-pb-act"><button type="button" class="wd-btn s sm" data-proj="${esc(name)}" onclick="toggleProjectComplete(this.dataset.proj)">${complete ? 'Reopen project' : 'Mark project complete'}</button></div>`;
+  return `<div class="rpt-project">
+    <button type="button" class="rpt-project-hd" aria-expanded="false" aria-controls="${id}" onclick="toggleBlock(this)">
+      <span class="rpt-project-name"><span class="nm">${esc(name)}${complete ? ' <span class="wd-tag">Complete</span>' : ''}</span>${bar(pct)}</span>
+      <span class="rpt-project-pct">${pct}%</span>${CHEV}
+    </button>
+    <div id="${id}" class="rpt-project-body" hidden>${act}${tasks.map(taskRowHTML).join('')}</div>
+  </div>`;
+}
+
+// ── MONTH SELECTOR + SHARED CONTROLS ───────────────────────────────────────
+(function initMonths() {
+  const sel = $('month-sel');
+  const now = new Date();
+  let opts = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    opts += `<option value="${d.getFullYear()}-${pad(d.getMonth() + 1)}"${i === 0 ? ' selected' : ''}>${MONTHS[d.getMonth()]} ${d.getFullYear()}</option>`;
   }
-  sel.innerHTML=opts;
-  selMonth=sel.value;
+  sel.innerHTML = opts;
+  selMonth = sel.value;
 })();
 
-// ── LOAD DATA ──────────────────────────────────────────────────────────────
-window.loadReport=()=>{
-  selMonth=document.getElementById('month-sel').value;
+function getCurrentQuarter() { return Math.floor(new Date().getMonth() / 3) + 1; }
+(function initQuarterSelectors() {
+  const qSel = $('qr-quarter-sel'), ySel = $('qr-year-sel');
+  qSel.innerHTML = [1, 2, 3, 4].map(q => `<option value="${q}"${q === getCurrentQuarter() ? ' selected' : ''}>Q${q} (${['Jan–Mar', 'Apr–Jun', 'Jul–Sep', 'Oct–Dec'][q - 1]})</option>`).join('');
+  const curY = new Date().getFullYear();
+  let y = '';
+  for (let i = curY; i >= curY - 2; i--) y += `<option value="${i}"${i === curY ? ' selected' : ''}>${i}</option>`;
+  ySel.innerHTML = y;
+})();
+
+window.loadReport = () => { selMonth = $('month-sel').value; renderActiveTab(); };
+
+function syncControls() {
+  const ctl = $('ctl-month');
+  const showMonth = activeRptTab === 'monthly' || (activeRptTab === 'myreport' && myReportPeriod === 'month');
+  if (activeRptTab === 'monthly') $('month-host-monthly').appendChild(ctl);
+  else $('month-host-perf').appendChild(ctl);
+  ctl.hidden = !showMonth;
+  $('rpt-filter-btn').hidden = activeRptTab !== 'monthly';
+  $('filter-row-wrap').hidden = !(activeRptTab === 'monthly' && filtersOpen);
+}
+
+function renderActiveTab() {
+  if (activeRptTab === 'monthly') renderMonthly();
+  if (activeRptTab === 'myreport') renderMyReport();
+  if (activeRptTab === 'weekly') renderWeekly();
+  if (activeRptTab === 'quarterly') renderQuarterly();
+}
+
+window.switchRptTab = (tab) => {
+  activeRptTab = tab;
+  document.querySelectorAll('.rpt-tabs button').forEach(b => {
+    const on = b.id === 'tab-' + tab;
+    b.classList.toggle('on', on); b.setAttribute('aria-selected', on);
+  });
+  document.querySelectorAll('.rpt-panel').forEach(p => p.classList.toggle('on', p.id === 'panel-' + tab));
+  syncControls();
   renderActiveTab();
 };
 
-onUserReady(async()=>{
-  [allTasks,allMembers,calendarEvents,projectsData]=await Promise.all([getTasks(),getMembers(),getCalendarEvents(),getProjects()]);
+onUserReady(async () => {
+  try {
+    [allTasks, allMembers, calendarEvents, projectsData] = await Promise.all([getTasks(), getMembers(), getCalendarEvents(), getProjects()]);
+  } catch (e) {
+    console.error('Report load failed:', e);
+    const msg = emptyHTML('Could not load the report.', 'Check your connection and reload.');
+    ['quarterly-content', 'monthly-content', 'weekly-content', 'my-report-content'].forEach(id => { $(id).innerHTML = msg; });
+    return;
+  }
   populateMemberSelector();
   renderActiveTab();
 });
-
-// ── INIT QUARTER/YEAR SELECTORS ─────────────────────────────────────────────
-function getCurrentQuarter(){ return Math.floor(new Date().getMonth()/3)+1; }
-(function initQuarterSelectors(){
-  const qSel=document.getElementById('qr-quarter-sel');
-  const ySel=document.getElementById('qr-year-sel');
-  if(!qSel||!ySel) return;
-  qSel.innerHTML=[1,2,3,4].map(q=>`<option value="${q}"${q===getCurrentQuarter()?' selected':''}>Q${q} ${['(Jan–Mar)','(Apr–Jun)','(Jul–Sep)','(Oct–Dec)'][q-1]}</option>`).join('');
-  const curY=new Date().getFullYear();
-  let yOpts='';
-  for(let y=curY;y>=curY-2;y--) yOpts+=`<option value="${y}"${y===curY?' selected':''}>${y}</option>`;
-  ySel.innerHTML=yOpts;
-})();
-
-function renderActiveTab(){
-  if(activeRptTab==='monthly')   renderMonthly();
-  if(activeRptTab==='myreport')  renderMyReport();
-  if(activeRptTab==='weekly')    renderWeekly();
-  if(activeRptTab==='quarterly') renderQuarterly();
-}
-
-// ── TAB SWITCHING ──────────────────────────────────────────────────────────
-window.toggleRptFilters = () => {
-  const wrap = document.getElementById('filter-row-wrap');
-  const btn  = document.getElementById('rpt-filter-btn');
-  const open = wrap.style.display !== 'none';
-  wrap.style.display = open ? 'none' : '';
-  btn.style.background = open ? '' : 'rgba(10,132,255,.08)';
-  btn.style.color      = open ? '' : 'var(--neon)';
-  btn.style.borderColor = open ? '' : 'rgba(10,132,255,.3)';
-};
-
-window.switchRptTab=(tab)=>{
-  activeRptTab=tab;
-  document.querySelectorAll('.rpt-tab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.rpt-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-  // Show/hide filter row
-  document.getElementById('filter-row').style.display=tab==='monthly'?'flex':'none';
-  document.getElementById('filter-row-wrap').style.display='none';
-  const fb=document.getElementById('rpt-filter-btn');
-  if(fb)fb.style.display=tab==='monthly'?'':'none';
-  renderActiveTab();
-};
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 function isProjectCompleted(projName, month) {
@@ -568,350 +249,237 @@ function isProjectCompleted(projName, month) {
   if (!p || !p.completedMonth) return false;
   return p.completedMonth < month; // hide only from months AFTER completion
 }
-
 function isProjectCompletedForMonth(projName, month) {
   const p = projectsData[btoa(projName)];
   if (!p) return false;
   return !!p.completedMonth;
 }
 
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day} ${MONTHS[parseInt(m)-1]}`;}
-function monthLabel(m){const[y,mo]=m.split('-');return MONTHS[parseInt(mo)-1]+' '+y;}
-function pctColor(p){return p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';}
-function priorityBorderColor(p){return{critical:'var(--red)',high:'var(--amber)',medium:'var(--neon)',low:'var(--text3)'}[p||'medium'];}
-
-// ── FILTERS ────────────────────────────────────────────────────────────────
-window.applyFilters=()=>{
-  activeFilters.project  = document.getElementById('filter-project')?.value||'';
-  activeFilters.member   = document.getElementById('filter-member')?.value||'';
-  activeFilters.priority = document.getElementById('filter-priority')?.value||'';
-  activeFilters.status   = document.getElementById('filter-status')?.value||'';
+// ── FILTERS (Monthly) ──────────────────────────────────────────────────────
+window.toggleRptFilters = () => {
+  filtersOpen = !filtersOpen;
+  $('filter-row-wrap').hidden = !filtersOpen;
+  $('rpt-filter-btn').setAttribute('aria-expanded', filtersOpen);
+};
+window.applyFilters = () => {
+  activeFilters.project = $('filter-project')?.value || '';
+  activeFilters.member = $('filter-member')?.value || '';
+  activeFilters.priority = $('filter-priority')?.value || '';
+  activeFilters.status = $('filter-status')?.value || '';
   renderMonthly();
 };
-window.clearFilters=()=>{
-  ['filter-project','filter-member','filter-priority','filter-status'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  activeFilters={project:'',member:'',priority:'',status:''};
+window.clearFilters = () => {
+  ['filter-project', 'filter-member', 'filter-priority', 'filter-status'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  activeFilters = { project: '', member: '', priority: '', status: '' };
   renderMonthly();
 };
-function applyActiveFilters(tasks){
-  let r=[...tasks];
-  if(activeFilters.project)  r=r.filter(t=>(t.project||'')===activeFilters.project);
-  if(activeFilters.member)   r=r.filter(t=>(t.members||[]).some(m=>m.name===activeFilters.member));
-  if(activeFilters.priority) r=r.filter(t=>t.priority===activeFilters.priority);
-  if(activeFilters.status)   r=r.filter(t=>t.status===activeFilters.status);
+function applyActiveFilters(tasks) {
+  let r = [...tasks];
+  if (activeFilters.project) r = r.filter(t => (t.project || '') === activeFilters.project);
+  if (activeFilters.member) r = r.filter(t => (t.members || []).some(m => m.name === activeFilters.member));
+  if (activeFilters.priority) r = r.filter(t => t.priority === activeFilters.priority);
+  if (activeFilters.status) r = r.filter(t => t.status === activeFilters.status);
   return r;
 }
-function populateFilterDropdowns(mt){
-  const pSel=document.getElementById('filter-project');
-  if(pSel){
-    const projects=[...new Set(mt.map(t=>t.project).filter(Boolean))].sort();
-    const cur=pSel.value;
-    pSel.innerHTML='<option value="">All Projects</option>'+projects.map(p=>`<option value="${esc(p)}"${cur===p?' selected':''}>${esc(p)}</option>`).join('');
+function populateFilterDropdowns(mt) {
+  const pSel = $('filter-project');
+  if (pSel) {
+    const projects = [...new Set(mt.map(t => t.project).filter(Boolean))].sort();
+    const cur = pSel.value;
+    pSel.innerHTML = '<option value="">All projects</option>' + projects.map(p => `<option value="${esc(p)}"${cur === p ? ' selected' : ''}>${esc(p)}</option>`).join('');
   }
-  const mSel=document.getElementById('filter-member');
-  if(mSel){
-    const names=[...new Set(mt.flatMap(t=>(t.members||[]).map(m=>m.name)))].sort();
-    const cur=mSel.value;
-    mSel.innerHTML='<option value="">All Members</option>'+names.map(n=>`<option value="${esc(n)}"${cur===n?' selected':''}>${esc(n)}</option>`).join('');
+  const mSel = $('filter-member');
+  if (mSel) {
+    const names = [...new Set(mt.flatMap(t => (t.members || []).map(m => m.name)))].sort();
+    const cur = mSel.value;
+    mSel.innerHTML = '<option value="">All members</option>' + names.map(n => `<option value="${esc(n)}"${cur === n ? ' selected' : ''}>${esc(n)}</option>`).join('');
   }
-  const filtered=applyActiveFilters(mt);
-  const hasF=Object.values(activeFilters).some(v=>v);
-  const countEl=document.getElementById('filter-count');
-  if(countEl) countEl.textContent=hasF?`${filtered.length}/${mt.length}`:'';
+  const filtered = applyActiveFilters(mt);
+  const nActive = Object.values(activeFilters).filter(Boolean).length;
+  $('filter-n').textContent = nActive ? nActive : '';
+  $('filter-count').textContent = nActive ? `Showing ${filtered.length} of ${mt.length}` : '';
 }
 
 // ── CHARTS ─────────────────────────────────────────────────────────────────
-function destroyCharts(){
-  Object.values(chartInstances).forEach(ch=>{try{ch.destroy()}catch(e){}});
-  chartInstances={};
+// A single ink ramp, read from the active skin: strongest to faintest.
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function chartTheme() {
+  return { ink: cssv('--text'), mid: cssv('--text2'), soft: cssv('--border2'), faint: cssv('--bg3'), paper: cssv('--bg'), grid: cssv('--border'), family: cssv('--sans') || 'system-ui, sans-serif' };
 }
-const chartBase={animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
-// Read actual CSS vars at render time so light/dark themes both work
-const _cs = getComputedStyle(document.body);
-const _textColor = _cs.getPropertyValue('--text2').trim() || 'rgba(100,100,100,.8)';
-const _gridColor = _cs.getPropertyValue('--border').trim() || 'rgba(0,0,0,.08)';
-const chartFont={font:{size:10,family:"'DM Sans',system-ui,sans-serif"},color:_textColor};
-const chartGrid={color:_gridColor};
-
-function renderCharts(mt){
+function destroyCharts() {
+  Object.values(chartInstances).forEach(ch => { try { ch.destroy(); } catch (e) {} });
+  chartInstances = {};
+}
+function renderCharts(mt) {
   destroyCharts();
-  if(!mt.length) return;
+  if (!mt.length || !window.Chart) return;
+  const c = chartTheme();
+  const font = { size: 11, family: c.family };
+  const base = { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+  const legend = { display: true, position: 'bottom', labels: { font, color: c.mid, boxWidth: 10, padding: 8 } };
+  const axes = { x: { ticks: { font, color: c.mid }, grid: { display: false } }, y: { ticks: { font, color: c.mid, precision: 0 }, grid: { color: c.grid }, beginAtZero: true } };
+  const stacked = { x: { ...axes.x, stacked: true }, y: { ...axes.y, stacked: true } };
+  const make = (key, id, cfg) => { const el = $(id); if (!el) return; try { chartInstances[key] = new Chart(el, cfg); } catch (e) {} };
 
-  // Status donut
-  try {
-    chartInstances.status=new Chart(document.getElementById('chart-status'),{
-      type:'doughnut',
-      data:{labels:['Done','In Prog','On Hold','Todo'],datasets:[{
-        data:[mt.filter(t=>t.status==='done').length,mt.filter(t=>t.status==='inprog').length,mt.filter(t=>t.status==='onhold').length,mt.filter(t=>t.status==='todo').length],
-        backgroundColor:['#34c759','#ff9f0a','#5e5ce6',_cs.getPropertyValue('--bg4').trim()||'#e5e7eb'],
-        borderWidth:0,hoverOffset:3,
-      }]},
-      options:{...chartBase,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
-    });
-  } catch(e){}
+  make('status', 'chart-status', {
+    type: 'doughnut',
+    data: { labels: ['Done', 'In progress', 'On hold', 'To do'], datasets: [{
+      data: ['done', 'inprog', 'onhold', 'todo'].map(s => mt.filter(t => t.status === s).length),
+      backgroundColor: [c.ink, c.mid, c.soft, c.faint], borderColor: c.paper, borderWidth: 2, hoverOffset: 3,
+    }] },
+    options: { ...base, plugins: { legend } },
+  });
+  make('priority', 'chart-priority', {
+    type: 'bar',
+    data: { labels: ['Critical', 'High', 'Medium', 'Low'], datasets: [{
+      data: ['critical', 'high', 'medium', 'low'].map(p => mt.filter(t => t.priority === p).length),
+      backgroundColor: [c.ink, c.mid, c.mid, c.soft], borderRadius: 4, borderWidth: 0,
+    }] },
+    options: { ...base, scales: axes },
+  });
 
-  // Priority bar
-  try {
-    chartInstances.priority=new Chart(document.getElementById('chart-priority'),{
-      type:'bar',
-      data:{labels:['Crit','High','Med','Low'],datasets:[{
-        data:['critical','high','medium','low'].map(p=>mt.filter(t=>t.priority===p).length),
-        backgroundColor:['#ff453a','#ff9f0a','#0a84ff','#34c759'],
-        borderRadius:4,borderWidth:0,
-      }]},
-      options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false}},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true}}}
-    });
-  } catch(e){}
-
-  // Member bar
-  const memberMap={};
-  mt.forEach(t=>{(t.members||[]).forEach(m=>{
-    if(!memberMap[m.name]) memberMap[m.name]={done:0,total:0};
+  const memberMap = {};
+  mt.forEach(t => (t.members || []).forEach(m => {
+    if (!memberMap[m.name]) memberMap[m.name] = { done: 0, total: 0 };
     memberMap[m.name].total++;
-    const ms=(t.memberStatus||{})[m.id]||t.status;
-    if(ms==='done') memberMap[m.name].done++;
-  });});
-  const mNames=Object.keys(memberMap).sort();
-  try {
-    chartInstances.member=new Chart(document.getElementById('chart-member'),{
-      type:'bar',
-      data:{labels:mNames.map(n=>n.split(' ')[0]),datasets:[
-        {label:'Done',data:mNames.map(n=>memberMap[n].done),backgroundColor:'#34c759',borderRadius:3,borderWidth:0},
-        {label:'Open',data:mNames.map(n=>memberMap[n].total-memberMap[n].done),backgroundColor:_cs.getPropertyValue('--bg4').trim()||'rgba(0,0,0,.08)',borderRadius:3,borderWidth:0},
-      ]},
-      options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
-        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
-    });
-  } catch(e){}
+    if (((t.memberStatus || {})[m.id] || t.status) === 'done') memberMap[m.name].done++;
+  }));
+  const mNames = Object.keys(memberMap).sort();
+  make('member', 'chart-member', {
+    type: 'bar',
+    data: { labels: mNames.map(n => n.split(' ')[0]), datasets: [
+      { label: 'Done', data: mNames.map(n => memberMap[n].done), backgroundColor: c.ink, borderRadius: 3, borderWidth: 0 },
+      { label: 'Open', data: mNames.map(n => memberMap[n].total - memberMap[n].done), backgroundColor: c.soft, borderRadius: 3, borderWidth: 0 },
+    ] },
+    options: { ...base, scales: stacked, plugins: { legend } },
+  });
 
-  // Project bar
-  const projMap={};
-  mt.forEach(t=>{const p=t.project||'(none)';if(!projMap[p]) projMap[p]={done:0,total:0};projMap[p].total++;if(t.status==='done')projMap[p].done++;});
-  const pNames=Object.keys(projMap).filter(p=>p!=='(none)').sort();
-  if(pNames.length>0){
-    try {
-      chartInstances.project=new Chart(document.getElementById('chart-project'),{
-        type:'bar',
-        data:{labels:pNames.map(n=>n.length>12?n.slice(0,11)+'…':n),datasets:[
-          {label:'Done',data:pNames.map(n=>projMap[n].done),backgroundColor:'#5e5ce6',borderRadius:3,borderWidth:0},
-          {label:'Open',data:pNames.map(n=>projMap[n].total-projMap[n].done),backgroundColor:_cs.getPropertyValue('--purple-glow').trim()||'rgba(94,92,230,.15)',borderRadius:3,borderWidth:0},
-        ]},
-        options:{...chartBase,scales:{x:{ticks:chartFont,grid:{display:false},stacked:true},y:{ticks:chartFont,grid:chartGrid,beginAtZero:true,stacked:true}},
-          plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9,family:"'DM Sans',system-ui,sans-serif"},color:_textColor,boxWidth:10,padding:6}}}}
-      });
-    } catch(e){}
-  } else {
-    const el=document.getElementById('chart-project');
-    if(el) el.closest('.rpt-chart-card')?.remove();
+  const projMap = {};
+  mt.forEach(t => { const p = t.project || '(none)'; if (!projMap[p]) projMap[p] = { done: 0, total: 0 }; projMap[p].total++; if (t.status === 'done') projMap[p].done++; });
+  const pNames = Object.keys(projMap).filter(p => p !== '(none)').sort();
+  if (pNames.length) {
+    make('project', 'chart-project', {
+      type: 'bar',
+      data: { labels: pNames.map(n => n.length > 12 ? n.slice(0, 11) + '…' : n), datasets: [
+        { label: 'Done', data: pNames.map(n => projMap[n].done), backgroundColor: c.ink, borderRadius: 3, borderWidth: 0 },
+        { label: 'Open', data: pNames.map(n => projMap[n].total - projMap[n].done), backgroundColor: c.soft, borderRadius: 3, borderWidth: 0 },
+      ] },
+      options: { ...base, scales: stacked, plugins: { legend } },
+    });
   }
 }
+window.toggleCharts = (btn) => {
+  chartsOpen = !chartsOpen;
+  $('charts-body').hidden = !chartsOpen;
+  btn.setAttribute('aria-expanded', chartsOpen);
+  if (chartsOpen) renderCharts(lastMonthly);
+};
 
-// ── TASK ROW HTML ──────────────────────────────────────────────────────────
-function taskRowHTML(t){
-  const stClass={done:'rt-done',inprog:'rt-ip',todo:'rt-todo'}[t.status]||'rt-todo';
-  const stLabel={done:'Done',inprog:'In Progress',todo:'Todo'}[t.status]||'Todo';
-  const prioClass={critical:'rt-crit',high:'rt-high',medium:'rt-med',low:'rt-low'}[t.priority||'medium'];
-  const members=(t.members||[]).map(m=>m.name).join(', ');
-  return `<div class="rpt-task" style="border-left-color:${priorityBorderColor(t.priority)}">
-    <div class="rpt-task-body">
-      <div class="rpt-task-name">${esc(t.label)}</div>
-      <div class="rpt-task-meta">
-        <span class="rt ${stClass}">${stLabel}</span>
-        <span class="rt ${prioClass}">${t.priority||'medium'}</span>
-        ${t.project?`<span class="rt rt-proj">&#128193; ${esc(t.project)}</span>`:''}
-        ${t.taskDueDate&&t.status!=='done'?`<span class="rt rt-todo">📅 ${fmtDate(t.taskDueDate)}</span>`:''}
-      </div>
-      ${members?`<div class="rpt-task-members">👥 ${esc(members)}</div>`:''}
-    </div>
-  </div>`;
-}
-
-// ── MONTHLY REPORT ─────────────────────────────────────────────────────────
-function renderMonthly(){
-  // Filter tasks: exclude projects completed in a prior month
-  const allMt=allTasks.filter(t=>{
-    if(t.month!==selMonth) return false;
-    if((t.taskType||'mbc')!=='mbc') return false;
-    if(t.project && isProjectCompleted(t.project, selMonth)) return false;
+// ── MONTHLY ────────────────────────────────────────────────────────────────
+function renderMonthly() {
+  // exclude projects completed in a prior month
+  const allMt = allTasks.filter(t => {
+    if (t.month !== selMonth) return false;
+    if ((t.taskType || 'mbc') !== 'mbc') return false;
+    if (t.project && isProjectCompleted(t.project, selMonth)) return false;
     return true;
   });
   populateFilterDropdowns(allMt);
-  const mt=applyActiveFilters(allMt);
-  const el=document.getElementById('monthly-content');
+  const mt = applyActiveFilters(allMt);
+  const el = $('monthly-content');
+  lastMonthly = mt;
 
-  if(!allMt.length){
-    el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📊</div>No tasks for ${monthLabel(selMonth)}</div>`;
-    return;
-  }
+  if (!allMt.length) { destroyCharts(); el.innerHTML = emptyHTML('No tasks for ' + monthLabel(selMonth), 'Pick another month above.'); return; }
+  if (!mt.length) { destroyCharts(); el.innerHTML = emptyHTML('No tasks match these filters.', 'Clear the filters to see all ' + allMt.length + ' tasks.'); return; }
 
-  const total=mt.length, done=mt.filter(t=>t.status==='done').length;
-  const inprog=mt.filter(t=>t.status==='inprog').length;
-  const crit=mt.filter(t=>t.priority==='critical'&&t.status!=='done').length;
-  const pct=total?Math.round(done/total*100):0;
-  const pc=pctColor(pct);
-  const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
+  const total = mt.length, done = mt.filter(t => t.status === 'done').length;
+  const inprog = mt.filter(t => t.status === 'inprog').length;
+  const critOpen = mt.filter(t => t.priority === 'critical' && t.status !== 'done');
+  const pct = total ? Math.round(done / total * 100) : 0;
 
-  // Group by project
-  const byProj={};
-  mt.forEach(t=>{const p=t.project||'';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
-  const projKeys=Object.keys(byProj).sort((a,b)=>{if(!a)return 1;if(!b)return-1;return a.localeCompare(b);});
-  const namedProjs=projKeys.filter(k=>k);
+  const byProj = {};
+  mt.forEach(t => { const p = t.project || ''; (byProj[p] ||= []).push(t); });
+  const namedProjs = Object.keys(byProj).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  const noProj = byProj[''] || [];
 
-  const shipped=mt.filter(t=>t.status==='done');
-  const pending=mt.filter(t=>t.status!=='done');
-  const critOpen=mt.filter(t=>t.priority==='critical'&&t.status!=='done');
+  const shipped = mt.filter(t => t.status === 'done');
+  const carry = mt.filter(t => t.status !== 'done' && t.priority !== 'critical');
 
-  el.innerHTML=`
-    <!-- STATS -->
-    <div class="rpt-stat-grid" style="grid-template-columns:repeat(4,1fr)">
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${done}</div><div class="rpt-stat-l">Done</div></div>
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--amber)">${inprog}</div><div class="rpt-stat-l">In Prog</div></div>
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--red)">${crit}</div><div class="rpt-stat-l">Critical</div></div>
-    </div>
+  const memberRows = allMembers.map(m => {
+    const mTasks = allMt.filter(t => (t.members || []).some(mm => mm.name && mm.name.toLowerCase() === m.name.toLowerCase()));
+    if (!mTasks.length) return '';
+    const mDone = mTasks.filter(t => {
+      const mid = (t.members || []).find(mm => mm.name && mm.name.toLowerCase() === m.name.toLowerCase())?.id;
+      return mid ? (t.memberStatus || {})[mid] === 'done' : t.status === 'done';
+    }).length;
+    const mp = Math.round(mDone / mTasks.length * 100);
+    return memberRowHTML(m.name, mp + '%', mp);
+  }).join('');
 
-    <!-- PROGRESS RING + LABEL -->
-    <div class="panel" style="padding:14px 16px;margin-bottom:12px">
-      <div class="rpt-ring-wrap">
-        <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
-          <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
-          <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
-            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-            stroke-linecap="round" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .6s"/>
-          <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
-        </svg>
-        <div class="rpt-ring-labels">
-          <div class="rpt-ring-pct" style="color:${pc}">${pct}% complete</div>
-          <div class="rpt-ring-sub">${done} of ${total} tasks done · ${monthLabel(selMonth)}</div>
-        </div>
-      </div>
-    </div>
+  const hasProjChart = namedProjs.length > 0;
+  el.innerHTML = `
+    ${summaryHTML(pct, pct + '% complete', `${done} of ${total} tasks done in ${monthLabel(selMonth)}`)}
+    ${statsHTML([[total, 'Tasks'], [done, 'Done'], [inprog, 'In progress'], [critOpen.length, 'Critical open']])}
 
-    <!-- CHARTS -->
-    <div class="rpt-charts-grid">
-      <div class="rpt-chart-card"><div class="rpt-chart-title">Status</div><div class="rpt-chart-wrap"><canvas id="chart-status"></canvas></div></div>
-      <div class="rpt-chart-card"><div class="rpt-chart-title">Priority</div><div class="rpt-chart-wrap"><canvas id="chart-priority"></canvas></div></div>
-      <div class="rpt-chart-card"><div class="rpt-chart-title">By Member</div><div class="rpt-chart-wrap"><canvas id="chart-member"></canvas></div></div>
-      ${namedProjs.length?`<div class="rpt-chart-card"><div class="rpt-chart-title">By Project</div><div class="rpt-chart-wrap"><canvas id="chart-project"></canvas></div></div>`:''}
-    </div>
+    <div class="rpt-fold"><button type="button" class="wd-disc" id="charts-toggle" aria-expanded="${chartsOpen}" aria-controls="charts-body" onclick="toggleCharts(this)"><span>Charts</span><span class="n">${hasProjChart ? 4 : 3}</span>${CHEV}</button>
+      <div class="rpt-charts" id="charts-body"${chartsOpen ? '' : ' hidden'}>
+        <div class="rpt-chart"><div class="rpt-chart-t">Status</div><div class="rpt-chart-wrap"><canvas id="chart-status"></canvas></div></div>
+        <div class="rpt-chart"><div class="rpt-chart-t">Priority</div><div class="rpt-chart-wrap"><canvas id="chart-priority"></canvas></div></div>
+        <div class="rpt-chart"><div class="rpt-chart-t">By member</div><div class="rpt-chart-wrap"><canvas id="chart-member"></canvas></div></div>
+        ${hasProjChart ? '<div class="rpt-chart"><div class="rpt-chart-t">By project</div><div class="rpt-chart-wrap"><canvas id="chart-project"></canvas></div></div>' : ''}
+      </div></div>
 
-    <!-- BY PROJECT -->
-    ${namedProjs.length?`
-    <div class="rpt-sec-hd"><div class="rpt-sec-title">By Project</div><div class="rpt-sec-count">${namedProjs.length} project${namedProjs.length>1?'s':''}</div></div>
-    ${namedProjs.map((proj,idx)=>{
-      const pt=byProj[proj];
-      const pd=pt.filter(t=>t.status==='done').length;
-      const pp=pt.length?Math.round(pd/pt.length*100):0;
-      const pc2=pctColor(pp);
-      return `<div class="rpt-project">
-        <div class="rpt-project-hd" onclick="toggleProject('rp-${idx}')">
-          <div class="rpt-project-name">
-            &#128193; ${esc(proj)}
-            ${isProjectCompletedForMonth(proj,selMonth)?'<span style="font-size:9px;font-weight:700;color:var(--green);background:rgba(52,199,89,.1);padding:2px 7px;border-radius:8px;margin-left:4px">✓ Done</span>':''}
-          </div>
-          <div class="rpt-project-meta" style="gap:6px">
-            <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
-            <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
-            <button onclick="event.stopPropagation();toggleProjectComplete('${proj.replace(/'/g,"\\'")}',${idx})"
-              style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--sans);flex-shrink:0"
-              id="proj-btn-${idx}">${isProjectCompletedForMonth(proj,selMonth)?'↺ Reopen':'✓ Mark Complete'}</button>
-            <span class="rpt-project-arrow" id="rp-arr-${idx}">▾</span>
-          </div>
-        </div>
-        <div class="rpt-project-body" id="rp-${idx}" style="display:none">
-          ${pt.map(t=>taskRowHTML(t)).join('')}
-        </div>
-      </div>`;
-    }).join('')}`:''}
-
-    <!-- SHIPPED -->
-    ${shipped.length?`
-    <div class="rpt-sec-hd"><div class="rpt-sec-title">What We Shipped</div><div class="rpt-sec-count">${shipped.length}</div></div>
-    ${shipped.map(t=>taskRowHTML(t)).join('')}`:''}
-
-    <!-- CRITICAL OPEN -->
-    ${critOpen.length?`
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title" style="color:var(--red)">Critical Open</div><div class="rpt-sec-count">${critOpen.length}</div></div>
-    ${critOpen.map(t=>taskRowHTML(t)).join('')}`:''}
-
-    <!-- PENDING -->
-    ${pending.length?`
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Pending / Carry-forward</div><div class="rpt-sec-count">${pending.length}</div></div>
-    ${pending.filter(t=>t.priority!=='critical').map(t=>taskRowHTML(t)).join('')}`:''}
-
-    <!-- MEMBER BREAKDOWN -->
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">By Member</div></div>
-    ${allMembers.map(m=>{
-      const mTasks=allMt.filter(t=>(t.members||[]).some(mm=>mm.name&&mm.name.toLowerCase()===m.name.toLowerCase()));
-      if(!mTasks.length) return '';
-      const mDone=mTasks.filter(t=>{const mid=(t.members||[]).find(mm=>mm.name&&mm.name.toLowerCase()===m.name.toLowerCase())?.id;return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';}).length;
-      const mp=mTasks.length?Math.round(mDone/mTasks.length*100):0;
-      const initials=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      return `<div class="rpt-member-row">
-        <div class="rpt-member-av">${initials}</div>
-        <div class="rpt-member-info">
-          <div class="rpt-member-name">${esc(m.name)}</div>
-          <div class="rpt-member-bar-bg"><div class="rpt-member-bar-fill" style="width:${mp}%"></div></div>
-        </div>
-        <div class="rpt-member-pct">${mp}%</div>
-      </div>`;
-    }).join('')}
+    ${namedProjs.length ? h2('Projects', namedProjs.length) + listHTML(namedProjs.map(p => projectBlockHTML(p, byProj[p], byProj[p].filter(t => t.status === 'done').length, { complete: isProjectCompletedForMonth(p, selMonth) })).join('')) : ''}
+    ${noProj.length ? foldHTML('Tasks without a project', noProj.length, listHTML(noProj.map(taskRowHTML).join(''))) : ''}
+    ${critOpen.length ? h2('Critical and still open', critOpen.length) + listHTML(critOpen.map(taskRowHTML).join('')) : ''}
+    ${shipped.length ? foldHTML('What we shipped', shipped.length, listHTML(shipped.map(taskRowHTML).join(''))) : ''}
+    ${carry.length ? foldHTML('Carry-forward', carry.length, listHTML(carry.map(taskRowHTML).join(''))) : ''}
+    ${memberRows ? h2('By member') + listHTML(memberRows) : ''}
   `;
-
-  setTimeout(()=>renderCharts(mt),30);
+  if (chartsOpen) setTimeout(() => renderCharts(mt), 30);
+  else destroyCharts();
 }
-window.renderMonthly=renderMonthly;
+window.renderMonthly = renderMonthly;
 
-// ── PROJECT TOGGLE ─────────────────────────────────────────────────────────
-window.toggleProjectComplete=async(projName,idx)=>{
+window.toggleProjectComplete = async (projName) => {
   const isComp = isProjectCompletedForMonth(projName, selMonth);
-  if (isComp) {
-    await reopenProject(projName);
-    delete projectsData[btoa(projName)];
-  } else {
-    await setProjectComplete(projName, selMonth);
-    projectsData[btoa(projName)] = { name:projName, completedMonth:selMonth };
-  }
-  // Refresh render
+  try {
+    if (isComp) {
+      await reopenProject(projName);
+      delete projectsData[btoa(projName)];
+    } else {
+      await setProjectComplete(projName, selMonth);
+      projectsData[btoa(projName)] = { name: projName, completedMonth: selMonth };
+    }
+    showNote(isComp ? 'Project reopened' : 'Marked complete');
+  } catch (e) { showNote('Could not update the project. Try again.'); }
   renderMonthly();
 };
 
-window.toggleProject=(id)=>{
-  const body=document.getElementById(id);
-  const arr=document.getElementById(id.replace('rp-','rp-arr-'));
-  if(!body) return;
-  const open=body.style.display==='block';
-  body.style.display=open?'none':'block';
-  if(arr) arr.classList.toggle('open',!open);
-};
-
-// ── MY REPORT ──────────────────────────────────────────────────────────────
-function populateMemberSelector(){
-  const sel=document.getElementById('my-report-member');
-  if(perfMode==='project'){
-    const projects=[...new Set(allTasks.map(t=>t.project).filter(Boolean))].sort();
-    sel.innerHTML=projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+// ── PERFORMANCE (one person, or one project) ───────────────────────────────
+function populateMemberSelector() {
+  const sel = $('my-report-member');
+  if (perfMode === 'project') {
+    const projects = [...new Set(allTasks.map(t => t.project).filter(Boolean))].sort();
+    sel.innerHTML = projects.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
     return;
   }
-  const myName=localStorage.getItem('wd_myname')||'';
-  const isAdmin=myName.toLowerCase()==='harshit';
-  const viewable=isAdmin?allMembers:allMembers.filter(m=>m.name.toLowerCase()===myName.toLowerCase());
-  sel.innerHTML=viewable.map(m=>`<option value="${m.id}"${m.name.toLowerCase()===myName.toLowerCase()?' selected':''}>${esc(m.name)}</option>`).join('');
+  const myName = localStorage.getItem('wd_myname') || '';
+  const isAdmin = myName.toLowerCase() === 'harshit';
+  const viewable = isAdmin ? allMembers : allMembers.filter(m => m.name.toLowerCase() === myName.toLowerCase());
+  sel.innerHTML = viewable.map(m => `<option value="${m.id}"${m.name.toLowerCase() === myName.toLowerCase() ? ' selected' : ''}>${esc(m.name)}</option>`).join('');
 }
 
-window.setPerfMode=(mode,btn)=>{
-  perfMode=mode;
-  document.querySelectorAll('.perf-mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+window.setPerfMode = (mode, btn) => {
+  perfMode = mode;
+  document.querySelectorAll('.rpt-mode button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   populateMemberSelector();
   renderMyReport();
 };
-
-window.setMyReportPeriod=(period,btn)=>{
-  myReportPeriod=period;
-  document.querySelectorAll('.rpt-period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===period));
+window.setMyReportPeriod = (period, btn) => {
+  myReportPeriod = period;
+  document.querySelectorAll('.rpt-periods button').forEach(b => b.classList.toggle('on', b.dataset.period === period));
+  syncControls();
   renderMyReport();
 };
 
@@ -982,258 +550,119 @@ function isDoneForMember(t, memberName){
   return mid?(t.memberStatus||{})[mid]==='done':t.status==='done';
 }
 
-window.renderMyReport=()=>{
-  const el=document.getElementById('my-report-content');
-  const sel=document.getElementById('my-report-member');
-  const id=sel?.value;
 
-  if(perfMode==='project'){
-    if(!id){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📁</div>No project selected</div>`;return;}
-    const mt=getMyReportTasks(id);
-    if(!mt.length){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📋</div>No tasks found for ${getPeriodLabel()}</div>`;return;}
+window.renderMyReport = () => {
+  const el = $('my-report-content');
+  const id = $('my-report-member')?.value;
 
-    const totalDone=mt.filter(t=>t.status==='done').length;
-    const total=mt.length;
-    const pct=total?Math.round(totalDone/total*100):0;
-    const pc=pctColor(pct);
-    const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
+  if (perfMode === 'project') {
+    if (!id) { el.innerHTML = emptyHTML('No project selected', 'Tasks need a project before they show up here.'); return; }
+    const mt = getMyReportTasks(id);
+    if (!mt.length) { el.innerHTML = emptyHTML('No tasks found for ' + getPeriodLabel()); return; }
+    const totalDone = mt.filter(t => t.status === 'done').length;
+    const total = mt.length;
+    const pct = total ? Math.round(totalDone / total * 100) : 0;
 
-    // Group by contributing member instead of by project (there's only one
-    // project in this view) — shows who's doing the work on this project.
-    const byMember={};
-    mt.forEach(t=>{
-      const names=(t.members||[]).map(m=>m.name).filter(Boolean);
-      if(!names.length) names.push('Unassigned');
-      names.forEach(n=>{ (byMember[n]||=[]).push(t); });
+    // who is doing the work on this project
+    const byMember = {};
+    mt.forEach(t => {
+      const names = (t.members || []).map(m => m.name).filter(Boolean);
+      if (!names.length) names.push('Unassigned');
+      names.forEach(n => { (byMember[n] ||= []).push(t); });
     });
-    const memberKeys=Object.keys(byMember).sort((a,b)=>byMember[b].length-byMember[a].length);
+    const memberKeys = Object.keys(byMember).sort((a, b) => byMember[b].length - byMember[a].length);
 
-    el.innerHTML=`
-      <div class="panel" style="padding:14px 16px;margin-bottom:12px">
-        <div class="rpt-ring-wrap">
-          <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
-            <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
-            <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
-              stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-              stroke-linecap="round" transform="rotate(-90 42 42)"/>
-            <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
-          </svg>
-          <div class="rpt-ring-labels">
-            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px">📁 ${esc(id)}</div>
-            <div class="rpt-ring-pct" style="color:${pc};font-size:18px">${pct}% complete</div>
-            <div class="rpt-ring-sub">${totalDone}/${total} tasks · ${getPeriodLabel()}</div>
-          </div>
-        </div>
-      </div>
-      <div class="rpt-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
-        <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
-        <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${totalDone}</div><div class="rpt-stat-l">Done</div></div>
-        <div class="rpt-stat"><div class="rpt-stat-n" style="color:${pc}">${pct}%</div><div class="rpt-stat-l">Complete</div></div>
-      </div>
-      <div class="rpt-sec-hd"><div class="rpt-sec-title">By Contributor</div></div>
-      ${memberKeys.map((name,idx)=>{
-        const pt=byMember[name];
-        const pd=pt.filter(t=>t.status==='done').length;
-        const pp=pt.length?Math.round(pd/pt.length*100):0;
-        const pc2=pctColor(pp);
-        return `<div class="rpt-project">
-          <div class="rpt-project-hd" onclick="toggleProject('mrp-${idx}')">
-            <div class="rpt-project-name">👤 ${esc(name)}</div>
-            <div class="rpt-project-meta">
-              <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
-              <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
-              <span class="rpt-project-arrow" id="mrp-arr-${idx}">▾</span>
-            </div>
-          </div>
-          <div class="rpt-project-body" id="mrp-${idx}" style="display:none">
-            ${pt.map(t=>taskRowHTML(t)).join('')}
-          </div>
-        </div>`;
-      }).join('')}
+    el.innerHTML = `
+      ${summaryHTML(pct, esc(id), `${pct}% complete · ${totalDone} of ${total} tasks · ${getPeriodLabel()}`)}
+      ${statsHTML([[total, 'Tasks'], [totalDone, 'Done'], [pct + '%', 'Complete']])}
+      ${h2('By contributor', memberKeys.length)}
+      ${listHTML(memberKeys.map(name => projectBlockHTML(name, byMember[name], byMember[name].filter(t => t.status === 'done').length)).join(''))}
     `;
     return;
   }
 
-  // ── MEMBER MODE (original behaviour) ──
-  const member=allMembers.find(m=>m.id===id);
-  if(!member){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">👤</div>No member selected</div>`;return;}
+  const member = allMembers.find(m => m.id === id);
+  if (!member) { el.innerHTML = emptyHTML('No member selected'); return; }
+  const mt = getMyReportTasks(id);
+  if (!mt.length) { el.innerHTML = emptyHTML('No tasks found for ' + getPeriodLabel()); return; }
 
-  const mt=getMyReportTasks(id);
-  if(!mt.length){el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">📋</div>No tasks found for ${getPeriodLabel()}</div>`;return;}
+  const totalDone = mt.filter(t => isDoneForMember(t, member.name)).length;
+  const total = mt.length;
+  const pct = total ? Math.round(totalDone / total * 100) : 0;
 
-  const totalDone=mt.filter(t=>isDoneForMember(t,member.name)).length;
-  const total=mt.length;
-  const pct=total?Math.round(totalDone/total*100):0;
-  const pc=pctColor(pct);
-  const R=36,C=2*Math.PI*R,off=C-(pct/100)*C;
+  const byProj = {};
+  mt.forEach(t => { const p = t.project || ''; (byProj[p] ||= []).push(t); });
+  const projKeys = Object.keys(byProj).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  const mbcTasks = mt.filter(t => (t.taskType || 'mbc') === 'mbc');
+  const indTasks = mt.filter(t => t.taskType === 'individual');
 
-  // Group by project
-  const byProj={};
-  mt.forEach(t=>{const p=t.project||'';if(!byProj[p])byProj[p]=[];byProj[p].push(t);});
-  const projKeys=Object.keys(byProj).sort((a,b)=>{if(!a)return 1;if(!b)return-1;return a.localeCompare(b);});
-
-  const mbcTasks=mt.filter(t=>(t.taskType||'mbc')==='mbc');
-  const indTasks=mt.filter(t=>t.taskType==='individual');
-
-  el.innerHTML=`
-    <!-- Ring summary -->
-    <div class="panel" style="padding:14px 16px;margin-bottom:12px">
-      <div class="rpt-ring-wrap">
-        <svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0">
-          <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="6"/>
-          <circle cx="42" cy="42" r="${R}" fill="none" stroke="${pc}" stroke-width="6"
-            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-            stroke-linecap="round" transform="rotate(-90 42 42)"/>
-          <text x="42" y="47" text-anchor="middle" font-family="var(--mono)" font-size="14" font-weight="500" fill="${pc}">${pct}%</text>
-        </svg>
-        <div class="rpt-ring-labels">
-          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px">${esc(member.name)}</div>
-          <div class="rpt-ring-pct" style="color:${pc};font-size:18px">${pct}% complete</div>
-          <div class="rpt-ring-sub">${totalDone}/${total} tasks · ${getPeriodLabel()}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="rpt-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--neon)">${total}</div><div class="rpt-stat-l">Total</div></div>
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:var(--green)">${totalDone}</div><div class="rpt-stat-l">Done</div></div>
-      <div class="rpt-stat"><div class="rpt-stat-n" style="color:${pc}">${pct}%</div><div class="rpt-stat-l">Complete</div></div>
-    </div>
-
-    <!-- By project -->
-    ${projKeys.filter(k=>k).length?`
-    <div class="rpt-sec-hd"><div class="rpt-sec-title">By Project</div></div>
-    ${projKeys.filter(k=>k).map((proj,idx)=>{
-      const pt=byProj[proj];
-      const pd=pt.filter(t=>isDoneForMember(t,member.name)).length;
-      const pp=pt.length?Math.round(pd/pt.length*100):0;
-      const pc2=pctColor(pp);
-      return `<div class="rpt-project">
-        <div class="rpt-project-hd" onclick="toggleProject('mrp-${idx}')">
-          <div class="rpt-project-name">&#128193; ${esc(proj)}</div>
-          <div class="rpt-project-meta">
-            <div class="rpt-project-bar-wrap"><div class="rpt-project-bar" style="width:${pp}%;background:${pc2}"></div></div>
-            <span class="rpt-project-pct" style="color:${pc2}">${pp}%</span>
-            <span class="rpt-project-arrow" id="mrp-arr-${idx}">▾</span>
-          </div>
-        </div>
-        <div class="rpt-project-body" id="mrp-${idx}" style="display:none">
-          ${pt.map(t=>taskRowHTML(t)).join('')}
-        </div>
-      </div>`;
-    }).join('')}`:''}
-
-    <!-- MBC Tasks -->
-    ${mbcTasks.length?`
-    <div class="rpt-sec-hd"><div class="rpt-sec-title">MBC Tasks</div><div class="rpt-sec-count">${mbcTasks.length}</div></div>
-    ${mbcTasks.map(t=>taskRowHTML(t)).join('')}`:''}
-
-    <!-- Individual Tasks -->
-    ${indTasks.length?`
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Individual Tasks</div><div class="rpt-sec-count">${indTasks.length}</div></div>
-    ${indTasks.map(t=>taskRowHTML(t)).join('')}`:''}
+  el.innerHTML = `
+    ${summaryHTML(pct, esc(member.name), `${pct}% complete · ${totalDone} of ${total} tasks · ${getPeriodLabel()}`)}
+    ${statsHTML([[total, 'Tasks'], [totalDone, 'Done'], [pct + '%', 'Complete']])}
+    ${projKeys.length ? h2('By project', projKeys.length) + listHTML(projKeys.map(p => projectBlockHTML(p, byProj[p], byProj[p].filter(t => isDoneForMember(t, member.name)).length)).join('')) : ''}
+    ${mbcTasks.length ? foldHTML('Team tasks', mbcTasks.length, listHTML(mbcTasks.map(taskRowHTML).join(''))) : ''}
+    ${indTasks.length ? foldHTML('Individual tasks', indTasks.length, listHTML(indTasks.map(taskRowHTML).join(''))) : ''}
   `;
 };
 
-// ── WEEKLY DIGEST ──────────────────────────────────────────────────────────
-function renderWeekly(){
-  const now=new Date();
-  const monday=new Date(now); monday.setDate(now.getDate()-((now.getDay()+6)%7));
-  const toStr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  const mondayStr=toStr(monday), todayStr=toStr(now);
+// ── WEEKLY ─────────────────────────────────────────────────────────────────
+function renderWeekly() {
+  const now = new Date();
+  const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const toStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const mondayStr = toStr(monday), todayStr = toStr(now);
 
-  const weekTasks=allTasks.filter(t=>{
-    if((t.taskType||'mbc')!=='mbc') return false;
-    const cr=t.createdAt?(t.createdAt.toDate?t.createdAt.toDate():new Date(t.createdAt)):null;
-    const ca=t.completedAt?(t.completedAt.toDate?t.completedAt.toDate():new Date(t.completedAt)):null;
-    if(t.status!=='done') return true;
-    return (ca&&toStr(ca)>=mondayStr)||(cr&&toStr(cr)>=mondayStr);
+  const weekTasks = allTasks.filter(t => {
+    if ((t.taskType || 'mbc') !== 'mbc') return false;
+    const cr = t.createdAt ? (t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt)) : null;
+    const ca = t.completedAt ? (t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) : null;
+    if (t.status !== 'done') return true;
+    return (ca && toStr(ca) >= mondayStr) || (cr && toStr(cr) >= mondayStr);
   });
+  const done = weekTasks.filter(t => t.status === 'done');
+  const inprog = weekTasks.filter(t => t.status === 'inprog');
+  const todo = weekTasks.filter(t => t.status === 'todo');
 
-  const done=weekTasks.filter(t=>t.status==='done');
-  const inprog=weekTasks.filter(t=>t.status==='inprog');
-  const todo=weekTasks.filter(t=>t.status==='todo');
-
-  // Member stats
-  const memberStats={};
-  weekTasks.forEach(t=>{(t.members||[]).forEach(m=>{
-    if(!memberStats[m.name]) memberStats[m.name]={done:0,total:0};
+  const memberStats = {};
+  weekTasks.forEach(t => (t.members || []).forEach(m => {
+    if (!memberStats[m.name]) memberStats[m.name] = { done: 0, total: 0 };
     memberStats[m.name].total++;
-    const ms=(t.memberStatus||{})[m.id]||t.status;
-    if(ms==='done') memberStats[m.name].done++;
-  });});
+    if (((t.memberStatus || {})[m.id] || t.status) === 'done') memberStats[m.name].done++;
+  }));
 
-  const weekLabel=`Mon ${fmtDate(mondayStr)} — ${fmtDate(todayStr)}`;
-  const el=document.getElementById('weekly-content');
+  const weekLabel = `Mon ${fmtDate(mondayStr)} to ${fmtDate(todayStr)}`;
+  const teamRows = Object.entries(memberStats).sort((a, b) => b[1].done - a[1].done)
+    .map(([name, s]) => memberRowHTML(name, `${s.done}/${s.total}`, s.total ? Math.round(s.done / s.total * 100) : 0)).join('');
 
-  el.innerHTML=`
-    <div class="panel-hd" style="margin:-0px -0px 12px;padding:0 0 12px;border-bottom:1px solid var(--border)">
-      <div class="panel-title">Weekly Digest</div>
-      <div style="font-size:11px;color:var(--text3)">${weekLabel}</div>
-    </div>
-
-    <!-- Stats -->
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--green)">${done.length}</div><div class="digest-stat-l">Done</div></div>
-      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--amber)">${inprog.length}</div><div class="digest-stat-l">In Prog</div></div>
-      <div class="digest-stat"><div class="digest-stat-n" style="color:var(--text2)">${todo.length}</div><div class="digest-stat-l">Todo</div></div>
-    </div>
-
-    <!-- Done this week -->
-    ${done.length?`
-    <div class="rpt-sec-hd"><div class="rpt-sec-title">Completed This Week</div><div class="rpt-sec-count">${done.length}</div></div>
-    ${done.map(t=>taskRowHTML(t)).join('')}`:`<div class="rpt-empty" style="padding:16px"><div class="rpt-empty-icon">✅</div>No tasks completed yet this week</div>`}
-
-    <!-- In progress -->
-    ${inprog.length?`
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">In Progress</div><div class="rpt-sec-count">${inprog.length}</div></div>
-    ${inprog.map(t=>taskRowHTML(t)).join('')}`:''}
-
-    <!-- Team -->
-    <div class="rpt-sec-hd" style="margin-top:16px"><div class="rpt-sec-title">Team This Week</div></div>
-    ${Object.entries(memberStats).sort((a,b)=>b[1].done-a[1].done).map(([name,s])=>{
-      const mp=s.total?Math.round(s.done/s.total*100):0;
-      const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      return `<div class="rpt-member-row">
-        <div class="rpt-member-av">${initials}</div>
-        <div class="rpt-member-info">
-          <div class="rpt-member-name">${esc(name)}</div>
-          <div class="rpt-member-bar-bg"><div class="rpt-member-bar-fill" style="width:${mp}%"></div></div>
-        </div>
-        <div class="rpt-member-pct">${s.done}/${s.total}</div>
-      </div>`;
-    }).join('') || '<div class="rpt-empty" style="padding:12px">No assignments this week</div>'}
-
-    <!-- Copy for WhatsApp -->
-    <button onclick="copyWeeklyDigest()" style="width:100%;margin-top:16px;padding:12px;border-radius:var(--r);border:none;background:var(--neon2);color:#0c0c0f;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">
-      📋 Copy for WhatsApp
-    </button>
+  $('weekly-content').innerHTML = `
+    ${summaryHTML(weekTasks.length ? Math.round(done.length / weekTasks.length * 100) : 0, 'This week', esc(weekLabel))}
+    ${statsHTML([[done.length, 'Done'], [inprog.length, 'In progress'], [todo.length, 'To do']])}
+    ${h2('Completed this week', done.length)}
+    ${done.length ? listHTML(done.map(taskRowHTML).join('')) : emptyHTML('Nothing completed yet this week.')}
+    ${inprog.length ? h2('In progress', inprog.length) + listHTML(inprog.map(taskRowHTML).join('')) : ''}
+    ${teamRows ? h2('Team this week') + listHTML(teamRows) : ''}
   `;
-
-  // Store for copy
-  window._weekDigestData={done,inprog,memberStats,weekLabel};
+  window._weekDigestData = { done, inprog, memberStats, weekLabel };
 }
-window.renderWeekly=renderWeekly;
+window.renderWeekly = renderWeekly;
 
-window.copyWeeklyDigest=()=>{
-  const d=window._weekDigestData; if(!d) return;
-  const nl='\n';
-  const doneTxt=d.done.map(t=>'  • '+t.label+(t.members?.length?' ('+t.members.map(m=>m.name).join(', ')+')':'')).join(nl)||'  None';
-  const inpTxt=d.inprog.map(t=>'  • '+t.label).join(nl)||'  None';
-  const memTxt=Object.entries(d.memberStats).sort((a,b)=>b[1].done-a[1].done).map(([n,s])=>'  '+n+': '+s.done+'/'+s.total).join(nl)||'  None';
-  const txt='📊 WorkDesk Weekly Digest'+nl+d.weekLabel+nl+nl+'✅ Completed ('+d.done.length+'):'+nl+doneTxt+nl+nl+'🔄 In Progress ('+d.inprog.length+'):'+nl+inpTxt+nl+nl+'👥 Team:'+nl+memTxt;
-  navigator.clipboard.writeText(txt).then(()=>{
-    const b=event.target; b.textContent='✓ Copied!';
-    setTimeout(()=>b.textContent='📋 Copy for WhatsApp',2000);
-  });
+window.copyWeeklyDigest = async () => {
+  const d = window._weekDigestData;
+  if (!d) { toast('Nothing to copy yet'); return; }
+  const nl = '\n';
+  const doneTxt = d.done.map(t => '  • ' + t.label + (t.members?.length ? ' (' + t.members.map(m => m.name).join(', ') + ')' : '')).join(nl) || '  None';
+  const inpTxt = d.inprog.map(t => '  • ' + t.label).join(nl) || '  None';
+  const memTxt = Object.entries(d.memberStats).sort((a, b) => b[1].done - a[1].done).map(([n, s]) => '  ' + n + ': ' + s.done + '/' + s.total).join(nl) || '  None';
+  const txt = '📊 WorkDesk Weekly Digest' + nl + d.weekLabel + nl + nl + '✅ Completed (' + d.done.length + '):' + nl + doneTxt + nl + nl + '🔄 In Progress (' + d.inprog.length + '):' + nl + inpTxt + nl + nl + '👥 Team:' + nl + memTxt;
+  try { await navigator.clipboard.writeText(txt); toast('Digest copied. Paste it anywhere.'); }
+  catch (e) { window.prompt('Copy this digest:', txt); }
 };
 
-// ── PDF EXPORTS ────────────────────────────────────────────────────────────
+// ── PRINTABLE REPORTS (self-contained documents, unchanged) ────────────────
 window.exportPDF=()=>{
   const allMt = allTasks.filter(t => t.month===selMonth && (t.taskType||'mbc')==='mbc');
   const mt = applyActiveFilters(allMt);
-  if (!mt.length) { alert('No tasks for this month.'); return; }
+  if (!mt.length) { toast('No tasks for this month.'); return; }
 
   const lbl = monthLabel(selMonth);
   const total = mt.length;
@@ -1527,23 +956,11 @@ window.exportMyReportPDF=()=>{
   setTimeout(()=>win.print(),400);
 };
 
-// ── TOAST (local — report.html has no shared toast helper) ─────────────────
-let _toastTimer;
-function toast(msg){
-  const el=document.getElementById('toast');
-  if(!el) return;
-  el.textContent=msg; el.className='toast show';
-  clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
-}
 
-// ── QUARTERLY REPORT ─────────────────────────────────────────────────────────
-// The flagship, management-facing view. Everything here is derived from the
-// same allTasks/allMembers/projectsData already loaded for the other tabs —
-// no extra Firestore reads. Convention matches the rest of report.html:
-// a task "belongs" to a quarter if its `.month` (YYYY-MM) falls in that
-// quarter's 3 months, and only taskType 'mbc' counts toward team stats
-// (individual tasks are excluded, same as Monthly/My Report).
+// ── QUARTERLY ──────────────────────────────────────────────────────────────
+// Everything here is derived from the data already loaded for the other tabs.
+// A task belongs to a quarter if its `.month` falls in that quarter's three
+// months, and only team (mbc) tasks count toward the team stats.
 function getQuarterMonths(year,q){
   const startMonth=(q-1)*3; // Q1->Jan(0), Q2->Apr(3), Q3->Jul(6), Q4->Oct(9)
   return [0,1,2].map(i=>`${year}-${pad(startMonth+i+1)}`);
@@ -1647,149 +1064,80 @@ function qrGetSelection(){
   return {q,year};
 }
 
-window.renderQuarterly=()=>{
-  const {q,year}=qrGetSelection();
-  const lbl=`Q${q} ${year}`;
-  const dateRangeLbl=(()=>{
-    const ms=getQuarterMonths(year,q);
-    return `${MONTHS[parseInt(ms[0].split('-')[1])-1]} – ${MONTHS[parseInt(ms[2].split('-')[1])-1]} ${year}`;
-  })();
 
-  const qt=getQuarterTasksFor(year,q);
-  const stats=computeQuarterStats(qt,year,q);
-  const prev=getPrevQuarter(year,q);
-  const prevQt=getQuarterTasksFor(prev.year,prev.q);
-  const prevStats=computeQuarterStats(prevQt,prev.year,prev.q);
+window.renderQuarterly = () => {
+  const { q, year } = qrGetSelection();
+  const lbl = `Q${q} ${year}`;
+  const qt = getQuarterTasksFor(year, q);
+  const stats = computeQuarterStats(qt, year, q);
+  const prev = getPrevQuarter(year, q);
+  const prevQt = getQuarterTasksFor(prev.year, prev.q);
+  const prevStats = computeQuarterStats(prevQt, prev.year, prev.q);
+  const el = $('quarterly-content');
 
-  const el=document.getElementById('quarterly-content');
-  if(!qt.length){
-    el.innerHTML=`<div class="rpt-empty"><div class="rpt-empty-icon">🏆</div>No tasks logged for ${lbl} yet</div>`;
-    return;
-  }
+  if (qrChartInstance) { try { qrChartInstance.destroy(); } catch (e) {} qrChartInstance = null; }
+  if (!qt.length) { el.innerHTML = emptyHTML(`No tasks logged for ${lbl} yet`, 'They show up here once tasks are added to a month in this quarter.'); return; }
 
-  const doneTrend=prevStats.done>0?Math.round((stats.done-prevStats.done)/prevStats.done*100):null;
-  const pctTrend=stats.pct-prevStats.pct;
+  const doneTrend = prevStats.done > 0 ? Math.round((stats.done - prevStats.done) / prevStats.done * 100) : null;
+  const pctTrend = prevStats.total > 0 ? stats.pct - prevStats.pct : null;
+  const trendTxt = (v, unit) => v === null ? '' : (v >= 0 ? 'Up ' : 'Down ') + Math.abs(v) + unit + ' on last quarter';
 
-  el.innerHTML=`
-    <div class="qr-hero">
-      <div class="qr-hero-eyebrow">Quarterly Performance Report</div>
-      <div class="qr-hero-title">${lbl}</div>
-      <div class="qr-hero-sub">${dateRangeLbl} · Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
-      <div class="qr-hero-headline">${generateHeadline(stats,prevStats,lbl)}</div>
-    </div>
+  el.innerHTML = `
+    <p class="rpt-lead">${generateHeadline(stats, prevStats, lbl)}</p>
+    ${statsHTML([
+      [stats.done, 'Tasks completed', trendTxt(doneTrend, '%')],
+      [stats.pct + '%', 'Completion rate', trendTxt(pctTrend, ' pts')],
+      [stats.onTimeRate !== null ? stats.onTimeRate + '%' : '–', 'Delivered on time'],
+      [stats.critResolved, 'Critical resolved', stats.critOpen ? stats.critOpen + ' still open' : ''],
+    ]).replace('rpt-stats c4', 'rpt-stats c4 q')}
 
-    <div class="qr-stat-strip">
-      <div class="qr-stat-card">
-        <div class="qr-stat-card-n" style="color:var(--neon)">${stats.done}</div>
-        <div class="qr-stat-card-l">Tasks Completed</div>
-        ${doneTrend!==null?`<div class="qr-stat-card-trend ${doneTrend>=0?'up':'down'}">${doneTrend>=0?'▲':'▼'} ${Math.abs(doneTrend)}% vs last qtr</div>`:''}
-      </div>
-      <div class="qr-stat-card">
-        <div class="qr-stat-card-n" style="color:${pctColor(stats.pct)}">${stats.pct}%</div>
-        <div class="qr-stat-card-l">Completion Rate</div>
-        <div class="qr-stat-card-trend ${pctTrend>=0?'up':'down'}">${pctTrend>=0?'▲':'▼'} ${Math.abs(pctTrend)}pt vs last qtr</div>
-      </div>
-      <div class="qr-stat-card">
-        <div class="qr-stat-card-n" style="color:var(--green)">${stats.onTimeRate!==null?stats.onTimeRate+'%':'—'}</div>
-        <div class="qr-stat-card-l">On-Time Delivery</div>
-      </div>
-      <div class="qr-stat-card">
-        <div class="qr-stat-card-n" style="color:${stats.critOpen?'var(--red)':'var(--green)'}">${stats.critResolved}</div>
-        <div class="qr-stat-card-l">Critical Resolved</div>
-        ${stats.critOpen?`<div class="qr-stat-card-trend down">${stats.critOpen} still open</div>`:''}
-      </div>
-    </div>
+    ${h2('Monthly momentum', 'Tasks done')}
+    <div class="rpt-chart solo"><div class="rpt-chart-wrap"><canvas id="qr-trend-chart"></canvas></div></div>
 
-    <div class="qr-sec">
-      <div class="qr-sec-eyebrow">Quarter Trend</div>
-      <div class="qr-sec-title">Monthly Momentum</div>
-      <div class="qr-sec-rule"></div>
-    </div>
-    <div class="qr-chart-card"><canvas id="qr-trend-chart"></canvas></div>
+    ${h2('Top performers', stats.leaderboard.length + (stats.leaderboard.length === 1 ? ' contributor' : ' contributors'))}
+    ${listHTML(stats.leaderboard.slice(0, 8).map((m, i) => `<div class="rpt-lb"><span class="rk${i < 3 ? ' top' : ''}">${i + 1}</span><div class="rpt-lb-b"><b>${esc(m.name)}</b><span>${m.done} of ${m.total} tasks done</span>${bar(m.pct)}</div><span class="rpt-lb-pct">${m.pct}%</span></div>`).join(''))}
 
-    <div class="qr-sec">
-      <div class="qr-sec-eyebrow">${stats.leaderboard.length} Contributor${stats.leaderboard.length===1?'':'s'}</div>
-      <div class="qr-sec-title">Top Performers</div>
-      <div class="qr-sec-rule"></div>
-    </div>
-    ${stats.leaderboard.slice(0,8).map((m,i)=>{
-      const rankCls=i===0?'r1':i===1?'r2':i===2?'r3':'';
-      const barColor=pctColor(m.pct);
-      return `<div class="qr-lb-row">
-        <div class="qr-lb-rank ${rankCls}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
-        <div class="qr-lb-body">
-          <div class="qr-lb-name">${esc(m.name)}</div>
-          <div class="qr-lb-meta">${m.done}/${m.total} tasks done</div>
-          <div class="qr-lb-bar-wrap"><div class="qr-lb-bar" style="width:${m.pct}%;background:${barColor}"></div></div>
-        </div>
-        <div class="qr-lb-pct" style="color:${barColor}">${m.pct}%</div>
-      </div>`;
-    }).join('')}
-
-    <div class="qr-sec">
-      <div class="qr-sec-eyebrow">${stats.projectSpotlight.length} Project${stats.projectSpotlight.length===1?'':'s'} · ${stats.projectsCompletedThisQ} Shipped</div>
-      <div class="qr-sec-title">Project Spotlight</div>
-      <div class="qr-sec-rule"></div>
-    </div>
-    <div class="qr-proj-grid">
-      ${stats.projectSpotlight.map(p=>{
-        const barColor=p.completed?'var(--green)':pctColor(p.pct);
-        return `<div class="qr-proj-card ${p.completed?'done':''}">
-          <div class="qr-proj-top">
-            <div class="qr-proj-name">📁 ${esc(p.name)} ${p.completed?'<span class="qr-proj-badge">✓ Shipped</span>':''}</div>
-            <div class="qr-proj-pct" style="color:${barColor}">${p.pct}%</div>
-          </div>
-          <div class="qr-proj-bar-wrap"><div class="qr-proj-bar" style="width:${p.pct}%;background:${barColor}"></div></div>
-          <div class="qr-proj-meta">${p.done}/${p.total} tasks complete</div>
-        </div>`;
-      }).join('')}
-    </div>
+    ${h2('Project spotlight', `${stats.projectsCompletedThisQ} of ${stats.projectCount} shipped`)}
+    ${listHTML(stats.projectSpotlight.map(p => `<div class="rpt-lb"><div class="rpt-lb-b"><b>${esc(p.name)}${p.completed ? ' <span class="wd-tag">Shipped</span>' : ''}</b><span>${p.done} of ${p.total} tasks complete</span>${bar(p.pct)}</div><span class="rpt-lb-pct">${p.pct}%</span></div>`).join(''))}
   `;
 
-  // Trend chart
-  if(qrChartInstance){ try{qrChartInstance.destroy()}catch(e){} }
-  const ctx=document.getElementById('qr-trend-chart');
-  if(ctx&&window.Chart){
-    qrChartInstance=new Chart(ctx,{
-      type:'bar',
-      data:{
-        labels:stats.monthlyTrend.map(m=>m.label),
-        datasets:[{data:stats.monthlyTrend.map(m=>m.done),backgroundColor:_cs.getPropertyValue('--neon').trim()||'#0a84ff',borderRadius:6,maxBarThickness:48}],
-      },
-      options:{...chartBase,scales:{x:{grid:{display:false},ticks:chartFont},y:{beginAtZero:true,ticks:{...chartFont,stepSize:Math.max(1,Math.ceil(Math.max(...stats.monthlyTrend.map(m=>m.done),1)/4))},grid:chartGrid}}},
+  const ctx = $('qr-trend-chart');
+  if (ctx && window.Chart) {
+    const c = chartTheme();
+    const font = { size: 11, family: c.family };
+    const top = Math.max(...stats.monthlyTrend.map(m => m.done), 1);
+    qrChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: stats.monthlyTrend.map(m => m.label), datasets: [{ data: stats.monthlyTrend.map(m => m.done), backgroundColor: c.ink, borderRadius: 6, maxBarThickness: 48 }] },
+      options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false }, ticks: { font, color: c.mid } }, y: { beginAtZero: true, ticks: { font, color: c.mid, stepSize: Math.max(1, Math.ceil(top / 4)) }, grid: { color: c.grid } } } },
     });
   }
 };
 
-window.copyQuarterlySummary=async()=>{
-  const {q,year}=qrGetSelection();
-  const lbl=`Q${q} ${year}`;
-  const qt=getQuarterTasksFor(year,q);
-  if(!qt.length){ toast('No data for '+lbl); return; }
-  const stats=computeQuarterStats(qt,year,q);
-  const prev=getPrevQuarter(year,q);
-  const prevStats=computeQuarterStats(getQuarterTasksFor(prev.year,prev.q),prev.year,prev.q);
+window.copyQuarterlySummary = async () => {
+  const { q, year } = qrGetSelection();
+  const lbl = `Q${q} ${year}`;
+  const qt = getQuarterTasksFor(year, q);
+  if (!qt.length) { toast('No data for ' + lbl); return; }
+  const stats = computeQuarterStats(qt, year, q);
+  const prev = getPrevQuarter(year, q);
+  const prevStats = computeQuarterStats(getQuarterTasksFor(prev.year, prev.q), prev.year, prev.q);
 
-  const top3=stats.leaderboard.slice(0,3).map((m,i)=>`${['🥇','🥈','🥉'][i]} ${m.name} (${m.done} tasks, ${m.pct}%)`).join('\n');
-  const shipped=stats.projectSpotlight.filter(p=>p.completed).map(p=>p.name);
+  const top3 = stats.leaderboard.slice(0, 3).map((m, i) => `${['🥇', '🥈', '🥉'][i]} ${m.name} (${m.done} tasks, ${m.pct}%)`).join('\n');
+  const shipped = stats.projectSpotlight.filter(p => p.completed).map(p => p.name);
 
-  const text=`📊 *WorkDesk — ${lbl} Summary*\n\n`+
-    `${stats.done}/${stats.total} tasks completed (${stats.pct}%)\n`+
-    `${stats.onTimeRate!==null?stats.onTimeRate+'% delivered on time\n':''}`+
-    `${stats.critResolved} critical issue${stats.critResolved===1?'':'s'} resolved\n`+
-    `${stats.projectsCompletedThisQ}/${stats.projectCount} projects shipped this quarter\n\n`+
-    `*Top Performers*\n${top3||'—'}\n`+
-    (shipped.length?`\n*Shipped This Quarter*\n${shipped.map(s=>'✓ '+s).join('\n')}\n`:'')+
-    `\n${generateHeadline(stats,prevStats,lbl).replace(/<\/?b>/g,'')}`;
+  const text = `📊 *WorkDesk — ${lbl} Summary*\n\n` +
+    `${stats.done}/${stats.total} tasks completed (${stats.pct}%)\n` +
+    `${stats.onTimeRate !== null ? stats.onTimeRate + '% delivered on time\n' : ''}` +
+    `${stats.critResolved} critical issue${stats.critResolved === 1 ? '' : 's'} resolved\n` +
+    `${stats.projectsCompletedThisQ}/${stats.projectCount} projects shipped this quarter\n\n` +
+    `*Top Performers*\n${top3 || '—'}\n` +
+    (shipped.length ? `\n*Shipped This Quarter*\n${shipped.map(s => '✓ ' + s).join('\n')}\n` : '') +
+    `\n${generateHeadline(stats, prevStats, lbl).replace(/<\/?b>/g, '')}`;
 
-  try{
-    await navigator.clipboard.writeText(text);
-    toast('📋 Summary copied — paste it anywhere');
-  }catch(e){
-    // Clipboard API needs a secure context / permission — fall back to a
-    // manual-copy prompt rather than failing silently.
-    window.prompt('Copy this summary:',text);
-  }
+  try { await navigator.clipboard.writeText(text); toast('Summary copied. Paste it anywhere.'); }
+  catch (e) { window.prompt('Copy this summary:', text); }   // clipboard needs a secure context
 };
 
 window.exportQuarterlyPDF=()=>{
@@ -1926,6 +1274,47 @@ window.exportQuarterlyPDF=()=>{
   setTimeout(()=>win.print(),500);
 };
 
+
+// ── SHARE (one button for every tab) ───────────────────────────────────────
+const SHARE_OPTIONS = {
+  quarterly: { sub: () => { const { q, year } = qrGetSelection(); return `Q${q} ${year}`; }, rows: [
+    ['copy', 'Copy summary', 'Plain text for WhatsApp or email', 'copyQuarterlySummary'],
+    ['print', 'Open printable report', 'Opens a new tab. Print it or save it as PDF.', 'exportQuarterlyPDF'] ] },
+  monthly: { sub: () => monthLabel(selMonth), rows: [
+    ['print', 'Open printable report', 'Opens a new tab. Print it or save it as PDF.', 'exportPDF'] ] },
+  weekly: { sub: () => (window._weekDigestData && window._weekDigestData.weekLabel) || 'This week', rows: [
+    ['copy', 'Copy digest', 'Plain text for WhatsApp', 'copyWeeklyDigest'] ] },
+  myreport: { sub: () => getPeriodLabel(), rows: [
+    ['print', 'Open printable report', 'Opens a new tab. Print it or save it as PDF.', 'exportMyReportPDF'] ] },
+};
+window.openShare = () => {
+  const opt = SHARE_OPTIONS[activeRptTab];
+  openSheet('rpt-share', `
+    <h2 class="wd-sheet-title">Share this report</h2>
+    <div class="wd-sheet-sub">${esc(opt.sub())}</div>
+    <div class="rpt-share-list">${opt.rows.map(([ic, ti, no, fn]) =>
+      `<button type="button" class="wd-mrow rpt-sh" onclick="runShare('${fn}')">${ICON[ic]}<span class="rpt-sh-t">${ti}<small>${no}</small></span></button>`).join('')}</div>`);
+};
+window.runShare = (fn) => { closeSheet('rpt-share'); window[fn](); };
+
+initShell();
+syncControls();
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/workdesk-pwa/sw.js', { scope: '/workdesk-pwa/' });
+  });
+}
+</script>
+
+<div class="wd-nav-fade"></div>
+<nav class="wd-nav" aria-label="Main">
+  <a href="index.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/></svg>Home</a>
+  <a href="input.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>Add</a>
+  <a href="calendar.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</a>
+  <a href="projects.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5a2.5 2.5 0 0 1 2.5-2.5h3.6l2 2.2H18a2.5 2.5 0 0 1 2.5 2.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>Projects</a>
+  <a href="report.html" class="on" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 20V12M12 20V4.5M18.5 20v-6.5"/></svg>Report</a>
+</nav>
 </body>
 </html>
