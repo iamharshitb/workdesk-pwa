@@ -78,7 +78,7 @@ html.theme-dark .wd-ring .trk { stroke: var(--border2); }
 /* ── GROUPS + TASK ROWS ────────────────────────────────────────────────── */
 .wd-gh { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 2px; font-size: 13px; font-weight: 600; color: var(--text2); }
 html.theme-light .wd-gh.late { color: var(--late); }
-html.theme-dark .wd-gh { font-size: 14px; font-weight: 500; padding: 10px 22px 6px; }
+html.theme-dark .wd-gh { font-size: 14px; font-weight: 500; padding: 18px 24px 10px; color: #8FA0A6; }
 
 .wd-g { display: inline-flex; color: var(--proj, var(--text)); background: none; border: 0; padding: 0; cursor: pointer; flex: none; border-radius: 50%; }
 html.theme-dark .wd-g { color: currentColor; }
@@ -108,26 +108,27 @@ html.theme-light .wd-task.u-late .due { color: var(--late); font-weight: 600; }
 html.theme-light .wd-task.u-today .due { color: var(--text); font-weight: 600; }
 html.theme-light .wd-task.is-done .tt, html.theme-light .wd-task.is-done .meta { color: var(--text2); }
 
-/* Deep tide: stacked pills. Lightness carries urgency. */
-html.theme-dark .wd-tasks { margin: 0 16px; }
+/* Deep tide: one calm pill per task, a clear gap between them.
+   Lightness carries urgency: the later a task, the lighter its fill.
+   (The first version overlapped the pills; it read as clutter on a phone.) */
+html.theme-dark .wd-tasks { margin: 0 16px; display: flex; flex-direction: column; gap: 8px; }
 html.theme-dark .wd-task {
   grid-template-columns: 20px 1fr auto; grid-template-areas: "g t t" "g m d";
-  height: 82px; border-radius: 41px; padding: 13px 28px 0 22px; margin-top: -24px; align-content: start;
-  box-shadow: 0 1px 0 rgba(255,255,255,.28) inset, 0 12px 22px rgba(0,0,0,.42);
+  min-height: 66px; border-radius: 30px; padding: 12px 24px 12px 20px; align-content: center; row-gap: 1px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
 }
-html.theme-dark .wd-tasks > .wd-task:first-child { margin-top: 0; }
-html.theme-dark .wd-tasks > .wd-task:last-child { height: 66px; }
-html.theme-dark .wd-task .tt { font-size: 16.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.theme-dark .wd-task .meta { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.theme-dark .wd-task .due { font-size: 14px; font-weight: 500; line-height: 19px; }
-html.theme-dark .wd-task.u-late  { background: #CCD0CF; color: #06141B; }
-html.theme-dark .wd-task.u-today { background: #9BA8AB; color: #06141B; }
-html.theme-dark .wd-task.u-later { background: #253745; color: #CCD0CF; }
-html.theme-dark .wd-task.u-later .meta { color: #9BA8AB; }
-html.theme-dark .wd-task.u-hold, html.theme-dark .wd-task.u-done { background: #11212D; color: #9BA8AB; }
-html.theme-dark .wd-task.u-late .meta, html.theme-dark .wd-task.u-today .meta { color: rgba(6,20,27,.8); }
-html.theme-dark .wd-task.u-late .due, html.theme-dark .wd-task.u-today .due { font-weight: 600; }
-html.theme-dark .wd-task.u-late .wd-g, html.theme-dark .wd-task.u-today .wd-g { --chk: #CCD0CF; }
+html.theme-dark .wd-task .tt { font-size: 16.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html.theme-dark .wd-task .meta { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #8FA0A6; }
+html.theme-dark .wd-task .due { font-size: 14px; font-weight: 500; line-height: 19px; color: #9BA8AB; }
+html.theme-dark .wd-task.u-late  { background: #35505F; color: #EEF1F1; }
+html.theme-dark .wd-task.u-today { background: #233844; color: #EEF1F1; }
+html.theme-dark .wd-task.u-later { background: #182B38; color: #CCD0CF; }
+html.theme-dark .wd-task.u-hold, html.theme-dark .wd-task.u-done { background: transparent; color: #9BA8AB; box-shadow: inset 0 0 0 1px rgba(255,255,255,.09); }
+html.theme-dark .wd-task.u-late .meta, html.theme-dark .wd-task.u-today .meta { color: #B7C2C4; }
+html.theme-dark .wd-task.u-late .due { color: #EEF1F1; font-weight: 600; }
+html.theme-dark .wd-task.u-today .due { color: #CCD0CF; font-weight: 600; }
+html.theme-dark .wd-task:active { filter: brightness(1.12); }
+html.theme-dark .wd-task .wd-g { --chk: #06141B; }
 
 /* folded groups: Backlog / On hold / Done */
 .wd-folds { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px 0; }
@@ -139,6 +140,7 @@ html.theme-dark .wd-folds { padding: 12px 20px 0; }
 html.theme-dark .wd-fchip { background: var(--bg3); border: 0; border-radius: var(--pill); color: var(--neon); }
 html.theme-dark .wd-fchip.on { background: var(--neon); color: var(--bg); }
 .wd-fold-body { padding-top: 6px; }
+html.theme-dark .wd-fold-body { padding-top: 14px; }
 .wd-empty { padding: 36px 28px; text-align: center; color: var(--text2); font-size: 15px; line-height: 1.45; }
 .wd-empty b { display: block; color: var(--text); font-size: 17px; font-weight: 500; margin-bottom: 4px; }
 
@@ -289,7 +291,8 @@ html.theme-dark .wd-sub-task { padding-left: 68px; padding-right: 22px; }
 .wd-sub-task .meta b { font-weight: 600; color: var(--late); }
 html.theme-dark .wd-sub-task .meta b { color: var(--text); }
 .wd-tick { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: none; border: 1px solid var(--text); color: var(--text); cursor: pointer; }
-html.theme-dark .wd-tick { background: var(--neon); border: 0; color: var(--bg); }
+html.theme-dark .wd-tick { background: var(--bg3); border: 0; color: var(--text2); }
+html.theme-dark .wd-tick:active { background: var(--border2); color: var(--text); }
 .wd-tick svg { width: 18px; height: 18px; }
 .wd-team-sep { height: 6px; }
 
