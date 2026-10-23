@@ -1,5 +1,5 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
-// Two skins — Fair copy (light) and Deep tide (dark) — and a mode that picks
+// Two skins — Fair copy (light) and Plum (dark) — and a mode that picks
 // between them: 'light', 'dark', or 'auto' (follow the device).
 //
 // The resolved skin is a class on <html> (`theme-light` / `theme-dark`); all
@@ -10,7 +10,7 @@
 
 export const THEMES = [
   { id: 'light', name: 'Light', sub: 'Fair copy',  bg: '#FFFFFF' },
-  { id: 'dark',  name: 'Dark',  sub: 'Deep tide',  bg: '#06141B' },
+  { id: 'dark',  name: 'Dark',  sub: 'Plum',       bg: '#000000' },
 ];
 export const MODES = [
   { id: 'light', name: 'Light' },

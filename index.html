@@ -1430,7 +1430,10 @@ function renderMine() {
   else headline = open.length || done.length ? 'All clear' : 'Nothing assigned yet';
   const sub = used >= SPRINT_MAX ? `Week is full, ${used} of ${SPRINT_MAX} slots in use`
     : `${used} of ${SPRINT_MAX} week slots in use`;
-  const summary = `<div class="wd-sum"><div><div class="t">${headline}</div><div class="s">${sub}</div></div>${ringHTML(used / SPRINT_MAX * 100, 46, 4, String(used))}</div>`;
+  const plumHead = today.length ? `${today.length} due today` : inWeek.length ? 'Nothing due today' : backlog.length ? 'Plan your week' : (open.length || done.length ? 'All clear' : 'Nothing assigned yet');
+  const lateStrip = late.length ? `<div class="wd-sum-late"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 6v4.5M10 13.4v.1"/></svg><span>${late.length} late</span></div>` : '';
+  const slots = `<div class="wd-slots" role="img" aria-label="${used} of ${SPRINT_MAX} week slots in use">${Array.from({ length: SPRINT_MAX }, (_, i) => `<i${i < used ? '' : ' class="free"'}></i>`).join('')}</div>`;
+  const summary = `${lateStrip}<div class="wd-sum"><div><div class="lab">This week</div><div class="t">${headline}</div><div class="t2">${plumHead}</div>${slots}<div class="s">${sub}</div></div>${ringHTML(used / SPRINT_MAX * 100, 46, 4, String(used))}<a class="wd-sum-add" href="input.html"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i>Add task</a></div>`;
 
   // groups
   let body = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later this week', later);
@@ -1582,9 +1585,9 @@ function renderTeam() {
     const doneOpen = teamDoneOpen.has(m.id);
     const doneBlock = doneEntries.length
       ? `<button type="button" class="wd-team-done" aria-expanded="${doneOpen}" onclick="toggleTeamDone('${m.id}')"><span>Done</span><span class="n">${doneEntries.length}</span>${ICON.chevron}</button>`
-        + (doneOpen ? `<div class="wd-tasks" style="margin:0">${doneEntries.map(subRow).join('')}</div>` : '')
+        + (doneOpen ? `<div class="wd-tasks flat">${doneEntries.map(subRow).join('')}</div>` : '')
       : '';
-    const subs = open ? (entries.length ? `<div class="wd-tasks" style="margin:0">` + entries.map(subRow).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') + doneBlock : '';
+    const subs = open ? (entries.length ? `<div class="wd-tasks flat">` + entries.map(subRow).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') + doneBlock : '';
     return `<button type="button" class="wd-mem" aria-expanded="${open}" onclick="toggleTeamMember('${m.id}')">
         <span class="wd-av sm quiet">${esc(initials(m.name))}</span>
         <span class="who"><div class="nm">${esc(m.name)}${you}</div><div class="mt">${mt}</div></span>

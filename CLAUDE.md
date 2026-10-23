@@ -29,16 +29,19 @@ This file gives Claude full context about the WorkDesk app so any new chat sessi
 
 ### Look: two themes plus Auto
 
-| | Fair copy (light) | Deep tide (dark) |
+| | Fair copy (light) | Plum (dark) |
 |---|---|---|
 | Class on `<html>` | `theme-light` (also the `:root` default, so first paint is never unstyled) | `theme-dark` |
-| Font | Hanken Grotesk | Jost |
-| Surfaces | paper `#FFFFFF`, mist `#F5F7FA`, rule `#E3E7EE` | `#06141B` base, `#11212D` raised, `#253745` edge, radial light spill, stadium/pill shapes |
-| Text | ink `#1F2B47`, pencil `#5C6883` | `#EEF1F1`, `#CCD0CF`, `#9BA8AB`, `#4A5C6A` |
-| Late | red-pen `#D4332B` — **red only ever means late** | no warning colour: `--late` is `#EEF1F1`, and **lightness stands in for urgency** (later task, lighter pill) |
-| Project colour | `--hue-blue #2F6FED`, `--hue-amber #C77D0A`, `--hue-fern #2E9A6B`, `--hue-violet #7A5AE0` — **glyphs and dots only** | all four `--hue-*` equal `#9BA8AB` (colour is dropped; shape and position carry meaning) |
+| Font | Hanken Grotesk | Poppins (400/500/600) |
+| Surfaces | paper `#FFFFFF`, mist `#F5F7FA`, rule `#E3E7EE` | `#000000` page, `#161616` cards and sheets (`--bg2`), `#262626` chips and off-toggles (`--bg3`), no shadows |
+| Text | ink `#1F2B47`, pencil `#5C6883` | `#FFFFFF`, `#A1A1A1`, `#8A8A8A` |
+| Late | red-pen `#D4332B` — **red only ever means late** | sun-yellow `--late` / `--sun` `#FFD463` — **yellow only ever means late** |
+| Project colour | `--hue-blue #2F6FED`, `--hue-amber #C77D0A`, `--hue-fern #2E9A6B`, `--hue-violet #7A5AE0` — **glyphs and dots only** | all four `--hue-*` equal `#A1A1A1` (colour is dropped; shape and position carry meaning) |
+| The one loud thing | none | `--plum #9D40D9`: the Home hero card, and nothing else |
 
-Design rules that follow from this: **shape is status** (the four glyphs), **colour is project**, **red is only "late"**. Don't add a new accent colour, and never use a project hue as a fill or text colour.
+Design rules that follow from this: **shape is status** (the four glyphs), **colour is project** (Light), **red (Light) / yellow (Dark) is only "late"**. Don't add a new accent colour, and never use a project hue as a fill or text colour.
+
+**Plum, in one paragraph (Oct 2026, from the wallet-app reference):** black page, one near-black card per task group, each task leading with its status glyph inside a 40px black circle. Home's summary is a plum card with ten week-slot pills (filled white, free dashed), a black corner tab with **Add task**, and a sun-yellow card peeking out behind it that exists only while something is late (`.wd-sum-late`). The bottom nav is a floating black capsule: icons only, the active page is a white pill with its label. White fill means "do / selected / done" (primary button, active tab, active chip). The hero's extra markup (`.wd-sum-late`, `.wd-sum .lab`, `.wd-sum .t2`, `.wd-slots`, `.wd-sum-add`) is built by Home's `summary` template and is `display:none` outside `html.theme-dark`, so Light renders exactly as before. `.wd-tasks.flat` is the borderless variant used inside Team's member rows.
 
 - Appearance is **Light / Dark / Auto**, stored in `localStorage.wd_mode`. `js/theme.js` migrates the legacy `wd_theme` once (old dark themes → dark, everything else → light) and then deletes it. The six old themes and "Run of show" are retired; `themes.css` is now ~240 lines defining only these two skins plus token re-pointing for the legacy components still in `style.css`.
 - Fonts come from the `@import` at the top of `themes.css`. Load order on every page: `style.css` → `themes.css` → `ui.css`.
@@ -73,13 +76,15 @@ Design rules that follow from this: **shape is status** (the four glyphs), **col
 1. **`[hidden]` is overridden by any class that sets `display:flex/grid`.** Every such component needs its own `.cls[hidden]{display:none}` rule. This bit us repeatedly (chip rows, folds, sheets).
 2. **Light-theme fold stacking:** consecutive `.wd-disc` rows are tightened into one run of hairlines with `html.theme-light … { margin-top:0 }`. If a new fold sits next to existing ones, add its sibling selector to that rule, and add a `tight` class when it follows a fold (see `renderPanel` in Projects). When overriding in a page block, match the specificity (`html.theme-light body.proj-wide …`) or the light rule will beat you.
 3. **Don't style by `:first-of-type` for these sections** — it never matched; use the adjacent-sibling pattern (`.wd-sub + .hlp-fold`).
-4. **Dark mode can't use colour for state.** Anything that was "a coloured dot" needs `currentColor` or a lightness change in dark (e.g. `.prj-late`).
+4. **Dark mode can't use colour for state, except yellow for "late".** Project hues are all one grey, so anything that was "a coloured dot" needs `currentColor` or a lightness change in dark (e.g. `.prj-late`). `--late` is the only dark-mode colour that carries meaning.
 5. **Empty states say less:** omit labels that would repeat ("No tasks yet" three times) and leave the right-hand column empty.
 6. **Skeleton first:** pages ship a `.wd-skel` block as initial HTML; real render replaces it.
 7. **Service worker:** `sw.js` (labelled v12) is pass-through — it deletes caches on activate and never serves stale files, so CSS/JS changes need **no version bump**. If changes don't appear, it's the browser/GitHub Pages cache.
 8. **Firebase and sounds modules are the user's own** — `js/firebase.js` and `js/sounds.js` were never changed or regenerated by the redesign; every page imports them as before.
 9. **Pre-existing quirks deliberately left alone:** `recordTaskCompletion(MY_NAME)` credits the *viewer* when an admin ticks a teammate's part; `calendarEvents` is never populated on Home.
-10. **Dark task rows never overlap** — the first Deep tide build stacked the pills with a negative margin; on a phone it read as clutter and was replaced (Oct 2026). `html.theme-dark .wd-tasks` is now a flex column with an 8px gap, rows are `min-height: 66px` with a two-line title clamp, and urgency is still lightness only: late `#35505F` → today `#233844` → later `#182B38`, with on-hold and done as transparent outlined pills. No drop shadows. Don't reintroduce overlap or a fixed row height. Light theme rows are untouched (verified pixel-identical).
+10. **Dark task rows: one card per group, never overlapping pills.** An earlier dark skin (Deep tide) stacked pills with a negative margin and it read as clutter on a phone. In Plum, `html.theme-dark .wd-tasks` is a single `#161616` card (radius 28) holding the group's rows, rows are `min-height: 68px` with a two-line title clamp, and urgency is written in the due label (yellow and bold when late, bold white when due today) rather than in a fill. No drop shadows. Don't reintroduce overlap or a fixed row height. Light theme rows are untouched (verified pixel-identical).
+11. **The Plum hero overlaps on purpose.** `.wd-sum-late + .wd-sum { margin-top: -30px }` tucks the plum card over the yellow one, and the yellow card's `padding-bottom: 44px` leaves room for that. Change one and you must change the other.
+12. **Dark nav labels are `font-size: 0`.** Each nav link is a 22px SVG (own `width`/`height`) followed by the label as a bare text node. Inactive links hide the label by zeroing the font size; only `.on` restores 14px. A new nav item must keep that shape (SVG, then text) or it will be unlabelled when active.
 
 ### Working on this UI (how it was built and checked)
 
@@ -90,7 +95,8 @@ Design rules that follow from this: **shape is status** (the four glyphs), **col
 
 - The old Home's **Follow-up** tab was not carried over. The older Home notes further down (Sprint, Known Issues #9, #12, #15, #17) describe markup that no longer exists — `myTaskCard`, `renderMyTasks`, `toggleTaskExpand`, `_animatedCards` and `_firstPaintDone` are gone; `_openEditId`/`_editDraft` remain and still protect an open edit sheet from live-sync re-renders. The Firestore and logic behaviour they describe is still valid.
 - **Easter-egg pages** (`cards.html`, `snake.html`, `quiz.html`, `space.html`) were not part of the redesign and have not been checked against the two new themes — they load `style.css` + `themes.css`, whose old theme selectors are gone.
-- In dark mode the logo image sits on a white capsule; a text wordmark would look cleaner.
+- In dark mode the logo PNG has a white background, so `html.theme-dark .wd-logo` flips it with `invert(1) hue-rotate(180deg)`. Plum looks right with it, but a real transparent or SVG wordmark would be cleaner (`brightness(0) invert(1)` turns the white background into a blank pill, so don't use it).
+- **Light has not been given the Plum treatment.** The reference also has a light half (grey page, white cards, same plum and yellow cards, black nav capsule). It was mocked for approval but not shipped; Light is still Fair copy.
 - Files in this folder are only the ones that changed; `manifest.json`, `js/firebase.js`, `js/sounds.js` and the game pages stay as they are in the repo.
 
 ---
@@ -143,7 +149,7 @@ workdesk-pwa/
 ├── sw.js               — Service worker v12 (pass-through, no caching)
 ├── css/
 │   ├── style.css       — Legacy component CSS (still needed by the game pages; don't extend)
-│   ├── themes.css      — Fair copy (light) + Deep tide (dark) tokens
+│   ├── themes.css      — Fair copy (light) + Plum (dark) tokens
 │   └── ui.css          — Shared wd-* components + one block per page
 └── js/
     ├── firebase.js     — All Firestore functions and exports (user's file, untouched by the redesign)
@@ -264,7 +270,7 @@ Fires from inside `onTasksChanged`'s existing `type === 'added'` + `assignedToMe
 
 ## Themes (6 total)
 
-> **SUPERSEDED (Oct 2026 redesign).** Only two themes exist now — Fair copy (`theme-light`) and Deep tide (`theme-dark`) — chosen with Light / Dark / Auto (`wd_mode`). The table below lists retired themes and is kept only for history.
+> **SUPERSEDED (Oct 2026 redesign).** Only two themes exist now — Fair copy (`theme-light`) and Plum (`theme-dark`) — chosen with Light / Dark / Auto (`wd_mode`). The table below lists retired themes and is kept only for history.
 
 
 | ID | Name | Description |

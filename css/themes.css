@@ -3,10 +3,11 @@
 
    Fair copy  (light)  Hanken Grotesk · paper white, ink, hairlines.
                        Shape is status, colour is project, red only means late.
-   Deep tide  (dark)   Jost · deep teal-navy, stacked pills, soft light spill.
-                       There is no warning colour in this palette, so
-                       lightness carries urgency: the later a task, the lighter
-                       its pill.
+   Plum       (dark)   Poppins · black canvas, near-black cards, one plum hero
+                       card with a sun-yellow card behind it while anything is
+                       late. White fill means "do" or "done" (primary buttons,
+                       selected tabs, the active nav pill). Dashed means empty.
+                       Sun-yellow only ever means "late".
 
    How it applies: js/theme.js puts `theme-light` or `theme-dark` on <html>
    (Auto picks one from the OS setting). Light is also the :root default so the
@@ -15,7 +16,7 @@
    that still use the old components keep working.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300..700&family=Jost:wght@300..600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300..700&family=Poppins:wght@400;500;600&display=swap');
 
 /* ── FAIR COPY · light ─────────────────────────────────────────────────── */
 :root,
@@ -78,57 +79,59 @@ html.theme-light {
   --nav-bg:     rgba(255,255,255,.94);
 }
 
-/* ── DEEP TIDE · dark ──────────────────────────────────────────────────── */
+/* ── PLUM · dark ───────────────────────────────────────────────────────── */
 html.theme-dark {
   color-scheme: dark;
 
-  --bg:      #06141B;
-  --bg2:     #11212D;
-  --bg3:     #253745;
-  --panel:   #11212D;
-  --border:  #253745;
-  --border2: #4A5C6A;   /* the 4A5C6A swatch: lines, outlines and ring tracks only */
+  /* Plum: black page, near-black cards, one plum card and one sun-yellow card */
+  --bg:      #000000;
+  --bg2:     #161616;   /* cards, sheets */
+  --bg3:     #262626;   /* chips, toggles that are off */
+  --panel:   #161616;
+  --border:  #262626;
+  --border2: #3A3A3A;
 
-  --text:    #EEF1F1;
-  --text2:   #9BA8AB;
-  --text3:   #85959D;
+  --text:    #FFFFFF;
+  --text2:   #A1A1A1;
+  --text3:   #8A8A8A;
 
-  --neon:    #CCD0CF;
-  --neon2:   #9BA8AB;
-  /* soft tints for the few places that still need a hue (legacy pages) */
-  --red:     #EBA8A2;
-  --amber:   #E2C58F;
-  --green:   #A5D1BC;
-  --purple:  #B9B3E0;
+  --neon:    #FFFFFF;   /* the light fill: primary action, selected, done */
+  --neon2:   #A1A1A1;
+  --plum:    #9D40D9;   /* the hero card */
+  --sun:     #FFD463;   /* attention: late */
+  --red:     #FF7A70;
+  --amber:   #FFD463;
+  --green:   #7ED9A8;
+  --purple:  #C08BEB;
 
-  --hue-blue:   #9BA8AB;
-  --hue-amber:  #9BA8AB;
-  --hue-fern:   #9BA8AB;
-  --hue-violet: #9BA8AB;
+  --hue-blue:   #A1A1A1;
+  --hue-amber:  #A1A1A1;
+  --hue-fern:   #A1A1A1;
+  --hue-violet: #A1A1A1;
 
-  --late:     #EEF1F1;
-  --on-accent:#06141B;
-  --chk:      #11212D;
-  --focus:    #CCD0CF;
-  --scrim:    rgba(2,9,13,.62);
+  --late:     #FFD463;
+  --on-accent:#000000;
+  --chk:      #000000;
+  --focus:    #FFFFFF;
+  --scrim:    rgba(0,0,0,.5);
 
-  --sans: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --doto: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --doto: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --r:    14px;
-  --rr:   26px;
-  --rrr:  34px;
+  --rr:   24px;
+  --rrr:  28px;
   --pill: 999px;
-  --sheet-r: 34px;
+  --sheet-r: 30px;
 
-  --shadow-card:     0 1px 0 rgba(255,255,255,.10) inset, 0 10px 22px rgba(0,0,0,.34);
-  --shadow-elevated: 0 1px 0 rgba(255,255,255,.14) inset, 0 24px 48px rgba(0,0,0,.5);
+  --shadow-card:     none;
+  --shadow-elevated: none;
   --shadow-neon:     none;
-  --glass-bg:   rgba(17,33,45,.86);
+  --glass-bg:   rgba(22,22,22,.9);
   --glass-blur: blur(18px);
-  --glass-edge: 0 1px 0 rgba(255,255,255,.10) inset;
-  --nav-bg:     rgba(6,20,27,.86);
+  --glass-edge: none;
+  --nav-bg:     rgba(0,0,0,.9);
 }
 
 /* ── BASE ──────────────────────────────────────────────────────────────── */
@@ -138,13 +141,6 @@ body {
   background-image: none;
   font-family: var(--sans);
   font-variant-numeric: tabular-nums;
-}
-/* the soft light spill, top-left — Deep tide only */
-html.theme-dark body {
-  background-image:
-    radial-gradient(520px 460px at -8% -6%, rgba(110,134,153,.55), rgba(74,92,106,.26) 42%, rgba(37,55,69,0) 74%),
-    linear-gradient(168deg, #132633 0%, #0C1B26 46%, #06141B 100%);
-  background-attachment: fixed;
 }
 html.theme-dark ::-webkit-scrollbar-thumb { background: var(--border2); }
 
@@ -207,7 +203,7 @@ html.theme-dark .notes-ta, html.theme-dark .modal-inp, html.theme-dark .comment-
 html.theme-dark input[type="text"], html.theme-dark input[type="date"],
 html.theme-dark input[type="time"], html.theme-dark input[type="search"],
 html.theme-dark textarea, html.theme-dark select {
-  background: #0C1B26; border-color: var(--border);
+  background: var(--bg3); border-color: transparent;
 }
 .task-input:focus, .role-input:focus, .add-member-inp:focus, .notes-ta:focus, .modal-inp:focus,
 input:focus, textarea:focus, select:focus { border-color: var(--text2); outline: none; box-shadow: none; }
@@ -233,7 +229,7 @@ html.theme-dark .bn-item.active { color: var(--bg); background: var(--neon); bor
 .toast { background: var(--text); color: var(--bg); border: 0; box-shadow: var(--shadow-elevated); }
 html.theme-dark .toast { background: var(--neon); color: var(--bg); }
 .toast.err { background: var(--red); color: #fff; }
-html.theme-dark .toast.err { color: #06141B; }
+html.theme-dark .toast.err { color: #000; }
 
 /* modal scrim */
 .modal-overlay { background: var(--scrim); }
