@@ -295,6 +295,14 @@ html.theme-dark .wd-tick { background: var(--bg3); border: 0; color: var(--text2
 html.theme-dark .wd-tick:active { background: var(--border2); color: var(--text); }
 .wd-tick svg { width: 18px; height: 18px; }
 .wd-team-sep { height: 6px; }
+/* Team tab: finished work sits behind one quiet row under each person */
+.wd-sub-task.is-done .tt { color: var(--text2); text-decoration: line-through; text-decoration-thickness: 1px; }
+.wd-sub-task.is-done .meta { color: var(--text2); opacity: .85; }
+.wd-team-done { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 22px 0 66px; background: none; border: 0; cursor: pointer; font: 500 14.5px var(--sans); color: var(--text2); text-align: left; }
+.wd-team-done .n { color: var(--text2); font-weight: 400; margin-left: 2px; }
+.wd-team-done svg { margin-left: auto; flex: none; transition: transform var(--dur-base) var(--ease-out); }
+.wd-team-done[aria-expanded="true"] svg { transform: rotate(90deg); }
+html.theme-dark .wd-team-done { padding-left: 68px; }
 
 /* task sheet */
 .wd-ts-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 15px; color: var(--text2); flex-wrap: wrap; }
@@ -872,6 +880,46 @@ html.theme-dark .prj-acts { padding-left: 24px; padding-right: 24px; }
 .prj-crow .when { flex: none; font-size: 13.5px; color: var(--text2); }
 .prj-crow.on .nm { font-weight: 600; }
 html.theme-dark .prj-crow { padding-left: 22px; padding-right: 22px; }
+
+/* groups: a second chip row, the group overview, and the organise sheet */
+.prj-sub-r { display: flex; align-items: center; gap: 18px; }
+.wd-sub.prj-subrow { flex-wrap: wrap; row-gap: 6px; }
+.prj-subrow #prj-sub { white-space: nowrap; }
+.prj-sub-r { margin-left: auto; }
+.prj-sub-chips { margin-top: 8px; }
+.prj-sub-chips[hidden] { display: none; }
+.prj-chips .wd-chip .ct { font-weight: 400; opacity: .7; }
+.prj-grow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0; background: none; border: 0; border-top: 1px solid var(--border); text-align: left; cursor: pointer; color: var(--text); font-family: var(--sans); }
+.prj-grow:first-child { border-top: 0; }
+.prj-grow .wd-pd { flex: none; }
+.prj-grow .gb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prj-grow .gb b { font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
+.prj-grow .gb span { font-size: 13.5px; color: var(--text2); }
+.prj-grow .gb .late { color: var(--late); font-weight: 600; }
+.prj-grow svg { flex: none; color: var(--text2); }
+.prj-grow.is-done .gb b { color: var(--text2); }
+html.theme-dark .prj-grow { border-top-color: var(--border2); }
+html.theme-dark .prj-grow .gb .late { color: var(--text); }
+
+.prj-gchips { margin-top: 10px; }
+.prj-org-hint { margin: 2px 0 6px; }
+.prj-sug { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+.prj-sug:first-of-type { border-top: 0; }
+.prj-sug .sb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prj-sug .sb b { font-size: 16px; font-weight: 500; }
+.prj-sug .sb span { font-size: 13.5px; color: var(--text2); overflow-wrap: anywhere; }
+.prj-sug .wd-btn, .prj-org-new .wd-btn { width: auto; flex: none; height: 40px; margin: 0; padding: 0 16px; font-size: 14.5px; }
+.prj-org-list { margin-top: 2px; }
+.prj-org-item { border-top: 1px solid var(--border); }
+.prj-org-item:first-child { border-top: 0; }
+.prj-org-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.prj-org-row .nm { flex: 1; min-width: 0; font-size: 15.5px; overflow-wrap: anywhere; }
+.prj-org-row .wd-select { width: auto; max-width: 48%; flex: none; height: 40px; font-size: 14px; }
+.prj-org-new { display: flex; gap: 8px; padding: 0 0 12px; }
+.prj-org-new[hidden] { display: none; }
+.prj-org-new .wd-field { flex: 1; min-width: 0; }
+#org-done { margin-top: 22px; }
+html.theme-dark .prj-sug, html.theme-dark .prj-org-item { border-top-color: var(--border2); }
 
 .prj-form .wd-hint { margin-top: 8px; }
 .prj-form .wd-field[disabled] { opacity: .6; }

@@ -814,7 +814,7 @@
 <script type="module">
 import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
-import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML } from './js/ui.js';
+import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML, dayMonth } from './js/ui.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
@@ -829,6 +829,7 @@ let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
 // Home state
 let _meName = '', homeTab = 'mine', openFold = null, doneShown = 15, _sheetTaskId = null, _canBroadcast = false;
 const teamOpen = new Set();
+const teamDoneOpen = new Set();
 let _editPriority = {};   // { [taskId]: 'critical'|'high'|'medium'|'low' }
 let _openEditId = null;   // task whose edit form is open in the sheet
 const _editDraft = {};    // { [taskId]: { label?, project?, due? } } unsaved keystrokes
@@ -1526,16 +1527,24 @@ window.switchHomeTab = (id) => {
 };
 
 // ── TEAM (by person, late first) ───────────────────────────────────────────
-function memberEntries(m) {
+function memberTasks(m) {
   const admin = isAdminUser();
   const out = [];
   tasks.forEach(t => {
     const mm = (t.members || []).find(x => sameName(x.name, m.name));
     if (!mm) return;
     if (t.taskType === 'individual' && !(admin || sameName(m.name, _meName))) return;
-    if (t.status === 'done' || getMemberStatus(t, mm.id) === 'done') return;
-    out.push({ t, mid: mm.id, status: glyphStatusFor(t, getMemberStatus(t, mm.id)) });
+    const done = t.status === 'done' || getMemberStatus(t, mm.id) === 'done';
+    out.push({ t, mid: mm.id, done, status: glyphStatusFor(t, getMemberStatus(t, mm.id)) });
   });
+  return out;
+}
+// finished work, newest first (the Team tab keeps it behind a quiet "Done" row)
+function memberDoneEntries(m) {
+  return memberTasks(m).filter(e => e.done).sort((a, b) => (doneTime(b.t) - doneTime(a.t)) || byDue(b.t, a.t));
+}
+function memberEntries(m) {
+  const out = memberTasks(m).filter(e => !e.done);
   const rank = e => e.status === 'onhold' ? 2 : (dayDiff(e.t.taskDueDate) != null && dayDiff(e.t.taskDueDate) < 0 ? 0 : 1);
   out.sort((a, b) => (rank(a) - rank(b)) || ((a.status === 'inprog' ? 0 : 1) - (b.status === 'inprog' ? 0 : 1)) || byDue(a.t, b.t));
   return out;
@@ -1554,17 +1563,28 @@ function renderTeam() {
     const open = teamOpen.has(m.id);
     const mt = late ? `<b>${late} late</b>, ${entries.length} open` : entries.length ? `${entries.length} open` : 'All clear';
     const you = isMe(m.name) ? ' <span style="font-weight:400;color:var(--text2)">(you)</span>' : '';
-    const subs = open ? (entries.length ? `<div class="wd-tasks" style="margin:0">` + entries.map(e => {
+    const canAct = admin || sameName(m.name, _meName);
+    const subRow = e => {
       const label = dueLabel(e.t.taskDueDate);
       const lateTxt = isLateEntry(e);
-      const canAct = admin || sameName(m.name, _meName);
-      return `<div class="wd-sub-task" style="--proj:${projHue(e.t.project)}" onclick="openTaskSheet('${e.t.id}')">
+      let meta = esc(e.t.project || 'No project');
+      if (e.done) {
+        const dt = doneTime(e.t);
+        if (dt) meta += ', done ' + esc(dayMonth(localDateStr(new Date(dt))));
+      } else if (label) meta += ', ' + (lateTxt ? `<b>${esc(label)}</b>` : esc(label));
+      return `<div class="wd-sub-task${e.done ? ' is-done' : ''}" style="--proj:${projHue(e.t.project)}" onclick="openTaskSheet('${e.t.id}')">
         <span class="wd-g static">${glyphSVG(e.status)}</span>
-        <div class="body"><div class="tt">${esc(e.t.label)}</div>
-          <div class="meta">${esc(e.t.project || 'No project')}${label ? ', ' + (lateTxt ? `<b>${esc(label)}</b>` : esc(label)) : ''}</div></div>
-        ${canAct ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(m.name)}: ${esc(e.t.label)}" onclick="event.stopPropagation();tickMember('${e.t.id}','${e.mid}','${esc(m.name).replace(/'/g, '&#39;')}')">${ICON.check}</button>` : ''}
+        <div class="body"><div class="tt">${esc(e.t.label)}</div><div class="meta">${meta}</div></div>
+        ${canAct && !e.done ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(m.name)}: ${esc(e.t.label)}" onclick="event.stopPropagation();tickMember('${e.t.id}','${e.mid}','${esc(m.name).replace(/'/g, '&#39;')}')">${ICON.check}</button>` : ''}
       </div>`;
-    }).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') : '';
+    };
+    const doneEntries = open ? memberDoneEntries(m) : [];
+    const doneOpen = teamDoneOpen.has(m.id);
+    const doneBlock = doneEntries.length
+      ? `<button type="button" class="wd-team-done" aria-expanded="${doneOpen}" onclick="toggleTeamDone('${m.id}')"><span>Done</span><span class="n">${doneEntries.length}</span>${ICON.chevron}</button>`
+        + (doneOpen ? `<div class="wd-tasks" style="margin:0">${doneEntries.map(subRow).join('')}</div>` : '')
+      : '';
+    const subs = open ? (entries.length ? `<div class="wd-tasks" style="margin:0">` + entries.map(subRow).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') + doneBlock : '';
     return `<button type="button" class="wd-mem" aria-expanded="${open}" onclick="toggleTeamMember('${m.id}')">
         <span class="wd-av sm quiet">${esc(initials(m.name))}</span>
         <span class="who"><div class="nm">${esc(m.name)}${you}</div><div class="mt">${mt}</div></span>
@@ -1573,6 +1593,7 @@ function renderTeam() {
   }).join('<div class="wd-team-sep"></div>');
 }
 window.toggleTeamMember = (id) => { if (teamOpen.has(id)) teamOpen.delete(id); else teamOpen.add(id); renderTeam(); };
+window.toggleTeamDone = (id) => { if (teamDoneOpen.has(id)) teamDoneOpen.delete(id); else teamDoneOpen.add(id); renderTeam(); };
 window.tickMember = async (taskId, memberId, name) => {
   const t = tasks.find(x => x.id === taskId); if (!t) return;
   const prev = getMemberStatus(t, memberId);

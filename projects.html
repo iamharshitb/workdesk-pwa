@@ -26,12 +26,13 @@
     <h1 class="wd-h1">Projects</h1>
     <button type="button" class="rpt-share prj-new" onclick="openProjectForm()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New project</button>
   </div>
-  <div class="wd-sub">
+  <div class="wd-sub prj-subrow">
     <span id="prj-sub">&nbsp;</span>
-    <button type="button" class="wd-link" id="view-btn" onclick="toggleView()">Landscape view</button>
+    <span class="prj-sub-r"><button type="button" class="wd-link" id="org-btn" onclick="openOrganise()">Organise</button><button type="button" class="wd-link" id="view-btn" onclick="toggleView()">Landscape view</button></span>
   </div>
 
   <div class="wd-filter-chips prj-chips" id="prj-chips" role="tablist" aria-label="Projects" hidden></div>
+  <div class="wd-filter-chips prj-chips prj-sub-chips" id="prj-subchips" role="tablist" aria-label="Projects in this group" hidden></div>
 
   <div class="prj-panel" id="prj-panel" aria-live="polite">
     <div class="wd-skel" aria-hidden="true">
@@ -55,7 +56,7 @@ import { onUserReady, WORKSPACE_ID, onTasksChanged, getProjects, setProjectCompl
 import { getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initShell } from './js/shell.js';
-import { esc, initials, ICON, glyphSVG, STATUS_LABEL, ringHTML, openSheet, closeSheet, showUndo, showNote, localDateStr, dayDiff, dueLabel, dayMonth, projHue, PRIO_LABEL } from './js/ui.js';
+import { esc, initials, ICON, glyphSVG, STATUS_LABEL, ringHTML, openSheet, closeSheet, sheetBody, showUndo, showNote, localDateStr, dayDiff, dueLabel, dayMonth, projHue, PRIO_LABEL } from './js/ui.js';
 
 const $ = id => document.getElementById(id);
 const haptic = n => { try { navigator.vibrate && navigator.vibrate(n); } catch (e) {} };
@@ -70,7 +71,8 @@ let allTasks = [];
 let tasksLoaded = false;
 let projectsData = {};          // completion flags from getProjects(), keyed by btoa(name)
 let projectMeta = {};           // description / target date from the projectMeta collection, same keys
-let activeProject = null;
+let activeProject = null;       // a project is open, or null while a group overview is open
+let activeGroup = '';           // the group whose overview is open (only while activeProject is null)
 let completedOpen = false;
 const openFolds = new Set();    // `${project}|${fold}` — folds stay as the person left them across live updates
 let editingName = null;         // set while the sheet is editing rather than creating
@@ -125,8 +127,34 @@ function computeProjectList() {
 
 const statusOf = t => (['todo', 'inprog', 'onhold', 'done'].includes(t.status) ? t.status : 'todo');
 
-function projectStats(name) {
-  const tasks = allTasks.filter(t => t.project === name);
+// ── groups ─────────────────────────────────────────────────────────────────
+// A group is only a headline stored on each member project (projectMeta.group).
+// Tasks keep their own project name, so nothing else in the app is affected,
+// and "ungroup" is always a clean undo.
+const metaOf = n => projectMeta[keyFor(n)] || {};
+const groupOf = n => String(metaOf(n).group || '').trim();
+const curGroup = () => (activeProject ? groupOf(activeProject) : activeGroup);
+const membersOf = g => computeProjectList().filter(n => groupOf(n) === g);   // active and completed
+function groupNames() {
+  const set = new Set();
+  computeProjectList().forEach(n => { const g = groupOf(n); if (g) set.add(g); });
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+// what the chip row shows: one chip per group, plus each project that has none
+function topEntries(active) {
+  const groups = new Map(), out = [];
+  active.forEach(n => {
+    const g = groupOf(n);
+    if (!g) { out.push({ kind: 'project', name: n }); return; }
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(n);
+  });
+  groups.forEach((members, g) => out.push({ kind: 'group', name: g, members }));
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function projectStats(name) { return statsOf(allTasks.filter(t => t.project === name)); }
+function statsOf(tasks) {
   const count = s => tasks.filter(t => statusOf(t) === s).length;
   const total = tasks.length, done = count('done');
   const open = tasks.filter(t => statusOf(t) !== 'done' && t.taskDueDate);
@@ -173,31 +201,53 @@ function renderAll() {
   $('prj-sub').textContent = names.length ? active.length + ' active · ' + completed.length + ' completed' : 'Nothing here yet';
 
   if (!names.length) {
-    activeProject = null;
-    renderChips([]);
+    activeProject = null; activeGroup = '';
+    renderChips([], active);
     $('prj-panel').classList.remove('has');
     $('prj-panel').innerHTML = `<div class="wd-empty"><b>No projects yet</b>Projects group tasks so you can follow them as a whole. Create one here, or type a project name the next time you add a task.</div>
       <div class="prj-empty-act"><button type="button" class="wd-btn p" onclick="openProjectForm()">Create your first project</button></div>`;
     renderCompleted([]);
     return;
   }
-  if (!activeProject || !names.includes(activeProject)) activeProject = active[0] || completed[0];
-  renderChips(active);
+  const entries = topEntries(active);
+  // keep the selection pointing at something that still exists
+  if (activeProject && !names.includes(activeProject)) activeProject = null;
+  if (activeGroup && !entries.some(e => e.kind === 'group' && e.name === activeGroup)) activeGroup = '';
+  if (activeProject) activeGroup = '';
+  if (!activeProject && !activeGroup) {
+    const first = entries[0];
+    if (first && first.kind === 'group') activeGroup = first.name;
+    else activeProject = (first && first.name) || completed[0];
+  }
+  renderChips(entries, active);
   renderPanel();
   renderCompleted(completed);
 }
 
-function renderChips(active) {
-  const el = $('prj-chips');
-  if (!active.length) { el.hidden = true; el.innerHTML = ''; return; }
-  const keep = el.scrollLeft;
+const LATE_DOT = '<i class="prj-late" role="img" aria-label="has overdue tasks"></i>';
+function renderChips(entries, active) {
+  const el = $('prj-chips'), sub = $('prj-subchips');
+  if (!entries.length) { el.hidden = true; el.innerHTML = ''; sub.hidden = true; sub.innerHTML = ''; return; }
+  const g = curGroup();
+  const keep = el.scrollLeft, keepSub = sub.scrollLeft;
   el.hidden = false;
-  el.innerHTML = active.map(n => {
-    const on = n === activeProject;
-    const late = projectStats(n).overdue > 0;
-    return `<button type="button" class="wd-chip${on ? ' on' : ''}" aria-pressed="${on}" data-proj="${esc(n)}">${esc(n)}${late ? '<i class="prj-late" role="img" aria-label="has overdue tasks"></i>' : ''}</button>`;
+  el.innerHTML = entries.map(e => {
+    const isGroup = e.kind === 'group';
+    const on = isGroup ? e.name === g : (!g && e.name === activeProject);
+    const late = isGroup ? e.members.some(n => projectStats(n).overdue > 0) : projectStats(e.name).overdue > 0;
+    return `<button type="button" class="wd-chip${on ? ' on' : ''}" aria-pressed="${on}" data-kind="${e.kind}" data-name="${esc(e.name)}">${esc(e.name)}${isGroup ? `<span class="ct">${e.members.length}</span>` : ''}${late ? LATE_DOT : ''}</button>`;
   }).join('');
   el.scrollLeft = keep;
+
+  // second row: the projects inside the open group
+  const members = g ? active.filter(n => groupOf(n) === g) : [];
+  if (!members.length) { sub.hidden = true; sub.innerHTML = ''; return; }
+  sub.hidden = false;
+  sub.innerHTML = `<button type="button" class="wd-chip${activeProject ? '' : ' on'}" aria-pressed="${!activeProject}" data-kind="overview">Overview</button>` + members.map(n => {
+    const on = n === activeProject;
+    return `<button type="button" class="wd-chip${on ? ' on' : ''}" aria-pressed="${on}" data-kind="project" data-name="${esc(n)}">${esc(n)}${projectStats(n).overdue > 0 ? LATE_DOT : ''}</button>`;
+  }).join('');
+  sub.scrollLeft = keepSub;
 }
 
 function renderCompleted(completed) {
@@ -239,7 +289,33 @@ function foldHTML(key, label, n, inner) {
   return `<div class="rpt-fold"><button type="button" class="wd-disc" aria-expanded="${open}" aria-controls="fb-${key}" data-fold="${key}"><span>${label}</span><span class="n">${n}</span>${CHEV}</button><div class="rpt-fold-body" id="fb-${key}"${open ? '' : ' hidden'}>${inner}</div></div>`;
 }
 
+function renderGroupPanel() {
+  const g = activeGroup;
+  const names = membersOf(g).sort((a, b) => ((projectsData[keyFor(a)] ? 1 : 0) - (projectsData[keyFor(b)] ? 1 : 0)) || (projectStats(b).overdue - projectStats(a).overdue) || a.localeCompare(b));
+  const s = statsOf(allTasks.filter(t => names.includes(t.project)));
+  const bits = [plural(names.length, 'project', 'projects')];
+  if (s.overdue) bits.push(`<span class="late">${s.overdue} overdue</span>`);
+  const head = `<div class="prj-head"><h2 class="prj-name"><span>${esc(g)}</span></h2><p class="prj-meta">${bits.join(' · ')}</p></div>`;
+  const sumTitle = s.total ? `${s.done} of ${plural(s.total, 'task', 'tasks')} done` : 'No tasks yet';
+  const sumSub = !s.total ? 'Add a task to one of these projects' : s.pct === 100 ? 'Everything is done' : plural(s.total - s.done, 'task', 'tasks') + ' to go';
+  const summary = `<div class="rpt-sum">${ringHTML(s.pct, 76, 6, s.pct + '%')}<div class="rs"><b>${sumTitle}</b><span>${esc(sumSub)}</span></div></div>`;
+  const acts = `<div class="prj-acts">
+    <button type="button" class="wd-btn p" data-act="new-in-group">${PLUS}New project</button>
+    <button type="button" class="wd-btn s" data-act="rename-group">Rename</button>
+  </div>`;
+  const rows = names.map(n => {
+    const st = projectStats(n), isDone = !!projectsData[keyFor(n)];
+    const sub = isDone ? 'Completed' : st.total ? `${st.done} of ${st.total} done${st.overdue ? `, <b class="late">${st.overdue} overdue</b>` : ''}` : 'No tasks yet';
+    return `<button type="button" class="prj-grow${isDone ? ' is-done' : ''}" data-proj="${esc(n)}" style="--proj:${projHue(n)}"><span class="wd-pd"></span><span class="gb"><b>${esc(n)}</b><span>${sub}</span></span>${CHEV}</button>`;
+  }).join('');
+  const panel = $('prj-panel');
+  panel.classList.add('has');
+  panel.innerHTML = `<div class="prj-left">${head}${summary}${acts}</div><div class="prj-right"><div class="rpt-h2"><span>Projects</span><span class="n">${names.length}</span></div><div class="rpt-list">${rows}</div></div>`;
+  $('prj-done').classList.remove('tight');
+}
+
 function renderPanel() {
+  if (!activeProject) return renderGroupPanel();
   const name = activeProject;
   const key = keyFor(name);
   const isDone = !!projectsData[key];
@@ -250,6 +326,8 @@ function renderPanel() {
 
   // header: name, what it is, where it stands
   const bits = [];
+  const grp = groupOf(name);
+  if (grp) bits.push(`<span>${esc(grp)}</span>`);
   if (isDone) bits.push(`<span>Completed${projectsData[key].completedMonth ? ' ' + esc(monthLabel(projectsData[key].completedMonth)) : ''}</span>`);
   else if (health.key !== 'empty') bits.push(`<span${health.key === 'late' ? ' class="late"' : ''}>${esc(health.label)}</span>`);
   if (meta.targetDate) {
@@ -305,17 +383,29 @@ function renderPanel() {
 // ── interaction ────────────────────────────────────────────────────────────
 function selectProject(name, { top = false } = {}) {
   if (!name) return;
-  activeProject = name;
+  activeProject = name; activeGroup = '';
   renderAll();
-  const on = $('prj-chips').querySelector('.wd-chip.on');
-  if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+  document.querySelectorAll('.prj-chips .wd-chip.on').forEach(on => on.scrollIntoView && on.scrollIntoView({ inline: 'center', block: 'nearest' }));
   if (top) window.scrollTo({ top: 0, behavior: 'smooth' });
+  haptic(4);
+}
+function selectGroup(g) {
+  if (!g) return;
+  activeGroup = g; activeProject = null;
+  renderAll();
+  document.querySelectorAll('.prj-chips .wd-chip.on').forEach(on => on.scrollIntoView && on.scrollIntoView({ inline: 'center', block: 'nearest' }));
   haptic(4);
 }
 
 $('prj-chips').addEventListener('click', e => {
-  const chip = e.target.closest('[data-proj]');
-  if (chip) selectProject(chip.dataset.proj);
+  const chip = e.target.closest('[data-name]');
+  if (!chip) return;
+  if (chip.dataset.kind === 'group') selectGroup(chip.dataset.name); else selectProject(chip.dataset.name);
+});
+$('prj-subchips').addEventListener('click', e => {
+  const chip = e.target.closest('[data-kind]');
+  if (!chip) return;
+  if (chip.dataset.kind === 'overview') selectGroup(curGroup()); else selectProject(chip.dataset.name);
 });
 $('prj-done-body').addEventListener('click', e => {
   const row = e.target.closest('[data-proj]');
@@ -331,10 +421,14 @@ $('prj-panel').addEventListener('click', e => {
     document.getElementById(fold.getAttribute('aria-controls')).hidden = !open;
     return;
   }
+  const row = e.target.closest('[data-proj]');
+  if (row) { selectProject(row.dataset.proj, { top: true }); return; }
   const act = e.target.closest('[data-act]');
   if (!act) return;
   if (act.dataset.act === 'edit') openProjectForm(activeProject);
   else if (act.dataset.act === 'toggle') toggleComplete(activeProject);
+  else if (act.dataset.act === 'new-in-group') openProjectForm(null, { group: activeGroup });
+  else if (act.dataset.act === 'rename-group') openRenameGroup(activeGroup);
 });
 
 window.toggleCompleted = () => {
@@ -382,15 +476,21 @@ async function toggleComplete(name) {
 }
 
 // ── new / edit sheet ───────────────────────────────────────────────────────
-window.openProjectForm = (name) => {
+window.openProjectForm = (name, opts = {}) => {
   editingName = name || null;
   const meta = name ? (projectMeta[keyFor(name)] || {}) : {};
+  const group = name ? groupOf(name) : String(opts.group || '');
+  const groups = groupNames();
   const sheet = openSheet('prj-form', `
     <h2 class="wd-sheet-title">${name ? 'Edit project' : 'New project'}</h2>
     <div class="prj-form">
       <div class="wd-lab">Name</div>
       <input class="wd-field" id="pf-name" maxlength="80" placeholder="e.g. Q4 town hall series" autocomplete="off" value="${esc(name || '')}"${name ? ' disabled aria-describedby="pf-name-note"' : ''}>
       ${name ? '<p class="wd-hint" id="pf-name-note">The name can’t change, because every task in the project uses it.</p>' : ''}
+      <div class="wd-lab">Group<span class="opt">optional</span></div>
+      <input class="wd-field" id="pf-group" maxlength="60" placeholder="e.g. BMGE 2027" autocomplete="off" value="${esc(group)}">
+      ${groups.length ? `<div class="wd-chips prj-gchips">${groups.map(g => `<button type="button" class="wd-chip" data-g="${esc(g)}">${esc(g)}</button>`).join('')}</div>` : ''}
+      <p class="wd-hint">Projects in the same group share one headline on this page.</p>
       <div class="wd-lab">Description<span class="opt">optional</span></div>
       <textarea class="wd-field" id="pf-desc" rows="3" maxlength="240" placeholder="What is this project about?">${esc(meta.description || '')}</textarea>
       <div class="wd-lab">Target date<span class="opt">optional</span></div>
@@ -399,6 +499,7 @@ window.openProjectForm = (name) => {
       <button type="button" class="wd-btn p" id="pf-save">${name ? 'Save changes' : 'Create project'}</button>
       <button type="button" class="wd-btn s" id="pf-cancel">Cancel</button>
     </div>`);
+  sheet.querySelectorAll('[data-g]').forEach(b => { b.onclick = () => { $('pf-group').value = b.dataset.g; }; });
   sheet.querySelector('#pf-save').onclick = saveProjectForm;
   sheet.querySelector('#pf-cancel').onclick = () => closeSheet('prj-form');
   sheet.querySelector('#pf-name').addEventListener('input', clearFormError);
@@ -424,13 +525,14 @@ async function saveProjectForm() {
   }
   const description = $('pf-desc').value.trim();
   const targetDate = $('pf-target').value || null;
+  const group = ($('pf-group').value || '').trim();
   const k = keyFor(name);
   const btn = $('pf-save');
   const creating = !editingName;
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
     await setDoc(metaDoc(k), {
-      name, description, targetDate,
+      name, description, targetDate, group,
       updatedAt: serverTimestamp(),
       ...(creating ? { createdAt: serverTimestamp() } : {}),
     }, { merge: true });
@@ -440,13 +542,148 @@ async function saveProjectForm() {
     formError('Could not save. Check your connection and try again.');
     return;
   }
-  projectMeta[k] = { ...(projectMeta[k] || {}), name, description, targetDate };
+  projectMeta[k] = { ...(projectMeta[k] || {}), name, description, targetDate, group };
   activeProject = name;
   closeSheet('prj-form');
   renderAll();
   showNote(creating ? 'Project created' : 'Project updated');
   haptic(8);
 }
+
+// ── group actions ──────────────────────────────────────────────────────────
+async function setGroupFor(names, group) {
+  const g = String(group || '').trim();
+  try {
+    await Promise.all(names.map(n => setDoc(metaDoc(keyFor(n)), { name: n, group: g, updatedAt: serverTimestamp() }, { merge: true })));
+  } catch (e) {
+    console.error('Group update failed:', e);
+    showNote('Could not update the group. Check your connection and try again.');
+    return false;
+  }
+  names.forEach(n => { const k = keyFor(n); projectMeta[k] = { ...(projectMeta[k] || {}), name: n, group: g }; });
+  renderAll();
+  return true;
+}
+
+function openRenameGroup(g) {
+  if (!g) return;
+  const sheet = openSheet('prj-grp', `
+    <h2 class="wd-sheet-title">Rename group</h2>
+    <div class="prj-form">
+      <div class="wd-lab">Group name</div>
+      <input class="wd-field" id="gf-name" maxlength="60" autocomplete="off" value="${esc(g)}">
+      <p class="wd-err" id="gf-err" role="alert" hidden></p>
+      <button type="button" class="wd-btn p" id="gf-save">Save name</button>
+      <button type="button" class="wd-btn s" id="gf-ungroup">Ungroup these projects</button>
+      <button type="button" class="wd-btn s" id="gf-cancel">Cancel</button>
+    </div>`);
+  const save = async () => {
+    const name = $('gf-name').value.trim();
+    if (!name) { const err = $('gf-err'); err.textContent = 'Enter a group name.'; err.hidden = false; return; }
+    if (name === g) { closeSheet('prj-grp'); return; }
+    const members = membersOf(g);
+    if (await setGroupFor(members, name)) { activeGroup = name; closeSheet('prj-grp'); renderAll(); showNote('Group renamed'); haptic(8); }
+  };
+  sheet.querySelector('#gf-save').onclick = save;
+  sheet.querySelector('#gf-name').addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+  sheet.querySelector('#gf-cancel').onclick = () => closeSheet('prj-grp');
+  sheet.querySelector('#gf-ungroup').onclick = async () => {
+    const members = membersOf(g);
+    activeGroup = '';
+    if (!(await setGroupFor(members, ''))) { activeGroup = g; return; }
+    closeSheet('prj-grp');
+    showUndo('Ungrouped “' + g + '”', () => setGroupFor(members, g));
+  };
+}
+
+// Suggest groups from names that start with the same word, e.g. "BMGE 2027" and
+// "BMGE – Digital plan" → "BMGE". Nothing happens until the person taps Group them.
+function suggestGroups(names) {
+  const STOP = new Set(['the', 'and', 'for', 'with', 'new', 'project', 'projects', 'team', 'plan', 'review', 'update', 'updates', 'weekly', 'monthly']);
+  const norm = w => w.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const by = new Map();
+  names.filter(n => !groupOf(n)).forEach(n => {
+    const w = norm(n.trim().split(/\s+/)[0] || '');
+    if (w.length < 3 || STOP.has(w)) return;
+    if (!by.has(w)) by.set(w, []);
+    by.get(w).push(n);
+  });
+  const existing = groupNames();
+  const out = [];
+  by.forEach(list => {
+    if (list.length < 2) return;
+    const split = list.map(n => n.trim().split(/\s+/));
+    let k = 0;
+    while (split.every(p => p[k] && norm(p[k]) === norm(split[0][k]))) k++;
+    let name = split[0].slice(0, k).join(' ').replace(/[\s\-–—:|,]+$/, '');
+    if (!name) return;
+    name = existing.find(x => x.toLowerCase() === name.toLowerCase()) || name;
+    out.push({ name, names: list.sort((a, b) => a.localeCompare(b)) });
+  });
+  return out.sort((a, b) => b.names.length - a.names.length || a.name.localeCompare(b.name));
+}
+
+let orgSuggestions = [];
+function organiseHTML() {
+  const names = computeProjectList().filter(n => !projectsData[keyFor(n)]);
+  const groups = groupNames();
+  orgSuggestions = suggestGroups(names);
+  const sug = orgSuggestions.length ? `<div class="wd-lab">Suggested groups</div>` + orgSuggestions.map((g, i) =>
+    `<div class="prj-sug"><div class="sb"><b>${esc(g.name)}</b><span>${esc(plural(g.names.length, 'project', 'projects'))}: ${esc(g.names.join(', '))}</span></div><button type="button" class="wd-btn s" data-sug="${i}">Group them</button></div>`).join('') : '';
+  const rows = names.length ? names.map((n, i) => {
+    const g = groupOf(n);
+    const opts = ['<option value="">No group</option>'].concat(groups.map(x => `<option value="${esc(x)}"${x === g ? ' selected' : ''}>${esc(x)}</option>`)).concat('<option value="__new">New group…</option>').join('');
+    return `<div class="prj-org-item" data-i="${i}"><div class="prj-org-row"><span class="nm">${esc(n)}</span><select class="wd-select" aria-label="Group for ${esc(n)}" data-n="${i}">${opts}</select></div>
+      <div class="prj-org-new" hidden><input class="wd-field" maxlength="60" placeholder="New group name" aria-label="New group name for ${esc(n)}"><button type="button" class="wd-btn p" data-newgo="${i}">Add</button></div></div>`;
+  }).join('') : '<div class="wd-empty"><b>No active projects</b>Create a project first, then group it here.</div>';
+  return `<h2 class="wd-sheet-title">Organise projects</h2>
+    <p class="wd-hint prj-org-hint">Put related projects under one headline. Tasks stay exactly as they are, and you can ungroup at any time.</p>
+    ${sug}
+    <div class="wd-lab">All projects</div>
+    <div class="prj-org-list">${rows}</div>
+    <button type="button" class="wd-btn p" id="org-done">Done</button>`;
+}
+window.openOrganise = () => {
+  const sheet = openSheet('prj-org', organiseHTML());
+  const names = () => computeProjectList().filter(n => !projectsData[keyFor(n)]);
+  const refresh = async (changed) => {
+    const top = sheet.scrollTop;
+    sheet.innerHTML = '<div class="wd-grab"></div>' + organiseHTML();
+    sheet.scrollTop = top;
+    return changed;
+  };
+  sheet.onclick = async e => {
+    if (e.target.closest('#org-done')) { closeSheet('prj-org'); return; }
+    const sug = e.target.closest('[data-sug]');
+    if (sug) {
+      const g = orgSuggestions[+sug.dataset.sug];
+      if (g && await setGroupFor(g.names, g.name)) { refresh(); showNote('Grouped under “' + g.name + '”'); haptic(8); }
+      return;
+    }
+    const go = e.target.closest('[data-newgo]');
+    if (go) {
+      const item = go.closest('.prj-org-item');
+      const val = item.querySelector('input').value.trim();
+      if (!val) { item.querySelector('input').focus(); return; }
+      const n = names()[+go.dataset.newgo];
+      const exact = groupNames().find(x => x.toLowerCase() === val.toLowerCase()) || val;
+      if (n && await setGroupFor([n], exact)) refresh();
+    }
+  };
+  sheet.onchange = async e => {
+    const sel = e.target.closest('select[data-n]');
+    if (!sel) return;
+    const n = names()[+sel.dataset.n];
+    if (!n) return;
+    if (sel.value === '__new') {
+      const box = sel.closest('.prj-org-item').querySelector('.prj-org-new');
+      box.hidden = false; box.querySelector('input').focus();
+      sel.value = groupOf(n);
+      return;
+    }
+    if (await setGroupFor([n], sel.value)) refresh();
+  };
+};
 </script>
 <script>
 if ('serviceWorker' in navigator) {
