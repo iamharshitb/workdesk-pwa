@@ -11,54 +11,13 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>WorkDesk — Dashboard</title>
+<script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/ui.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07090f">
   <style>
-    /* ── SKELETON LOADING ──
-       Reusable shimmer for anything shown before real data arrives. Used on:
-       stat pills (`.stat-pill.skel`, cleared by renderStats on first real
-       render) and the My Tasks list (static placeholder rows in the HTML,
-       naturally replaced when renderMyTasks() first overwrites the
-       container's innerHTML with real content — no JS needed to remove it). */
-    .skel-block {
-      position: relative; overflow: hidden;
-      background: var(--bg3); border-radius: 6px;
-      color: transparent !important;
-    }
-    .skel-block::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
-      background-size: 200% 100%;
-      animation: skel-shimmer 1.4s ease-in-out infinite;
-    }
-    @keyframes skel-shimmer {
-      0%   { background-position: 150% 0; }
-      100% { background-position: -50% 0; }
-    }
-    .stat-pill.skel .stat-n, .stat-pill.skel .stat-l {
-      color: transparent; position: relative; border-radius: 5px;
-    }
-    .stat-pill.skel .stat-n { background: var(--bg3); }
-    .stat-pill.skel .stat-l { background: var(--bg3); opacity: .6; }
-    .stat-pill.skel .stat-n::after, .stat-pill.skel .stat-l::after {
-      content: ''; position: absolute; inset: 0; border-radius: inherit;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-      background-size: 200% 100%;
-      animation: skel-shimmer 1.4s ease-in-out infinite;
-    }
-    .skeleton-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 12px; margin-bottom: 6px;
-      border: 1px solid var(--border2); background: var(--bg2);
-    }
-    .skeleton-row-body { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    @media (prefers-reduced-motion: reduce) {
-      .skel-block::after, .stat-pill.skel .stat-n::after, .stat-pill.skel .stat-l::after {
-        animation: none !important;
-      }
-    }
 
     /* ── SPLASH SCREEN ──
        Sequence: logo springs in -> 5 mini task-card placeholders fly in from
@@ -129,66 +88,7 @@
       }
     }
 
-    /* ── TASK CARD STATUS COLORS ── */
-    .task-card.status-inprog {
-      position: relative;
-      border-left-color: var(--amber) !important;
-      overflow: hidden;
-    }
-    .task-card.status-inprog::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, transparent, var(--amber) 45%, var(--amber) 55%, transparent);
-      background-size: 250% 100%;
-      animation: inprog-shimmer 2s ease-in-out infinite;
-      opacity: 1;
-      box-shadow: 0 0 8px var(--amber);
-    }
-    @keyframes inprog-shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -100% 0; }
-    }
-    .task-card.status-onhold {
-      border-left-color: var(--purple) !important;
-    }
-    .task-card.status-done {
-      background: rgba(0,229,184,.05);
-      border-color: rgba(0,229,184,.2);
-      opacity: .55;
-    }
 
-    /* ── TIMER TOGGLE ICON ── */
-    .timer-icon-btn {
-      width:48px;height:48px;border-radius:12px;flex-shrink:0;
-      background:var(--bg2);border:1px solid var(--border2);
-      display:flex;align-items:center;justify-content:center;
-      cursor:pointer;transition:all var(--dur-base) var(--ease-out);position:relative;
-      -webkit-tap-highlight-color:transparent;
-    }
-    .timer-icon-btn:hover { border-color:var(--neon) }
-    .timer-icon-btn:active { transform:scale(.95) }
-    .timer-icon-btn.running {
-      border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.08);
-      box-shadow:0 0 0 2px rgba(10,132,255,.12);
-    }
-    .timer-icon-emoji { font-size:20px;line-height:1 }
-    .timer-icon-running-dot {
-      position:absolute;top:5px;right:5px;
-      width:7px;height:7px;border-radius:50%;
-      background:var(--neon);box-shadow:0 0 6px var(--neon);
-      display:none;animation:pulse 1.4s ease-in-out infinite;
-    }
-    .timer-icon-btn.running .timer-icon-running-dot { display:block }
-    .timer-icon-mini-time {
-      position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
-      font-size:7px;font-weight:800;color:var(--neon);
-      background:var(--bg2);padding:0 3px;border-radius:4px;
-      display:none;font-family:var(--mono);white-space:nowrap;
-    }
-    .timer-icon-btn.running .timer-icon-mini-time { display:block }
-
-    .timer-panel-wrap { display:none }
-    .timer-panel-wrap.open { display:block }
 
     /* ── SLIM TIMER — clock expands to 2/3, controls shrink to 1/3 ── */
     .timer-slim {
@@ -241,331 +141,13 @@
     .timer-slim-btns { display: flex; gap: 6px; }
     .timer-slim-btns .t-btn { flex: 1; padding: 9px 4px; font-size: 13px; }
 
-    /* ── STATS FILTER ── */
-    .stat-pill {
-      cursor: pointer;
-      transition: all var(--dur-base) var(--ease-out);
-      user-select: none;
-    }
-    .stat-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
-    .stat-pill.active-filter { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,229,184,.15); }
-    /* Due date filter row */
-    .due-filter-row {
-      display:flex;gap:7px;margin-bottom:10px;
-    }
-    .due-filter-btn {
-      flex:1;padding:7px 10px;border-radius:8px;
-      border:1px solid var(--border);background:var(--bg2);
-      color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all var(--dur-base) var(--ease-out);text-align:center;
-      display:flex;align-items:center;justify-content:center;gap:5px;
-      letter-spacing:.01em;
-    }
-    .due-filter-btn:hover { border-color:var(--border2);color:var(--text) }
-    .due-filter-btn:active { transform:scale(.97) }
-    .due-filter-btn.active {
-      border-color:rgba(240,165,0,.35);
-      background:rgba(240,165,0,.07);
-      color:var(--amber);
-    }
-    .due-filter-count {
-      font-size:10px;font-weight:700;font-family:var(--mono);
-      background:rgba(240,165,0,.12);color:var(--amber);
-      padding:1px 5px;border-radius:8px;
-    }
 
-    /* ── FILTER DROPDOWN ── */
-    .filter-wrap { position:relative; margin-bottom:10px }
-    .filter-btn {
-      display:inline-flex;align-items:center;gap:6px;
-      padding:8px 18px;border-radius:20px;
-      border:1.5px solid var(--border2);background:var(--bg2);
-      color:var(--text);font-family:var(--sans);font-size:12px;font-weight:700;
-      cursor:pointer;transition:all var(--dur-base) var(--ease-out);-webkit-tap-highlight-color:transparent;
-      box-shadow:0 1px 4px rgba(0,0,0,.12);
-    }
-    .filter-btn:hover { border-color:var(--neon);color:var(--neon) }
-    .filter-btn:active { transform:scale(.97) }
-    .filter-btn.active { border-color:var(--neon);color:var(--neon);background:rgba(10,132,255,.08) }
-    .filter-active-pill {
-      display:inline-flex;align-items:center;gap:5px;margin-left:8px;
-      font-size:11px;font-weight:700;color:var(--neon);
-      padding:5px 11px;background:rgba(10,132,255,.08);
-      border:1px solid rgba(10,132,255,.2);border-radius:20px;cursor:pointer;
-    }
-    .filter-dropdown {
-      position:fixed;left:16px;right:16px;top:180px;z-index:99999;
-      background:var(--panel);border:1.5px solid var(--border2);
-      border-radius:16px;padding:16px;
-      box-shadow:0 16px 48px rgba(0,0,0,.8);
-      display:none;
-    }
-    .filter-dropdown.open { display:block !important }
-    .fd-group-label {
-      font-size:10px;font-weight:700;color:var(--text3);
-      text-transform:uppercase;letter-spacing:.1em;
-      margin:12px 0 7px;
-    }
-    .fd-group-label:first-child { margin-top:0 }
-    .fd-options { display:flex;flex-wrap:wrap;gap:6px }
-    .fd-opt {
-      padding:5px 12px;border-radius:20px;
-      border:1px solid var(--border2);background:var(--bg2);
-      color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);-webkit-tap-highlight-color:transparent;
-    }
-    .fd-opt:active { transform:scale(.95) }
-    .fd-opt.sel     { border-color:var(--neon);background:rgba(10,132,255,.08);color:var(--neon) }
-    .fd-opt.sel-due { border-color:var(--amber);background:rgba(255,159,10,.12);color:var(--amber) }
-    .fd-opt.sel-crit { border-color:rgba(255,69,58,.5); background:rgba(255,69,58,.08); color:var(--red) }
-    .fd-opt.sel-high { border-color:rgba(255,159,10,.5);background:rgba(255,159,10,.08);color:var(--amber) }
-    .fd-opt.sel-med  { border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.08);color:var(--neon) }
-    .fd-opt.sel-low  { border-color:rgba(52,199,89,.5); background:rgba(52,199,89,.08); color:var(--green) }
-    .fd-apply {
-      width:100%;margin-top:12px;padding:9px;border-radius:10px;border:none;
-      background:var(--neon);color:#0c0c0f;
-      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-      transition:all var(--dur-base) var(--ease-out);
-    }
-    .fd-apply:active { transform:scale(.98) }
 
-    /* ── COMPACT TASK ROW ── */
-    .task-row-compact {
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;
-      border-radius:12px;margin-bottom:6px;
-      border:1px solid var(--border2);
-      background:var(--bg2);
-      cursor:pointer;
-      transition:all var(--dur-base) var(--ease-out);
-      -webkit-tap-highlight-color:transparent;
-    }
-    .task-row-compact:hover {
-      border-color:var(--neon2);background:var(--bg3);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,.12);
-    }
-    .task-row-compact:active { transform: translateY(0) scale(.99); }
-    .task-row-compact.status-inprog {
-      position: relative;
-      overflow: hidden;
-    }
-    .task-row-compact.status-inprog::after {
-      content: '';
-      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--amber);
-      animation: inprog-pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes inprog-pulse {
-      0%,100% { opacity: .5;  box-shadow: 0 0 4px var(--amber); }
-      50%     { opacity: 1;   box-shadow: 0 0 18px var(--amber), 0 0 6px var(--amber); }
-    }
-    .task-row-compact.status-onhold { opacity:.75; border-left-color:var(--purple) !important }
-    .task-row-compact.status-done { opacity:.5; }
-    .trc-left { flex:1;min-width:0; }
-    .trc-name {
-      font-size:14px;font-weight:700;color:var(--text);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      margin-bottom:4px;
-    }
-    .trc-meta { display:flex;align-items:center;gap:5px;flex-wrap:wrap; }
-    .trc-members {
-      font-size:11px;color:var(--text2);font-weight:600;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      max-width:160px;
-    }
-    .trc-expand {
-      position:relative;
-      flex-shrink:0;width:28px;height:28px;border-radius:50%;
-      border:1px solid var(--border2);background:var(--bg3);
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;color:var(--text2);transition:all var(--dur-base) var(--ease-out);
-      cursor:pointer;
-    }
-    /* Invisible hit-area extension: 28px visual + 8px on each side = 44px
-       tappable, without inflating the circle itself (which would look
-       oversized in a compact row). The parent .task-row-compact is itself
-       clickable via onclick="toggleTaskExpand", so this mostly matters for
-       precise taps that land just outside the visible circle. */
-    .trc-expand::before {
-      content:''; position:absolute; inset:-8px;
-    }
-    .trc-expand.open { transform:rotate(180deg);border-color:var(--neon);color:var(--neon); }
-    /* Expanded detail panel */
-    .task-detail {
-      display:none;
-      margin-bottom:8px;margin-top:-2px;
-      padding:12px 14px;
-      border-radius:0 0 12px 12px;
-      border:1px solid var(--border2);border-top:none;
-      background:var(--bg3);
-      animation:sld .18s ease;
-    }
-    .task-detail.open { display:block; }
 
-    /* ── DONE SECTION ── */
-    .done-section-toggle {
-      display:flex;align-items:center;justify-content:space-between;
-      padding:9px 12px;margin-top:8px;
-      border-radius:10px;border:1px solid var(--border2);
-      background:var(--bg2);cursor:pointer;
-      font-size:12px;font-weight:700;color:var(--text2);
-      user-select:none;-webkit-tap-highlight-color:transparent;
-      transition:all var(--dur-base) var(--ease-out);
-    }
-    .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
-    .done-section-arrow { transition:transform var(--dur-base) var(--ease-spring);font-size:10px }
-    .done-section-arrow.open { transform:rotate(180deg) }
-    .done-section-body { display:none;margin-top:4px }
-    .done-section-body.open { display:block }
-    /* Collapsible month within done section */
-    .done-month-toggle {
-      display:flex;align-items:center;justify-content:space-between;
-      padding:7px 10px;margin:4px 0 2px;
-      border-radius:8px;background:var(--bg3);
-      font-size:10px;font-weight:800;color:var(--text2);
-      letter-spacing:.06em;text-transform:uppercase;
-      cursor:pointer;user-select:none;transition:all var(--dur-base) var(--ease-out);
-    }
-    .done-month-toggle:hover { background:var(--bg2);color:var(--text) }
-    .done-month-arrow { font-size:9px;transition:transform var(--dur-base) var(--ease-spring) }
-    .done-month-arrow.open { transform:rotate(180deg) }
-    .done-month-body { display:none }
-    .done-month-body.open { display:block }
 
-    /* Collapsible By Member card */
-    .member-card {
-      background:var(--panel);border:1px solid var(--border2);
-      border-radius:14px;margin-bottom:8px;overflow:hidden;
-      box-shadow:var(--shadow-card);
-    }
-    .member-card-hd {
-      display:flex;align-items:center;gap:10px;
-      padding:12px 14px;cursor:pointer;
-      transition:background var(--dur-fast) var(--ease-out);
-      user-select:none;-webkit-tap-highlight-color:transparent;
-    }
-    .member-card-hd:hover { background:var(--bg3) }
-    .member-card-body { display:none;padding:0 14px 12px }
-    .member-card-body.open { display:block }
-    .member-card-arrow { font-size:11px;color:var(--text3);transition:transform var(--dur-base) var(--ease-spring);flex-shrink:0 }
-    .member-card-arrow.open { transform:rotate(180deg) }
-    .member-card-rank {
-      font-size:10px;font-weight:800;color:var(--text3);
-      width:18px;text-align:center;flex-shrink:0;
-    }
-    .member-card-rank.gold   { color:#f5a800 }
-    .member-card-rank.silver { color:#94a3b8 }
-    .member-card-rank.bronze { color:#b87333 }
 
-    /* ── INDIVIDUAL TASK BADGE ── */
-    .individual-badge {
-      display:inline-flex;align-items:center;gap:3px;
-      padding:2px 7px;border-radius:20px;font-size:9px;font-weight:800;
-      background:rgba(157,126,255,.1);color:var(--purple);
-      border:1px solid rgba(157,126,255,.25);flex-shrink:0;
-    }
 
-    /* ── COMMS CARD (calendar events in My Tasks) ── */
-    .comms-card {
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:12px;margin-bottom:6px;
-      border:1.5px solid rgba(157,126,255,.3);
-      background:rgba(157,126,255,.07);
-      cursor:pointer;transition:all var(--dur-base) var(--ease-out);
-      -webkit-tap-highlight-color:transparent;
-    }
-    .comms-card:hover { background:rgba(157,126,255,.12) }
-    .comms-card-left { flex:1;min-width:0 }
-    .comms-card-type {
-      font-size:10px;font-weight:800;color:var(--purple);
-      letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;
-    }
-    .comms-card-subject {
-      font-size:14px;font-weight:700;color:var(--text);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;
-    }
-    .comms-card-meta { font-size:11px;color:var(--text2) }
-    .comms-status-planned { color:#60a5fa;font-weight:800 }
-    .comms-status-sent    { color:#34d399;font-weight:800 }
-    .comms-status-delayed { color:#f87171;font-weight:800 }
-    .comms-section-label {
-      font-size:10px;font-weight:700;color:var(--purple);
-      letter-spacing:.1em;text-transform:uppercase;
-      padding:6px 0 4px;display:flex;align-items:center;gap:6px;
-    }
-    .comms-section-label::before {
-      content:'';flex:1;height:1px;background:rgba(157,126,255,.2);
-    }
-    .comms-section-label::after {
-      content:'';flex:1;height:1px;background:rgba(157,126,255,.2);
-    }
 
-    /* ── DUE TODAY HIGHLIGHT ── */
-    .task-row-compact.due-today {
-      position: relative;
-      overflow: hidden;
-    }
-    .task-row-compact.due-today::after {
-      content: '';
-      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--red);
-      animation: due-today-glow 1.3s ease-in-out infinite;
-    }
-    @keyframes due-today-glow {
-      0%,100% { opacity: .45; box-shadow: 0 0 5px var(--red); }
-      50%     { opacity: 1;   box-shadow: 0 0 20px var(--red), 0 0 6px var(--red); }
-    }
-    .due-today-badge {
-      display:inline-flex;align-items:center;gap:3px;
-      padding:2px 7px;border-radius:20px;
-      font-size:9px;font-weight:800;
-      background:rgba(255,58,94,.15);color:var(--red);
-      border:1px solid rgba(255,58,94,.3);
-      animation:pulse-badge 1.3s ease-in-out infinite;
-    }
-    @keyframes pulse-badge {
-      0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.55; transform:scale(1.08);}
-    }
-    .due-soon-badge {
-      display:inline-flex;align-items:center;gap:3px;
-      padding:2px 7px;border-radius:20px;
-      font-size:9px;font-weight:800;
-      background:rgba(245,168,0,.12);color:var(--amber);
-      border:1px solid rgba(245,168,0,.3);
-    }
-
-    /* ── WORLD CLOCK ── */
-    .world-clock {
-      display:flex;align-items:center;justify-content:center;
-      gap:0;margin-bottom:10px;
-      background:var(--bg2);border:1px solid var(--border2);
-      border-radius:var(--rr);overflow:hidden;
-      box-shadow:var(--shadow-card);
-    }
-    .wc-zone {
-      flex:1;display:flex;align-items:center;justify-content:center;
-      gap:8px;padding:10px 14px;
-    }
-    .wc-zone:first-child {
-      border-right:1px solid var(--border2);
-    }
-    .wc-info { display:flex;flex-direction:column;gap:1px }
-    .wc-time {
-      font-family:var(--mono);font-size:16px;font-weight:500;
-      color:var(--text);line-height:1;letter-spacing:.02em;
-    }
-    .wc-label {
-      font-size:9px;font-weight:700;color:var(--text3);
-      letter-spacing:.1em;text-transform:uppercase;
-    }
-    .wc-date {
-      font-size:9px;font-weight:400;color:var(--text3);
-      margin-top:1px;
-    }
-    /* Subtle dot separator */
-    .wc-zone.ist .wc-time { color:var(--amber) }
-    .wc-zone.ger .wc-time { color:var(--neon) }
 
     /* ── WELCOME SCREEN ── */
     .welcome-overlay {
@@ -637,233 +219,10 @@
       font-size:10px;color:var(--text3);line-height:1.6;
     }
 
-    /* ── WEEKLY SPRINT ── */
-    .sprint-section {
-      background:var(--bg2);border:1px solid var(--border2);
-      border-radius:var(--rr);margin-bottom:12px;overflow:hidden;
-      box-shadow:var(--shadow-card);
-    }
-    .sprint-hd {
-      display:flex;align-items:center;gap:10px;
-      padding:12px 14px;cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-      transition:background var(--dur-fast) var(--ease-out);
-    }
-    .sprint-hd:hover { background:var(--bg3) }
-    .sprint-icon {
-      width:32px;height:32px;border-radius:9px;flex-shrink:0;
-      background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.2);
-      display:flex;align-items:center;justify-content:center;font-size:16px;
-    }
-    .sprint-title {
-      font-size:13px;font-weight:800;color:var(--text);flex:1;
-    }
-    .sprint-count {
-      font-size:11px;font-weight:700;
-      padding:3px 9px;border-radius:20px;
-      background:rgba(10,132,255,.1);color:var(--neon);
-    }
-    .sprint-count.full {
-      background:rgba(255,159,10,.1);color:var(--amber);
-    }
-    .sprint-arrow {
-      font-size:11px;color:var(--text3);transition:transform var(--dur-base) var(--ease-spring);
-    }
-    .sprint-arrow.open { transform:rotate(180deg) }
-    .sprint-body { display:none; border-top:1px solid var(--border) }
-    .sprint-body.open { display:block }
-    .sprint-progress {
-      display:flex;align-items:center;gap:8px;
-      padding:10px 14px 6px;
-    }
-    .sprint-bar-bg {
-      flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;
-    }
-    .sprint-bar-fill {
-      height:100%;border-radius:3px;background:var(--neon);
-      transition:width .4s var(--ease-inout);
-    }
-    .sprint-bar-fill.full { background:var(--amber) }
-    .sprint-bar-label {
-      font-size:10px;font-weight:700;color:var(--text3);flex-shrink:0;
-    }
-    .sprint-empty {
-      padding:14px;font-size:12px;color:var(--text3);
-      text-align:center;font-style:italic;
-    }
-    .sprint-reset {
-      font-size:10px;color:var(--text3);text-align:center;
-      padding:4px 14px 10px;
-    }
-    /* Sprint badge on task card */
-    .sprint-badge {
-      display:inline-flex;align-items:center;gap:3px;
-      font-size:9px;font-weight:700;color:var(--neon);
-      background:rgba(10,132,255,.08);border:1px solid rgba(10,132,255,.2);
-      padding:2px 6px;border-radius:8px;
-    }
-    /* Sprint button in task actions */
-    .sprint-task-btn {
-      padding:5px 10px;border-radius:8px;
-      border:1px solid rgba(10,132,255,.25);
-      background:rgba(10,132,255,.06);color:var(--neon);
-      font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);white-space:nowrap;
-    }
-    .sprint-task-btn:active { transform:scale(.95) }
-    .sprint-task-btn.remove {
-      border-color:rgba(255,69,58,.25);background:rgba(255,69,58,.06);color:var(--red);
-    }
-    .sprint-task-btn.full-disabled {
-      border-color:var(--border);background:none;color:var(--text3);cursor:default;
-    }
 
-    /* ── GREETING BAR ── */
-    .greeting-bar {
-      padding:14px 16px;
-      background:var(--bg2);
-      border:1px solid var(--border);
-      border-radius:var(--rr);
-      margin-bottom:10px;
-      display:flex;align-items:center;justify-content:space-between;
-      box-shadow:var(--shadow-elevated);
-      /* Moises-style: subtle teal glow on the card itself */
-      box-shadow:var(--shadow-elevated), 0 0 0 1px rgba(0,210,168,.04) inset;
-    }
-    .greeting-text { font-size:15px;font-weight:700;color:var(--text);line-height:1.4 }
-    .greeting-sub  { font-size:12px;color:var(--text2);margin-top:2px }
-    .streak-badge  {
-      display:flex;align-items:center;gap:5px;
-      background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.25);
-      border-radius:20px;padding:5px 12px;
-      font-size:13px;font-weight:800;color:var(--amber);
-      white-space:nowrap;flex-shrink:0;
-    }
 
-    /* ── PRIORITY CARD ── */
-    .priority-card {
-      background:var(--bg2);
-      border:1px solid var(--border);
-      border-radius:var(--rr);padding:0;
-      box-shadow:var(--shadow-elevated);
-      overflow:hidden;
-      /* Opal glass edge */
-      box-shadow:var(--shadow-elevated), 0 1px 0 rgba(255,255,255,.04) inset;
-    }
-    .priority-row {
-      display:flex;align-items:center;gap:10px;
-      padding:10px 14px;cursor:pointer;
-      transition:all var(--dur-base) var(--ease-out);
-      border-bottom:1px solid var(--border);
-      -webkit-tap-highlight-color:transparent;
-    }
-    .priority-row:last-child { border-bottom:none }
-    .priority-row:hover { background:var(--bg3); }
-    .priority-row:active { background:var(--bg3); }
-    .priority-row-label {
-      font-size:9px;font-weight:800;color:var(--text3);
-      text-transform:uppercase;letter-spacing:.08em;
-      flex-shrink:0;width:44px;
-    }
-    .priority-row-content { flex:1;min-width:0 }
-    .priority-row-task {
-      font-size:13px;font-weight:700;color:var(--text);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      margin-bottom:3px;
-    }
-    .priority-row-meta {
-      display:flex;align-items:center;gap:5px;flex-wrap:wrap;
-    }
-    .priority-empty {
-      font-size:12px;color:var(--text3);font-style:italic;
-    }
-    .priority-arrow {
-      font-size:11px;color:var(--text3);flex-shrink:0;
-    }
-    .priority-dot {
-      width:7px;height:7px;border-radius:50%;flex-shrink:0;
-    }
 
-    /* ── INLINE TASK EDIT ── */
-    .task-edit-panel {
-      display:none;
-      padding:14px;
-      background:var(--bg3);
-      border-top:1px solid var(--border2);
-      border-radius:0 0 var(--r) var(--r);
-      animation:sld .18s ease;
-    }
-    .task-edit-panel.open { display:block }
-    .task-edit-row { margin-bottom:10px }
-    .task-edit-label {
-      font-size:10px;font-weight:700;color:var(--text3);
-      text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;
-    }
-    .task-edit-inp {
-      width:100%;background:var(--bg2);border:1px solid var(--border2);
-      border-radius:8px;padding:9px 11px;color:var(--text);
-      font-family:var(--sans);font-size:14px;outline:none;
-      transition:border-color var(--dur-fast) var(--ease-out);
-    }
-    .task-edit-inp:focus { border-color:rgba(10,132,255,.4) }
-    .task-edit-prow { display:flex;gap:6px }
-    .task-edit-pchip {
-      flex:1;padding:7px 4px;border-radius:20px;text-align:center;
-      font-family:var(--sans);font-size:11px;font-weight:700;
-      border:1px solid var(--border2);background:var(--bg2);
-      color:var(--text3);cursor:pointer;transition:all var(--dur-fast) var(--ease-out);
-    }
-    .task-edit-pchip.pc { background:rgba(255,69,58,.08); border-color:rgba(255,69,58,.3); color:var(--red) }
-    .task-edit-pchip.ph { background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.3);color:var(--amber) }
-    .task-edit-pchip.pm { background:rgba(10,132,255,.08);border-color:rgba(10,132,255,.3); color:var(--neon) }
-    .task-edit-pchip.pl { background:rgba(52,199,89,.06); border-color:rgba(52,199,89,.25); color:var(--green) }
-    .task-edit-dates { display:flex;gap:7px }
-    .task-edit-date-inp {
-      flex:1;background:var(--bg2);border:1px solid var(--border2);
-      border-radius:8px;padding:8px 10px;color:var(--text);
-      font-family:var(--sans);font-size:12px;outline:none;
-    }
-    .task-edit-actions { display:flex;gap:8px;margin-top:14px }
-    .task-edit-save {
-      flex:1;padding:10px;border-radius:9px;border:none;
-      background:var(--neon);color:#0c0c0f;
-      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-      transition:all var(--dur-base) var(--ease-out);
-    }
-    .task-edit-save:active { transform:scale(.97) }
-    .task-edit-cancel {
-      padding:10px 16px;border-radius:9px;
-      border:1px solid var(--border2);background:none;
-      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-    }
 
-    /* ── IDEAS FAB ── */
-    .ideas-fab {
-      position:fixed;bottom:76px;right:16px;z-index:100;
-      width:48px;height:48px;border-radius:50%;
-      background:linear-gradient(135deg,var(--purple),#7b6bff);
-      border:none;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      font-size:20px;
-      box-shadow:0 4px 16px rgba(94,92,230,.4),0 2px 6px rgba(0,0,0,.2);
-      transition:all var(--dur-base) var(--ease-spring);
-      -webkit-tap-highlight-color:transparent;
-      animation: fab-breathe 3.5s ease-in-out infinite;
-    }
-    @keyframes fab-breathe {
-      0%,100% { box-shadow:0 4px 16px rgba(94,92,230,.4),0 2px 6px rgba(0,0,0,.2); }
-      50%     { box-shadow:0 4px 24px rgba(94,92,230,.6),0 2px 10px rgba(0,0,0,.25); }
-    }
-    .ideas-fab:hover { transform:scale(1.1); animation-play-state:paused; }
-    .ideas-fab:active { transform:scale(.93) }
-    .ideas-fab-badge {
-      position:absolute;top:-2px;right:-2px;
-      width:16px;height:16px;border-radius:50%;
-      background:var(--red);border:2px solid var(--bg);
-      font-size:8px;font-weight:800;color:#fff;
-      display:flex;align-items:center;justify-content:center;
-      display:none;
-    }
 
     /* ── CONFETTI ── */
     .confetti-wrap {
@@ -983,8 +342,6 @@
     }
     .ptr-indicator.visible { display:block }
 
-    /* ── WEEKLY DIGEST ── */
-    .digest-panel { }
 
     /* ── BADGES ── */
     .badge-row {
@@ -1079,27 +436,6 @@
       font-weight:700;cursor:pointer;
     }
 
-    /* ── TASK SEARCH ── */
-    .search-bar {
-      display:flex;align-items:center;gap:8px;
-      margin-bottom:10px;
-      background:var(--bg2);border:1.5px solid var(--border2);
-      border-radius:10px;padding:8px 12px;
-      transition:border-color var(--dur-fast) var(--ease-out);
-    }
-    .search-bar:focus-within { border-color:var(--neon) }
-    .search-icon { font-size:14px;color:var(--text3);flex-shrink:0 }
-    .search-inp {
-      flex:1;background:none;border:none;outline:none;
-      color:var(--text);font-family:var(--sans);font-size:14px;
-    }
-    .search-inp::placeholder { color:var(--text3) }
-    .search-clear {
-      background:none;border:none;cursor:pointer;
-      font-size:13px;color:var(--text3);padding:0 2px;
-      transition:color var(--dur-fast) var(--ease-out);
-    }
-    .search-clear:hover { color:var(--red) }
 
     /* ── ANNOUNCEMENT POPUP ── */
     .announcement-popup {
@@ -1218,36 +554,7 @@
       border:1.5px solid rgba(255,58,94,.3);background:none;
       color:var(--red);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
     }
-    /* ── FILTER BANNER ── */
-    .filter-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: rgba(0,229,184,.06);
-      border: 1px solid rgba(0,229,184,.2);
-      border-radius: 10px;
-      margin-bottom: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--neon);
-    }
-    .filter-clear {
-      background: none;
-      border: none;
-      color: var(--text2);
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: var(--sans);
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    .filter-clear:hover { color: var(--red); }
-  </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</style>
 </head>
 <body>
 <!-- ── SPLASH SCREEN ──
@@ -1295,56 +602,56 @@
   setTimeout(finish, 2100);
 })();
 </script>
-<nav class="nav">
-  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="36" style="display:block"></a>
-  <div class="nav-right">
-    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
-    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
-    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
-    <button class="btn-theme-toggle" id="notif-btn" onclick="handleNotifToggle()" title="Task notifications">🔕</button>
-  </div>
-</nav>
-
 <div id="page-loader" style="display:none"></div>
 
-<div class="page" id="main">
+<div class="wd-page" id="main">
+  <header class="wd-appbar">
+    <a href="index.html" class="nav-brand" id="nav-brand-tap" aria-label="WorkDesk"><img class="wd-logo" src="data:image/png;base64,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" alt="Workdesk" height="30"></a>
+    <div class="wd-appbar-r">
+      <button type="button" class="wd-timer-pill" id="timer-icon-btn" onclick="toggleTimerPanel()" hidden aria-label="Focus timer running">
+        <span class="wd-dot-live"></span><span id="timer-icon-mini"></span>
+      </button>
+      <button type="button" class="wd-av" id="me-btn" onclick="openProfile()" aria-label="Your profile and settings">·</button>
+    </div>
+  </header>
 
-  <!-- GREETING + STREAK -->
-  <!-- WORLD CLOCK -->
-  <div class="world-clock fi" style="animation-delay:.005s;align-items:stretch">
-    <div class="wc-zone ist">
-      <div style="width:30px;height:30px;border-radius:7px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--amber);flex-shrink:0;letter-spacing:.02em">IN</div>
-      <div class="wc-info">
-        <div class="wc-time" id="wc-ist-time">--:--</div>
-        <div class="wc-label">IST · India</div>
-        <div class="wc-date" id="wc-ist-date"></div>
-      </div>
-    </div>
-    <div class="wc-zone ger">
-      <div style="width:30px;height:30px;border-radius:7px;background:rgba(10,132,255,.08);border:1px solid rgba(10,132,255,.18);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--neon);flex-shrink:0;letter-spacing:.02em">DE</div>
-      <div class="wc-info">
-        <div class="wc-time" id="wc-ger-time">--:--</div>
-        <div class="wc-label" id="wc-ger-label">CET · Germany</div>
-        <div class="wc-date" id="wc-ger-date"></div>
-      </div>
-    </div>
-    <button class="timer-icon-btn" id="timer-icon-btn" onclick="toggleTimerPanel()" title="Focus Timer">
-      <span class="timer-icon-emoji">⏱</span>
-      <span class="timer-icon-running-dot"></span>
-      <span class="timer-icon-mini-time" id="timer-icon-mini"></span>
-    </button>
+  <div class="wd-title">
+    <h1 class="wd-h1" id="home-title" onclick="handleGreetingTap()">This week</h1>
+    <button type="button" class="wd-icon-btn" id="search-toggle" onclick="toggleSearch()" aria-label="Search and filter" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button>
+  </div>
+  <div class="wd-sub">
+    <span id="today-line"></span>
+    <span class="wd-clocks"><i>India</i><span id="wc-ist-time">--:--</span><i>Germany</i><span id="wc-ger-time">--:--</span></span>
   </div>
 
-  <div class="greeting-bar fi" id="greeting-bar" style="animation-delay:.01s"></div>
+  <div class="wd-search" id="search-panel" hidden>
+    <input class="wd-field" id="search-inp" type="search" placeholder="Search tasks, people, projects" autocomplete="off"
+      oninput="handleSearch(this.value)" aria-label="Search tasks">
+    <div class="wd-filter-chips" id="filter-chips"></div>
+  </div>
 
-  <!-- SLIM TIMER — collapsible, hidden by default -->
-  <div class="timer-panel-wrap" id="timer-panel-wrap">
-  <div class="panel fi" style="animation-delay:.02s">
-    <div class="panel-hd">
-      <span class="panel-title">Focus Timer</span>
-      <button onclick="toggleTimerPanel()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0">✕</button>
+  <div class="wd-tabs" role="tablist" aria-label="Mine or Team">
+    <button type="button" class="on" id="tab-mine" role="tab" aria-selected="true" onclick="switchHomeTab('mine')">Mine</button>
+    <button type="button" id="tab-team" role="tab" aria-selected="false" onclick="switchHomeTab('team')">Team</button>
+  </div>
+
+  <section id="home-mine" aria-live="polite">
+    <div class="wd-skel" aria-hidden="true">
+      <div class="wd-skel-sum"><div><i style="width:150px"></i><i style="width:190px;height:11px"></i></div><b></b></div>
+      <div class="wd-skel-row"><b></b><div><i style="width:68%"></i><i style="width:42%;height:11px"></i></div></div>
+      <div class="wd-skel-row"><b></b><div><i style="width:56%"></i><i style="width:34%;height:11px"></i></div></div>
+      <div class="wd-skel-row"><b></b><div><i style="width:62%"></i><i style="width:38%;height:11px"></i></div></div>
     </div>
-    <div class="timer-slim" style="position:relative"><div class="timer-scanline" id="timer-scanline"></div>
+  </section>
+  <section id="home-team" hidden></section>
+</div>
+
+<!-- FOCUS TIMER SHEET -->
+<div class="wd-scrim" id="timer-sheet" onclick="if(event.target===this)toggleTimerPanel()">
+  <div class="wd-sheet" role="dialog" aria-label="Focus timer">
+    <div class="wd-grab"></div>
+    <div class="wd-sheet-title">Focus timer</div>
+    <div class="timer-slim" style="position:relative;margin-top:14px"><div class="timer-scanline" id="timer-scanline"></div>
       <div class="timer-slim-clock" id="t-clock">
         <div class="timer-slim-digits" id="t-disp">45:00</div>
         <div class="timer-slim-st" id="t-st">Ready</div>
@@ -1362,115 +669,24 @@
       </div>
     </div>
   </div>
-  </div>
-
-  <!-- STATS — clickable filters. Start in `.skel` (skeleton shimmer) state;
-       computeBadges()/renderStats() removes it on the first real snapshot. -->
-  <div class="stats-row fi" style="animation-delay:.05s">
-    <div class="stat-pill skel" id="sp-total" onclick="filterTasks('total')">
-      <div class="stat-n sn-b" id="s-total">0</div><div class="stat-l">Total</div>
-    </div>
-    <div class="stat-pill skel" id="sp-inprog" onclick="filterTasks('inprog')">
-      <div class="stat-n sn-a" id="s-inprog">0</div><div class="stat-l">In Prog</div>
-    </div>
-    <div class="stat-pill skel" id="sp-done" onclick="filterTasks('done')">
-      <div class="stat-n sn-g" id="s-done">0</div><div class="stat-l">Done</div>
-    </div>
-    <div class="stat-pill skel" id="sp-crit" onclick="filterTasks('critical')">
-      <div class="stat-n sn-r" id="s-crit">0</div><div class="stat-l">Critical</div>
-    </div>
-  </div>
-
-  <!-- FILTER BUTTON -->
-  <div class="filter-wrap fi" style="animation-delay:.06s">
-    <button class="filter-btn" id="filter-btn" onclick="toggleFilterDrop(event)">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-      Filters
-    </button>
-    <span id="filter-pill" class="filter-active-pill" style="display:none" onclick="clearActiveFilter()"></span>
-  </div>
-
-
-
-  <!-- PROGRESS -->
-  <div class="prog-wrap fi" style="animation-delay:.08s">
-    <div class="prog-top">
-      <span class="prog-label">Overall Progress</span>
-      <span class="prog-pct" id="prog-pct">0%</span>
-    </div>
-    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-  </div>
-
-  <!-- TASK TABS -->
-  <div class="panel fi" style="animation-delay:.11s">
-    <div class="panel-hd"><span class="panel-title">Task Tracker</span></div>
-    <div class="panel-body">
-      <!-- SEARCH BAR -->
-      <div class="search-bar" id="search-bar" style="display:none">
-        <span class="search-icon">🔍</span>
-        <input class="search-inp" id="search-inp" placeholder="Search tasks..."
-          oninput="handleSearch(this.value)"
-          onclick="event.stopPropagation()">
-        <button class="search-clear" onclick="clearSearch()" id="search-clear" style="display:none">✕</button>
-      </div>
-      <div class="tabs">
-        <button class="tab active" onclick="switchTab('mytasks',this)">My Tasks</button>
-        <button class="tab" onclick="switchTab('bymember',this)">By Member</button>
-        <button class="tab" onclick="switchTab('followup',this)">Follow-up</button>
-      </div>
-      <div id="tab-mytasks"><div id="my-tasks-list">
-        <!-- Skeleton rows shown until the first Firestore snapshot arrives.
-             renderMyTasks() overwrites this div's innerHTML wholesale on the
-             first real render, so nothing needs to explicitly remove these —
-             they're gone the instant real content exists. Three rows roughly
-             match real row height to avoid a layout jump when they're replaced. -->
-        <div class="skeleton-row">
-          <div class="skel-block" style="width:36px;height:36px;border-radius:10px;flex-shrink:0"></div>
-          <div class="skeleton-row-body">
-            <div class="skel-block" style="width:70%;height:13px"></div>
-            <div class="skel-block" style="width:40%;height:10px"></div>
-          </div>
-        </div>
-        <div class="skeleton-row">
-          <div class="skel-block" style="width:36px;height:36px;border-radius:10px;flex-shrink:0"></div>
-          <div class="skeleton-row-body">
-            <div class="skel-block" style="width:55%;height:13px"></div>
-            <div class="skel-block" style="width:30%;height:10px"></div>
-          </div>
-        </div>
-        <div class="skeleton-row">
-          <div class="skel-block" style="width:36px;height:36px;border-radius:10px;flex-shrink:0"></div>
-          <div class="skeleton-row-body">
-            <div class="skel-block" style="width:60%;height:13px"></div>
-            <div class="skel-block" style="width:35%;height:10px"></div>
-          </div>
-        </div>
-      </div></div>
-      <div id="tab-bymember" style="display:none"><div id="by-member-list"></div></div>
-      <div id="tab-followup" style="display:none"><div id="followup-list"></div></div>
-    </div>
-  </div>
-
-  <!-- GAMES HINT -->
-  <div style="text-align:center;padding:2px 0 6px">
-    <span style="font-size:11px;color:var(--text3);cursor:pointer;opacity:.4;user-select:none"
-      onclick="document.getElementById('search-inp')?.focus()"
-      title="Psst... try typing 'snake', 'quiz' or 'space' in the search bar 🎮">🎮</span>
-  </div>
-
-  <!-- NOTES -->
-  <div class="panel fi" style="animation-delay:.15s">
-    <div class="panel-hd"><span class="panel-title">Quick Notes</span></div>
-    <div class="panel-body">
-      <textarea class="notes-ta" id="notes-ta" placeholder="Scratch pad — type anything..."></textarea>
-      <div class="notes-foot">
-        <span class="notes-cnt" id="notes-cnt">0 / 500</span>
-        <button class="notes-clr" onclick="clearNotes()">Clear</button>
-      </div>
-    </div>
-  </div>
-
 </div>
+
+<!-- QUICK NOTES SHEET -->
+<div class="wd-scrim" id="notes-sheet" onclick="if(event.target===this)closeNotes()">
+  <div class="wd-sheet" role="dialog" aria-label="Quick notes">
+    <div class="wd-grab"></div>
+    <div class="wd-sheet-title">Quick notes</div>
+    <p class="wd-sheet-note">A scratch pad that follows you across your devices.</p>
+    <textarea class="wd-field notes-ta" id="notes-ta" rows="7" placeholder="Type anything…" style="margin-top:12px"></textarea>
+    <div class="notes-foot">
+      <span class="notes-cnt" id="notes-cnt">0 / 500</span>
+      <button class="notes-clr" onclick="clearNotes()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="proj-list"></datalist>
+
 <div class="toast" id="toast"></div>
 
 <!-- PULL TO REFRESH indicator -->
@@ -1506,20 +722,10 @@
   </div>
 </div>
 
-<!-- ANNOUNCEMENT ADMIN BUTTON (fixed, bottom-left, only for Harshit) -->
-<button id="ann-admin-btn" onclick="openAnnModal()"
-  style="display:none;position:fixed;bottom:72px;left:16px;z-index:200;
-  padding:8px 14px;border-radius:20px;border:1.5px solid rgba(157,126,255,.4);
-  background:rgba(20,10,40,.85);backdrop-filter:blur(12px);
-  color:#a78bfa;font-family:var(--sans);font-size:12px;font-weight:700;
-  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);">
-  📣
-</button>
-
 <!-- ANNOUNCEMENT MODAL (admin only) -->
 <div class="ann-modal-overlay" id="ann-modal" onclick="if(event.target===this)closeAnnModal()">
   <div class="ann-modal">
-    <div class="ann-modal-title">📣 Post Announcement</div>
+    <div class="ann-modal-title">Post an announcement</div>
     <textarea class="ann-inp" id="ann-inp" placeholder="Type a message for the whole team..." maxlength="200"></textarea>
     <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right" id="ann-char">0/200</div>
     <div class="ann-modal-btns">
@@ -1529,7 +735,7 @@
     </div>
     <!-- Admin-only: manage who can broadcast -->
     <div class="ann-perm-section" id="ann-perm-section" style="display:none">
-      <div class="ann-perm-title">📣 Broadcast Access</div>
+      <div class="ann-perm-title">Who can post announcements</div>
       <div id="ann-perm-list"></div>
     </div>
   </div>
@@ -1539,7 +745,7 @@
 <div class="ann-history-overlay" id="ann-history-overlay" style="display:none" onclick="if(event.target===this)closeAnnHistory()">
   <div class="ann-history-sheet">
     <div class="ann-history-header">
-      <div class="ann-history-header-title">📣 Recent Announcements</div>
+      <div class="ann-history-header-title">Recent announcements</div>
       <button class="ann-history-close" onclick="closeAnnHistory()">Close</button>
     </div>
     <div class="ann-history-scroll" id="ann-history-list">
@@ -1551,7 +757,7 @@
 <!-- REMINDER MODAL -->
 <div class="reminder-modal" id="reminder-modal">
   <div class="reminder-box">
-    <div class="reminder-title">🔔 Set Reminder</div>
+    <div class="reminder-title">Set reminder</div>
     <div id="reminder-task-name" style="font-size:12px;color:var(--text2);margin-bottom:14px;font-weight:600;line-height:1.4;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--purple)"></div>
 
     <!-- Quick pick buttons -->
@@ -1573,8 +779,8 @@
 
     <div class="reminder-btns">
       <button class="reminder-cancel" onclick="closeReminderModal()">Cancel</button>
-      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">🗑 Remove</button>
-      <button class="reminder-set" onclick="confirmReminder()">✓ Set</button>
+      <button class="reminder-dismiss" id="reminder-dismiss-btn" onclick="dismissReminderNow()" style="display:none">Remove</button>
+      <button class="reminder-set" onclick="confirmReminder()">Set reminder</button>
     </div>
   </div>
 </div>
@@ -1608,17 +814,24 @@
 <script type="module">
 import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
+import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML } from './js/ui.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
 let calendarEvents = {}; // comms calendar events
-let todayStr = new Date().toISOString().slice(0,10); // date string, refreshed daily
+let todayStr = (() => { const d = new Date(), p = n => String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); })(); // local date, refreshed by renderAll
 let MY_NAME = localStorage.getItem('wd_myname') || '';
 let sprintTaskIds = new Set();
 let sprintOpen = true;
 const ADMIN_NAME = 'Harshit'; // Admin can mark anyone's tasks done
 let activeFilter = null; // 'total'|'inprog'|'done'|'critical'|'this-week'|'two-weeks'|null
 let activeDueFilter      = null; // 'today'|'this-week'|'two-weeks'|null
+// Home state
+let _meName = '', homeTab = 'mine', openFold = null, doneShown = 15, _sheetTaskId = null, _canBroadcast = false;
+const teamOpen = new Set();
+let _editPriority = {};   // { [taskId]: 'critical'|'high'|'medium'|'low' }
+let _openEditId = null;   // task whose edit form is open in the sheet
+const _editDraft = {};    // { [taskId]: { label?, project?, due? } } unsaved keystrokes
 
 // ── WEEKLY SPRINT ──────────────────────────────────────────────────────────
 // Per-user — stored on this person's own Firestore user doc (same doc as
@@ -1634,11 +847,16 @@ const SPRINT_MAX = 10;
 // counts done tasks too; this is the one place that distinction is made, and
 // every SPRINT_MAX check below calls this instead of reading .size directly
 // so the cap logic can't drift out of sync across the 4 places it's enforced.
-function activeSprintCount(idsSet) {
+function activeSprintCount(idsSet, name) {
+  const who = (name || _meName || MY_NAME || '').toLowerCase();
   let n = 0;
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
-    if (!t || t.status !== 'done') n++;
+    if (!t) { n++; continue; }
+    if (t.status === 'done') continue;
+    const m = (t.members || []).find(mm => (mm.name || '').trim().toLowerCase() === who);
+    if (m && getMemberStatus(t, m.id) === 'done') continue;   // my part is done
+    n++;
   }
   return n;
 }
@@ -1688,22 +906,15 @@ function saveSprint() {
 window.toggleSprintTask = (taskId) => {
   if (sprintTaskIds.has(taskId)) {
     sprintTaskIds.delete(taskId);
-    expandedTasks.delete(taskId);
     saveSprint(); renderAll(); toast('Removed from This Week');
   } else {
     if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
       toast('Sprint full — max ' + SPRINT_MAX + ' active tasks per week'); return;
     }
     sprintTaskIds.add(taskId);
-    expandedTasks.delete(taskId);
     if (navigator.vibrate) navigator.vibrate(10);
     saveSprint(); renderAll(); toast('🎯 Added to This Week!');
   }
-};
-
-window.toggleSprintPanel = () => {
-  sprintOpen = !sprintOpen;
-  renderMyTasks();
 };
 
 // ── ADMIN: manage OTHER people's "This Week" ────────────────────────────────
@@ -1738,7 +949,7 @@ async function loadMemberSprintCache() {
   }));
   memberSprintCache = Object.fromEntries(results);
   _memberSprintCacheLoaded = true;
-  renderByMember();
+  renderTeam(); refreshTaskSheet();
 }
 
 window.toggleMemberSprintTask = async (memberId, taskId) => {
@@ -1775,13 +986,13 @@ window.toggleMemberSprintTask = async (memberId, taskId) => {
   if (wasIn) {
     current.delete(taskId);
   } else {
-    if (activeSprintCount(current) >= SPRINT_MAX) {
+    if (activeSprintCount(current, memberName) >= SPRINT_MAX) {
       toast(memberName + "'s sprint is full — max " + SPRINT_MAX + " active"); return;
     }
     current.add(taskId);
   }
   memberSprintCache[key] = current; // optimistic local update
-  renderByMember();
+  renderTeam(); refreshTaskSheet();
 
   try {
     await saveUserData(memberName, { sprint: { week: wk, ids: [...current] } });
@@ -1790,7 +1001,7 @@ window.toggleMemberSprintTask = async (memberId, taskId) => {
     // Roll back the optimistic update if the write actually failed
     if (wasIn) current.add(taskId); else current.delete(taskId);
     memberSprintCache[key] = current;
-    renderByMember();
+    renderTeam(); refreshTaskSheet();
     toast('Could not update — try again');
   }
 };
@@ -1990,260 +1201,49 @@ onUserReady(async () => {
       loader.style.display = 'none';
       initNotes(); // init notes after DOM is visible and MY_NAME is set
       initSprint(); // load this user's personal "This Week" list and wire live sync
-      // Show broadcast button — check permission from Firestore
-      const adminBtn = document.getElementById('ann-admin-btn');
-      const isAdminUser = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
-      if (isAdminUser) {
-        // Admin always sees it
-        if (adminBtn) adminBtn.style.display = '';
-      } else if (MY_NAME) {
-        // Others: check broadcastEnabled flag
-        getUserData(MY_NAME.toLowerCase()).then(data => {
-          const allowed = data?.broadcastEnabled !== false; // default true
-          if (adminBtn) adminBtn.style.display = allowed ? '' : 'none';
-        });
+      // Who may post announcements (admin always; others unless switched off)
+      _canBroadcast = isAdminUser();
+      if (!_canBroadcast && MY_NAME) {
+        getUserData(MY_NAME.toLowerCase()).then(data => { _canBroadcast = data?.broadcastEnabled !== false; refreshProfile(); });
       }
-      // Show search bar for My Tasks tab
-      const sb = document.getElementById('search-bar');
-      if (sb) sb.style.display = '';
+      getStreak().then(st => { streakData = st; refreshProfile(); });
     }
   });
 });
 
 
-// ── WORLD CLOCK ────────────────────────────────────────────────────────────
+// ── WORLD CLOCK + DATE ──────────────────────────────────────────────────────
 function updateWorldClock() {
   const now = new Date();
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  function formatZone(tz) {
-    const t = new Date(now.toLocaleString('en-US', { timeZone: tz }));
-    const h = t.getHours(), m = t.getMinutes(), s = t.getSeconds();
-    const hh = String(h).padStart(2,'0');
-    const mm = String(m).padStart(2,'0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    const time = String(h12).padStart(2,'0') + ':' + mm + ' ' + ampm;
-    const date = days[t.getDay()] + ', ' + t.getDate() + ' ' + months[t.getMonth()];
-    return { time, date, h };
-  }
-
-  const ist = formatZone('Asia/Kolkata');
-  const ger = formatZone('Europe/Berlin');
-
-  const istTime = document.getElementById('wc-ist-time');
-  const istDate = document.getElementById('wc-ist-date');
-  const gerTime = document.getElementById('wc-ger-time');
-  const gerDate = document.getElementById('wc-ger-date');
-  const gerLabel = document.getElementById('wc-ger-label');
-
-  if (istTime) istTime.textContent = ist.time;
-  if (istDate) istDate.textContent = ist.date;
-  if (gerTime) gerTime.textContent = ger.time;
-  if (gerDate) gerDate.textContent = ger.date;
-
-  // Germany uses CET (UTC+1) in winter, CEST (UTC+2) in summer
-  if (gerLabel) {
-    const offset = new Date().toLocaleString('en-US', { timeZone:'Europe/Berlin', timeZoneName:'short' });
-    const tzName = offset.split(' ').pop();
-    gerLabel.textContent = (tzName || 'CET') + ' · Germany';
-  }
+  const hm = tz => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  const a = document.getElementById('wc-ist-time'), b = document.getElementById('wc-ger-time'), d = document.getElementById('today-line');
+  if (a) a.textContent = hm('Asia/Kolkata');
+  if (b) b.textContent = hm('Europe/Berlin');
+  if (d) d.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
+  const ds = localDateStr(now);
+  if (ds !== todayStr && tasks.length) renderAll();   // midnight rolled over: late/today change
 }
-
 updateWorldClock();
-setInterval(updateWorldClock, 30000); // update every 30s — no need for per-second
-// ── FILTER DROPDOWN ──────────────────────────────────────────────────────
-let _pendingFilter  = { type:null, value:null };
+setInterval(updateWorldClock, 30000);
 
-window.toggleFilterDrop = (e) => {
-  e.stopPropagation();
-  const drop = document.getElementById('filter-drop');
-  const btn  = document.getElementById('filter-btn');
-  const rect = btn.getBoundingClientRect();
-  drop.style.top = (rect.bottom + 8) + 'px';
-  drop.classList.toggle('open');
-};
-// Close on outside click
-document.addEventListener('click', () => {
-  document.getElementById('filter-drop')?.classList.remove('open');
-});
-
-window.selectFilter = (type, value, btn) => {
-  // Deselect all
-  document.querySelectorAll('.fd-opt').forEach(b =>
-    b.className = 'fd-opt'
-  );
-  // Select this one
-  const cls = type === 'due' ? 'sel-due' :
-    {critical:'sel-crit',high:'sel-high',medium:'sel-med',low:'sel-low'}[value] || 'sel-due';
-  btn.classList.add(cls);
-  _pendingFilter = { type, value };
-};
-
-window.applyFilter = () => {
-  if (!_pendingFilter.type) return;
-  activeDueFilter      = _pendingFilter.type === 'due'      ? _pendingFilter.value : null;
-  activePriorityFilter = _pendingFilter.type === 'priority' ? _pendingFilter.value : null;
-
-  // Show active pill
-  const labels = {
-    today:'Today', 'this-week':'This Week', 'two-weeks':'2 Weeks',
-    critical:'🔴 Critical', high:'🟠 High', medium:'🔵 Medium', low:'🟢 Low',
-  };
-  const pill = document.getElementById('filter-pill');
-  if (pill) { pill.textContent = (labels[_pendingFilter.value]||_pendingFilter.value) + ' ✕'; pill.style.display = ''; }
-  document.getElementById('filter-btn')?.classList.add('active');
-  document.getElementById('filter-drop')?.classList.remove('open');
-
-  // Clear stat filter
-  activeFilter = null;
-  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-
-  switchTab('mytasks', document.querySelector('.tab'));
-  renderMyTasks();
-};
-
-window.clearActiveFilter = () => {
-  activeDueFilter = activePriorityFilter = null;
-  _pendingFilter  = { type:null, value:null };
-  document.querySelectorAll('.fd-opt').forEach(b => b.className = 'fd-opt');
-  const pill = document.getElementById('filter-pill');
-  if (pill) pill.style.display = 'none';
-  document.getElementById('filter-btn')?.classList.remove('active');
-  renderMyTasks();
-};
-
-window.clearAllFilters = window.clearActiveFilter;
-window.filterByDue      = (v) => { _pendingFilter={type:'due',value:v};      applyFilter(); };
-window.filterByPriority = (v) => { _pendingFilter={type:'priority',value:v}; applyFilter(); };
-
-function renderAll() {
-  computeBadges();
-  renderStats(); renderMyTasks(); renderByMember(); renderFollowup(); renderGreeting();
-}
-
-
-// ── STATS FILTER ───────────────────────────────────────────────────────────
-
-window.filterTasks = (type) => {
-  if (activeFilter === type) {
-    // toggle off
-    activeFilter = null;
-    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-  } else {
-    activeFilter = type;
-    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-    document.getElementById('sp-' + (type === 'critical' ? 'crit' : type === 'total' ? 'total' : type)).classList.add('active-filter');
-    // Clear due and priority filters
-    activeDueFilter = null;
-    activePriorityFilter = null;
-    document.getElementById('due-today-btn')?.classList.remove('active');
-    document.getElementById('due-this-week-btn')?.classList.remove('active');
-    document.getElementById('due-two-weeks-btn')?.classList.remove('active');
-    ['critical','high','medium','low'].forEach(p => {
-      document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
-    });
-  }
-  // Switch to My Tasks tab to show filtered results
-  switchTab('mytasks', document.querySelector('.tab'));
-  renderMyTasks();
-};
-
-window.clearFilter = () => {
-  activeFilter = null;
-  activeDueFilter = null;
-  activePriorityFilter = null;
-  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
-  document.getElementById('due-today-btn')?.classList.remove('active');
-  document.getElementById('due-this-week-btn')?.classList.remove('active');
-  document.getElementById('due-two-weeks-btn')?.classList.remove('active');
-  ['critical','high','medium','low'].forEach(p => {
-    document.getElementById('pf-'+p)?.classList.remove('active-crit','active-high','active-med','active-low');
-  });
-  renderMyTasks();
-};
-
-// ── STATS ──────────────────────────────────────────────────────────────────
-function renderStats() {
-  // First real render — clear the skeleton shimmer. classList.remove is a
-  // no-op once already cleared, so no extra guard flag needed.
-  document.querySelectorAll('.stat-pill.skel').forEach(el => el.classList.remove('skel'));
-  // Exclude individual tasks from all stats and progress bar
-  const mbcTasks = tasks.filter(t => (t.taskType||'mbc') === 'mbc');
-  const total = mbcTasks.length;
-  const done  = mbcTasks.filter(t => t.status === 'done').length;
-  const inprog = mbcTasks.filter(t => t.status === 'inprog' || t.status === 'onhold').length;
-  const crit  = mbcTasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
-  const pct   = total ? Math.round(done / total * 100) : 0;
-  set('s-total', total); set('s-inprog', inprog); set('s-done', done); set('s-crit', crit);
-  set('prog-pct', pct + '%');
-  document.getElementById('prog-fill').style.width = pct + '%';
-
-  // Update due filter counts (my tasks only, not done)
-  const myActiveTasks = tasks.filter(t =>
-    t.status !== 'done' &&
-    (t.members||[]).some(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase())
-  );
-  const _n2 = new Date(), _p2 = n => String(n).padStart(2,'0');
-  const _ts = `${_n2.getFullYear()}-${_p2(_n2.getMonth()+1)}-${_p2(_n2.getDate())}`;
-  const _w  = new Date(_n2); _w.setDate(_w.getDate()+7);
-  const _ws = `${_w.getFullYear()}-${_p2(_w.getMonth()+1)}-${_p2(_w.getDate())}`;
-  const _2w = new Date(_n2); _2w.setDate(_2w.getDate()+14);
-  const _2ws= `${_2w.getFullYear()}-${_p2(_2w.getMonth()+1)}-${_p2(_2w.getDate())}`;
-  const todayCount     = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate<=_ts).length;
-  const thisWeekCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_ws).length;
-  const twoWeeksCount  = myActiveTasks.filter(t=>t.taskDueDate && t.taskDueDate>=_ts && t.taskDueDate<=_2ws).length;
-  const tc   = document.getElementById('due-today-count');
-  const twc  = document.getElementById('due-this-week-count');
-  const ttwc = document.getElementById('due-two-weeks-count');
-  if (tc)   tc.textContent   = todayCount;
-  if (twc)  twc.textContent  = thisWeekCount;
-  if (ttwc) ttwc.textContent = twoWeeksCount;
-
-  // Priority counts (my active tasks only)
-  const prioCounts = { critical:0, high:0, medium:0, low:0 };
-  myActiveTasks.forEach(t => { const p = t.priority||'medium'; if(prioCounts[p]!==undefined) prioCounts[p]++; });
-  const pc = document.getElementById('prio-crit-count');
-  const ph = document.getElementById('prio-high-count');
-  const pm = document.getElementById('prio-med-count');
-  const pl = document.getElementById('prio-low-count');
-  if(pc) pc.textContent = prioCounts.critical;
-  if(ph) ph.textContent = prioCounts.high;
-  if(pm) pm.textContent = prioCounts.medium;
-  if(pl) pl.textContent = prioCounts.low;
-}
-
-// Search/priority/status/due filters, as one predicate. Previously this logic
-// was inlined only in renderMyTasks()'s main taskList pipeline — the Sprint
-// section built its card list straight from sprintTaskIds with no filtering
-// at all, so searching (or any other filter) left Sprint showing everything
-// regardless of match. That's what made it look like "on-hold tasks aren't
-// showing up when searched": a matching on-hold task that was ALSO pinned to
-// "This Week" would show, unfiltered, up in Sprint, while search correctly
-// hid everything else — so the one visible copy was in the wrong section,
-// displaying regardless of whether it actually matched. Single source of
-// truth now; both call sites below use this.
+// ── refine filters (search box + filter chips) ─────────────────────────────
 function matchesRefineFilters(t) {
   if (activePriorityFilter && (t.priority || 'medium') !== activePriorityFilter) return false;
   if (activeStatusFilter && t.status !== activeStatusFilter) return false;
   if (activeDueFilter) {
-    const _today = new Date();
-    const _pad = n => String(n).padStart(2, '0');
-    const _ts = `${_today.getFullYear()}-${_pad(_today.getMonth() + 1)}-${_pad(_today.getDate())}`;
     if (t.status === 'done' || !t.taskDueDate) return false;
+    const ts = localDateStr();
     if (activeDueFilter === 'today') {
-      if (t.taskDueDate > _ts) return false;
+      if (t.taskDueDate > ts) return false;          // today and anything already late
     } else {
-      const _cutoff = new Date(_today);
-      _cutoff.setDate(_cutoff.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
-      const _cutoffStr = `${_cutoff.getFullYear()}-${_pad(_cutoff.getMonth() + 1)}-${_pad(_cutoff.getDate())}`;
-      if (t.taskDueDate > _cutoffStr) return false;
+      const cut = new Date(); cut.setDate(cut.getDate() + (activeDueFilter === 'this-week' ? 7 : 14));
+      if (t.taskDueDate > localDateStr(cut)) return false;
     }
   }
   if (searchQuery) {
-    const hit = t.label.toLowerCase().includes(searchQuery) ||
-      (t.members || []).some(m => m.name.toLowerCase().includes(searchQuery)) ||
+    const hit = (t.label || '').toLowerCase().includes(searchQuery) ||
+      (t.project || '').toLowerCase().includes(searchQuery) ||
+      (t.members || []).some(m => (m.name || '').toLowerCase().includes(searchQuery)) ||
       (t.priority || '').toLowerCase().includes(searchQuery) ||
       (t.status || '').toLowerCase().includes(searchQuery);
     if (!hit) return false;
@@ -2251,868 +1251,546 @@ function matchesRefineFilters(t) {
   return true;
 }
 
-// ── MY TASKS ───────────────────────────────────────────────────────────────
-function renderMyTasks() {
-  const el = document.getElementById('my-tasks-list');
+function renderAll() {
+  todayStr = localDateStr();
+  resolveMeName();
+  computeBadges();
+  renderMeButton();
+  renderFilterChips();
+  renderMine();
+  renderTeam();
+  refreshTaskSheet();
+  refreshProfile();
+}
 
-  // Build sprint section. sprintCount/sprintDone/donePct intentionally stay
-  // based on the FULL sprint list (not filtered) — "6/10 this week" should
-  // reflect your actual sprint capacity regardless of what you're currently
-  // searching for. Only which CARDS are shown is filtered.
-  const sprintTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status !== 'done');
-  // In-progress tasks bubble to the top of the sprint list — the point of
-  // "This Week" is to know what's actively moving; a stable sort keeps
-  // everything else in its existing relative order, it just pulls inprog
-  // ones to the front.
-  sprintTasks.sort((a, b) => (a.status === 'inprog' ? 0 : 1) - (b.status === 'inprog' ? 0 : 1));
-  const sprintTasksVisible = sprintTasks.filter(matchesRefineFilters);
-  // Full task list for done sprint tasks — previously only a count
-  // (sprintDone) existed. Kept sprintDone/sprintCount as plain numbers too
-  // since the header's progress bar still wants them as counts, not arrays.
-  const sprintDoneTasks = tasks.filter(t => sprintTaskIds.has(t.id) && t.status === 'done');
-  const sprintDoneTasksVisible = sprintDoneTasks.filter(matchesRefineFilters);
-  const sprintDone  = sprintDoneTasks.length;
-  const sprintCount = sprintTaskIds.size; // total ever pinned this week (active + done) — used only for the "X/Y done" progress bar below, NOT the capacity cap
-  const isFull = sprintTasks.length >= SPRINT_MAX; // capacity cap counts ACTIVE tasks only — completing one frees a slot
-  const donePct = sprintCount > 0 ? Math.round(sprintDone / sprintCount * 100) : 0;
+// ═════════════════════════════════════════════════════════════════════════
+// HOME — "This week": Mine / Team, task sheet, profile sheet
+//
+// One list shape for everything: a status glyph, a title, a meta line and a
+// due label. Shape is status (empty ring = to do, half = in progress, dashed =
+// on hold, filled tick = done); colour is the project; "late" is the only
+// thing that gets the red pen (Light) or the lightest pill (Dark).
+// State variables (_meName, homeTab, openFold, …) are declared up with the
+// other top-level `let`s so nothing here can hit a temporal-dead-zone error.
+// ═════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const WD_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PRIO_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+const PRIO_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+const isAdminUser = () => !!MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
 
-  // Monday date for next reset
-  const nextMon = new Date();
-  const daysUntilMon = (7 - nextMon.getDay() + 1) % 7 || 7;
-  nextMon.setDate(nextMon.getDate() + daysUntilMon);
-  const resetStr = nextMon.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'});
+// ── dates ──────────────────────────────────────────────────────────────────
+function localDateStr(d = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+// whole days from today to a YYYY-MM-DD string (negative = in the past)
+function dayDiff(dateStr) {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const now = new Date();
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+}
+function dateParts(dateStr) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d); }
+function dueLabel(dateStr) {
+  const diff = dayDiff(dateStr);
+  if (diff == null) return '';
+  if (diff < 0) return (-diff) + (diff === -1 ? ' day late' : ' days late');
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  const d = dateParts(dateStr);
+  if (diff <= 6) return WD_NAMES[d.getDay()] + ' ' + d.getDate();
+  return d.getDate() + ' ' + MON_NAMES[d.getMonth()];
+}
+function longDate(dateStr) {
+  const d = dateParts(dateStr);
+  return WD_NAMES[d.getDay()] + ' ' + d.getDate() + ' ' + MON_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+}
 
-  const sprintHTML = `<div class="sprint-section">
-    <div class="sprint-hd" onclick="toggleSprintPanel()">
-      <div class="sprint-icon">🎯</div>
-      <div class="sprint-title">This Week's Sprint</div>
-      <span class="sprint-count${isFull?' full':''}">${sprintTasks.length} / ${SPRINT_MAX}</span>
-      <span class="sprint-arrow${sprintOpen?' open':''}">▾</span>
-    </div>
-    <div class="sprint-body${sprintOpen?' open':''}">
-      <div class="sprint-progress">
-        <div class="sprint-bar-bg">
-          <div class="sprint-bar-fill${isFull?' full':''}" style="width:${donePct}%"></div>
-        </div>
-        <div class="sprint-bar-label">${sprintDone}/${sprintCount} done</div>
-      </div>
-      ${sprintTasks.length === 0
-        ? (sprintDone === 0
-            ? '<div class="sprint-empty">No tasks yet — expand any task and tap ＋ This Week to add it</div>'
-            : '') /* everything in the sprint is done — nothing to show here, the Done sub-section below covers it */
-        : (sprintTasksVisible.length === 0
-            ? `<div class="sprint-empty">No sprint tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`
-            : sprintTasksVisible.map((t,i) => myTaskCard(t, i)).join(''))
-      }
-      ${sprintDoneTasks.length ? `
-      <div class="done-section-toggle" onclick="event.stopPropagation();toggleSprintDoneSection()" id="sprint-done-toggle" style="margin-top:10px">
-        <span>✅ Done This Week (${sprintDoneTasks.length})</span>
-        <span class="done-section-arrow" id="sprint-done-arrow">▼</span>
-      </div>
-      <div class="done-section-body" id="sprint-done-body">
-        ${sprintDoneTasksVisible.length
-          ? sprintDoneTasksVisible.map((t,i) => myTaskCard(t, i)).join('')
-          : `<div class="sprint-empty">No done tasks match ${searchQuery ? 'your search' : 'this filter'}</div>`}
-      </div>` : ''}
-      ${sprintCount > 0 ? `<div class="sprint-reset">Resets ${resetStr}</div>` : ''}
-    </div>
+// ── who am I, and which tasks are mine ─────────────────────────────────────
+// Task data stores member NAMES, and people have typed their name on the
+// welcome screen in slightly different ways ("Harsh", "harshit"), so match the
+// way the old dashboard did: exact, or either name starts with the other.
+function resolveMeName() {
+  if (!MY_NAME) { _meName = ''; return; }
+  const k = MY_NAME.trim().toLowerCase();
+  const names = new Set(tasks.flatMap(t => (t.members || []).map(m => (m.name || '').trim().toLowerCase())).filter(Boolean));
+  const hit = [...names].find(n => n === k) || [...names].find(n => n.startsWith(k) || k.startsWith(n));
+  _meName = hit || k;
+}
+const sameName = (a, b) => !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+const isMe = name => !!_meName && sameName(name, _meName);
+const myMemberOf = t => (t.members || []).find(m => isMe(m.name));
+const unassignedIndividual = t => t.taskType === 'individual' && !(t.members || []).length;
+const isMine = t => !!myMemberOf(t) || unassignedIndividual(t);
+function myPartStatus(t) { const m = myMemberOf(t); return m ? getMemberStatus(t, m.id) : (t.status || 'todo'); }
+const myPartDone = t => t.status === 'done' || myPartStatus(t) === 'done';
+function glyphStatusFor(t, status) {
+  if (status === 'done' || t.status === 'done') return 'done';
+  if (t.status === 'onhold' || status === 'onhold') return 'onhold';
+  return status || 'todo';
+}
+const myGlyph = t => glyphStatusFor(t, myPartStatus(t));
+
+// project colour: stable pick from the four project hues (glyphs and dots only)
+function projHue(name) {
+  if (!name) return 'var(--text2)';
+  let h = 0; for (const c of String(name).toLowerCase()) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return ['var(--hue-blue)', 'var(--hue-amber)', 'var(--hue-fern)', 'var(--hue-violet)'][Math.abs(h) % 4];
+}
+function othersText(t, viewerName) {
+  const others = (t.members || []).filter(m => !sameName(m.name, viewerName)).map(m => m.name);
+  if (!others.length) return '';
+  return 'with ' + (others.length <= 2 ? others.join(' and ') : others[0] + ' and ' + (others.length - 1) + ' others');
+}
+function metaText(t, viewerName) {
+  const base = t.project || 'No project';
+  const w = othersText(t, viewerName);
+  return w ? base + ', ' + w : base;
+}
+function urgencyClass(glyph, t) {
+  if (glyph === 'done') return 'u-done';
+  if (glyph === 'onhold') return 'u-hold';
+  const diff = dayDiff(t.taskDueDate);
+  if (diff != null && diff < 0) return 'u-late';
+  if (diff === 0) return 'u-today';
+  return 'u-later';
+}
+const byDue = (a, b) => (a.taskDueDate || '9999-12-31').localeCompare(b.taskDueDate || '9999-12-31')
+  || (PRIO_ORDER[a.priority || 'medium'] - PRIO_ORDER[b.priority || 'medium']);
+const byUrgency = (a, b) => {
+  const rank = t => { const g = myGlyph(t); return g === 'done' ? 3 : g === 'onhold' ? 2 : 0; };
+  return (rank(a) - rank(b)) || byDue(a, b);
+};
+function doneTime(t) {
+  const c = t.completedAt;
+  if (!c) return 0;
+  if (typeof c.toDate === 'function') return c.toDate().getTime();
+  const v = new Date(c).getTime();
+  return isNaN(v) ? 0 : v;
+}
+
+// ── a task row (same markup in both skins) ─────────────────────────────────
+function taskRowHTML(t) {
+  const g = myGlyph(t);
+  const label = g === 'done' ? '' : dueLabel(t.taskDueDate);
+  const tapLabel = g === 'done' ? 'Reopen my part' : 'Mark my part done';
+  return `<div class="wd-task ${urgencyClass(g, t)}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
+      onclick="openTaskSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTaskSheet('${t.id}')}">
+    <button type="button" class="wd-g g" aria-label="${tapLabel}: ${esc(t.label)}" onclick="event.stopPropagation();tapGlyph('${t.id}')">${glyphSVG(g)}</button>
+    <div class="tt">${esc(t.label)}</div>
+    <div class="meta">${esc(metaText(t, _meName))}</div>
+    <div class="due">${esc(label)}</div>
   </div>`;
-  const banner = sprintHTML;
-
-  // Get base task list — if filter active show ALL tasks in that filter, not just mine
-  let taskList;
-  if (activeFilter && activeFilter !== 'total') {
-    if (activeFilter === 'inprog') taskList = tasks.filter(t => t.status === 'inprog');
-    else if (activeFilter === 'done') taskList = tasks.filter(t => t.status === 'done');
-    else if (activeFilter === 'critical') taskList = tasks.filter(t => t.priority === 'critical' && t.status !== 'done');
-  } else if (activeFilter === 'total') {
-    taskList = [...tasks];
-  } else {
-    if (MY_NAME) {
-      const myNameClean = MY_NAME.trim().toLowerCase();
-      // Find best matching member name from actual task data
-      const allMemberNames = [...new Set(
-        tasks.flatMap(t => (t.members||[]).map(m => (m.name||'').trim()))
-      )];
-      const matchedName = allMemberNames.find(n =>
-        n.toLowerCase() === myNameClean ||
-        n.toLowerCase().startsWith(myNameClean) ||
-        myNameClean.startsWith(n.toLowerCase())
-      );
-      const nameToUse = matchedName || MY_NAME.trim();
-      const myTasks = tasks.filter(t => {
-        if ((t.members||[]).some(m => (m.name||'').trim().toLowerCase() === nameToUse.toLowerCase())) return true;
-        if (t.taskType === 'individual' && (!t.members || t.members.length === 0)) return true;
-        return false;
-      });
-      taskList = myTasks.length > 0 ? myTasks : tasks;
-    } else {
-      taskList = tasks;
-    }
-  }
-
-  // Easter egg triggers — navigate after brief delay. Checked before the
-  // shared predicate since it's keyed off the raw searchQuery, not a task match.
-  const _easterEggs = { quiz:'quiz.html', snake:'snake.html', space:'space.html' };
-  if (_easterEggs[searchQuery]) {
-    setTimeout(() => { window.location.href = _easterEggs[searchQuery]; }, 120);
-    return;
-  }
-
-  // Priority / status / due / search — same predicate the Sprint section
-  // above uses, so the two can never drift out of sync again.
-  taskList = taskList.filter(matchesRefineFilters);
-
-  // Filter banner
-  const filterLabels = { total: 'All Tasks', inprog: 'In Progress', done: 'Done', critical: 'Critical' };
-  const filterBanner = activeFilter
-    ? `<div class="filter-banner">
-        Showing: ${filterLabels[activeFilter]} (${taskList.length})
-        <button class="filter-clear" onclick="clearFilter()">✕ Clear</button>
-       </div>`
-    : '';
-
-  if (!taskList.length) {
-    const _hasFilter = activeFilter || activeDueFilter || activePriorityFilter || activeStatusFilter || searchQuery;
-    if (_hasFilter) {
-      el.innerHTML = banner + `<div class="empty">
-        <div class="ei">🔍</div>
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">No tasks match this filter</div>
-        <button onclick="clearAllFilters();clearSearch()"
-          style="padding:8px 20px;border-radius:20px;border:1.5px solid var(--neon);
-          background:rgba(10,132,255,.08);color:var(--neon);font-family:var(--sans);
-          font-size:12px;font-weight:700;cursor:pointer">✕ Clear Filter</button>
-      </div>`;
-    } else {
-      const _emptyMsg = MY_NAME ? 'Nothing on your plate right now, ' + esc(MY_NAME) + ' 🎉' : 'No tasks yet — add one in the Input tab';
-      el.innerHTML = sprintHTML + '<div class="empty"><div class="ei">◈</div>' + _emptyMsg + '</div>';
-    }
-    return;
-  }
-
-  const po = {critical:0,high:1,medium:2,low:3}, so = {inprog:0,todo:1,onhold:2,done:3};
-  const _n = new Date(), _p = n => String(n).padStart(2,'0');
-  const now16 = `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}`;
-  const todayStr = new Date().toISOString().slice(0,10);
-  const sorted = [...taskList].sort((a,b) => {
-    // 1st: overdue tasks that aren't done (pin to top)
-    const aOverdue = a.taskDueDate && a.taskDueDate < todayStr && a.status !== 'done' ? -1 : 0;
-    const bOverdue = b.taskDueDate && b.taskDueDate < todayStr && b.status !== 'done' ? -1 : 0;
-    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-    // 2nd: tasks due today that aren't done
-    const aDueToday = a.taskDueDate === todayStr && a.status !== 'done' ? -1 : 0;
-    const bDueToday = b.taskDueDate === todayStr && b.status !== 'done' ? -1 : 0;
-    if (aDueToday !== bDueToday) return aDueToday - bDueToday;
-    // 2nd: tasks with active reminders due now
-    const aRem = a.reminder?.active && `${a.reminder.date}T${a.reminder.time}` <= now16 ? -1 : 0;
-    const bRem = b.reminder?.active && `${b.reminder.date}T${b.reminder.time}` <= now16 ? -1 : 0;
-    if (aRem !== bRem) return aRem - bRem;
-    // 3rd: status + priority
-    return (so[a.status]??1)-(so[b.status]??1)||(po[a.priority]??2)-(po[b.priority]??2);
-  });
-  // Build comms cards from calendar for this user
-  const myCommsCards = [];
-  Object.entries(calendarEvents).forEach(([date, evts]) => {
-    if (!Array.isArray(evts)) return;
-    evts.forEach(ev => {
-      if (!ev.people) return;
-      const people = ev.people.split(',').map(p => p.trim().toLowerCase());
-      const isMe = MY_NAME && people.some(p => p === MY_NAME.toLowerCase());
-      if (!isMe) return;
-      if (ev.status === 'Sent') return; // done — hide from My Tasks
-      // Show if today or upcoming (within 7 days) or overdue
-      const daysFromToday = Math.ceil((new Date(date) - new Date(todayStr)) / 86400000);
-      if (daysFromToday > 7) return; // too far in future
-      myCommsCards.push({ date, daysFromToday, ev });
-    });
-  });
-
-  // Sort: overdue first, then today, then upcoming
-  myCommsCards.sort((a,b) => a.daysFromToday - b.daysFromToday);
-
-  const commsHTML = myCommsCards.length ? `
-    <div class="comms-section-label">📡 Communications</div>
-    ${myCommsCards.map(({date, daysFromToday, ev}) => {
-      const st = ev.status || 'Planned';
-      const stClass = 'comms-status-' + st.toLowerCase();
-      const stIcon = st === 'Sent' ? '✅' : st === 'Delayed' ? '⚠️' : '🔵';
-      const dateLabel = daysFromToday < 0 ? `Overdue by ${Math.abs(daysFromToday)}d`
-                      : daysFromToday === 0 ? 'Today'
-                      : `In ${daysFromToday}d · ${date}`;
-      return `<div class="comms-card" onclick="window.open('calendar.html','_self')">
-        <div class="comms-card-left">
-          <div class="comms-card-type">${esc(ev.type||'Comms')}</div>
-          <div class="comms-card-subject">${esc(ev.subject)}</div>
-          <div class="comms-card-meta">
-            📅 ${dateLabel} &nbsp;·&nbsp; <span class="${stClass}">${stIcon} ${st}</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('')}
-    <div class="comms-section-label">📋 Tasks</div>
-  ` : '';
-
-  // Split into active, on-hold, and done
-  const activeTasks = sorted.filter(t => t.status !== 'done' && t.status !== 'onhold');
-  const onholdTasks = sorted.filter(t => t.status === 'onhold');
-  const doneTasks   = sorted.filter(t => t.status === 'done');
-
-  // Group done tasks by month
-  const doneByMonth = {};
-  doneTasks.forEach(t => {
-    const key = t.month || 'Unknown';
-    if (!doneByMonth[key]) doneByMonth[key] = [];
-    doneByMonth[key].push(t);
-  });
-
-  const doneMonthKeys = Object.keys(doneByMonth).sort((a,b) => b.localeCompare(a));
-  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fmtMonthKey(key) {
-    const [y,m] = key.split('-');
-    return m ? MONTH_NAMES[parseInt(m)-1] + ' ' + y : key;
-  }
-
-  const doneHTML = doneTasks.length ? `
-    <div class="done-section-toggle" onclick="toggleDoneSection()" id="done-toggle">
-      <span>✅ Done (${doneTasks.length})</span>
-      <span class="done-section-arrow" id="done-arrow">▼</span>
-    </div>
-    <div class="done-section-body" id="done-body">
-      ${doneMonthKeys.map((key, mi) => `
-        <div class="done-month-toggle" onclick="toggleDoneMonth('dm-${mi}')" id="dm-toggle-${mi}">
-          <span>${fmtMonthKey(key)} · ${doneByMonth[key].length} task${doneByMonth[key].length>1?'s':''}</span>
-          <span class="done-month-arrow" id="dm-arrow-${mi}">▼</span>
-        </div>
-        <div class="done-month-body" id="dm-${mi}">
-          ${doneByMonth[key].map((t,i) => myTaskCard(t, i)).join('')}
-        </div>
-      `).join('')}
-    </div>
-  ` : '';
-
-  try {
-    // On Hold section
-  const onholdHTML = onholdTasks.length ? `
-    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
-      <span style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.1em">⏸ On Hold</span>
-      <span style="font-size:10px;color:var(--text3);font-weight:600">${onholdTasks.length}</span>
-    </div>
-    ${onholdTasks.map((t,i) => myTaskCard(t, i)).join('')}
-  ` : '';
-
-  // innerHTML destroys every node, which also drops focus and caret position.
-  // _editDraft preserves the *values*; this preserves where the user was typing,
-  // so a teammate's change syncing in mid-sentence no longer kicks you out of
-  // the field. Snapshot before, restore after.
-  const _focusSnap = _captureEditFocus();
-  try {
-    el.innerHTML = sprintHTML + filterBanner + commsHTML + activeTasks.map((t,i) => myTaskCard(t, i)).join('') + onholdHTML + doneHTML;
-  } catch(err) {
-    el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">Render error: ${err.message}</div>`;
-  }
-  _restoreEditFocus(_focusSnap);
-  _firstPaintDone = true;
-  } catch(err) {
-    el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;font-family:var(--mono)">
-      Render error: ${err.message}<br>
-      Tasks loaded: ${tasks.length}<br>
-      Active: ${activeTasks.length}
-    </div>`;
-  }
 }
+const rowsHTML = list => `<div class="wd-tasks">${list.map(taskRowHTML).join('')}</div>`;
+const groupHTML = (title, list, cls = '') => list.length
+  ? `<div class="wd-gh ${cls}"><span>${title}</span><span>${list.length}</span></div>${rowsHTML(list)}` : '';
 
-// Track which task rows are expanded
-const expandedTasks = new Set();
-// Task ids whose entry animation has already played this session. Cards render
-// with .fi only on first mount — see myTaskCard(). Not persisted: a page reload
-// should animate the list in again, a background sync should not.
-const _animatedCards = new Set();
-// True once the initial task list has painted. Gates the entry stagger so it
-// only runs on first load, not for tasks arriving later over the live listener.
-let _firstPaintDone = false;
+// ── MINE ───────────────────────────────────────────────────────────────────
+const EASTER_EGGS = { quiz: 'quiz.html', snake: 'snake.html', space: 'space.html' };
+const anyRefine = () => !!(searchQuery || activeDueFilter || activePriorityFilter || activeStatusFilter);
 
-// ── INLINE EDIT STATE ──
-// Declared here (not next to the edit handlers further down) because
-// myTaskCard() renders from it, and myTaskCard is defined above those handlers.
-// Keeping render state together also avoids the temporal-dead-zone trap
-// documented in CLAUDE.md.
-let _editPriority = {};   // { [taskId]: 'critical'|'high'|'medium'|'low' }
-let _openEditId = null;   // taskId of the currently open editor, or null
-const _editDraft = {};    // { [taskId]: { label?, project?, due? } } — unsaved keystrokes
-
-// Snapshot which edit field has focus + the caret position, so renderMyTasks()
-// can put the user back exactly where they were after an innerHTML rebuild.
-function _captureEditFocus() {
-  const a = document.activeElement;
-  if (!a || !a.id || !/^edit-(label|project|due)-/.test(a.id)) return null;
-  // selectionStart throws on input[type=date] in some browsers — guard it.
-  let start = null, end = null;
-  try { start = a.selectionStart; end = a.selectionEnd; } catch(e) {}
-  return { id: a.id, start, end };
-}
-function _restoreEditFocus(snap) {
-  if (!snap) return;
-  const el = document.getElementById(snap.id);
+function renderMine() {
+  const el = $('home-mine');
   if (!el) return;
-  el.focus({ preventScroll: true });
-  if (snap.start != null) {
-    try { el.setSelectionRange(snap.start, snap.end); } catch(e) {}
+  if (EASTER_EGGS[searchQuery]) { setTimeout(() => { window.location.href = EASTER_EGGS[searchQuery]; }, 120); return; }
+  const mine = tasks.filter(isMine);
+
+  // searching / filtering: one flat list across everything of mine
+  if (anyRefine()) {
+    const hits = mine.filter(matchesRefineFilters).sort(byUrgency);
+    el.innerHTML = `<div class="wd-results-head"><span>${hits.length} ${hits.length === 1 ? 'result' : 'results'}</span>
+        <button type="button" class="wd-link" onclick="clearSearchAndFilters()">Clear</button></div>` +
+      (hits.length ? rowsHTML(hits.slice(0, 60))
+        : `<div class="wd-empty"><b>No tasks match</b>Try a different word, or clear the filters.</div>`);
+    return;
   }
+
+  const open = mine.filter(t => !myPartDone(t));
+  const inWeek = open.filter(t => sprintTaskIds.has(t.id) && t.status !== 'onhold');
+  const late = inWeek.filter(t => dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) < 0).sort(byDue);
+  const today = inWeek.filter(t => dayDiff(t.taskDueDate) === 0).sort(byDue);
+  const later = inWeek.filter(t => !(dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) <= 0)).sort(byDue);
+  const backlog = open.filter(t => !sprintTaskIds.has(t.id) && t.status !== 'onhold').sort(byDue);
+  const onhold = open.filter(t => t.status === 'onhold').sort(byDue);
+  const done = mine.filter(myPartDone).sort((a, b) => doneTime(b) - doneTime(a));
+
+  // summary line + sprint ring
+  const used = activeSprintCount(sprintTaskIds);
+  const bits = [];
+  if (late.length) bits.push(`<b class="late">${late.length} late</b>`);
+  if (today.length) bits.push(`${today.length} due today`);
+  let headline;
+  if (bits.length) headline = bits.join(', ');
+  else if (inWeek.length) headline = 'Nothing due today';
+  else if (backlog.length) headline = 'Plan your week';
+  else headline = open.length || done.length ? 'All clear' : 'Nothing assigned yet';
+  const sub = used >= SPRINT_MAX ? `Week is full, ${used} of ${SPRINT_MAX} slots in use`
+    : `${used} of ${SPRINT_MAX} week slots in use`;
+  const summary = `<div class="wd-sum"><div><div class="t">${headline}</div><div class="s">${sub}</div></div>${ringHTML(used / SPRINT_MAX * 100, 46, 4, String(used))}</div>`;
+
+  // groups
+  let body = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later this week', later);
+  if (!inWeek.length) {
+    body = backlog.length
+      ? `<div class="wd-empty"><b>Your week is empty</b>Open Backlog below and add the tasks you want to finish this week.</div>`
+      : `<div class="wd-empty"><b>${done.length ? 'Everything is done' : 'No tasks yet'}</b>${done.length ? 'Nice work. New tasks you are assigned will show up here.' : 'Tasks you are assigned will show up here.'}</div>`;
+  }
+
+  // folded lists
+  const folds = [
+    { id: 'backlog', label: 'Backlog', list: backlog, show: true },
+    { id: 'onhold', label: 'On hold', list: onhold, show: onhold.length > 0 },
+    { id: 'done', label: 'Done', list: done, show: done.length > 0 },
+  ].filter(f => f.show);
+  if (openFold && !folds.some(f => f.id === openFold)) openFold = null;
+  const chips = `<div class="wd-folds">${folds.map(f =>
+    `<button type="button" class="wd-fchip${openFold === f.id ? ' on' : ''}" aria-expanded="${openFold === f.id}" onclick="toggleFold('${f.id}')">${f.label} <b>${f.list.length}</b></button>`).join('')}</div>`;
+  let foldBody = '';
+  const of = folds.find(f => f.id === openFold);
+  if (of) {
+    const shown = of.id === 'done' ? of.list.slice(0, doneShown) : of.list;
+    foldBody = `<div class="wd-fold-body">${of.list.length ? rowsHTML(shown) : `<div class="wd-empty">Nothing here.</div>`}` +
+      (of.id === 'done' && of.list.length > doneShown ? `<div style="text-align:center"><button type="button" class="wd-link" onclick="showMoreDone()">Show more (${of.list.length - doneShown})</button></div>` : '') + '</div>';
+  }
+  el.innerHTML = summary + body + chips + foldBody;
 }
 
-let _doneOpen = false;
-window.toggleDoneSection = () => {
-  _doneOpen = !_doneOpen;
-  const body  = document.getElementById('done-body');
-  const arrow = document.getElementById('done-arrow');
-  if (body)  body.classList.toggle('open', _doneOpen);
-  if (arrow) arrow.classList.toggle('open', _doneOpen);
-};
-let _sprintDoneOpen = false;
-window.toggleSprintDoneSection = () => {
-  _sprintDoneOpen = !_sprintDoneOpen;
-  const body  = document.getElementById('sprint-done-body');
-  const arrow = document.getElementById('sprint-done-arrow');
-  if (body)  body.classList.toggle('open', _sprintDoneOpen);
-  if (arrow) arrow.classList.toggle('open', _sprintDoneOpen);
-};
-const _doneMonthOpen = {};
-window.toggleDoneMonth = (id) => {
-  _doneMonthOpen[id] = !_doneMonthOpen[id];
-  const body  = document.getElementById(id);
-  const arrow = document.getElementById('dm-arrow-' + id.replace('dm-',''));
-  if (body)  body.classList.toggle('open', _doneMonthOpen[id]);
-  if (arrow) arrow.classList.toggle('open', _doneMonthOpen[id]);
-};
+window.toggleFold = (id) => { openFold = openFold === id ? null : id; if (id !== 'done') doneShown = 15; renderMine(); };
+window.showMoreDone = () => { doneShown += 20; renderMine(); };
 
-window.toggleTaskExpand = (id) => {
-  if (expandedTasks.has(id)) expandedTasks.delete(id);
-  else expandedTasks.add(id);
-  const isOpen = expandedTasks.has(id);
-
-  // A task can legitimately render more than once — e.g. it's on-hold AND
-  // also pinned to "This Week", so it appears in both the Sprint section and
-  // the On Hold section, sharing the same trc-/trx-/trd- ids. This used to
-  // call getElementById, which always resolves to the FIRST match in the
-  // document (the Sprint copy, since that section renders first) — so
-  // clicking a later copy silently expanded/collapsed the WRONG one; from
-  // the clicker's point of view, nothing happened where they clicked.
-  //
-  // Fix: sync EVERY copy sharing this id to the same open/closed state, not
-  // just one. querySelectorAll (not getElementById) on purpose — this also
-  // prevents two duplicate cards for the same task ending up visually
-  // disagreeing with each other (e.g. clicking the Sprint copy open, then
-  // the On Hold copy, would otherwise leave one open and one closed even
-  // though expandedTasks — the actual source of truth — only tracks one
-  // boolean per task id).
-  document.querySelectorAll('[id="trd-' + id + '"]').forEach(d => d.classList.toggle('open', isOpen));
-  document.querySelectorAll('[id="trx-' + id + '"]').forEach(b => b.classList.toggle('open', isOpen));
-
-  // Load comments into every copy that hasn't loaded them yet.
-  if (isOpen) {
-    document.querySelectorAll('[id="trd-' + id + '"]').forEach(detail => {
-      const commentContainer = detail.querySelector('[id^="comments-"]');
-      if (commentContainer && !commentContainer.dataset.loaded) {
-        commentContainer.dataset.loaded = '1';
-        renderCommentSection(id, commentContainer);
-      }
-    });
+// glyph tap = mark MY part done, with a way back
+window.tapGlyph = async (id) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  if (navigator.vibrate) navigator.vibrate(10);
+  const m = myMemberOf(t);
+  if (myPartDone(t)) {
+    if (m) await setMemberStatus(id, m.id, 'todo'); else await toggleIndividualDone(id, 'todo');
+    return;
   }
-};
-
-function myTaskCard(t, i) {
-  const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-  // 'onhold' was missing from both these maps — on-hold tasks have always
-  // rendered a literal `<span class="tag undefined">undefined</span>` status
-  // tag as a result (there was never a matching .t-onhold CSS class either).
-  const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
-  const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
-  const isDone = t.status === 'done';
-  const isInprog = t.status === 'inprog';
-  // Capacity check for the "This Week" button below — active tasks only,
-  // see activeSprintCount().
-  const _mySprintFull = activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
-  const isOnhold = t.status === 'onhold';
-  const statusClass = isDone ? 'status-done' : isInprog ? 'status-inprog' : isOnhold ? 'status-onhold' : '';
-  const isExpanded = expandedTasks.has(t.id);
-
-  const myMemberData = (t.members||[]).find(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase());
-  const myRespTask = myMemberData?.role || '';
-  // Use ID from task's own members array — same source as memberStatus keys
-  const myMemberId = myMemberData?.id || null;
-  // For individual tasks with no members, fall back to overall task status
-  const isIndividualNoMember = t.taskType === 'individual' && (!t.members || t.members.length === 0);
-  const myStatus = myMemberId ? getMemberStatus(t, myMemberId) : t.status;
-  const myIsDone = myStatus === 'done';
-  const others = (t.members||[]).filter(m => m.name.toLowerCase() !== (MY_NAME||'').toLowerCase());
-  const allNames = ['You', ...others.map(m => esc(m.name))].join(', ');
-  // Left accent color based on priority
-  const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
-
-  // Entry animation ONLY for cards this session hasn't shown before. Without
-  // this, every renderAll() (which fires on EVERY task change by ANY teammate,
-  // via onTasksChanged) replays the staggered fade-up for the entire list —
-  // so someone else marking a task done made your whole screen flicker.
-  //
-  // The stagger is deliberately limited to first paint: cascading the initial
-  // list in feels considered, but a single task arriving later should land
-  // immediately rather than inherit a queue delay of up to 360ms.
-  const isNew = !_animatedCards.has(t.id);
-  if (isNew) _animatedCards.add(t.id);
-  const delay = _firstPaintDone ? 0 : Math.min(i, 12) * .03;
-  const entryAnim = isNew ? ` class="fi" style="animation-delay:${delay}s"` : '';
-
-  return `
-    <div${entryAnim}>
-      <!-- COMPACT ROW -->
-      <div class="task-row-compact ${statusClass}${t.taskDueDate === todayStr && t.status !== 'done' ? ' due-today' : ''}" id="trc-${t.id}"
-        onclick="toggleTaskExpand('${t.id}')"
-        style="border-left:3px solid ${t.taskDueDate === todayStr && t.status !== 'done' ? 'var(--red)' : accentColor}">
-        <div class="trc-left">
-          <div class="trc-name">${esc(t.label)}</div>
-          <div class="trc-meta">
-            ${t.taskType === 'individual' ? '<span class="individual-badge">👤 Individual</span>' : ''}
-            ${t.project ? `<span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(157,126,255,.1);border:1px solid rgba(157,126,255,.2);padding:2px 6px;border-radius:4px;flex-shrink:0">${esc(t.project)}</span>` : ''}
-            <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
-            <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
-            ${t.taskDueDate && t.status !== 'done' ? (() => {
-              const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(todayStr)) / 86400000);
-              if (daysLeft < 0)  return '<span class="due-today-badge">⚠ Overdue</span>';
-              if (daysLeft === 0) return '<span class="due-today-badge">🔴 Due Today</span>';
-              if (daysLeft <= 3) return `<span class="due-soon-badge">⏰ ${daysLeft}d left</span>`;
-              return '';
-            })() : ''}
-            <span class="trc-members">· ${allNames}</span>
-          </div>
-        </div>
-        <div class="trc-expand${isExpanded?' open':''}" id="trx-${t.id}">▾</div>
-      </div>
-
-      <!-- EXPANDED DETAIL -->
-      <div class="task-detail${isExpanded?' open':''}" id="trd-${t.id}">
-        ${t.taskDueDate && t.status !== 'done' ? (() => {
-          const daysLeft = Math.ceil((new Date(t.taskDueDate) - new Date(todayStr)) / 86400000);
-          const label = daysLeft < 0 ? '⚠ Overdue by ' + Math.abs(daysLeft) + ' day' + (Math.abs(daysLeft)>1?'s':'')
-                      : daysLeft === 0 ? '🔴 Due Today'
-                      : '📅 Due in ' + daysLeft + ' day' + (daysLeft>1?'s':'');
-          const col = daysLeft <= 0 ? 'var(--red)' : daysLeft <= 3 ? 'var(--amber)' : 'var(--text2)';
-          return `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:8px">${label} — ${t.taskDueDate}</div>`;
-        })() : ''}
-        <div class="tc-members" style="margin-bottom:10px">
-          <span class="m-pill">
-            <span class="m-pill-name">You${myIsDone?' ✓':''}</span>
-            <span class="m-pill-role">${myRespTask ? esc(myRespTask) : 'No resp. task set'}</span>
-          </span>
-          ${others.map(m => {
-            const otherId = members.find(mm => mm.name.toLowerCase() === m.name.toLowerCase())?.id;
-            const otherDone = otherId ? getMemberStatus(t, otherId) === 'done' : false;
-            return `<span class="m-pill" style="${otherDone?'opacity:.6':''}">
-              <span class="m-pill-name">${esc(m.name)}${otherDone?' ✓':''}</span>
-              <span class="m-pill-role">${m.role ? esc(m.role) : 'No resp. task set'}</span>
-            </span>`;
-          }).join('')}
-        </div>
-        <div class="tc-actions">
-          ${!isDone ? `<button class="sc-btn" onclick="event.stopPropagation();cycleOverall('${t.id}')"
-            style="${t.status==='onhold'?'color:var(--purple);border-color:rgba(94,92,230,.3)':''}">
-            ${t.status === 'todo' ? '▶ Start' : t.status === 'inprog' ? '⏸ On Hold' : '↩ Resume'}
-          </button>` : ''}
-          ${myMemberId ? `
-          <button class="mark-done-btn${myIsDone?' undone':''}"
-            onclick="event.stopPropagation();setMemberStatusWindow('${t.id}','${myMemberId}','${myIsDone?'todo':'done'}')">
-            ${myIsDone ? '↩ Reopen My Task' : '✓ My Task Done'}
-          </button>` : `
-          <button class="mark-done-btn${isDone?' undone':''}"
-            onclick="event.stopPropagation();toggleIndividualDone('${t.id}','${isDone?'todo':'done'}')">
-            ${isDone ? '↩ Reopen' : '✓ Mark Done'}
-          </button>`}
-          ${(() => {
-            const remActive = t.reminder?.active &&
-              (!t.reminder.setBy || t.reminder.setBy.toLowerCase() === (MY_NAME||'').toLowerCase());
-            return `<button class="reminder-badge" onclick="event.stopPropagation();openReminderModal('${t.id}')"
-              title="${remActive ? 'Edit reminder' : 'Set reminder'}">
-              ${remActive ? (() => {
-                const [y,mo,d] = t.reminder.date.split('-');
-                const dateLabel = new Date(parseInt(y),parseInt(mo)-1,parseInt(d))
-                  .toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-                const timeLabel = t.reminder.time || '';
-                return '🔔 ' + dateLabel + (timeLabel ? ' · ' + timeLabel : '');
-              })() : '🔔 Remind me'}
-            </button>`;
-          })()}
-          ${!isDone ? `<button class="sprint-task-btn${sprintTaskIds.has(t.id) ? ' remove' : (_mySprintFull ? ' full-disabled' : '')}"
-            onclick="event.stopPropagation();${_mySprintFull && !sprintTaskIds.has(t.id) ? '' : "toggleSprintTask('" + t.id + "')"}"
-            title="${_mySprintFull && !sprintTaskIds.has(t.id) ? 'Sprint full (max 10 active)' : ''}">
-            ${sprintTaskIds.has(t.id) ? '✕ Remove' : _mySprintFull ? '🎯 Full' : '🎯 This Week'}
-          </button>` : ''}
-          <button class="sc-btn" onclick="event.stopPropagation();openInlineEdit('${t.id}')"
-            style="margin-left:auto;border-color:rgba(10,132,255,.25);color:var(--neon)">
-            ✎ Edit
-          </button>
-        </div>
-        <div id="comments-${t.id}" onclick="event.stopPropagation()"></div>
-
-        <!-- INLINE EDIT PANEL -->
-        <!-- Open state and field values come from JS state (_openEditId /
-             _editDraft / _editPriority), NOT from the DOM. Previously this
-             rendered with no .open class and read values straight off the task
-             object, so any renderAll() — including one triggered by a teammate's
-             edit landing over the live listener — closed the panel and threw
-             away whatever the user had typed.
-             NOTE: no backticks in this comment; it lives inside a template
-             literal and a stray backtick terminates the string. -->
-        <div class="task-edit-panel${_openEditId === t.id ? ' open' : ''}" id="edit-panel-${t.id}" onclick="event.stopPropagation()">
-          <div class="task-edit-row">
-            <div class="task-edit-label">Task</div>
-            <input class="task-edit-inp" id="edit-label-${t.id}" value="${esc(_editDraft[t.id]?.label ?? t.label)}"
-              oninput="__editDraft('${t.id}','label',this.value)"
-              onkeydown="if(event.key==='Enter')saveInlineEdit('${t.id}')">
-          </div>
-          <div class="task-edit-row">
-            <div class="task-edit-label">Project</div>
-            <input class="task-edit-inp" id="edit-project-${t.id}" value="${esc(_editDraft[t.id]?.project ?? t.project ?? '')}"
-              oninput="__editDraft('${t.id}','project',this.value)"
-              placeholder="Project name" style="font-size:13px">
-          </div>
-          <div class="task-edit-row">
-            <div class="task-edit-label">Priority</div>
-            <div class="task-edit-prow">
-              ${['critical','high','medium','low'].map(p => {
-                const cls = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[p];
-                const sel = (_editPriority[t.id] ?? t.priority ?? 'medium') === p ? ' '+cls : '';
-                return `<button class="task-edit-pchip${sel}" id="edit-p-${t.id}-${p}"
-                  onclick="event.stopPropagation();selectEditPriority('${t.id}','${p}')">${p}</button>`;
-              }).join('')}
-            </div>
-          </div>
-          <div class="task-edit-row">
-            <div class="task-edit-label">Due Date</div>
-            <input type="date" class="task-edit-date-inp" id="edit-due-${t.id}" value="${_editDraft[t.id]?.due ?? t.taskDueDate ?? ''}"
-              oninput="__editDraft('${t.id}','due',this.value)">
-          </div>
-          <div class="task-edit-actions">
-            <button class="task-edit-cancel" onclick="event.stopPropagation();closeInlineEdit('${t.id}')">Cancel</button>
-            <button class="task-edit-save" onclick="event.stopPropagation();saveInlineEdit('${t.id}')">✓ Save Changes</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
-// ── BY MEMBER ──────────────────────────────────────────────────────────────
-function renderByMember() {
-  const el = document.getElementById('by-member-list');
-  if (!members.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No members yet.</div>'; return; }
-
-  // Admin-only: load once, so memberTaskCard() below can synchronously show
-  // whether a task is already in each teammate's "This Week" list. Guarded
-  // exactly like _sprintInitialized elsewhere — this function re-runs on
-  // every task change via renderAll(), so without the guard this would
-  // re-fetch every member's sprint doc on every single sync.
-  const isAdminCache = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
-  if (isAdminCache && !_memberSprintCacheLoaded) {
-    loadMemberSprintCache(); // re-renders itself once resolved
-  }
-
-  let html = '';
-  // Sort members by completion % — highest first (leaderboard)
-  const sortedMembers = [...members].sort((a, b) => {
-    const aTasks = tasks.filter(t => (t.members||[]).some(mm =>
-      mm.name && mm.name.toLowerCase() === a.name.toLowerCase()));
-    const bTasks = tasks.filter(t => (t.members||[]).some(mm =>
-      mm.name && mm.name.toLowerCase() === b.name.toLowerCase()));
-    const aId = (t) => (t.members||[]).find(mm => mm.name?.toLowerCase()===a.name.toLowerCase())?.id;
-    const bId = (t) => (t.members||[]).find(mm => mm.name?.toLowerCase()===b.name.toLowerCase())?.id;
-    const aPct = aTasks.length ? aTasks.filter(t => { const id=aId(t); return id ? getMemberStatus(t,id)==='done' : t.status==='done'; }).length/aTasks.length : 0;
-    const bPct = bTasks.length ? bTasks.filter(t => { const id=bId(t); return id ? getMemberStatus(t,id)==='done' : t.status==='done'; }).length/bTasks.length : 0;
-    return bPct - aPct;
+  const prevPart = myPartStatus(t), prevOverall = t.status || 'todo';
+  if (m) await setMemberStatus(id, m.id, 'done', { quiet: true });
+  else await toggleIndividualDone(id, 'done', { quiet: true });
+  showUndo('Marked done', async () => {
+    if (m) await setMemberStatus(id, m.id, prevPart === 'done' ? 'todo' : prevPart, { quiet: true });
+    else await toggleIndividualDone(id, prevOverall === 'done' ? 'todo' : prevOverall, { quiet: true });
   });
-  const expandedMembers = new Set();
-  window.toggleMemberCard = (mid) => {
-    if (expandedMembers.has(mid)) expandedMembers.delete(mid);
-    else expandedMembers.add(mid);
-    const body  = document.getElementById('mc-body-' + mid);
-    const arrow = document.getElementById('mc-arrow-' + mid);
-    if (body)  body.classList.toggle('open', expandedMembers.has(mid));
-    if (arrow) arrow.classList.toggle('open', expandedMembers.has(mid));
-  };
-  const expandedMemberDone = {};
-  window.toggleMemberDone = (mid) => {
-    expandedMemberDone[mid] = !expandedMemberDone[mid];
-    const body  = document.getElementById('mc-done-' + mid);
-    const arrow = document.getElementById('mc-done-arrow-' + mid);
-    if (body)  body.classList.toggle('open', expandedMemberDone[mid]);
-    if (arrow) arrow.classList.toggle('open', expandedMemberDone[mid]);
-  };
-  const expandedMemberMonth = {};
-  window.toggleMemberMonth = (key) => {
-    expandedMemberMonth[key] = !expandedMemberMonth[key];
-    const body  = document.getElementById('mc-month-' + key);
-    const arrow = document.getElementById('mc-month-arrow-' + key);
-    if (body)  body.classList.toggle('open', expandedMemberMonth[key]);
-    if (arrow) arrow.classList.toggle('open', expandedMemberMonth[key]);
-  };
+};
 
-  const MONTH_NAMES_BM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const fmtBMKey = key => { const [y,m] = key.split('-'); return m ? MONTH_NAMES_BM[parseInt(m)-1]+' '+y : key; };
-  const rankClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-  const rankIcon  = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'';
+// ── search + filters ───────────────────────────────────────────────────────
+const FILTER_CHIPS = [
+  { k: 'due:today', label: 'Due today' }, { k: 'due:this-week', label: 'This week' },
+  { k: 'priority:critical', label: 'Critical' }, { k: 'priority:high', label: 'High' },
+  { k: 'status:inprog', label: 'In progress' }, { k: 'status:todo', label: 'To do' },
+];
+function chipOn(k) {
+  const [g, v] = k.split(':');
+  return (g === 'due' && activeDueFilter === v) || (g === 'priority' && activePriorityFilter === v) || (g === 'status' && activeStatusFilter === v);
+}
+function renderFilterChips() {
+  const el = $('filter-chips'); if (!el) return;
+  el.innerHTML = FILTER_CHIPS.map(c => `<button type="button" class="wd-chip${chipOn(c.k) ? ' on' : ''}" aria-pressed="${chipOn(c.k)}" onclick="toggleFilterChip('${c.k}')">${c.label}</button>`).join('');
+}
+window.toggleFilterChip = (k) => {
+  const [g, v] = k.split(':');
+  if (g === 'due') activeDueFilter = activeDueFilter === v ? null : v;
+  if (g === 'priority') activePriorityFilter = activePriorityFilter === v ? null : v;
+  if (g === 'status') activeStatusFilter = activeStatusFilter === v ? null : v;
+  renderFilterChips(); renderMine();
+};
+window.handleSearch = (val) => { searchQuery = String(val || '').trim().toLowerCase(); renderMine(); };
+window.clearSearchAndFilters = () => {
+  searchQuery = ''; activeDueFilter = activePriorityFilter = activeStatusFilter = null;
+  const inp = $('search-inp'); if (inp) inp.value = '';
+  renderFilterChips(); renderMine();
+};
+window.toggleSearch = () => {
+  const panel = $('search-panel'), btn = $('search-toggle');
+  const open = panel.hidden;
+  panel.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+  if (open) { if (homeTab !== 'mine') switchHomeTab('mine'); setTimeout(() => $('search-inp')?.focus(), 30); }
+  else clearSearchAndFilters();
+};
+window.switchHomeTab = (id) => {
+  homeTab = id;
+  $('tab-mine').classList.toggle('on', id === 'mine'); $('tab-mine').setAttribute('aria-selected', String(id === 'mine'));
+  $('tab-team').classList.toggle('on', id === 'team'); $('tab-team').setAttribute('aria-selected', String(id === 'team'));
+  $('home-mine').hidden = id !== 'mine';
+  $('home-team').hidden = id !== 'team';
+  if (id === 'team' && !$('search-panel').hidden) toggleSearch();
+  if (id === 'team' && isAdminUser() && !_memberSprintCacheLoaded) loadMemberSprintCache();
+  document.querySelector('.wd-title')?.classList.toggle('no-search', id === 'team');
+};
 
-  sortedMembers.forEach((m, rank) => {
-    const mTasks = tasks.filter(t => {
-      // Match by name (consistent with how tasks store members)
-      const inTask = (t.members||[]).some(mm =>
-        mm.name && mm.name.toLowerCase() === m.name.toLowerCase()
-      );
-      if (!inTask) return false;
-      if (t.taskType !== 'individual') return true;
-      const isAdminView = MY_NAME && MY_NAME.toLowerCase() === 'harshit';
-      const isOwnSection = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
-      return isAdminView || isOwnSection;
-    });
-    // Get member ID from the task's own members array (same source as memberStatus)
-    const getMId = (t) => (t.members||[]).find(mm =>
-      mm.name && mm.name.toLowerCase() === m.name.toLowerCase()
-    )?.id;
-    const activeTasks = mTasks.filter(t => {
-      const mid = getMId(t);
-      return mid ? getMemberStatus(t, mid) !== 'done' : t.status !== 'done';
-    });
-    const doneTasks = mTasks.filter(t => {
-      const mid = getMId(t);
-      return mid ? getMemberStatus(t, mid) === 'done' : t.status === 'done';
-    });
-    const memberDone  = doneTasks.length;
-    const total = mTasks.length;
-    const pct   = total ? Math.round(memberDone / total * 100) : 0;
-    const isOpen = expandedMembers.has(m.id);
-
-    // This Week gauge — open vs done, for whoever this section belongs to.
-    // Same sprint-data sources as the per-task toggle button in
-    // memberTaskCard(): the live, already-synced sprintTaskIds for your own
-    // card, memberSprintCache (admin-only, pre-fetched — see
-    // loadMemberSprintCache) for a teammate's.
-    const mIsMyCard = MY_NAME && m.name.toLowerCase() === MY_NAME.toLowerCase();
-    const mSprintIds = mIsMyCard ? sprintTaskIds : (memberSprintCache[m.name.toLowerCase()] || new Set());
-    let mSprintOpen = 0, mSprintDone = 0;
-    for (const id of mSprintIds) {
-      const st = tasks.find(x => x.id === id);
-      if (!st) continue;
-      if (st.status === 'done') mSprintDone++; else mSprintOpen++;
-    }
-    const mSprintTotal = mSprintOpen + mSprintDone;
-
-    // Group done tasks by month
-    const doneByMonthBM = {};
-    doneTasks.forEach(t => {
-      const key = m.id + '-' + (t.month || 'Unknown');
-      if (!doneByMonthBM[key]) doneByMonthBM[key] = [];
-      doneByMonthBM[key].push(t);
-    });
-    const doneMonthKeysBM = Object.keys(doneByMonthBM).sort((a,b) => b.localeCompare(a));
-
-    const doneSection = doneTasks.length ? `
-      <div class="done-section-toggle" style="margin-top:8px"
-        onclick="event.stopPropagation();toggleMemberDone('${m.id}')">
-        <span>✅ Done (${doneTasks.length})</span>
-        <span class="done-section-arrow" id="mc-done-arrow-${m.id}">▼</span>
-      </div>
-      <div class="done-section-body" id="mc-done-${m.id}">
-        ${doneMonthKeysBM.map(key => `
-          <div class="done-month-toggle"
-            onclick="event.stopPropagation();toggleMemberMonth('${key}')">
-            <span>${fmtBMKey(key.split('-').slice(1).join('-'))} · ${doneByMonthBM[key].length}</span>
-            <span class="done-month-arrow" id="mc-month-arrow-${key}">▼</span>
-          </div>
-          <div class="done-month-body" id="mc-month-${key}">
-            ${doneByMonthBM[key].map((t,i) => memberTaskCard(t, m, i)).join('')}
-          </div>
-        `).join('')}
-      </div>` : '';
-
-    html += `<div class="member-card">
-      <div class="member-card-hd" onclick="toggleMemberCard('${m.id}')">
-        <div class="member-card-rank ${rankClass(rank)}">${rankIcon(rank)}</div>
-        <span class="member-av">${initials(m.name)}</span>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <span class="member-name">${esc(m.name)}</span>
-            ${(cachedBadges[m.id]||[]).length ? `<span style="display:flex;gap:3px;margin-left:4px">${(cachedBadges[m.id]||[]).map(b=>`<span class="badge-tooltip"><span class="badge">${b.icon}</span><span class="badge-tip">${b.label}</span></span>`).join('')}</span>` : ''}
-            <span class="member-cnt">${memberDone}/${total} · ${pct}%</span>
-          </div>
-          ${mSprintTotal > 0 ? `<div class="member-sprint-gauge">🎯 This Week: ${mSprintOpen} open · ${mSprintDone} done</div>` : ''}
-          <div class="member-prog"><div class="member-prog-fill" style="width:${pct}%"></div></div>
-        </div>
-        <span class="member-card-arrow${isOpen?' open':''}" id="mc-arrow-${m.id}">▼</span>
-      </div>
-      <div class="member-card-body${isOpen?' open':''}" id="mc-body-${m.id}">
-        ${activeTasks.length
-          ? activeTasks.map((t,i) => memberTaskCard(t, m, i)).join('')
-          : '<div class="empty" style="padding:8px 0 4px;font-size:12px">No active tasks</div>'}
-        ${doneSection}
-      </div>
-    </div>`;
+// ── TEAM (by person, late first) ───────────────────────────────────────────
+function memberEntries(m) {
+  const admin = isAdminUser();
+  const out = [];
+  tasks.forEach(t => {
+    const mm = (t.members || []).find(x => sameName(x.name, m.name));
+    if (!mm) return;
+    if (t.taskType === 'individual' && !(admin || sameName(m.name, _meName))) return;
+    if (t.status === 'done' || getMemberStatus(t, mm.id) === 'done') return;
+    out.push({ t, mid: mm.id, status: glyphStatusFor(t, getMemberStatus(t, mm.id)) });
   });
-  el.innerHTML = html;
+  const rank = e => e.status === 'onhold' ? 2 : (dayDiff(e.t.taskDueDate) != null && dayDiff(e.t.taskDueDate) < 0 ? 0 : 1);
+  out.sort((a, b) => (rank(a) - rank(b)) || ((a.status === 'inprog' ? 0 : 1) - (b.status === 'inprog' ? 0 : 1)) || byDue(a.t, b.t));
+  return out;
 }
+const isLateEntry = e => e.status !== 'onhold' && dayDiff(e.t.taskDueDate) != null && dayDiff(e.t.taskDueDate) < 0;
 
-function memberTaskCard(t, member, i) {
-  const mData = (t.members||[]).find(mm => mm.id === member.id);
-  const respTask = mData?.role || '';
-  const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-  const memberStatus = getMemberStatus(t, member.id);
-  const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[memberStatus];
-  const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[memberStatus];
-  const isDone = memberStatus === 'done';
-  const statusClass = isDone ? 'status-done' : t.status === 'inprog' ? 'status-inprog' : t.status === 'onhold' ? 'status-onhold' : '';
-
-  // Show button if: this is your own card, OR you are the admin
-  const isMyCard = MY_NAME && member.name.toLowerCase() === MY_NAME.toLowerCase();
-  const isAdmin  = MY_NAME && MY_NAME.toLowerCase() === ADMIN_NAME.toLowerCase();
-  const canAct   = isMyCard || isAdmin;
-
-  // "This Week" toggle — own card uses the live, already-synced sprintTaskIds;
-  // a teammate's card (admin only) uses the pre-fetched memberSprintCache
-  // (see loadMemberSprintCache — undefined until that resolves, treated as
-  // empty in the meantime rather than blocking the render).
-  const memberSprintSet = isMyCard ? sprintTaskIds : (memberSprintCache[member.name.toLowerCase()] || new Set());
-  const inSprint = memberSprintSet.has(t.id);
-  const sprintFull = !inSprint && activeSprintCount(memberSprintSet) >= SPRINT_MAX;
-  const sprintBtnHTML = (canAct && !isDone) ? `
-        <button class="sprint-task-btn${inSprint ? ' remove' : (sprintFull ? ' full-disabled' : '')}"
-          onclick="event.stopPropagation();${sprintFull ? '' : `toggleMemberSprintTask('${member.id}','${t.id}')`}"
-          title="${sprintFull ? 'Sprint full (max ' + SPRINT_MAX + ')' : ''}">
-          ${inSprint ? '✕ Remove' : sprintFull ? '🎯 Full' : '🎯 This Week'}
-        </button>` : '';
-
-  return `
-    <div class="task-card ${pc} ${statusClass}" style="margin-left:12px">
-      <div class="tc-title">${esc(t.label)}</div>
-      <div class="tc-meta">
-        <span class="tag ${stTag}">${stLbl}</span>
-        <span class="m-pill" style="display:inline-flex">
-          <span class="m-pill-name">Resp. Task</span>
-          <span class="m-pill-role">${respTask ? esc(respTask) : 'Not set'}</span>
-        </span>
-      </div>
-      ${canAct ? `
-      <div class="tc-actions">
-        <button class="mark-done-btn${isDone?' undone':''}"
-          onclick="setMemberStatusWindow('${t.id}','${member.id}','${isDone?'todo':'done'}')">
-          ${isDone ? '↩ Reopen Resp. Task' : '✓ Resp. Task Done'}
-        </button>
-        ${sprintBtnHTML}
-      </div>` : ''}
-    </div>`;
-}
-
-// ── FOLLOW-UP ──────────────────────────────────────────────────────────────
-function renderFollowup() {
-  const el = document.getElementById('followup-list');
-  const others = MY_NAME
-    ? members.filter(m => m.name.toLowerCase() !== MY_NAME.toLowerCase())
-    : members;
-  if (!others.length) { el.innerHTML = '<div class="empty"><div class="ei">◈</div>No other team members</div>'; return; }
-  let html = '';
-  others.forEach(m => {
-    const allT = tasks.filter(t => (t.members||[]).some(mm => mm.id === m.id));
-    const working = allT.filter(t => getMemberStatus(t,m.id) === 'inprog');
-    const todo = allT.filter(t => getMemberStatus(t,m.id) === 'todo');
-    const memberDone = allT.filter(t => getMemberStatus(t,m.id) === 'done').length;
-    const pct = allT.length ? Math.round(memberDone/allT.length*100) : 0;
-    if (!allT.length) return;
-    html += `<div class="fu-card">
-      <div class="fu-person">
-        <span class="fu-av">${initials(m.name)}</span>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="fu-name">${esc(m.name)}</span>
-            <span style="font-size:12px;font-weight:600;color:var(--text3)">${memberDone}/${allT.length} done</span>
-          </div>
-          <div class="member-prog" style="margin-top:5px"><div class="member-prog-fill" style="width:${pct}%"></div></div>
-        </div>
+function renderTeam() {
+  const el = $('home-team'); if (!el) return;
+  if (!members.length) { el.innerHTML = '<div class="wd-empty"><b>No team yet</b>Add people on the Add page.</div>'; return; }
+  const cards = members.map(m => {
+    const entries = memberEntries(m);
+    return { m, entries, late: entries.filter(isLateEntry).length };
+  }).sort((a, b) => (b.late - a.late) || (b.entries.length - a.entries.length) || a.m.name.localeCompare(b.m.name));
+  const admin = isAdminUser();
+  el.innerHTML = cards.map(({ m, entries, late }) => {
+    const open = teamOpen.has(m.id);
+    const mt = late ? `<b>${late} late</b>, ${entries.length} open` : entries.length ? `${entries.length} open` : 'All clear';
+    const you = isMe(m.name) ? ' <span style="font-weight:400;color:var(--text2)">(you)</span>' : '';
+    const subs = open ? (entries.length ? `<div class="wd-tasks" style="margin:0">` + entries.map(e => {
+      const label = dueLabel(e.t.taskDueDate);
+      const lateTxt = isLateEntry(e);
+      const canAct = admin || sameName(m.name, _meName);
+      return `<div class="wd-sub-task" style="--proj:${projHue(e.t.project)}" onclick="openTaskSheet('${e.t.id}')">
+        <span class="wd-g static">${glyphSVG(e.status)}</span>
+        <div class="body"><div class="tt">${esc(e.t.label)}</div>
+          <div class="meta">${esc(e.t.project || 'No project')}${label ? ', ' + (lateTxt ? `<b>${esc(label)}</b>` : esc(label)) : ''}</div></div>
+        ${canAct ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(m.name)}: ${esc(e.t.label)}" onclick="event.stopPropagation();tickMember('${e.t.id}','${e.mid}','${esc(m.name).replace(/'/g, '&#39;')}')">${ICON.check}</button>` : ''}
       </div>`;
-    if (working.length) {
-      html += `<div class="fu-section-label" style="color:var(--amber)">● Working on now</div>`;
-      working.forEach(t => {
-        const mData=(t.members||[]).find(mm=>mm.id===m.id);
-        const isDone = getMemberStatus(t,m.id)==='done';
-        html += `<div class="fu-task-row">
-          <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
-          <div class="fu-task-actions">
-            <button class="mark-done-btn${isDone?' undone':''}"
-              onclick="setMemberStatusWindow('${t.id}','${m.id}','${isDone?'todo':'done'}')">
-              ${isDone?'↩ Reopen':'✓ Mark Done'}
-            </button>
-          </div>
-        </div>`;
-      });
-    }
-    if (todo.length) {
-      const visible = todo.slice(0, 2);
-      const hidden  = todo.slice(2);
-      const fuId    = 'fu-more-' + m.id;
-      html += `<div class="fu-section-label" style="color:var(--text2);margin-top:10px">Next up</div>`;
-      visible.forEach(t => {
-        const mData=(t.members||[]).find(mm=>mm.id===m.id);
-        html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
-          <div class="fu-task-name">${esc(t.label)}</div>
-          <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
-        </div>`;
-      });
-      if (hidden.length) {
-        html += `<div id="${fuId}" style="display:none">`;
-        hidden.forEach(t => {
-          const mData=(t.members||[]).find(mm=>mm.id===m.id);
-          html += `<div class="fu-task-row" style="border-left-color:var(--text3);opacity:.7">
-            <div class="fu-task-name">${esc(t.label)}</div>
-            <div class="fu-task-role">Resp. Task: ${mData?.role ? esc(mData.role) : 'Not set'}</div>
-          </div>`;
-        });
-        html += `</div>
-        <div style="text-align:center;padding:6px 0">
-          <button onclick="toggleFuMore('${fuId}',this)"
-            style="background:none;border:1px solid var(--border2);border-radius:20px;
-            padding:4px 14px;font-family:var(--sans);font-size:11px;font-weight:700;
-            color:var(--text2);cursor:pointer;transition:all var(--dur-base) var(--ease-out)">
-            +${hidden.length} more
-          </button>
-        </div>`;
-      }
-    }
-    html += `</div>`;
-  });
-  el.innerHTML = html || '<div class="empty"><div class="ei">✓</div>No active tasks for teammates</div>';
+    }).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') : '';
+    return `<button type="button" class="wd-mem" aria-expanded="${open}" onclick="toggleTeamMember('${m.id}')">
+        <span class="wd-av sm quiet">${esc(initials(m.name))}</span>
+        <span class="who"><div class="nm">${esc(m.name)}${you}</div><div class="mt">${mt}</div></span>
+        <span class="ch">${ICON.chevron}</span>
+      </button>${subs}`;
+  }).join('<div class="wd-team-sep"></div>');
 }
+window.toggleTeamMember = (id) => { if (teamOpen.has(id)) teamOpen.delete(id); else teamOpen.add(id); renderTeam(); };
+window.tickMember = async (taskId, memberId, name) => {
+  const t = tasks.find(x => x.id === taskId); if (!t) return;
+  const prev = getMemberStatus(t, memberId);
+  if (navigator.vibrate) navigator.vibrate(10);
+  await setMemberStatus(taskId, memberId, 'done', { quiet: true });
+  showUndo('Marked done for ' + String(name).replace(/&#39;/g, "'"), () => setMemberStatus(taskId, memberId, prev === 'done' ? 'todo' : prev, { quiet: true }));
+};
+
+// ── TASK SHEET ─────────────────────────────────────────────────────────────
+function renderTaskSheetMain() {
+  const box = $('ts-main'); const t = tasks.find(x => x.id === _sheetTaskId);
+  if (!box || !t) return;
+  if (_openEditId === t.id) { box.innerHTML = editFormHTML(t); return; }
+  const admin = isAdminUser();
+  const mm = myMemberOf(t);
+  const mineTask = isMine(t);
+  const done = t.status === 'done';
+  const myDone = myPartDone(t);
+  const diff = dayDiff(t.taskDueDate);
+  const overall = glyphStatusFor(t, t.status || 'todo');
+  const lateTxt = !done && diff != null && diff < 0 ? dueLabel(t.taskDueDate) : (diff === 0 && !done ? 'Today' : '');
+  const inWeek = sprintTaskIds.has(t.id);
+  const full = !inWeek && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
+
+  const primary = mineTask
+    ? (myDone
+        ? `<button type="button" class="wd-btn s" style="margin-top:16px;height:50px" onclick="sheetReopenMine('${t.id}')">Reopen my part</button>`
+        : `<button type="button" class="wd-btn p" style="margin-top:16px" onclick="sheetDoneMine('${t.id}')">${ICON.check}${mm ? 'Mark my part done' : 'Mark done'}</button>`)
+    : '';
+  const remActive = t.reminder?.active && (!t.reminder.setBy || sameName(t.reminder.setBy, MY_NAME));
+  const remLabel = remActive ? (() => {
+    const [y, mo, d] = t.reminder.date.split('-');
+    return 'Reminder, ' + parseInt(d) + ' ' + MON_NAMES[parseInt(mo) - 1] + (t.reminder.time ? ' ' + t.reminder.time : '');
+  })() : 'Remind me';
+  const cycleLabel = overall === 'todo' ? 'Start' : overall === 'inprog' ? 'Put on hold' : 'Resume';
+
+  // admin can plan teammates' weeks from here
+  const teammateWeek = admin ? (t.members || []).filter(x => !sameName(x.name, _meName)).slice(0, 3).map(x => {
+    const set = memberSprintCache[x.name.toLowerCase()] || new Set();
+    const inSet = set.has(t.id);
+    return `<button type="button" class="wd-btn s" onclick="toggleMemberSprintTask('${members.find(mm2 => sameName(mm2.name, x.name))?.id || x.id}','${t.id}')">${inSet ? 'Remove from ' + esc(x.name) + '’s week' : 'Add to ' + esc(x.name) + '’s week'}</button>`;
+  }).join('') : '';
+
+  const people = (t.members || []).map(x => {
+    const st = getMemberStatus(t, x.id);
+    const canAct = admin || isMe(x.name);
+    const g = glyphStatusFor(t, st);
+    return `<div class="wd-ppl">
+      <div class="wd-av sm quiet in-sheet">${esc(initials(x.name))}</div>
+      <div class="who"><b>${esc(x.name)}${isMe(x.name) ? ' (you)' : ''}</b><span class="r">${x.role ? esc(x.role) : 'No responsibility set'}</span></div>
+      ${g === 'done'
+        ? `<span class="wd-g static" style="--proj:var(--text)">${glyphSVG('done')}</span>${canAct ? `<button type="button" class="rbtn" onclick="setMemberStatusWindow('${t.id}','${x.id}','todo')">Reopen</button>` : ''}`
+        : (canAct ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(x.name)}" onclick="setMemberStatusWindow('${t.id}','${x.id}','done')">${ICON.check}</button>`
+                  : `<span class="wd-g static" style="--proj:var(--text2)">${glyphSVG(g)}</span>`)}
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="wd-sheet-title">${esc(t.label)}</div>
+    <div class="wd-sheet-sub" style="--proj:${projHue(t.project)}"><i class="wd-pd"></i>${esc(t.project || 'No project')}${t.taskType === 'individual' ? ' · Just you' : ''}</div>
+    <div class="wd-ts-status" style="--proj:${projHue(t.project)}"><span class="wd-g static">${glyphSVG(overall, 18)}</span>${STATUS_LABEL[overall] || 'To do'} · ${PRIO_LABEL[t.priority || 'medium']} priority</div>
+    ${t.taskDueDate ? `<div class="wd-ts-due">${ICON.calendar}<span>${longDate(t.taskDueDate)}</span>${lateTxt ? `<span class="late">${esc(lateTxt)}</span>` : ''}</div>` : ''}
+    ${primary}
+    <div class="wd-btns">
+      ${!done ? `<button type="button" class="wd-btn s" onclick="cycleOverall('${t.id}')">${cycleLabel}</button>` : ''}
+      ${mineTask && !myDone ? `<button type="button" class="wd-btn s"${full ? ' disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from week' : full ? 'Week is full' : 'Add to week'}</button>` : ''}
+      ${mineTask ? `<button type="button" class="wd-btn s" onclick="openReminderModal('${t.id}')">${esc(remLabel)}</button>` : ''}
+      <button type="button" class="wd-btn s" onclick="openInlineEdit('${t.id}')">Edit details</button>
+      ${teammateWeek}
+    </div>
+    ${(t.members || []).length ? `<div class="wd-lab">People</div>${people}` : ''}`;
+}
+
+function editFormHTML(t) {
+  const id = t.id;
+  const d = _editDraft[id] || {};
+  const prio = _editPriority[id] ?? t.priority ?? 'medium';
+  return `
+    <div class="wd-sheet-title">Edit task</div>
+    <div class="wd-lab">Task</div>
+    <input class="wd-field" id="edit-label-${id}" value="${esc(d.label ?? t.label)}" maxlength="200"
+      oninput="__editDraft('${id}','label',this.value)" onkeydown="if(event.key==='Enter')saveInlineEdit('${id}')">
+    <div class="wd-lab">Project</div>
+    <input class="wd-field" id="edit-project-${id}" list="proj-list" value="${esc(d.project ?? t.project ?? '')}" placeholder="Project name"
+      oninput="__editDraft('${id}','project',this.value)">
+    <div class="wd-lab">Priority</div>
+    <div class="wd-chips">${['critical', 'high', 'medium', 'low'].map(p =>
+      `<button type="button" class="wd-chip${prio === p ? ' on' : ''}" id="edit-p-${id}-${p}" aria-pressed="${prio === p}" onclick="selectEditPriority('${id}','${p}')">${PRIO_LABEL[p]}</button>`).join('')}</div>
+    <div class="wd-lab">Due date</div>
+    <input type="date" class="wd-field" id="edit-due-${id}" value="${d.due ?? t.taskDueDate ?? ''}" oninput="__editDraft('${id}','due',this.value)">
+    <div class="wd-btns" style="margin-top:20px">
+      <button type="button" class="wd-btn s" onclick="closeInlineEdit('${id}')">Cancel</button>
+      <button type="button" class="wd-btn p" onclick="saveInlineEdit('${id}')">Save changes</button>
+    </div>`;
+}
+
+window.openTaskSheet = (id) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  _sheetTaskId = id;
+  const dl = $('proj-list');
+  if (dl) dl.innerHTML = [...new Set(tasks.map(x => x.project).filter(Boolean))].sort().map(p => `<option value="${esc(p)}">`).join('');
+  openSheet('task-sheet', `<div id="ts-main"></div><div class="wd-lab">Notes</div><div id="ts-comments"></div>`, {
+    onClose: () => {
+      if (commentUnsubs[id]) { try { commentUnsubs[id](); } catch (e) {} delete commentUnsubs[id]; }
+      if (_openEditId === id) { _openEditId = null; delete _editDraft[id]; }
+      if (_sheetTaskId === id) _sheetTaskId = null;
+    },
+  });
+  renderTaskSheetMain();
+  renderCommentSection(id, $('ts-comments'));
+};
+function refreshTaskSheet() {
+  if (!_sheetTaskId) return;
+  const t = tasks.find(x => x.id === _sheetTaskId);
+  if (!t) { closeSheet('task-sheet'); return; }
+  if (_openEditId === _sheetTaskId) return; // never clobber an edit in progress
+  renderTaskSheetMain();
+}
+window.sheetDoneMine = async (id) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const m = myMemberOf(t);
+  if (m) await setMemberStatus(id, m.id, 'done'); else await toggleIndividualDone(id, 'done');
+};
+window.sheetReopenMine = async (id) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const m = myMemberOf(t);
+  if (m) await setMemberStatus(id, m.id, 'todo'); else await toggleIndividualDone(id, 'todo');
+};
+
+// ── inline edit (now inside the task sheet) ────────────────────────────────
+// State lives in JS (_openEditId / _editDraft / _editPriority), not in the DOM,
+// so a teammate's edit landing over the live listener can't close the form or
+// throw away what is being typed (see refreshTaskSheet).
+window.__editDraft = (taskId, field, val) => { (_editDraft[taskId] ||= {})[field] = val; };
+window.openInlineEdit = (taskId) => {
+  const t = tasks.find(x => x.id === taskId); if (!t) return;
+  _openEditId = taskId;
+  _editPriority[taskId] = t.priority || 'medium';
+  renderTaskSheetMain();
+  setTimeout(() => $('edit-label-' + taskId)?.focus(), 60);
+};
+window.closeInlineEdit = (taskId) => {
+  if (_openEditId === taskId) _openEditId = null;
+  delete _editDraft[taskId];
+  renderTaskSheetMain();
+};
+window.selectEditPriority = (taskId, priority) => {
+  _editPriority[taskId] = priority;
+  ['critical', 'high', 'medium', 'low'].forEach(p => {
+    const b = $(`edit-p-${taskId}-${p}`); if (!b) return;
+    b.classList.toggle('on', p === priority); b.setAttribute('aria-pressed', String(p === priority));
+  });
+};
+window.saveInlineEdit = async (taskId) => {
+  const label = $('edit-label-' + taskId)?.value.trim();
+  const project = $('edit-project-' + taskId)?.value.trim();
+  const due = $('edit-due-' + taskId)?.value;
+  const priority = _editPriority[taskId] || 'medium';
+  if (!label) { toast('Task name cannot be empty'); return; }
+  const t = tasks.find(x => x.id === taskId);
+  if (t) { t.label = label; t.project = project; t.priority = priority; t.taskDueDate = due || null; }
+  await updateTask(taskId, { label, project, priority, taskDueDate: due || null, dueDate: due || null });
+  closeInlineEdit(taskId);
+  renderAll();
+  toast('✓ Task updated');
+};
+
+// ── PROFILE ("You") sheet ──────────────────────────────────────────────────
+function renderMeButton() {
+  const b = $('me-btn'); if (b) b.textContent = MY_NAME ? initials(MY_NAME) : '?';
+}
+function profileRows() {
+  const notifSupported = 'Notification' in window;
+  const rows = [
+    { id: 'sound', icon: 'sound', label: 'Sound', toggle: { on: !getMuted(), action: 'profileSound' } },
+  ];
+  if (notifSupported) rows.push({ id: 'notif', icon: 'bell', label: 'Task notifications', toggle: { on: notifEnabled(), action: 'profileNotif' } });
+  rows.push(
+    { id: 'timer', icon: 'timer', label: 'Focus timer', value: tRunning ? fmtTime(tLeft) : '', action: 'profileTimer' },
+    { id: 'notes', icon: 'notes', label: 'Quick notes', action: 'profileNotes' },
+    { id: 'ideas', icon: 'idea', label: 'Ideas', href: 'ideas.html' },
+  );
+  if (_canBroadcast) rows.push({ id: 'ann', icon: 'announce', label: 'Post an announcement', tag: isAdminUser() ? 'Admin' : '', action: 'profileAnn' });
+  rows.push(
+    { id: 'help', icon: 'help', label: 'Help', href: 'help.html' },
+    { id: 'backup', icon: 'backup', label: 'Backup and restore', href: 'backup.html' },
+  );
+  return rows;
+}
+function profileLine() {
+  const s = streakData.currentStreak || 0;
+  return (isAdminUser() ? 'Admin · ' : '') + (s > 0 ? s + ' day streak' : 'No streak yet');
+}
+window.openProfile = () => {
+  const meId = (members.find(m => sameName(m.name, _meName)) || {}).id;
+  const badges = (cachedBadges[meId] || []).map(b => b.icon).join(' ');
+  const sheet = openSheet('wd-profile', profileSheetHTML({ name: MY_NAME, line: profileLine(), rows: profileRows() }));
+  const r = sheet.querySelector('.wd-ppl .r');
+  if (r) { r.style.cursor = 'pointer'; r.title = 'Tap 5 times for a secret'; r.onclick = () => handleStreakTap(); if (badges) r.textContent += '  ' + badges; }
+};
+function refreshProfile() {
+  const scrim = $('wd-profile');
+  if (scrim && scrim.classList.contains('open')) window.openProfile();
+}
+window.profileSound = () => { toggleMute(); refreshProfile(); };
+window.profileNotif = async () => { await window.handleNotifToggle(); refreshProfile(); };
+window.profileTimer = () => { closeSheet('wd-profile'); setTimeout(toggleTimerPanel, 160); };
+window.profileNotes = () => { closeSheet('wd-profile'); setTimeout(() => $('notes-sheet').classList.add('open'), 160); };
+window.profileAnn = () => { closeSheet('wd-profile'); setTimeout(() => openAnnModal(), 160); };
+window.closeNotes = () => $('notes-sheet').classList.remove('open');
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // FEATURE: TASK SEARCH
 // ═══════════════════════════════════════════════════════════════════════
 let searchQuery = '';
 
-window.handleSearch = (val) => {
-  searchQuery = val.trim().toLowerCase();
-  const clearBtn = document.getElementById('search-clear');
-  if (clearBtn) clearBtn.style.display = searchQuery ? '' : 'none';
-  renderMyTasks();
-};
 
-window.clearSearch = () => {
-  searchQuery = '';
-  const inp = document.getElementById('search-inp');
-  const clearBtn = document.getElementById('search-clear');
-  if (inp) inp.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-  renderMyTasks();
-};
-
-// Show search bar on load if on My Tasks tab
-document.addEventListener('DOMContentLoaded', () => {
-  const sb = document.getElementById('search-bar');
-  if (sb) sb.style.display = '';
-});
 
 // ═══════════════════════════════════════════════════════════════════════
 // FEATURE: TEAM ANNOUNCEMENTS
@@ -3305,18 +1983,18 @@ function getMemberStatus(task, memberId) {
 }
 
 // ── UPDATE member's individual status ─────────────────────────────────────
-async function setMemberStatus(taskId, memberId, newStatus) {
+// opts.quiet: skip the toasts (the caller shows its own Undo bar). Sounds,
+// confetti, streak and first-task-of-the-day bookkeeping still run.
+async function setMemberStatus(taskId, memberId, newStatus, opts = {}) {
+  const q = !!opts.quiet;
   const t = tasks.find(t => t.id === taskId); if (!t) return;
   if (!t.memberStatus) t.memberStatus = {};
-  // Update local copy
   t.memberStatus[memberId] = newStatus;
 
-  // Check allDone using merged state: Firestore memberStatus + this new update
-  // This handles overdue tasks where some members' statuses may be stale in memory
+  // Check allDone using merged state: Firestore memberStatus + this new update.
+  // This handles overdue tasks where some members' statuses may be stale in memory.
   const memberIds = (t.members||[]).map(m => m.id);
-  // Build merged status: start from existing memberStatus, apply new value
   const merged = Object.assign({}, t.memberStatus, { [memberId]: newStatus });
-  // A member is done if their status is 'done' — default to 'todo' if missing
   const allDone = memberIds.length > 0 && memberIds.every(id => (merged[id]||'todo') === 'done');
 
   let overallStatus;
@@ -3325,142 +2003,50 @@ async function setMemberStatus(taskId, memberId, newStatus) {
   else { overallStatus = t.status || 'todo'; }
   t.status = overallStatus;
 
-  // Save: update this member's status + overall status in one write
+  // One write: this member's status + the overall status
   const updates = { status: overallStatus };
   updates[`memberStatus.${memberId}`] = newStatus;
-  // Also explicitly set completedAt if all done — overdue tasks may have missed this
   if (allDone) updates.completedAt = new Date();
   await updateTask(taskId, updates);
   renderAll();
   if (allDone) {
     playTimerDone(); launchConfetti();
-    if (checkFirstTaskOfDay()) {
-      toast('⚡ First blood! First task of the day!');
-      setTimeout(() => toast('🎉 All done! Task complete!'), 1800);
-    } else {
-      toast('🎉 All done! Task complete!');
-    }
+    if (!q) {
+      if (checkFirstTaskOfDay()) {
+        toast('⚡ First blood! First task of the day!');
+        setTimeout(() => toast('🎉 All done! Task complete!'), 1800);
+      } else {
+        toast('🎉 All done! Task complete!');
+      }
+    } else checkFirstTaskOfDay();
     recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
-    if (checkFirstTaskOfDay()) {
-      toast('⚡ First blood! First task of the day!');
-    } else {
-      toast('✓ Your part is done!');
-    }
+    if (!q) {
+      if (checkFirstTaskOfDay()) toast('⚡ First blood! First task of the day!');
+      else toast('✓ Your part is done!');
+    } else checkFirstTaskOfDay();
     recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
-  } else { playReopen(); toast('↩ Reopened'); }
+  } else { playReopen(); if (!q) toast('↩ Reopened'); }
 }
 
-// ── CYCLE OVERALL (todo ↔ inprog only) ────────────────────────────────────
-window.toggleIndividualDone = async (taskId, newStatus) => {
+// ── MARK AN UNASSIGNED / SINGLE-OWNER TASK DONE ────────────────────────────
+window.toggleIndividualDone = async (taskId, newStatus, opts = {}) => {
+  const q = !!opts.quiet;
   const t = tasks.find(t => t.id === taskId); if (!t) return;
   t.status = newStatus;
   await updateTask(taskId, { status: newStatus, completedAt: newStatus === 'done' ? new Date() : null });
   renderAll();
   if (newStatus === 'done') {
     playMarkDone(); launchConfetti();
-    // Satisfying settle on the card that just completed (post-render, so the
-    // node exists), plus a tiny haptic tick on devices that support it.
-    const card = document.getElementById('trc-' + taskId);
-    if (card) {
-      card.classList.add('just-done');
-      card.addEventListener('animationend', () => card.classList.remove('just-done'), { once: true });
-    }
     if (navigator.vibrate) navigator.vibrate(12);
-    toast('✓ Task done!');
+    if (!q) toast('✓ Task done!');
     recordTaskCompletion(MY_NAME).then(s => { streakData = s; renderGreeting(); });
   } else {
-    playReopen(); toast('↩ Reopened');
+    playReopen(); if (!q) toast('↩ Reopened');
   }
 };
 
-// ── INLINE TASK EDIT ──────────────────────────────────────────────────────
-// State (_editPriority / _openEditId / _editDraft) is declared up with
-// expandedTasks — myTaskCard() reads it, and myTaskCard is defined earlier in
-// the file than this block. It works today only because renders happen inside
-// callbacks; declaring it here would be one stray top-level render away from
-// the same "Cannot access before initialization" bug the sprint code hit.
-
-// Called on every keystroke in an edit field. Cheap (plain object write), and
-// it's what lets an in-flight edit survive a background sync re-render.
-window.__editDraft = (taskId, field, val) => {
-  (_editDraft[taskId] ||= {})[field] = val;
-};
-
-window.openInlineEdit = (taskId) => {
-  const panel = document.getElementById('edit-panel-' + taskId);
-  if (!panel) return;
-  const t = tasks.find(t => t.id === taskId);
-  if (!t) return;
-
-  const willOpen = _openEditId !== taskId;
-
-  // Close any other open editor (DOM + state), discarding its draft
-  if (_openEditId && _openEditId !== taskId) {
-    document.getElementById('edit-panel-' + _openEditId)?.classList.remove('open');
-    delete _editDraft[_openEditId];
-  }
-  document.querySelectorAll('.task-edit-panel.open').forEach(p => {
-    if (p.id !== 'edit-panel-' + taskId) p.classList.remove('open');
-  });
-
-  if (willOpen) {
-    _openEditId = taskId;
-    _editPriority[taskId] = t.priority || 'medium';
-    panel.classList.add('open');
-    setTimeout(() => document.getElementById('edit-label-' + taskId)?.focus(), 100);
-  } else {
-    _openEditId = null;
-    delete _editDraft[taskId];
-    panel.classList.remove('open');
-  }
-};
-
-window.closeInlineEdit = (taskId) => {
-  document.getElementById('edit-panel-' + taskId)?.classList.remove('open');
-  if (_openEditId === taskId) _openEditId = null;
-  delete _editDraft[taskId];
-};
-
-window.selectEditPriority = (taskId, priority) => {
-  _editPriority[taskId] = priority;
-  const pCls = {critical:'pc',high:'ph',medium:'pm',low:'pl'};
-  ['critical','high','medium','low'].forEach(p => {
-    const btn = document.getElementById(`edit-p-${taskId}-${p}`);
-    if (!btn) return;
-    btn.className = 'task-edit-pchip' + (p === priority ? ' ' + pCls[p] : '');
-  });
-};
-
-window.saveInlineEdit = async (taskId) => {
-  const label   = document.getElementById('edit-label-'   + taskId)?.value.trim();
-  const project = document.getElementById('edit-project-' + taskId)?.value.trim();
-  const due     = document.getElementById('edit-due-'     + taskId)?.value;
-  const priority = _editPriority[taskId] || 'medium';
-
-  if (!label) { toast('Task name cannot be empty'); return; }
-
-  // Update local cache
-  const t = tasks.find(t => t.id === taskId);
-  if (t) {
-    t.label    = label;
-    t.project  = project;
-    t.priority = priority;
-    t.taskDueDate = due || null;
-  }
-
-  // Save to Firestore
-  await updateTask(taskId, {
-    label, project, priority,
-    taskDueDate: due || null,
-    dueDate:     due || null,
-  });
-
-  closeInlineEdit(taskId);
-  renderAll();
-  toast('✓ Task updated');
-};
 
 window.cycleOverall = async (id) => {
   const t = tasks.find(t => t.id === id); if (!t) return;
@@ -3475,18 +2061,6 @@ window.cycleOverall = async (id) => {
 
 window.setMemberStatusWindow = (taskId, memberId, newStatus) => {
   setMemberStatus(taskId, memberId, newStatus);
-};
-
-// ── TABS ───────────────────────────────────────────────────────────────────
-window.switchTab = (id, btn) => {
-  ['mytasks','bymember','followup'].forEach(t => document.getElementById('tab-'+t).style.display = t===id?'':'none');
-  // Show search only on My Tasks
-  const sb = document.getElementById('search-bar');
-  if (sb) sb.style.display = id === 'mytasks' ? '' : 'none';
-  if (id !== 'mytasks') clearSearch();
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  else document.querySelectorAll('.tab')[0].classList.add('active');
 };
 
 // ── TIMER ──────────────────────────────────────────────────────────────────
@@ -3555,14 +2129,12 @@ function updateTimerUI() {
 function updateTimerIcon() {
   const btn  = document.getElementById('timer-icon-btn');
   const mini = document.getElementById('timer-icon-mini');
-  if (!btn) return;
-  btn.classList.toggle('running', tRunning);
+  if (btn) btn.hidden = !tRunning;
   if (mini) mini.textContent = tRunning ? fmtTime(tLeft) : '';
 }
 
 window.toggleTimerPanel = () => {
-  const wrap = document.getElementById('timer-panel-wrap');
-  wrap.classList.toggle('open');
+  document.getElementById('timer-sheet').classList.toggle('open');
 };
 
 let tStartedAt = null; // wall-clock time when timer was last started/resumed
@@ -3882,64 +2454,7 @@ function computeBadges() {
   }
 }
 
-async function renderGreeting() {
-  streakData = await getStreak();
-  const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const name  = MY_NAME ? `, ${MY_NAME}` : '';
-  const myTasks  = tasks.filter(t => (t.members||[]).some(m => m.name.toLowerCase() === (MY_NAME||'').toLowerCase()));
-
-  // Due this week count
-  const _gn = new Date(), _gp = n => String(n).padStart(2,'0');
-  const _gts = `${_gn.getFullYear()}-${_gp(_gn.getMonth()+1)}-${_gp(_gn.getDate())}`;
-  const _gwe = new Date(_gn); _gwe.setDate(_gwe.getDate()+7);
-  const _gwes = `${_gwe.getFullYear()}-${_gp(_gwe.getMonth()+1)}-${_gp(_gwe.getDate())}`;
-  const dueThisWeek = myTasks.filter(t =>
-    t.status !== 'done' && t.taskDueDate && t.taskDueDate >= _gts && t.taskDueDate <= _gwes
-  ).length;
-
-  // Done this month count
-  const thisMonth = `${_gn.getFullYear()}-${_gp(_gn.getMonth()+1)}`;
-  const doneThisMonth = myTasks.filter(t => t.status === 'done' && t.month === thisMonth).length;
-
-  let sub = '';
-  if (dueThisWeek > 0) sub += `${dueThisWeek} due this week`;
-  if (doneThisMonth > 0) sub += `${sub ? ' · ' : ''}${doneThisMonth} done this month`;
-  if (!sub) sub = myTasks.length === 0 ? 'No tasks assigned yet' : 'All caught up! 🎉';
-
-  // Friday 5pm special message
-  const day = new Date().getDay(); // 0=Sun,5=Fri
-  const isFridayEvening = day === 5 && hour >= 17;
-  // NOTE: `name` above already contains ', ' — the old code wrapped it in
-  // another ', ${...}' which double-commaed the greeting. Using MY_NAME
-  // directly, wrapped in .g-name for the animated gradient treatment.
-  let greetText = greet + (MY_NAME ? `, <span class="g-name">${esc(MY_NAME)}</span>` : '');
-  let greetEmoji = ' 👋';
-  if (isFridayEvening) {
-    greetText = 'Happy weekend' + (MY_NAME ? `, <span class="g-name">${esc(MY_NAME)}</span>` : '');
-    greetEmoji = ' <span class="party-emoji">🎉</span>';
-    sub = "You've earned it. See you Monday!";
-  }
-
-  // Quote — show on all-caught-up or randomly (1 in 4 chance)
-  const showQuote = sub.includes('All caught up') || Math.random() < 0.25;
-  const quoteHTML = showQuote
-    ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">"${getQuote()}"</div>`
-    : '';
-
-  const s = streakData.currentStreak || 0;
-  const streakHTML = s > 0
-    ? `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer" title="Tap 5× for secret">🔥 ${s} day streak</div>`
-    : `<div class="streak-badge" onclick="handleStreakTap()" style="cursor:pointer;opacity:.4">🔥 0</div>`;
-  const el = document.getElementById('greeting-bar');
-  if (el) el.innerHTML = `
-    <div onclick="handleGreetingTap()" style="cursor:pointer;flex:1" title="Tap 3× for secret">
-      <div class="greeting-text">${greetText}${greetEmoji}</div>
-      <div class="greeting-sub">${sub}</div>
-      ${quoteHTML}
-    </div>
-    ${streakHTML}`;
-}
+function renderGreeting() { refreshProfile(); }
 
 // ═══════════════════════════════════════════════════════
 // FEATURE 2: CONFETTI CELEBRATION
@@ -4194,15 +2709,8 @@ window.snoozeFromAlert = async (minutes, mode) => {
 window.openFromAlert = () => {
   if (!_alertTaskId) return;
   document.getElementById('reminder-alert').style.display = 'none';
-  // Switch to My Tasks and expand the task
-  switchTab('mytasks', document.querySelector('.tab'));
-  setTimeout(() => {
-    const row = document.getElementById('trc-' + _alertTaskId);
-    if (row) {
-      row.scrollIntoView({behavior:'smooth', block:'center'});
-      if (!expandedTasks.has(_alertTaskId)) toggleTaskExpand(_alertTaskId);
-    }
-  }, 200);
+  switchHomeTab('mine');
+  openTaskSheet(_alertTaskId);
 };
 
 // ── CHECK REMINDERS (every 30s) ──────────────────────────────────────────
@@ -4268,8 +2776,6 @@ function toast(msg,type=''){
 window.toast = toast;
 
 updateTimerUI();
-// Auto-expand timer panel if a session is already running
-if (tRunning) document.getElementById('timer-panel-wrap')?.classList.add('open');
 </script>
 <script>
 if ('serviceWorker' in navigator) {
@@ -4426,36 +2932,14 @@ if (!isStandalone() && !wasRecentlyDismissed()) {
   </div>
 </div>
 
-<!-- IDEAS FAB -->
-<a href="ideas.html" class="ideas-fab" title="Ideas">
-  💡
-  <span class="ideas-fab-badge" id="ideas-fab-badge"></span>
-</a>
-
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item active"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="projects.html" class="bn-item"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
-  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
+<div class="wd-nav-fade"></div>
+<nav class="wd-nav" aria-label="Main">
+  <a href="index.html" class="on" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/></svg>Home</a>
+  <a href="input.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>Add</a>
+  <a href="calendar.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</a>
+  <a href="projects.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5a2.5 2.5 0 0 1 2.5-2.5h3.6l2 2.2H18a2.5 2.5 0 0 1 2.5 2.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>Projects</a>
+  <a href="report.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 20V12M12 20V4.5M18.5 20v-6.5"/></svg>Report</a>
 </nav>
 
-<!-- FILTER DROPDOWN — body level to avoid clipping -->
-<div class="filter-dropdown" id="filter-drop" onclick="event.stopPropagation()">
-  <div class="fd-group-label">Due Date</div>
-  <div class="fd-options">
-    <button class="fd-opt" id="fd-today"   onclick="selectFilter('due','today',this)">Today</button>
-    <button class="fd-opt" id="fd-week"    onclick="selectFilter('due','this-week',this)">This Week</button>
-    <button class="fd-opt" id="fd-2weeks"  onclick="selectFilter('due','two-weeks',this)">2 Weeks</button>
-  </div>
-  <div class="fd-group-label">Priority</div>
-  <div class="fd-options">
-    <button class="fd-opt" id="fd-critical" onclick="selectFilter('priority','critical',this)">🔴 Critical</button>
-    <button class="fd-opt" id="fd-high"     onclick="selectFilter('priority','high',this)">🟠 High</button>
-    <button class="fd-opt" id="fd-medium"   onclick="selectFilter('priority','medium',this)">🔵 Medium</button>
-    <button class="fd-opt" id="fd-low"      onclick="selectFilter('priority','low',this)">🟢 Low</button>
-  </div>
-  <button class="fd-apply" onclick="applyFilter()">✓ Apply</button>
-</div>
 </body>
 </html>

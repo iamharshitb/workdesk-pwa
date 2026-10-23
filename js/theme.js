@@ -1,104 +1,128 @@
 // ── WorkDesk Theme System ─────────────────────────────────────────────────
+// Two skins — Fair copy (light) and Deep tide (dark) — and a mode that picks
+// between them: 'light', 'dark', or 'auto' (follow the device).
+//
+// The resolved skin is a class on <html> (`theme-light` / `theme-dark`); all
+// colours and shapes live in css/themes.css as tokens. The user's choice is
+// stored as `wd_mode`. The old six themes were retired: a saved legacy
+// `wd_theme` is migrated once (dark-ish ones → dark, the rest → light) and then
+// removed.
 
 export const THEMES = [
-  { id:'editorial',   name:'Editorial',      sub:'Inter · Clean · Minimal',    dot:'#16171A', bg:'#F3F3F5' },
-  { id:'neu',         name:'Neumorphism',    sub:'Soft UI · Sculpted light',   dot:'#2d56d8', bg:'#e0e5ec' },
-  { id:'neudark',     name:'Neumorphism Dark', sub:'Soft UI · Graphite clay',  dot:'#6a98ff', bg:'#2a2e37' },
-  { id:'glass',       name:'Glassmorphism',  sub:'Aurora · Deep frost',        dot:'#22d3ee', bg:'#0b1023' },
-  { id:'skeu',        name:'Skeuomorphism',  sub:'Leather · Paper · Tactile',  dot:'#8b4a2b', bg:'#e8dcc2' },
-  { id:'industrial',  name:'Industrial',     sub:'Hardware · Mono · B&W',      dot:'#ffffff', bg:'#0d0d0d' },
+  { id: 'light', name: 'Light', sub: 'Fair copy',  bg: '#FFFFFF' },
+  { id: 'dark',  name: 'Dark',  sub: 'Deep tide',  bg: '#06141B' },
+];
+export const MODES = [
+  { id: 'light', name: 'Light' },
+  { id: 'dark',  name: 'Dark'  },
+  { id: 'auto',  name: 'Auto'  },
 ];
 
-// Default to Neumorphism if no saved theme, or if saved theme no longer exists
-function getValidTheme() {
-  const saved = localStorage.getItem('wd_theme');
-  // 'ios' was the old default — migrate to current default (Neumorphism)
-  if (!saved || saved === 'ios') {
-    localStorage.setItem('wd_theme', 'neu');
-    return 'neu';
-  }
-  return THEMES.find(t => t.id === saved) ? saved : 'neu';
+const LEGACY_DARK = new Set(['neudark', 'glass', 'industrial', 'ember', 'matrix', 'ios']);
+const MODE_KEY = 'wd_mode';
+const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const listeners = new Set();
+
+function readMode() {
+  try {
+    const saved = localStorage.getItem(MODE_KEY);
+    if (saved === 'light' || saved === 'dark' || saved === 'auto') return saved;
+    const legacy = localStorage.getItem('wd_theme');
+    let mode = 'auto';
+    if (legacy) {
+      mode = LEGACY_DARK.has(legacy) ? 'dark' : 'light';
+      localStorage.removeItem('wd_theme');
+    }
+    localStorage.setItem(MODE_KEY, mode);
+    return mode;
+  } catch { return 'auto'; }
 }
 
-let currentTheme = getValidTheme();
+let mode = readMode();
 
-export function applyTheme(themeId) {
-  // Remove all theme classes
-  THEMES.forEach(t => document.body.classList.remove('theme-' + t.id));
-  // Also remove the empty 'theme-' class from previous sessions
-  document.body.classList.remove('theme-');
-  if (themeId) {
-    document.body.classList.add('theme-' + themeId);
-  }
-  currentTheme = themeId;
-  localStorage.setItem('wd_theme', themeId);
-  updateSwatchActive();
-  syncStatusBarColor(themeId);
+export function getMode() { return mode; }
+
+export function resolvedTheme() {
+  if (mode === 'light' || mode === 'dark') return mode;
+  return mq && mq.matches ? 'dark' : 'light';
 }
 
-// The <meta name="theme-color"> tag colours the OS status bar / task-switcher
-// header. It was previously a static dark value in the HTML, which looked
-// fine for the old dark-default themes but clashes badly now that
-// Neumorphism (light clay) is the default. Each theme already carries a `bg`
-// value for its picker swatch — reuse that instead of hardcoding a second
-// copy of every theme's background colour here.
-function syncStatusBarColor(themeId) {
-  const theme = THEMES.find(t => t.id === themeId);
-  if (!theme) return;
+function paint() {
+  const theme = resolvedTheme();
+  const root = document.documentElement;
+  root.classList.remove('theme-light', 'theme-dark');
+  root.classList.add('theme-' + theme);
+  root.dataset.mode = mode;
+  // keep the OS status bar / task-switcher header in step with the page
   let meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) {
     meta = document.createElement('meta');
     meta.name = 'theme-color';
     document.head.appendChild(meta);
   }
-  meta.content = theme.bg;
+  meta.content = THEMES.find(t => t.id === theme).bg;
+  document.querySelectorAll('[data-mode-opt]').forEach(el => {
+    const on = el.dataset.modeOpt === mode;
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  listeners.forEach(cb => { try { cb(theme, mode); } catch { /* listener errors never block paint */ } });
 }
+
+export function setMode(next) {
+  if (!MODES.some(m => m.id === next)) return;
+  mode = next;
+  try { localStorage.setItem(MODE_KEY, mode); } catch { /* private mode: keep in memory */ }
+  paint();
+}
+
+// Kept for pages that still call it with a skin id.
+export function applyTheme(themeId) {
+  setMode(themeId === 'dark' ? 'dark' : themeId === 'light' ? 'light' : 'auto');
+}
+
+export function onThemeChange(cb) { listeners.add(cb); return () => listeners.delete(cb); }
 
 export function initTheme() {
-  applyTheme(currentTheme);
+  paint();
+  if (mq) {
+    const follow = () => { if (mode === 'auto') paint(); };
+    if (mq.addEventListener) mq.addEventListener('change', follow);
+    else if (mq.addListener) mq.addListener(follow);
+  }
 }
 
-function updateSwatchActive() {
-  document.querySelectorAll('.swatch').forEach(s => {
-    s.classList.toggle('active', s.dataset.theme === currentTheme);
-  });
+// ── Appearance picker ─────────────────────────────────────────────────────
+// Pages that don't have the profile sheet yet open this small sheet from their
+// "Theme" button. The same three-way control is reused by the profile sheet in
+// js/ui.js (it only needs the `data-mode-opt` attribute and `window.__setMode`).
+window.__setMode = (id) => { if (navigator.vibrate) navigator.vibrate(8); setMode(id); };
+
+export function appearanceControlHTML() {
+  return `<div class="wd-seg" role="group" aria-label="Appearance">
+    ${MODES.map(m => `<button type="button" data-mode-opt="${m.id}" aria-pressed="${m.id === mode}"
+      class="${m.id === mode ? 'on' : ''}" onclick="window.__setMode('${m.id}')">${m.name}</button>`).join('')}
+  </div>`;
 }
 
 function buildThemePanel() {
   const overlay = document.createElement('div');
-  overlay.className = 'theme-panel-overlay';
+  overlay.className = 'wd-scrim';
   overlay.id = 'theme-overlay';
   overlay.onclick = e => { if (e.target === overlay) closeThemePanel(); };
-
-  const panel = document.createElement('div');
-  panel.className = 'theme-panel';
-  panel.innerHTML = `
-    <div class="tp-title">🎨 Theme</div>
-    <div class="theme-swatches">
-      ${THEMES.map(t => `
-        <div class="swatch${t.id === currentTheme ? ' active' : ''}" data-theme="${t.id}"
-          onclick="window.__applyTheme('${t.id}')">
-          <div class="swatch-dot" style="background:${t.dot};border-color:${t.bg}"></div>
-          <div>
-            <div class="swatch-name">${t.name}</div>
-            <div class="swatch-sub">${t.sub}</div>
-          </div>
-        </div>`).join('')}
-    </div>
-  `;
-
-  overlay.appendChild(panel);
+  overlay.innerHTML = `
+    <div class="wd-sheet" role="dialog" aria-label="Appearance">
+      <div class="wd-grab"></div>
+      <div class="wd-sheet-title">Appearance</div>
+      ${appearanceControlHTML()}
+      <p class="wd-sheet-note">Auto follows your device's light or dark setting.</p>
+    </div>`;
   document.body.appendChild(overlay);
-
-  window.__applyTheme = (id) => { if (navigator.vibrate) navigator.vibrate(8); applyTheme(id); };
 }
 
 export function toggleThemePanel() {
   let overlay = document.getElementById('theme-overlay');
-  if (!overlay) {
-    buildThemePanel();
-    overlay = document.getElementById('theme-overlay');
-  }
+  if (!overlay) { buildThemePanel(); overlay = document.getElementById('theme-overlay'); }
   overlay.classList.toggle('open');
 }
 

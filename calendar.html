@@ -10,959 +10,426 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WorkDesk — Calendar</title>
 <link rel="manifest" href="manifest.json">
+<script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<style>
-/* ── CALENDAR GRID ── */
-.cal-header {
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr);margin-bottom:12px;
-  box-shadow:var(--shadow-card);
-}
-.cal-month-label {
-  font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.01em;
-}
-.cal-nav-btn {
-  width:34px;height:34px;border-radius:50%;
-  border:1.5px solid var(--border2);background:var(--bg2);
-  color:var(--text2);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .15s;
-}
-.cal-nav-btn:hover { border-color:var(--neon);color:var(--neon); }
-
-.cal-grid {
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr);overflow:hidden;
-  box-shadow:var(--shadow-card);margin-bottom:12px;
-}
-.cal-dow-row {
-  display:grid;grid-template-columns:repeat(7,1fr);
-  border-bottom:1px solid var(--border);
-}
-.cal-dow {
-  text-align:center;padding:8px 0;
-  font-size:10px;font-weight:700;color:var(--text2);
-  letter-spacing:.08em;text-transform:uppercase;
-}
-.cal-days {
-  display:grid;grid-template-columns:repeat(7,1fr);
-}
-.cal-day {
-  min-height:90px;padding:6px 5px;
-  border-right:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  cursor:pointer;transition:background .12s;
-  position:relative;
-}
-.cal-day:nth-child(7n) { border-right:none }
-.cal-day:hover { background:var(--bg3) }
-.cal-day.today { background:rgba(0,229,184,.06) }
-.cal-day.today .cal-day-num { color:var(--neon);font-weight:800 }
-.cal-day.other-month { opacity:.35 }
-.cal-day.has-events { background:rgba(157,126,255,.05) }
-/* Fixed height so grid never shifts */
-.cal-day {
-  min-height:80px !important;
-  height:80px !important;
-  overflow:hidden;
-}
-.cal-day-num {
-  font-size:12px;font-weight:600;color:var(--text2);
-  margin-bottom:3px;line-height:1;flex-shrink:0;
-}
-.cal-events-wrap {
-  display:flex;flex-direction:column;gap:2px;overflow:hidden;
-  flex:1;min-height:0;
-}
-.cal-event-dot {
-  display:block;
-  font-size:9px;font-weight:700;
-  padding:2px 4px;border-radius:4px;
-  max-width:100%;line-height:1.2;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  flex-shrink:0;
-}
-.cal-more-badge {
-  font-size:9px;font-weight:700;color:var(--text3);
-  padding:1px 4px;
-}
-.dot-video      { background:rgba(248,113,113,.15);color:#f87171; }
-.dot-blog       { background:rgba(96,165,250,.15);color:#60a5fa; }
-.dot-email      { background:rgba(251,191,36,.15);color:#fbbf24; }
-.dot-event      { background:rgba(52,211,153,.15);color:#34d399; }
-.dot-social     { background:rgba(167,139,250,.15);color:#a78bfa; }
-.dot-livestream { background:rgba(249,115,22,.15);color:#f97316; }
-.dot-other      { background:rgba(107,114,128,.15);color:#9ca3af; }
-
-/* ── EVENT MODAL ── */
-.event-modal-overlay {
-  position:fixed;inset:0;background:rgba(0,0,0,.6);
-  z-index:200;display:none;align-items:flex-end;justify-content:center;
-  backdrop-filter:blur(4px);
-}
-.event-modal-overlay.open { display:flex }
-.event-modal {
-  background:var(--panel);
-  border:1.5px solid var(--border2);
-  border-radius:20px 20px 0 0;
-  padding:20px 16px 36px;
-  width:100%;max-width:500px;
-  box-shadow:0 -8px 40px rgba(0,0,0,.4);
-  max-height:85vh;overflow-y:auto;
-  animation:slide-up .25s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes slide-up { from{transform:translateY(100%)} to{transform:translateY(0)} }
-.modal-drag-handle {
-  width:36px;height:4px;border-radius:2px;
-  background:var(--border2);margin:0 auto 16px;
-}
-.modal-date-label {
-  font-size:15px;font-weight:800;color:var(--text);
-  margin-bottom:16px;
-}
-/* Existing events list */
-.event-list { margin-bottom:16px }
-.event-item {
-  display:flex;align-items:flex-start;gap:10px;
-  padding:10px 12px;border-radius:12px;margin-bottom:8px;
-  background:var(--bg2);border:1px solid var(--border2);
-}
-.event-item-color { width:4px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:40px }
-.event-item-body  { flex:1;min-width:0 }
-.event-item-subject { font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px }
-.event-item-meta    { font-size:11px;color:var(--text2) }
-.event-item-edit {
-  flex-shrink:0;background:none;border:1px solid var(--border2);
-  border-radius:7px;padding:4px 8px;cursor:pointer;
-  font-size:11px;color:var(--text2);font-family:var(--sans);
-  font-weight:700;transition:all .12s;
-}
-.event-item-edit:hover { border-color:var(--neon);color:var(--neon) }
-.event-item-del {
-  flex-shrink:0;width:26px;height:26px;border-radius:50%;
-  border:1px solid var(--border2);background:none;
-  color:var(--text3);font-size:13px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .15s;
-}
-.event-item-del:hover { border-color:rgba(255,58,94,.4);color:var(--red) }
-
-/* Add event form */
-.add-event-form { border-top:1px solid var(--border);padding-top:14px }
-.form-label {
-  font-size:11px;font-weight:700;color:var(--text2);
-  letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;margin-top:12px;
-}
-.form-input {
-  width:100%;background:var(--bg2);border:1.5px solid var(--border2);
-  border-radius:10px;padding:10px 12px;color:var(--text);
-  font-family:var(--sans);font-size:14px;font-weight:500;
-  outline:none;transition:border-color .15s;
-}
-.form-input:focus { border-color:var(--neon) }
-.form-input::placeholder { color:var(--text3) }
-.type-pills { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px }
-.type-pill {
-  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
-  border:1.5px solid var(--border2);background:var(--bg2);
-  color:var(--text2);cursor:pointer;transition:all .15s;
-}
-.type-pill.selected { border-color:var(--neon);background:rgba(0,229,184,.08);color:var(--neon) }
-.add-btn {
-  width:100%;padding:12px;border-radius:12px;border:none;
-  background:var(--neon);color:var(--bg);
-  font-family:var(--sans);font-size:14px;font-weight:800;
-  cursor:pointer;margin-top:14px;
-  box-shadow:0 4px 0 rgba(0,0,0,.2),0 2px 12px rgba(0,229,184,.2);
-  transition:all .15s;
-}
-.add-btn:hover { filter:brightness(1.08);transform:translateY(-1px) }
-.add-btn:active { transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2) }
-
-/* ── STATUS BADGES ── */
-.status-pill {
-  display:inline-flex;align-items:center;gap:4px;
-  padding:4px 10px;border-radius:20px;
-  font-size:11px;font-weight:800;cursor:pointer;
-  border:1.5px solid transparent;transition:all .15s;
-  user-select:none;
-}
-.status-planned  { background:rgba(96,165,250,.12);color:#60a5fa;border-color:rgba(96,165,250,.3) }
-.status-sent     { background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.3) }
-.status-delayed  { background:rgba(248,113,113,.12);color:#f87171;border-color:rgba(248,113,113,.3) }
-.status-pill:hover { filter:brightness(1.2) }
-.event-item-status { display:flex;align-items:center;gap:6px;margin-top:6px }
-
-/* ── YEAR HISTORY ── */
-.history-toggle {
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr);margin-top:12px;
-  cursor:pointer;transition:all .15s;
-  box-shadow:var(--shadow-card);
-  user-select:none;-webkit-tap-highlight-color:transparent;
-}
-.history-toggle:hover { border-color:var(--neon2) }
-.history-toggle-label {
-  font-size:13px;font-weight:700;color:var(--text2);
-  display:flex;align-items:center;gap:8px;
-}
-.history-toggle-count {
-  font-size:11px;padding:2px 8px;border-radius:20px;
-  background:rgba(157,126,255,.12);color:var(--purple);
-  border:1px solid rgba(157,126,255,.25);font-weight:700;
-}
-.history-arrow { font-size:12px;color:var(--text3);transition:transform .2s }
-.history-arrow.open { transform:rotate(180deg) }
-.history-body {
-  display:none;
-  background:var(--panel);border:1px solid var(--border2);
-  border-top:none;border-radius:0 0 var(--rr) var(--rr);
-  overflow:hidden;margin-top:-4px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow-card);
-}
-.history-body.open { display:block;margin-bottom:20px }
-.history-month-group {
-  border-bottom:1px solid var(--border);
-}
-.history-month-label {
-  font-size:11px;font-weight:800;color:var(--text2);
-  letter-spacing:.08em;text-transform:uppercase;
-  padding:8px 14px;background:var(--bg2);
-}
-.history-item {
-  display:flex;align-items:center;gap:10px;
-  padding:9px 14px;border-bottom:1px solid var(--border);
-}
-.history-item:last-child { border-bottom:none }
-.history-item-date {
-  font-size:11px;font-weight:700;color:var(--text3);
-  min-width:52px;flex-shrink:0;
-}
-.history-item-type {
-  font-size:10px;font-weight:800;padding:2px 7px;
-  border-radius:4px;flex-shrink:0;
-}
-.history-item-subject {
-  font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.history-item-status {
-  font-size:10px;font-weight:700;flex-shrink:0;
-}
-.history-empty {
-  padding:20px;text-align:center;
-  font-size:13px;color:var(--text3);font-weight:600;
-}
-
-/* ── LEGEND ── */
-.cal-legend {
-  display:flex;flex-wrap:wrap;gap:6px;
-  padding:12px 14px;
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr);margin-bottom:12px;
-  box-shadow:var(--shadow-card);
-}
-.legend-item {
-  display:flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:700;color:var(--text2);
-}
-.legend-dot { width:8px;height:8px;border-radius:2px }
-
-/* ── VIEW TOGGLE ── */
-.cal-view-toggle {
-  display:flex;align-items:center;gap:4px;
-  background:var(--bg2);border:1.5px solid var(--border2);
-  border-radius:20px;padding:3px;
-}
-.cal-view-btn {
-  padding:5px 10px;border-radius:16px;
-  font-size:11px;font-weight:700;
-  border:none;background:transparent;
-  color:var(--text2);cursor:pointer;
-  transition:all .15s;white-space:nowrap;
-  display:flex;align-items:center;gap:4px;
-}
-.cal-view-btn.active {
-  background:var(--panel);color:var(--neon);
-  box-shadow:0 1px 4px rgba(0,0,0,.15);
-}
-.cal-view-btn:hover:not(.active) { color:var(--text) }
-
-/* ── FILTER BAR ── */
-.cal-filter-bar {
-  display:flex;flex-wrap:wrap;gap:6px;
-  padding:10px 14px;
-  background:var(--panel);border:1px solid var(--border2);
-  border-radius:var(--rr);margin-bottom:12px;
-  box-shadow:var(--shadow-card);
-  align-items:center;
-}
-.cal-filter-label {
-  font-size:10px;font-weight:800;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.08em;
-  margin-right:2px;flex-shrink:0;
-}
-.filter-chip {
-  padding:5px 11px;border-radius:20px;
-  font-size:11px;font-weight:700;
-  border:1.5px solid var(--border2);background:var(--bg2);
-  color:var(--text2);cursor:pointer;
-  transition:all .15s;user-select:none;
-  -webkit-tap-highlight-color:transparent;
-}
-.filter-chip.active {
-  border-color:var(--neon);background:rgba(0,229,184,.08);color:var(--neon);
-}
-.filter-chip[data-type="Video"].active    { border-color:#f87171;background:rgba(248,113,113,.10);color:#f87171; }
-.filter-chip[data-type="Blog"].active     { border-color:#60a5fa;background:rgba(96,165,250,.10);color:#60a5fa; }
-.filter-chip[data-type="Email"].active    { border-color:#fbbf24;background:rgba(251,191,36,.10);color:#fbbf24; }
-.filter-chip[data-type="Event"].active    { border-color:#34d399;background:rgba(52,211,153,.10);color:#34d399; }
-.filter-chip[data-type="Social"].active   { border-color:#a78bfa;background:rgba(167,139,250,.10);color:#a78bfa; }
-.filter-chip[data-type="Livestream"].active { border-color:#f97316;background:rgba(249,115,22,.10);color:#f97316; }
-.filter-chip[data-type="Other"].active    { border-color:#9ca3af;background:rgba(107,114,128,.10);color:#9ca3af; }
-
-/* ── LANDSCAPE MODE ── */
-body.cal-landscape .page {
-  max-width: 100%;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-body.cal-landscape .cal-grid {
-  /* wider cells for desktop view */
-}
-body.cal-landscape .cal-day {
-  min-height: 140px !important;
-  height: 140px !important;
-  padding: 8px 7px;
-}
-body.cal-landscape .cal-day-num {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-body.cal-landscape .cal-event-dot {
-  font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 5px;
-}
-body.cal-landscape .cal-events-wrap {
-  gap: 3px;
-}
-/* Show up to 4 events in landscape (instead of 2) */
-body.cal-landscape .cal-day .cal-event-dot:nth-child(n+5) { display:none }
-
-/* Filtered-out days look muted */
-.cal-day.filter-muted {
-  opacity: 0.3;
-  cursor: default;
-}
-.cal-day.filter-muted:hover { background: transparent }
-</style>
+<link rel="stylesheet" href="css/ui.css">
 </head>
 <body>
-<nav class="nav">
-  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="32" style="display:block"></a>
-  <div class="nav-right">
-    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
-    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
-    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
-  </div>
-</nav>
+<div class="wd-page" id="main">
+  <header class="wd-appbar">
+    <a href="index.html" class="nav-brand" aria-label="WorkDesk"><img class="wd-logo" src="data:image/png;base64,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" alt="Workdesk" height="30"></a>
+    <button type="button" class="wd-av" id="me-btn" aria-label="Your profile and settings">·</button>
+  </header>
 
-<div class="page" style="padding-bottom:140px">
-
-  <!-- CALENDAR HEADER -->
-  <div class="cal-header fi">
-    <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
-    <div>
-      <div class="cal-month-label" id="cal-month-label">—</div>
-      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-top:2px" id="cal-sub-label"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <!-- View toggle: Portrait ↔ Landscape -->
-      <div class="cal-view-toggle" id="cal-view-toggle">
-        <button class="cal-view-btn active" id="view-portrait" onclick="setCalView('portrait')" title="Mobile portrait view">☰ Portrait</button>
-        <button class="cal-view-btn" id="view-landscape" onclick="setCalView('landscape')" title="Full desktop view">⊞ Landscape</button>
-      </div>
-      <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+  <div class="wd-title">
+    <h1 class="wd-h1 cal-h1" id="cal-month" aria-live="polite">&nbsp;</h1>
+    <div class="cal-nav">
+      <button type="button" class="wd-icon-btn" onclick="prevMonth()" aria-label="Previous month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button type="button" class="wd-icon-btn" onclick="nextMonth()" aria-label="Next month"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
   </div>
-
-  <!-- LEGEND -->
-  <div class="cal-legend fi" style="animation-delay:.03s">
-    <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Video</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>Blog</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Email</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Event</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Social</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Livestream</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#9ca3af"></div>Other</div>
+  <div class="wd-sub">
+    <span id="cal-sub">&nbsp;</span>
+    <button type="button" class="wd-link" id="view-btn" onclick="toggleView()">Landscape view</button>
   </div>
 
-  <!-- EVENT-TYPE FILTER BAR -->
-  <div class="cal-filter-bar fi" style="animation-delay:.04s">
-    <span class="cal-filter-label">Filter:</span>
-    <div class="filter-chip active" data-type="All" onclick="setFilter(this)">All</div>
-    <div class="filter-chip" data-type="Video" onclick="setFilter(this)">🎬 Video</div>
-    <div class="filter-chip" data-type="Blog" onclick="setFilter(this)">✍️ Blog</div>
-    <div class="filter-chip" data-type="Email" onclick="setFilter(this)">📧 Email</div>
-    <div class="filter-chip" data-type="Event" onclick="setFilter(this)">📅 Event</div>
-    <div class="filter-chip" data-type="Social" onclick="setFilter(this)">📲 Social</div>
-    <div class="filter-chip" data-type="Livestream" onclick="setFilter(this)">📡 Livestream</div>
-    <div class="filter-chip" data-type="Other" onclick="setFilter(this)">💬 Other</div>
-  </div>
+  <div class="wd-filter-chips cal-filter" id="cal-filter" role="group" aria-label="Filter by type"></div>
 
-  <!-- CALENDAR GRID -->
-  <div class="cal-grid fi" style="animation-delay:.05s">
-    <div class="cal-dow-row">
-      <div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div>
-      <div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
-      <div class="cal-dow">Sun</div>
-    </div>
+  <div class="cal-grid" id="cal-grid">
+    <div class="cal-dow" id="cal-dow"></div>
     <div class="cal-days" id="cal-days"></div>
   </div>
 
+  <section class="wd-all cal-hist">
+    <button type="button" class="wd-disc" id="hist-toggle" aria-expanded="false" aria-controls="hist-body" onclick="toggleHistory()">
+      <span id="hist-label">Communications this year</span><span class="n" id="hist-count">0</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div id="hist-body" hidden></div>
+  </section>
 </div>
-
-  <!-- YEAR HISTORY — collapsible -->
-  <div class="history-toggle fi" onclick="toggleHistory()" style="animation-delay:.08s">
-    <div class="history-toggle-label">
-      <span>📋</span>
-      <span id="history-label">Communications This Year</span>
-      <span class="history-toggle-count" id="history-count">0</span>
-    </div>
-    <span class="history-arrow" id="history-arrow">▼</span>
-  </div>
-  <div class="history-body" id="history-body"></div>
-
-</div>
-
-<!-- EVENT MODAL (bottom sheet) -->
-<div class="event-modal-overlay" id="event-modal" onclick="handleModalClick(event)">
-  <div class="event-modal">
-    <div class="modal-drag-handle"></div>
-    <div class="modal-date-label" id="modal-date-label">—</div>
-    <div class="event-list" id="event-list"></div>
-    <div class="add-event-form">
-      <div style="font-size:12px;font-weight:700;color:var(--neon);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">+ Add Communication</div>
-      <div class="form-label">Subject</div>
-      <input class="form-input" id="ev-subject" placeholder="e.g. Q1 Town Hall Announcement" maxlength="100">
-      <div class="form-label">Type of Communication</div>
-      <div class="type-pills" id="type-pills">
-        <div class="type-pill" data-type="Video" onclick="selectType(this)">🎬 Video</div>
-        <div class="type-pill" data-type="Blog" onclick="selectType(this)">✍️ Blog</div>
-        <div class="type-pill" data-type="Email" onclick="selectType(this)">📧 Email</div>
-        <div class="type-pill" data-type="Event" onclick="selectType(this)">📅 Event</div>
-        <div class="type-pill" data-type="Social" onclick="selectType(this)">📲 Social</div>
-        <div class="type-pill" data-type="Livestream" onclick="selectType(this)">📡 Livestream</div>
-        <div class="type-pill" data-type="Other" onclick="selectType(this)">💬 Other</div>
-      </div>
-      <div class="form-label">People Involved</div>
-      <input class="form-input" id="ev-people" placeholder="e.g. Harshit, Amrutha, Sriram" maxlength="100">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <input type="checkbox" id="create-task-cb" style="width:16px;height:16px;accent-color:var(--neon);cursor:pointer">
-        <label for="create-task-cb" style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer">Also register as task (Harshit + Godly as responsible)</label>
-      </div>
-      <button class="add-btn" onclick="addEvent()">Add to Calendar</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html" class="bn-item"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="calendar.html" class="bn-item active"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="projects.html" class="bn-item"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
-  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-</nav>
 
 <script type="module">
-import { initTheme, toggleThemePanel } from './js/theme.js';
-import { getMuted, toggleMute, initAudio } from './js/sounds.js';
 import { onUserReady, saveCalendarData, onCalendarDataChanged, addTask, getMembers } from './js/firebase.js';
+import { initShell } from './js/shell.js';
+import { esc, ICON, glyphSVG, openSheet, closeSheet, sheetBody, showUndo, showNote, localDateStr } from './js/ui.js';
 
-initTheme(); window.toggleThemePanel = toggleThemePanel;
-initAudio();
-function updateMuteBtn(){const b=document.getElementById('mute-btn');if(b)b.textContent=getMuted()?'🔇':'🔊';}
-window.handleMuteToggle=()=>{toggleMute();updateMuteBtn();}
-updateMuteBtn();
+const $ = id => document.getElementById(id);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TYPES = ['Video', 'Blog', 'Email', 'Event', 'Social', 'Livestream', 'Other'];
+const NEXT_STATUS = { Planned: 'Sent', Sent: 'Delayed', Delayed: 'Planned' };
+// status uses the same shapes as tasks: ring = planned, disc + tick = sent, dashed ring = delayed
+const STATUS_GLYPH = { Planned: 'todo', Sent: 'done', Delayed: 'onhold' };
 
-// Restore saved view preference
-try {
-  const saved = localStorage.getItem('calView');
-  if (saved === 'landscape') {
-    calView = 'landscape';
-    document.body.classList.add('cal-landscape');
-    document.getElementById('view-portrait').classList.remove('active');
-    document.getElementById('view-landscape').classList.add('active');
-  }
-} catch(e) {}
-
-// ── STATE ──────────────────────────────────────────────────────────────────
-let viewYear  = new Date().getFullYear();
-let viewMonth = new Date().getMonth(); // 0-indexed
-let events    = {}; // { 'YYYY-MM-DD': [ { subject, type, people, id } ] }
-let selectedDate = null;
-let selectedType = null;
-let calMembers = []; // loaded on init for auto-task creation
-let activeFilter = 'All';     // 'All' or any TYPE key
-let calView = 'portrait';     // 'portrait' | 'landscape'
-
-const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const TYPE_COLORS = {
-  Video:'dot-video', Blog:'dot-blog', Email:'dot-email',
-  Event:'dot-event', Social:'dot-social', Livestream:'dot-livestream', Other:'dot-other'
+// Type is a shape first and a hue second, so it still reads in Deep tide where
+// there are no hues: triangle · square · diamond · disc · plus · ring · dash.
+const SHAPE = {
+  Video:      '<path d="M3.4 2.3v7.4L9.6 6z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+  Blog:       '<rect x="2" y="2" width="8" height="8" rx="2" fill="currentColor"/>',
+  Email:      '<path d="M6 1.4l4.6 4.6L6 10.6 1.4 6z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
+  Event:      '<circle cx="6" cy="6" r="4.4" fill="currentColor"/>',
+  Social:     '<path d="M6 2v8M2 6h8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>',
+  Livestream: '<circle cx="6" cy="6" r="3.9" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  Other:      '<path d="M2.2 6h7.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>',
 };
-const TYPE_HEX = {
-  Video:'#f87171', Blog:'#60a5fa', Email:'#fbbf24',
-  Event:'#34d399', Social:'#a78bfa', Livestream:'#f97316', Other:'#9ca3af'
-};
+const typeKey = t => (TYPES.includes(t) ? t : 'Other');
+const typeGlyph = (type, size = 12, extra = '') =>
+  `<span class="tg tg-${typeKey(type)}${extra}" aria-hidden="true"><svg width="${size}" height="${size}" viewBox="0 0 12 12">${SHAPE[typeKey(type)]}</svg></span>`;
+const CHECK_SM = '<svg class="ck" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const haptic = n => { try { navigator.vibrate && navigator.vibrate(n); } catch (e) {} };
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
-// ── FIRESTORE SYNC ─────────────────────────────────────────────────────────
-onUserReady(async () => {
-  // Load members for auto-task creation
-  try { calMembers = await getMembers(); } catch(e) { calMembers = []; }
+// ── state ──────────────────────────────────────────────────────────────────
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth();       // 0-indexed
+let events = {};                              // { 'YYYY-MM-DD': [ { id, subject, type, people, status } ] }
+let selectedDate = null;                      // the day open in the sheet
+let selectedType = null;                      // type chosen in the form
+let editingIdx = null;                        // index of the event being edited, or null
+let wantTask = false;                         // "also add as a task" switch
+let calMembers = [];                          // for the auto-created task
+let activeFilter = 'All';                     // 'All' or a type
+let calView = 'portrait';                     // 'portrait' | 'landscape'
+let historyOpen = false;
 
-  // Render immediately with empty state so calendar grid shows on load
-  renderCalendar();
+try { if (localStorage.getItem('calView') === 'landscape') calView = 'landscape'; } catch (e) {}
 
-  // Then subscribe — will re-render when Firestore data arrives
-  onCalendarDataChanged((events_data) => {
-    // events_data is already parsed by onCalendarDataChanged
-    if (typeof events_data === 'object' && events_data !== null) {
-      events = events_data;
-    }
-    renderCalendar();
-  });
-});
-
+// ── persistence ────────────────────────────────────────────────────────────
 async function saveCalendar() {
-  try {
-    await saveCalendarData(events);
-    console.log('Calendar saved OK:', Object.keys(events).length, 'dates');
-  } catch(e) {
-    console.error('Calendar save failed:', e);
-    toast('Save failed', 'err');
-  }
+  try { await saveCalendarData(events); return true; }
+  catch (e) { console.error('Calendar save failed:', e); showNote('Could not save. Check your connection and try again.'); return false; }
 }
 
-// ── RENDER CALENDAR ────────────────────────────────────────────────────────
+// ── header, filter, view ───────────────────────────────────────────────────
+function renderDow() {
+  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  $('cal-dow').innerHTML = names.map(n => `<span><b>${n[0]}</b><i>${n}</i></span>`).join('');
+}
+function renderFilter() {
+  $('cal-filter').innerHTML = ['All', ...TYPES].map(t =>
+    `<button type="button" class="wd-chip${activeFilter === t ? ' on' : ''}" data-type="${t}" aria-pressed="${activeFilter === t}">${t === 'All' ? '' : typeGlyph(t)}${t}</button>`
+  ).join('');
+}
+function applyView() {
+  const wide = calView === 'landscape';
+  document.body.classList.toggle('cal-wide', wide);
+  $('view-btn').textContent = wide ? 'Portrait view' : 'Landscape view';
+}
+window.toggleView = () => {
+  calView = calView === 'landscape' ? 'portrait' : 'landscape';
+  try { localStorage.setItem('calView', calView); } catch (e) {}
+  applyView(); renderCalendar(); haptic(6);
+};
+
+// ── grid ───────────────────────────────────────────────────────────────────
+const pad2 = n => String(n).padStart(2, '0');
+const dateKey = (y, m, d) => y + '-' + pad2(m + 1) + '-' + pad2(d);
+function longDay(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function evChip(e) {
+  const sent = e.status === 'Sent', late = e.status === 'Delayed';
+  return `<span class="cal-ev${sent ? ' ev-sent' : ''}${late ? ' ev-late' : ''}">${typeGlyph(e.type, 10)}<span class="t">${esc(e.subject)}</span>${sent ? CHECK_SM : ''}</span>`;
+}
+function evDot(e) {
+  return typeGlyph(e.type, 11, e.status === 'Sent' ? ' ev-sent' : e.status === 'Delayed' ? ' ev-late' : '');
+}
+
 function renderCalendar() {
-  const now   = new Date();
-  const label = MONTHS[viewMonth] + ' ' + viewYear;
-  document.getElementById('cal-month-label').textContent = label;
-  // Count only events in the currently viewed month
-  const monthPrefix = viewYear + '-' + String(viewMonth+1).padStart(2,'0');
-  const monthEvents = Object.entries(events)
-    .filter(([date]) => date.startsWith(monthPrefix))
-    .reduce((s,[,arr]) => s + arr.length, 0);
-  document.getElementById('cal-sub-label').textContent = monthEvents
-    ? monthEvents + ' communication' + (monthEvents>1?'s':'') + ' planned this month'
-    : 'Click any date to add communications';
+  $('cal-month').innerHTML = `${MONTHS[viewMonth]} <span class="yr">${viewYear}</span>`;
 
-  // First day of month (0=Sun…6=Sat), convert to Mon=0 grid
+  const monthPrefix = viewYear + '-' + pad2(viewMonth + 1);
+  const inMonth = Object.entries(events).filter(([d]) => d.startsWith(monthPrefix));
+  const count = inMonth.reduce((s, [, arr]) => s + (activeFilter === 'All' ? arr.length : arr.filter(e => e.type === activeFilter).length), 0);
+  $('cal-sub').textContent = activeFilter === 'All'
+    ? (count ? plural(count, 'communication', 'communications') + ' this month' : 'Tap a date to add one')
+    : (count ? count + ' ' + activeFilter + ' this month' : 'No ' + activeFilter + ' this month');
+
+  const wide = calView === 'landscape';
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-  const gridStart = (firstDay + 6) % 7; // Mon-based offset
-  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
-  const daysInPrev  = new Date(viewYear, viewMonth, 0).getDate();
+  const gridStart = (firstDay + 6) % 7;                       // Monday-first
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+  const total = Math.ceil((gridStart + daysInMonth) / 7) * 7;
+  const today = localDateStr();
 
-  const grid = document.getElementById('cal-days');
-  grid.innerHTML = '';
-
-  const totalCells = Math.ceil((gridStart + daysInMonth) / 7) * 7;
-
-  for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-day';
-
-    let dayNum, dateStr, isOther = false;
+  const cells = [];
+  for (let i = 0; i < total; i++) {
+    let num, key, other = false;
     if (i < gridStart) {
-      dayNum = daysInPrev - gridStart + i + 1;
-      const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
-      const prevYear  = viewMonth === 0 ? viewYear - 1 : viewYear;
-      dateStr = `${prevYear}-${String(prevMonth+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
-      isOther = true;
+      num = daysInPrev - gridStart + i + 1;
+      key = viewMonth === 0 ? dateKey(viewYear - 1, 11, num) : dateKey(viewYear, viewMonth - 1, num);
+      other = true;
     } else if (i >= gridStart + daysInMonth) {
-      dayNum = i - gridStart - daysInMonth + 1;
-      const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
-      const nextYear  = viewMonth === 11 ? viewYear + 1 : viewYear;
-      dateStr = `${nextYear}-${String(nextMonth+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
-      isOther = true;
+      num = i - gridStart - daysInMonth + 1;
+      key = viewMonth === 11 ? dateKey(viewYear + 1, 0, num) : dateKey(viewYear, viewMonth + 1, num);
+      other = true;
     } else {
-      dayNum = i - gridStart + 1;
-      dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+      num = i - gridStart + 1;
+      key = dateKey(viewYear, viewMonth, num);
     }
-
-    if (isOther) cell.classList.add('other-month');
-
-    const todayStr = now.toISOString().slice(0,10);
-    if (dateStr === todayStr) cell.classList.add('today');
-
-    const allDayEvents = events[dateStr] || [];
-    // Apply type filter
-    const dayEvents = activeFilter === 'All'
-      ? allDayEvents
-      : allDayEvents.filter(ev => ev.type === activeFilter);
-
-    if (allDayEvents.length) cell.classList.add('has-events');
-
-    // Mute days with no matching events when a filter is active
-    if (activeFilter !== 'All' && dayEvents.length === 0 && !isOther) {
-      cell.classList.add('filter-muted');
+    const all = events[key] || [];
+    const list = activeFilter === 'All' ? all : all.filter(e => e.type === activeFilter);
+    const cls = 'cal-day' + (other ? ' other' : '') + (key === today ? ' today' : '') + (activeFilter !== 'All' && !list.length ? ' dim' : '');
+    const label = longDay(key) + (list.length ? ', ' + plural(list.length, 'communication', 'communications') : '');
+    let inner;
+    if (wide) {
+      const max = 3, vis = list.slice(0, max);
+      inner = `<span class="cal-n">${num}</span><span class="cal-evs">${vis.map(evChip).join('')}${list.length > max ? `<span class="cal-more">+${list.length - max} more</span>` : ''}</span>`;
+    } else {
+      const max = 4, vis = list.slice(0, max);
+      inner = `<span class="cal-n">${num}</span><span class="cal-dots">${vis.map(evDot).join('')}${list.length > max ? '<i class="cal-plus">+</i>' : ''}</span>`;
     }
-
-    const STATUS_DOT = { Planned:'', Sent:' ✓', Delayed:' ⚠' };
-    // Show 2 events portrait, 4 events landscape
-    const maxVisible = calView === 'landscape' ? 4 : 2;
-    const visibleEvents = dayEvents.slice(0, maxVisible);
-    const hiddenCount   = dayEvents.length - visibleEvents.length;
-    const eventsHTML = visibleEvents.map(ev =>
-      `<span class="cal-event-dot ${TYPE_COLORS[ev.type]||'dot-other'}">${esc(ev.subject)}${STATUS_DOT[ev.status||'Planned']}</span>`
-    ).join('');
-    const moreHTML = hiddenCount > 0
-      ? `<span class="cal-more-badge">+${hiddenCount} more</span>` : '';
-    cell.innerHTML = `
-      <div class="cal-day-num">${dayNum}</div>
-      <div class="cal-events-wrap">${eventsHTML}${moreHTML}</div>`;
-
-    if (!cell.classList.contains('filter-muted')) {
-      cell.onclick = () => openModal(dateStr);
-    }
-    grid.appendChild(cell);
+    cells.push(`<button type="button" class="${cls}" data-d="${key}" aria-label="${esc(label)}"${key === today ? ' aria-current="date"' : ''}>${inner}</button>`);
   }
-  updateHistoryCount();
+  const grid = $('cal-days');
+  grid.className = 'cal-days' + (wide ? ' wide' : '');
+  grid.innerHTML = cells.join('');
+  updateHistory();
 }
 
-// ── MONTH NAV ──────────────────────────────────────────────────────────────
-window.prevMonth = () => {
-  if (viewMonth === 0) { viewMonth = 11; viewYear--; }
-  else viewMonth--;
-  renderCalendar();
-};
-window.nextMonth = () => {
-  if (viewMonth === 11) { viewMonth = 0; viewYear++; }
-  else viewMonth++;
-  renderCalendar();
-};
+window.prevMonth = () => { if (viewMonth === 0) { viewMonth = 11; viewYear--; } else viewMonth--; renderCalendar(); };
+window.nextMonth = () => { if (viewMonth === 11) { viewMonth = 0; viewYear++; } else viewMonth++; renderCalendar(); };
 
-// ── VIEW TOGGLE (portrait ↔ landscape) ────────────────────────────────────
-window.setCalView = (mode) => {
-  calView = mode;
-  document.body.classList.toggle('cal-landscape', mode === 'landscape');
-  document.getElementById('view-portrait').classList.toggle('active', mode === 'portrait');
-  document.getElementById('view-landscape').classList.toggle('active', mode === 'landscape');
-  // Persist across page reloads
-  try { localStorage.setItem('calView', mode); } catch(e) {}
-  renderCalendar();
-  // Light haptic
-  if (navigator.vibrate) navigator.vibrate(6);
-};
+// ── day sheet ──────────────────────────────────────────────────────────────
+function daySheetHTML(dateStr) {
+  const yr = Number(dateStr.slice(0, 4));
+  const title = longDay(dateStr) + (yr !== new Date().getFullYear() ? ' ' + yr : '');
+  return `
+    <h2 class="wd-sheet-title" id="day-title">${esc(title)}</h2>
+    <div class="wd-sheet-sub" id="day-sub"></div>
+    <div id="ev-list"></div>
 
-// ── EVENT-TYPE FILTER ──────────────────────────────────────────────────────
-window.setFilter = (chip) => {
-  activeFilter = chip.dataset.type;
-  document.querySelectorAll('.filter-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.type === activeFilter);
-  });
-  renderCalendar();
-  // Light haptic
-  if (navigator.vibrate) navigator.vibrate(4);
-};
+    <div class="wd-lab cal-form-h" id="ev-form-h">Add a communication</div>
+    <input class="wd-field" id="ev-subject" placeholder="Subject, e.g. Q1 town hall invite" maxlength="100" autocomplete="off" enterkeyhint="done"
+      oninput="clearFormError()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">
+    <div class="wd-lab">Type</div>
+    <div class="wd-chips" id="ev-types" role="group" aria-label="Type of communication">
+      ${TYPES.map(t => `<button type="button" class="wd-chip" data-type="${t}" aria-pressed="false" onclick="pickType('${t}')">${typeGlyph(t)}${t}</button>`).join('')}
+    </div>
+    <div class="wd-lab">People <span class="opt">optional</span></div>
+    <input class="wd-field" id="ev-people" placeholder="Harshit, Amrutha, Sriram" maxlength="100" autocomplete="off" enterkeyhint="done"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">
+    <button type="button" class="wd-mrow cal-task" id="ev-task" role="switch" aria-checked="false" onclick="toggleTask()">
+      <span class="cal-task-t">Also add it as a task<small>Assigned to Harshit and Godly</small></span>
+      <span class="wd-sw" id="ev-task-sw"></span>
+    </button>
+    <p class="wd-err" id="ev-err" role="alert" hidden></p>
+    <button type="button" class="wd-btn p" id="ev-save" onclick="saveEvent()">Add to calendar</button>
+    <button type="button" class="wd-btn s" id="ev-cancel" onclick="cancelEdit()" hidden>Cancel edit</button>`;
+}
 
-// ── MODAL ──────────────────────────────────────────────────────────────────
-window.openModal = (dateStr) => {
-  selectedDate = dateStr;
-  selectedType = null;
-
-  // Format date nicely
-  const [y,m,d] = dateStr.split('-');
-  const dn = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-  document.getElementById('modal-date-label').textContent =
-    dn.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-  // Clear form
-  document.getElementById('ev-subject').value = '';
-  document.getElementById('ev-people').value  = '';
-  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
-
+window.openDay = (dateStr) => {
+  selectedDate = dateStr; selectedType = null; editingIdx = null; wantTask = false;
+  openSheet('cal-day', daySheetHTML(dateStr), { onClose: () => { selectedDate = null; editingIdx = null; } });
   renderEventList();
-  document.getElementById('event-modal').classList.add('open');
-  setTimeout(() => document.getElementById('ev-subject').focus(), 300);
+  if (!(events[dateStr] || []).length) setTimeout(() => { const i = $('ev-subject'); if (i && selectedDate === dateStr) i.focus({ preventScroll: true }); }, 380);
 };
-
-window.handleModalClick = (e) => {
-  if (e.target === document.getElementById('event-modal')) closeModal();
-};
-
-function closeModal() {
-  document.getElementById('event-modal').classList.remove('open');
-  selectedDate = null;
-  editingEventIdx = null;
-  const addBtn = document.getElementById('add-event-btn');
-  if (addBtn) { addBtn.textContent = '+ Add'; addBtn.style.background = ''; }
-}
 
 function renderEventList() {
-  const list = document.getElementById('event-list');
-  const dayEvents = events[selectedDate] || [];
-  if (!dayEvents.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text3);font-weight:600;padding:4px 0 8px">No communications planned</div>';
-    return;
-  }
-  const STATUS_NEXT = { Planned:'Sent', Sent:'Delayed', Delayed:'Planned' };
-  const STATUS_ICON = { Planned:'🔵', Sent:'✅', Delayed:'⚠️' };
-  list.innerHTML = dayEvents.map((ev, idx) => {
-    const st = ev.status || 'Planned';
-    const stClass = 'status-' + st.toLowerCase();
-    return `
-    <div class="event-item">
-      <div class="event-item-color" style="background:${TYPE_HEX[ev.type]||'#9ca3af'}"></div>
-      <div class="event-item-body">
-        <div class="event-item-subject">${esc(ev.subject)}</div>
-        <div class="event-item-meta">
-          ${ev.type ? `<span style="font-weight:700;color:${TYPE_HEX[ev.type]||'#9ca3af'}">${ev.type}</span>` : ''}
-          ${ev.people ? ` · 👥 ${esc(ev.people)}` : ''}
-        </div>
-        <div class="event-item-status">
-          <span class="status-pill ${stClass}" onclick="cycleStatus(${idx})" title="Click to change status">
-            ${STATUS_ICON[st]} ${st}
-          </span>
-        </div>
+  const host = $('ev-list'); if (!host) return;
+  const list = events[selectedDate] || [];
+  $('day-sub').textContent = list.length ? plural(list.length, 'communication', 'communications') : 'Nothing planned yet';
+  if (!list.length) { host.innerHTML = ''; return; }
+  host.innerHTML = '<div class="cal-list">' + list.map((e, i) => {
+    const st = e.status || 'Planned';
+    return `<div class="cal-row${st === 'Sent' ? ' ev-sent' : ''}">
+      ${typeGlyph(e.type, 14)}
+      <div class="cal-row-b">
+        <b>${esc(e.subject)}</b>
+        <span class="cal-row-m">${esc(e.type || 'Other')}${e.people ? ' · ' + esc(e.people) : ''}</span>
+        <button type="button" class="cal-st${st === 'Delayed' ? ' late' : ''}" onclick="cycleStatus(${i})" aria-label="Status: ${st}. Tap to change.">${glyphSVG(STATUS_GLYPH[st], 15)}${st}</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button class="event-item-edit" onclick="editEvent(${idx})" title="Edit">✎</button>
-        <button class="event-item-del" onclick="deleteEvent(${idx})" title="Delete">✕</button>
-      </div>
+      <button type="button" class="wd-x" onclick="editEvent(${i})" aria-label="Edit ${esc(e.subject)}">${ICON.edit}</button>
+      <button type="button" class="wd-x" onclick="deleteEvent(${i})" aria-label="Delete ${esc(e.subject)}">${ICON.bin}</button>
     </div>`;
-  }).join('');
+  }).join('') + '</div><p class="wd-hint cal-hint">Tap a status to move it on: Planned, Sent, Delayed.</p>';
 }
 
-window.selectType = (el) => {
-  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedType = el.dataset.type;
+window.pickType = (t) => {
+  selectedType = selectedType === t ? null : t;
+  document.querySelectorAll('#ev-types .wd-chip').forEach(c => {
+    const on = c.dataset.type === selectedType;
+    c.classList.toggle('on', on); c.setAttribute('aria-pressed', on);
+  });
+  clearFormError();
 };
+window.toggleTask = () => {
+  wantTask = !wantTask;
+  $('ev-task').setAttribute('aria-checked', wantTask);
+  $('ev-task-sw').classList.toggle('on', wantTask);
+};
+function formError(msg, fieldId) {
+  const e = $('ev-err'); e.textContent = msg; e.hidden = false;
+  if (fieldId) { const f = $(fieldId); f.classList.add('bad'); f.focus(); }
+  haptic(12);
+}
+window.clearFormError = () => { const e = $('ev-err'); if (e) e.hidden = true; const f = $('ev-subject'); if (f) f.classList.remove('bad'); };
 
-let editingEventIdx = null;
+function resetForm() {
+  $('ev-subject').value = ''; $('ev-people').value = '';
+  selectedType = null; editingIdx = null;
+  document.querySelectorAll('#ev-types .wd-chip').forEach(c => { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
+  wantTask = false; $('ev-task').setAttribute('aria-checked', 'false'); $('ev-task-sw').classList.remove('on');
+  $('ev-task').hidden = false;
+  $('ev-form-h').textContent = 'Add a communication';
+  $('ev-save').textContent = 'Add to calendar';
+  $('ev-cancel').hidden = true;
+  clearFormError();
+}
 
 window.editEvent = (idx) => {
-  const ev = (events[selectedDate] || [])[idx];
-  if (!ev) return;
-  editingEventIdx = idx;
-  // Pre-fill form
-  document.getElementById('ev-subject').value = ev.subject || '';
-  document.getElementById('ev-people').value  = ev.people  || '';
-  // Select type pill
-  document.querySelectorAll('.type-pill').forEach(p => {
-    p.classList.toggle('selected', p.dataset.type === ev.type);
-  });
+  const ev = (events[selectedDate] || [])[idx]; if (!ev) return;
+  editingIdx = idx;
+  $('ev-subject').value = ev.subject || '';
+  $('ev-people').value = ev.people || '';
   selectedType = ev.type || null;
-  // Change button label
-  const addBtn = document.getElementById('add-event-btn');
-  if (addBtn) { addBtn.textContent = '✓ Update'; addBtn.style.background = 'var(--amber)'; }
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  if (cancelBtn) cancelBtn.style.display = '';
-  document.getElementById('ev-subject').focus();
-  // Scroll to form
-  document.querySelector('.add-event-section')?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  document.querySelectorAll('#ev-types .wd-chip').forEach(c => { const on = c.dataset.type === selectedType; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+  wantTask = false; $('ev-task').hidden = true;               // a task is only registered when adding
+  $('ev-form-h').textContent = 'Edit communication';
+  $('ev-save').textContent = 'Save changes';
+  $('ev-cancel').hidden = false;
+  clearFormError();
+  $('ev-form-h').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('ev-subject').focus({ preventScroll: true });
 };
+window.cancelEdit = () => resetForm();
 
-window.cancelEdit = () => {
-  editingEventIdx = null;
-  document.getElementById('ev-subject').value = '';
-  document.getElementById('ev-people').value  = '';
-  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
-  selectedType = null;
-  const addBtn = document.getElementById('add-event-btn');
-  if (addBtn) { addBtn.textContent = '+ Add'; addBtn.style.background = ''; }
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  if (cancelBtn) cancelBtn.style.display = 'none';
-};
+window.saveEvent = async () => {
+  const subject = $('ev-subject').value.trim();
+  const people = $('ev-people').value.trim();
+  if (!subject) return formError('Write a subject for this communication.', 'ev-subject');
+  if (!selectedType) return formError('Choose a type.');
 
-window.addEvent = async () => {
-  const subject = document.getElementById('ev-subject').value.trim();
-  const people  = document.getElementById('ev-people').value.trim();
-  if (!subject)      { toast('Enter a subject', 'err'); return; }
-  if (!selectedType) { toast('Pick a type', 'err'); return; }
+  const date = selectedDate, type = selectedType;
+  const wasEditing = editingIdx !== null;
+  const makeTask = !wasEditing && wantTask;
+  if (!events[date]) events[date] = [];
 
-  if (!events[selectedDate]) events[selectedDate] = [];
-
-  if (editingEventIdx !== null) {
-    // Update existing event
-    const ev = events[selectedDate][editingEventIdx];
-    ev.subject = subject;
-    ev.type    = selectedType;
-    ev.people  = people;
-    editingEventIdx = null;
-    toast('Updated ✓');
+  let added = null;
+  if (wasEditing) {
+    const ev = events[date][editingIdx];
+    if (ev) { ev.subject = subject; ev.type = type; ev.people = people; }
   } else {
-    // Add new event
-    events[selectedDate].push({
-      id: Date.now(),
-      subject, type: selectedType, people,
-      status: 'Planned',
-    });
-    toast('Added ✓');
+    added = { id: Date.now(), subject, type, people, status: 'Planned' };
+    events[date].push(added);
   }
+  resetForm();
+  renderEventList(); renderCalendar();
+  const sh = sheetBody('cal-day'); if (sh) sh.scrollTo({ top: 0, behavior: 'smooth' });
+  if (!(await saveCalendar())) return;
 
-  await saveCalendar();
-
-  // Auto-create task if checkbox ticked
-  const createTask = document.getElementById('create-task-cb')?.checked;
-  if (createTask && editingEventIdx === null) {
+  if (makeTask) {
     try {
-      // Find Harshit and Godly in members
       const harshit = calMembers.find(m => m.name.toLowerCase().includes('harshit'));
-      const godly   = calMembers.find(m => m.name.toLowerCase().includes('godly'));
-      const taskMembers = [harshit, godly].filter(Boolean).map(m => ({
-        id: m.id, name: m.name, role: selectedType || 'Communication'
-      }));
+      const godly = calMembers.find(m => m.name.toLowerCase().includes('godly'));
+      const taskMembers = [harshit, godly].filter(Boolean).map(m => ({ id: m.id, name: m.name, role: type || 'Communication' }));
       await addTask({
-        label:     subject,
-        priority:  'high',
-        taskType:  'mbc',
-        taskDueDate: selectedDate,
-        dueDate:   selectedDate,
-        members:   taskMembers,
-        project:   selectedType ? selectedType + ' Communications' : 'Communications',
+        label: subject, priority: 'high', taskType: 'mbc',
+        taskDueDate: date, dueDate: date, members: taskMembers,
+        project: type + ' Communications',
       });
-      toast('Added to calendar + task registered ✓');
-    } catch(e) {
-      toast('Calendar saved, task failed: ' + e.message, 'err');
+      showNote('Added, and registered as a task');
+    } catch (e) {
+      showNote('Added to the calendar, but the task failed: ' + e.message, 4200);
     }
+  } else if (wasEditing) {
+    showNote('Saved');
+  } else {
+    showUndo('Added to the calendar', async () => {
+      const arr = events[date] || [];
+      const at = arr.findIndex(x => x.id === added.id);
+      if (at < 0) return;
+      arr.splice(at, 1); if (!arr.length) delete events[date];
+      if (selectedDate === date) renderEventList();
+      renderCalendar(); await saveCalendar();
+    });
   }
-
-  // Reset form
-  document.getElementById('ev-subject').value = '';
-  document.getElementById('ev-people').value  = '';
-  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
-  selectedType = null;
-  const addBtn = document.getElementById('add-event-btn');
-  if (addBtn) { addBtn.textContent = '+ Add'; addBtn.style.background = ''; }
-  const cb = document.getElementById('create-task-cb');
-  if (cb) cb.checked = false;
-
-  renderEventList();
-  renderCalendar();
 };
 
 window.cycleStatus = async (idx) => {
-  if (!selectedDate || !events[selectedDate]) return;
-  const ev = events[selectedDate][idx];
-  const next = { Planned:'Sent', Sent:'Delayed', Delayed:'Planned' };
-  ev.status = next[ev.status || 'Planned'];
+  const ev = (events[selectedDate] || [])[idx]; if (!ev) return;
+  ev.status = NEXT_STATUS[ev.status || 'Planned'];
+  renderEventList(); renderCalendar(); haptic(6);
   await saveCalendar();
-  renderEventList();
-  renderCalendar();
-  toast('Status: ' + ev.status);
 };
 
 window.deleteEvent = async (idx) => {
-  if (!selectedDate || !events[selectedDate]) return;
-  events[selectedDate].splice(idx, 1);
-  if (!events[selectedDate].length) delete events[selectedDate];
+  const date = selectedDate, arr = events[date]; if (!arr || !arr[idx]) return;
+  const [removed] = arr.splice(idx, 1);
+  if (!arr.length) delete events[date];
+  if (editingIdx !== null) resetForm();
+  renderEventList(); renderCalendar();
   await saveCalendar();
-  renderEventList();
-  renderCalendar();
-  toast('Removed');
+  showUndo('Removed', async () => {
+    if (!events[date]) events[date] = [];
+    events[date].splice(Math.min(idx, events[date].length), 0, removed);
+    if (selectedDate === date) renderEventList();
+    renderCalendar(); await saveCalendar();
+  });
 };
 
-// ── YEAR HISTORY ──────────────────────────────────────────────────────────
-let historyOpen = false;
-
+// ── the year, as a fold ────────────────────────────────────────────────────
 window.toggleHistory = () => {
   historyOpen = !historyOpen;
-  document.getElementById('history-body').classList.toggle('open', historyOpen);
-  document.getElementById('history-arrow').classList.toggle('open', historyOpen);
+  $('hist-toggle').setAttribute('aria-expanded', historyOpen);
+  $('hist-body').hidden = !historyOpen;
   if (historyOpen) renderHistory();
 };
 
-function renderHistory() {
-  const currentYear = new Date().getFullYear();
-  const yearPrefix  = String(currentYear);
-
-  // Collect all events this year, sorted by date desc
-  const allEntries = [];
-  Object.entries(events)
-    .filter(([date]) => date.startsWith(yearPrefix))
-    .forEach(([date, evts]) => {
-      evts.forEach(ev => allEntries.push({ date, ...ev }));
-    });
-  allEntries.sort((a,b) => b.date.localeCompare(a.date));
-
-  // Update count badge
-  document.getElementById('history-count').textContent = allEntries.length;
-  document.getElementById('history-label').textContent = 'Communications ' + yearPrefix;
-
-  const body = document.getElementById('history-body');
-  if (!allEntries.length) {
-    body.innerHTML = '<div class="history-empty">No communications recorded this year yet</div>';
-    return;
-  }
-
-  // Group by month
-  const byMonth = {};
-  allEntries.forEach(e => {
-    const mKey = e.date.slice(0,7); // YYYY-MM
-    if (!byMonth[mKey]) byMonth[mKey] = [];
-    byMonth[mKey].push(e);
-  });
-
-  const STATUS_COLOR = { Sent:'#34d399', Planned:'#60a5fa', Delayed:'#f87171' };
-  const STATUS_ICON  = { Sent:'✅', Planned:'🔵', Delayed:'⚠️' };
-
-  body.innerHTML = Object.entries(byMonth)
-    .sort((a,b) => b[0].localeCompare(a[0]))
-    .map(([mKey, items]) => {
-      const [y,m] = mKey.split('-');
-      const monthName = MONTHS[parseInt(m)-1] + ' ' + y;
-      const rows = items.map(e => {
-        const dayLabel = e.date.slice(8); // DD
-        const typeColor = TYPE_HEX[e.type] || '#9ca3af';
-        const st = e.status || 'Planned';
-        return `<div class="history-item">
-          <div class="history-item-date">${dayLabel} ${MONTHS[parseInt(m)-1].slice(0,3)}</div>
-          <div class="history-item-type" style="background:${typeColor}22;color:${typeColor}">${e.type||'Other'}</div>
-          <div class="history-item-subject">${esc(e.subject)}</div>
-          <div class="history-item-status" style="color:${STATUS_COLOR[st]}">${STATUS_ICON[st]} ${st}</div>
-        </div>`;
-      }).join('');
-      return `<div class="history-month-group">
-        <div class="history-month-label">${monthName} · ${items.length} communication${items.length>1?'s':''}</div>
-        ${rows}
-      </div>`;
-    }).join('');
+function yearEntries() {
+  const out = [];
+  Object.entries(events).filter(([d]) => d.startsWith(String(viewYear))).forEach(([date, arr]) => arr.forEach(e => out.push({ date, ...e })));
+  out.sort((a, b) => b.date.localeCompare(a.date));
+  return out;
 }
-
-// Update history count whenever calendar re-renders
-function updateHistoryCount() {
-  const currentYear = String(new Date().getFullYear());
-  const total = Object.entries(events)
-    .filter(([d]) => d.startsWith(currentYear))
-    .reduce((s,[,arr]) => s + arr.length, 0);
-  const badge = document.getElementById('history-count');
-  if (badge) badge.textContent = total;
+function updateHistory() {
+  const n = yearEntries().length;
+  $('hist-label').textContent = 'Communications ' + viewYear;
+  $('hist-count').textContent = n;
   if (historyOpen) renderHistory();
 }
-
-// ── UTILS ──────────────────────────────────────────────────────────────────
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
-let _tt;
-function toast(msg,type=''){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.className='toast '+type;
-  void el.offsetWidth;el.classList.add('show');
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2400);
+function renderHistory() {
+  const all = yearEntries(), body = $('hist-body');
+  if (!all.length) { body.innerHTML = `<div class="wd-empty">Nothing recorded for ${viewYear} yet.<br>Tap a date above to add a communication.</div>`; return; }
+  const byMonth = {};
+  all.forEach(e => { (byMonth[e.date.slice(0, 7)] ||= []).push(e); });
+  body.innerHTML = Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0])).map(([key, items]) => {
+    const mi = parseInt(key.slice(5), 10) - 1;
+    return `<div class="wd-subhead"><span>${MONTHS[mi]} ${key.slice(0, 4)}</span><span>${items.length}</span></div>` +
+      items.map(e => {
+        const st = e.status || 'Planned';
+        return `<button type="button" class="cal-h-row" onclick="openDay('${e.date}')">
+          <span class="d">${parseInt(e.date.slice(8), 10)} ${MONTHS[mi].slice(0, 3)}</span>
+          ${typeGlyph(e.type, 12)}
+          <span class="s">${esc(e.subject)}</span>
+          <span class="st${st === 'Delayed' ? ' late' : ''}">${st}</span>
+        </button>`;
+      }).join('');
+  }).join('');
 }
-</script>
 
+// ── wiring ─────────────────────────────────────────────────────────────────
+$('cal-days').addEventListener('click', e => { const c = e.target.closest('.cal-day'); if (c) window.openDay(c.dataset.d); });
+$('cal-filter').addEventListener('click', e => {
+  const b = e.target.closest('button[data-type]'); if (!b) return;
+  activeFilter = b.dataset.type; renderFilter(); renderCalendar(); haptic(4);
+});
+
+initShell();
+renderDow(); renderFilter(); applyView(); renderCalendar();
+
+onUserReady(async () => {
+  try { calMembers = await getMembers(); } catch (e) { calMembers = []; }
+  onCalendarDataChanged((data) => {
+    if (data && typeof data === 'object') events = data;
+    renderCalendar();
+    if (selectedDate) renderEventList();
+  });
+});
+</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -970,5 +437,14 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<div class="wd-nav-fade"></div>
+<nav class="wd-nav" aria-label="Main">
+  <a href="index.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/></svg>Home</a>
+  <a href="input.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>Add</a>
+  <a href="calendar.html" class="on" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</a>
+  <a href="projects.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5a2.5 2.5 0 0 1 2.5-2.5h3.6l2 2.2H18a2.5 2.5 0 0 1 2.5 2.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>Projects</a>
+  <a href="report.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 20V12M12 20V4.5M18.5 20v-6.5"/></svg>Report</a>
+</nav>
 </body>
 </html>

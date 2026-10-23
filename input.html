@@ -10,401 +10,110 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>WorkDesk — Input</title>
+  <title>WorkDesk — Add task</title>
+<script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/ui.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07090f">
-  <style>
-    /* Task type toggle */
-    .task-type-row {
-      display:flex;gap:8px;margin-bottom:14px;
-    }
-    .task-type-btn {
-      flex:1;padding:9px 12px;border-radius:10px;
-      border:1.5px solid var(--border2);background:var(--bg2);
-      color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;
-      cursor:pointer;transition:all .15s;text-align:center;
-    }
-    .task-type-btn.active-mbc {
-      border-color:var(--neon);background:rgba(0,229,184,.08);color:var(--neon);
-    }
-    .task-type-btn.active-individual {
-      border-color:var(--purple);background:rgba(157,126,255,.08);color:var(--purple);
-    }
-    /* Project field */
-    .project-row {
-      margin-bottom:12px;
-    }
-    .project-inp {
-      width:100%;background:var(--bg2);
-      border:1.5px solid var(--border2);border-radius:var(--r);
-      padding:9px 12px;color:var(--text);
-      font-family:var(--sans);font-size:14px;outline:none;
-      transition:border-color .15s;
-      list-style:none;
-    }
-    .project-inp:focus { border-color:var(--neon) }
-    .proj-drop-item {
-      padding:10px 13px;font-size:13px;font-weight:500;color:var(--text);
-      cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);
-      display:flex;align-items:center;gap:8px;
-    }
-    .proj-drop-item:last-child{border-bottom:none}
-    .proj-drop-item:hover,.proj-drop-item.hovered{background:var(--bg3)}
-    .proj-drop-item .proj-icon{font-size:12px;opacity:.5;flex-shrink:0}
-    .proj-drop-empty{padding:10px 13px;font-size:12px;color:var(--text3);font-style:italic}
-    .proj-drop-new{color:var(--neon)!important;font-weight:700!important}
-    .project-datalist-label {
-      font-size:11px;font-weight:700;color:var(--text3);
-      margin-bottom:5px;
-    }
-    .tc-actions-input{display:flex;gap:8px;padding-left:12px;margin-top:9px;flex-wrap:wrap;align-items:center}
-    /* This Week toggle button — copied from index.html, which only had it in
-       its own inline <style> (not the shared css/style.css), so it never
-       reached this page until now. */
-    .sprint-task-btn {
-      padding:5px 10px;border-radius:8px;
-      border:1px solid rgba(10,132,255,.25);
-      background:rgba(10,132,255,.06);color:var(--neon);
-      font-family:var(--sans);font-size:11px;font-weight:700;
-      cursor:pointer;transition:all var(--dur-fast) var(--ease-out);white-space:nowrap;
-    }
-    .sprint-task-btn:active { transform:scale(.95) }
-    .sprint-task-btn.remove {
-      border-color:rgba(255,69,58,.25);background:rgba(255,69,58,.06);color:var(--red);
-    }
-    .sprint-task-btn.full-disabled {
-      border-color:var(--border);background:none;color:var(--text3);cursor:default;
-    }
-    /* Compact task rows for All Tasks */
-    .task-row-compact{
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:12px;margin-bottom:6px;
-      border:1px solid var(--border2);background:var(--bg2);
-      cursor:pointer;transition:all .15s;
-      -webkit-tap-highlight-color:transparent;
-      position:relative;overflow:hidden;
-    }
-    .task-row-compact:hover{border-color:var(--neon2);background:var(--bg3)}
-    .task-row-compact.is-done{opacity:.5}
-    /* Matches the same prominent accent-edge treatment used on the Dashboard —
-       this used to be a flat background wash left over from before that
-       redesign, and was never brought in line with it. */
-    .task-row-compact.status-inprog::after{
-      content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
-      background:var(--amber);
-      animation:inprog-pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes inprog-pulse{
-      0%,100%{opacity:.5; box-shadow:0 0 4px var(--amber);}
-      50%    {opacity:1;   box-shadow:0 0 18px var(--amber), 0 0 6px var(--amber);}
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .task-row-compact.status-inprog::after { animation: none !important; }
-    }
-    .trc-left{flex:1;min-width:0}
-    .trc-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
-    .trc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-    .trc-members{font-size:11px;color:var(--text2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
-    .trc-expand{
-      flex-shrink:0;width:28px;height:28px;border-radius:50%;
-      border:1px solid var(--border2);background:var(--bg3);
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;color:var(--text2);transition:transform .2s,border-color .15s,color .15s;
-    }
-    .trc-expand.open{transform:rotate(180deg);border-color:var(--neon);color:var(--neon)}
-    .task-detail-inp{
-      display:none;margin-bottom:8px;margin-top:-2px;
-      padding:12px 14px;border-radius:0 0 12px 12px;
-      border:1px solid var(--border2);border-top:none;
-      background:var(--bg3);animation:sld .18s ease;
-    }
-    .task-detail-inp.open{display:block}
-    @keyframes sld{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-    /* Collapsible manage members */
-    .manage-members-toggle{
-      display:flex;align-items:center;gap:7px;
-      margin-top:14px;padding:8px 12px;
-      border-radius:var(--r);border:1.5px solid var(--border2);
-      background:var(--bg3);cursor:pointer;
-      font-size:12px;font-weight:700;color:var(--text2);
-      transition:all .15s;user-select:none;width:100%;
-    }
-    .manage-members-toggle:hover{border-color:var(--neon2);color:var(--text)}
-    .manage-members-toggle .mm-arrow{margin-left:auto;transition:transform .2s;font-size:10px}
-    .manage-members-toggle.open{border-color:var(--neon);color:var(--text)}
-    .manage-members-toggle.open .mm-arrow{transform:rotate(180deg)}
-    .manage-members-body{
-      display:none;margin-top:8px;
-      padding:12px;border-radius:var(--r);
-      border:1.5px solid var(--border2);background:var(--bg3);
-    }
-    .manage-members-body.open{display:block}
-    /* Date picker */
-    .date-row{display:flex;align-items:center;gap:10px;margin-top:13px}
-    .date-label{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
-    input[type="date"].date-inp{
-      flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r);
-      padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:15px;font-weight:500;
-      outline:none;transition:border-color .15s;cursor:pointer;
-    }
-    input[type="date"].date-inp:focus{border-color:var(--neon)}
-    input[type="date"].date-inp::-webkit-calendar-picker-indicator{
-      filter:invert(1);opacity:.5;cursor:pointer;
-    }
-    body.light input[type="date"].date-inp::-webkit-calendar-picker-indicator{filter:none;opacity:.6}
-    /* Due date badge on task card */
-    .due-badge{
-      display:inline-flex;align-items:center;gap:5px;
-      padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;
-      background:rgba(0,180,229,.08);color:var(--neon2);border:1.5px solid rgba(0,180,229,.2);
-    }
-    .due-badge.overdue{background:rgba(255,58,94,.09);color:var(--red);border-color:rgba(255,58,94,.25)}
-    .due-badge.today{background:rgba(245,168,0,.09);color:var(--amber);border-color:rgba(245,168,0,.25)}
-    /* Date range filter */
-    .range-panel{background:var(--panel);border:1.5px solid var(--border2);border-radius:var(--rr);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow-card)}
-    .range-body{padding:13px 16px}
-    .range-row{display:flex;gap:9px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-    .range-sep{font-size:13px;font-weight:700;color:var(--text3)}
-    .range-btn{
-      width:100%;padding:10px;border-radius:var(--r);border:none;
-      background:var(--neon);color:var(--bg);font-family:var(--sans);font-size:14px;font-weight:800;
-      cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.2),0 2px 10px rgba(0,229,184,.2);transition:all .15s;
-    }
-    .range-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-    .range-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
-    .range-clear{
-      width:100%;padding:8px;border-radius:var(--r);margin-top:7px;
-      border:1.5px solid var(--border2);background:none;color:var(--text2);
-      font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
-    }
-    .range-clear:hover{border-color:rgba(255,58,94,.35);color:var(--red)}
-    .range-results{margin-top:10px}
-    /* ── DONE SECTION ── */
-    .done-section-toggle {
-      display:flex;align-items:center;justify-content:space-between;
-      padding:9px 12px;margin-top:8px;
-      border-radius:10px;border:1px solid var(--border2);
-      background:var(--bg2);cursor:pointer;
-      font-size:12px;font-weight:700;color:var(--text2);
-      user-select:none;transition:all .15s;
-    }
-    .done-section-toggle:hover { border-color:var(--neon2);color:var(--text) }
-    .done-section-arrow { transition:transform .2s;font-size:10px }
-    .done-section-arrow.open { transform:rotate(180deg) }
-    .done-section-body { display:none;margin-top:4px }
-    .done-section-body.open { display:block }
-    .done-month-toggle {
-      display:flex;align-items:center;justify-content:space-between;
-      padding:7px 10px;margin:4px 0 2px;
-      border-radius:8px;background:var(--bg3);
-      font-size:10px;font-weight:800;color:var(--text2);
-      letter-spacing:.06em;text-transform:uppercase;
-      cursor:pointer;user-select:none;transition:all .15s;
-    }
-    .done-month-toggle:hover { background:var(--bg2);color:var(--text) }
-    .done-month-arrow { font-size:9px;transition:transform .18s }
-    .done-month-arrow.open { transform:rotate(180deg) }
-    .done-month-body { display:none }
-    .done-month-body.open { display:block }
-    .range-banner{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:8px 12px;background:rgba(0,229,184,.06);border:1px solid rgba(0,229,184,.2);
-      border-radius:9px;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--neon);
-    }
-  </style>
 </head>
 <body>
-<nav class="nav">
-  <a href="index.html" class="nav-brand"><img src="data:image/png;base64,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" alt="Workdesk" height="36" style="display:block"></a>
-  <div class="nav-right">
-    <a href="help.html" class="btn-theme-toggle" style="text-decoration:none">❓</a>
-    <button class="btn-theme-toggle" onclick="toggleThemePanel()">🎨 Theme</button>
-    <button class="btn-theme-toggle" id="mute-btn" onclick="handleMuteToggle()" title="Toggle sound">🔊</button>
-  </div>
-</nav>
+<div class="wd-page" id="main">
+  <header class="wd-appbar">
+    <a href="index.html" class="nav-brand" aria-label="WorkDesk"><img class="wd-logo" src="data:image/png;base64,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" alt="Workdesk" height="30"></a>
+    <button type="button" class="wd-av" id="me-btn" aria-label="Your profile and settings">·</button>
+  </header>
+  <div class="wd-title"><h1 class="wd-h1" id="add-title">Add task</h1><span class="wd-edit-tag" id="edit-badge" hidden>Editing</span></div>
 
-<div class="page">
-
-  <!-- NEW TASK -->
-  <div class="panel fi" style="animation-delay:.08s">
-    <div class="panel-hd">
-      <span class="panel-title">New Task</span>
-      <span id="edit-badge" style="display:none;font-size:12px;color:var(--amber);font-weight:700">EDITING</span>
+  <form class="wd-form" id="task-form" onsubmit="return false" autocomplete="off">
+    <div class="wd-ask">
+      <label class="wd-lab" for="f-task">What needs doing?</label>
+      <input class="wd-ask-inp" id="f-task" placeholder="Write the task" maxlength="120" enterkeyhint="done"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        oninput="this.classList.remove('bad');checkSimilarTasks(this.value)">
     </div>
-    <div class="panel-body">
 
-      <!-- TASK TYPE TOGGLE -->
-      <div class="task-type-row">
-        <button class="task-type-btn active-mbc" id="type-mbc" onclick="setTaskType('mbc')">
-          🏢 MBC Task
-        </button>
-        <button class="task-type-btn" id="type-individual" onclick="setTaskType('individual')">
-          👤 Individual Task
-        </button>
-      </div>
-      <div style="background:rgba(10,132,255,.06);border:1px solid rgba(10,132,255,.18);
-        border-radius:10px;padding:9px 13px;margin-top:10px;font-size:12px;
-        color:var(--text2);line-height:1.6">
-        💡 <strong>MBC tasks</strong> are team tasks visible to everyone on the dashboard.
-        <strong>Individual tasks</strong> are personal and only appear for you.
-      </div>
+    <div class="wd-sim" id="similar-tasks-wrap" hidden>
+      <div class="wd-sim-h">Similar tasks already exist</div>
+      <div id="similar-tasks-list"></div>
+    </div>
 
-      <input class="task-input" id="f-task" placeholder="What's the overall task?" maxlength="120"
-        onkeydown="if(event.key==='Enter')this.blur()"
-        oninput="checkSimilarTasks(this.value)">
+    <div class="wd-seg" id="type-seg" role="group" aria-label="Task type">
+      <button type="button" id="type-mbc" class="on" aria-pressed="true" onclick="setTaskType('mbc',true)">MBC task</button>
+      <button type="button" id="type-individual" aria-pressed="false" onclick="setTaskType('individual',true)">Individual task</button>
+    </div>
+    <p class="wd-hint" id="type-hint">A team task, shown to everyone.</p>
 
-      <!-- SIMILAR TASKS WARNING -->
-      <div id="similar-tasks-wrap" style="display:none;margin-top:8px;margin-bottom:4px">
-        <div style="background:rgba(255,159,10,.08);border:1px solid rgba(255,159,10,.3);
-          border-radius:10px;padding:10px 13px;">
-          <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:7px;
-            display:flex;align-items:center;gap:6px">
-            ⚠ Similar tasks already exist
-          </div>
-          <div id="similar-tasks-list"></div>
-        </div>
-      </div>
-
-      <div class="sect-label">Project</div>
-      <div class="project-row">
-        <div style="position:relative">
-          <input class="project-inp" id="f-project"
-            placeholder="e.g. SMF 2026, Brand Campaign, CIP…"
-            maxlength="80" autocomplete="off"
-            oninput="filterProjectDrop(this.value)"
-            onfocus="showProjectDrop()"
-            onblur="hideProjectDrop()"
-            onkeydown="projectKeyNav(event)">
-          <div id="project-drop"
-            style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;
-            background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
-            margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);max-height:200px;overflow-y:auto">
-          </div>
-        </div>
-      </div>
-
-      <div class="sect-label">Assign team members</div>
-      <div class="member-chips" id="chip-area">
-        <span style="font-size:14px;color:var(--text3);font-weight:600">Add team members above first</span>
-      </div>
-
+    <div id="who-wrap">
+      <div class="wd-lab">Who</div>
+      <div class="wd-chips" id="chip-area"></div>
       <div id="role-section"></div>
+    </div>
 
-      <div class="sect-label">Priority</div>
-      <div class="p-row" id="p-row">
-        <button class="p-chip" data-p="critical" onclick="selectPriority(this)">Critical</button>
-        <button class="p-chip" data-p="high"     onclick="selectPriority(this)">High</button>
-        <button class="p-chip pm" data-p="medium" onclick="selectPriority(this)">Medium</button>
-        <button class="p-chip" data-p="low"      onclick="selectPriority(this)">Low</button>
-      </div>
+    <div class="wd-lab">Due <span class="opt">optional</span></div>
+    <div class="wd-chips" id="due-chips"></div>
+    <input type="date" class="wd-field wd-pick" id="f-due" aria-label="Due date" hidden onchange="onDuePicked(this.value)">
 
-      <div class="date-row">
-        <span class="date-label">📅 Start Date</span>
-        <input type="date" class="date-inp" id="f-start" min="">
-      </div>
+    <div class="wd-lab">Project</div>
+    <div class="wd-combo">
+      <input class="wd-field" id="f-project" placeholder="Choose or type a new one" maxlength="80" autocomplete="off" enterkeyhint="next"
+        oninput="filterProjectDrop(this.value)" onfocus="showProjectDrop()" onblur="hideProjectDrop()" onkeydown="projectKeyNav(event)">
+      <div class="wd-drop" id="project-drop" hidden></div>
+    </div>
 
-      <div class="date-row" style="margin-top:8px">
-        <span class="date-label">🔔 Due Date</span>
-        <input type="date" class="date-inp" id="f-due" min=""
-          style="border-color:rgba(255,58,94,.3)"
-          title="Optional — task will be highlighted on due date">
-        <button onclick="document.getElementById('f-due').value=''"
-          style="flex-shrink:0;padding:6px 10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text3);font-family:var(--sans);font-size:12px;cursor:pointer"
-          title="Clear due date">✕</button>
-      </div>
+    <div class="wd-lab">Priority</div>
+    <div class="wd-chips" id="p-row" role="group" aria-label="Priority">
+      <button type="button" class="wd-chip" data-p="critical" onclick="setPriority('critical')">Critical</button>
+      <button type="button" class="wd-chip" data-p="high" onclick="setPriority('high')">High</button>
+      <button type="button" class="wd-chip on" data-p="medium" onclick="setPriority('medium')">Medium</button>
+      <button type="button" class="wd-chip" data-p="low" onclick="setPriority('low')">Low</button>
+    </div>
 
-      <button class="send-btn" id="send-btn" onclick="submitTask()">⬡ Register Task</button>
-      <button id="cancel-btn" onclick="cancelEdit()"
-        style="display:none;width:100%;margin-top:8px;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:none;color:var(--text2);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">
-        Cancel Edit
-      </button>
-
-      <!-- MANAGE MEMBERS — collapsible -->
-      <div class="manage-members-toggle" id="mm-toggle" onclick="toggleManageMembers()">
-        <span>👥</span>
-        <span id="mm-toggle-label">Manage Team Members</span>
-        <span class="mm-arrow">▼</span>
-      </div>
-      <div class="manage-members-body" id="mm-body">
-        <div id="member-list"></div>
-        <div class="add-member-row" style="margin-top:8px">
-          <input class="add-member-inp" id="m-inp" placeholder="Add member name..." maxlength="24"
-            onkeydown="if(event.key==='Enter')addMember()">
-          <button class="add-member-btn" onclick="addMember()">+ Add</button>
-        </div>
+    <button type="button" class="wd-disc" id="more-toggle" aria-expanded="false" aria-controls="more-body" onclick="toggleMore()">
+      <span>More options</span><span class="n"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div class="wd-disc-body" id="more-body" hidden>
+      <div class="wd-lab">Start date <span class="opt">optional</span></div>
+      <input type="date" class="wd-field" id="f-start" aria-label="Start date">
+      <div class="wd-lab">Team members <span class="opt" id="mm-count"></span></div>
+      <div class="wd-team-list" id="member-list"></div>
+      <div class="wd-addrow">
+        <input class="wd-field" id="m-inp" placeholder="Add a member" maxlength="24" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addMember()}">
+        <button type="button" class="wd-btn s" onclick="addMember()">Add</button>
       </div>
     </div>
-  </div>
 
-  <!-- DATE RANGE FILTER -->
-  <div class="range-panel fi" style="animation-delay:.09s">
-    <div class="panel-hd"><span class="panel-title">Date Range Filter</span></div>
-    <div class="range-body">
-      <div class="range-row">
-        <input type="date" class="date-inp" id="range-from" style="flex:1">
-        <span class="range-sep">→</span>
-        <input type="date" class="date-inp" id="range-to" style="flex:1">
-      </div>
-      <button class="range-btn" onclick="applyDateRange()">Show Tasks in Range</button>
-      <button class="range-clear" id="range-clear-btn" onclick="clearDateRange()" style="display:none">✕ Clear Filter</button>
-      <div class="range-results" id="range-results"></div>
-    </div>
-  </div>
+    <button type="button" class="wd-btn p" id="send-btn" onclick="submitTask()">Add task</button>
+    <button type="button" class="wd-btn s" id="cancel-btn" onclick="cancelEdit()" hidden>Cancel edit</button>
+  </form>
 
-  <!-- TEAM SUMMARY -->
-  <div class="panel fi" id="summary-panel" style="animation-delay:.11s">
-    <div class="panel-hd"><span class="panel-title">Team Summary</span></div>
-    <div class="panel-body" id="summary-body">
-      <div style="display:flex;gap:7px">
-        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--neon2)" id="sum-total">0</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Total</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--amber)" id="sum-inprog">0</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">In Prog</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--neon)" id="sum-done">0</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Done</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:10px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--red)" id="sum-crit">0</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Critical</div>
-        </div>
+  <section class="wd-all">
+    <button type="button" class="wd-disc" id="all-toggle" aria-expanded="false" aria-controls="all-body" onclick="toggleAll()">
+      <span>All tasks</span><span class="n" id="task-count"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div id="all-body" hidden>
+      <div class="wd-range">
+        <div><label for="range-from">From</label><input type="date" class="wd-field" id="range-from"></div>
+        <div><label for="range-to">To</label><input type="date" class="wd-field" id="range-to"></div>
       </div>
-      <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:10px">
-        <div id="sum-bar" style="height:100%;background:var(--neon);border-radius:3px;box-shadow:0 0 8px rgba(0,229,184,.4);transition:width .6s ease;width:0%"></div>
+      <div class="wd-range-go">
+        <button type="button" class="wd-btn s" onclick="applyDateRange()">Show this range</button>
+        <button type="button" class="wd-btn s" id="range-clear-btn" onclick="clearDateRange()" hidden>Clear</button>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:5px">
-        <span style="font-size:11px;font-weight:700;color:var(--text2)">Overall completion</span>
-        <span style="font-size:13px;font-weight:800;color:var(--neon)" id="sum-pct">0%</span>
-      </div>
+      <div id="range-results"></div>
+      <div id="task-list"><div class="wd-empty" id="page-loader">Loading tasks…</div></div>
     </div>
-  </div>
-
-  <!-- TASK LIST -->
-  <div class="panel fi" style="animation-delay:.13s">
-    <div class="panel-hd">
-      <span class="panel-title">All Tasks</span>
-      <span id="task-count" style="font-size:12px;color:var(--text2);font-weight:600"></span>
-    </div>
-    <div class="panel-body" id="task-list">
-      <div id="page-loader"><span class="loader"></span>Loading...</div>
-    </div>
-  </div>
-
+  </section>
 </div>
 
 <!-- PASSWORD DELETE MODAL -->
 <div class="modal-overlay" id="del-modal">
   <div class="modal">
-    <div class="modal-title">⚠ Delete Task</div>
-    <div class="modal-sub">Enter your delete password to remove this task permanently.</div>
+    <div class="modal-title">Delete task</div>
+    <div class="modal-sub">Enter the delete password to remove this task for good.</div>
     <div class="modal-task-name" id="del-modal-task"></div>
-    <input class="modal-inp" type="password" id="del-pw-inp" placeholder="Password..."
+    <input class="modal-inp" type="password" id="del-pw-inp" placeholder="Password"
       onkeydown="if(event.key==='Enter')confirmDelete()">
     <div class="modal-err" id="del-pw-err">Incorrect password. Try again.</div>
     <div class="modal-btns">
@@ -416,6 +125,7 @@
 
 <div class="toast" id="toast"></div>
 
+
 <script type="module">
 import {
   onUserReady, getMembers, onTasksChanged, getTasks,
@@ -423,31 +133,37 @@ import {
   addTask as fbAddTask, updateTask as fbUpdateTask, deleteTask as fbDeleteTask,
   DELETE_PASSWORD, getUserData, saveUserData
 } from './js/firebase.js';
-import { initTheme, toggleThemePanel } from './js/theme.js';
-import { initAudio, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
+import { initShell } from './js/shell.js';
+import { esc, initials, ICON, glyphSVG, STATUS_LABEL, openSheet, closeSheet, sheetBody,
+  localDateStr, dayDiff, dueLabel, shortDate, dayMonth, longDate, projHue, urgencyClass, othersText, PRIO_ORDER } from './js/ui.js';
+import { playTaskAssigned, playMarkDone, playReopen } from './js/sounds.js';
 
+const $ = id => document.getElementById(id);
 let members = [], tasks = [];
-let allTasksHistory = []; // full history including archived — for date range filter
-// selectedMembers stores: { memberId: { name, role } }
-// role = the respective task text for that member
+let allTasksHistory = []; // full history including archived — for the date range filter
+// selectedMembers stores: { memberId: { name, role } } — role = that person's part of the task
 let selectedMembers = {};
 let selectedPriority = 'medium';
-let selectedProject = '';
+let selectedTaskType = 'mbc';
+let dueValue = '';        // YYYY-MM-DD or ''
+let pickOpen = false;     // the date input under the Due chips is showing
 let editingId = null;
 let pendingDeleteId = null;
+let sheetTaskId = null;
+let fold = null;          // 'hold' | 'done' | null — which folded group is open in All tasks
+let rangeActive = false;
 
-// ── IDENTITY + WEEKLY SPRINT (ported from index.html) ───────────────────────
-// Self-service only here — a task assigned to MY_NAME can be toggled into
-// their own "This Week". Admin control of OTHER people's sprints (the
-// memberSprintCache/toggleMemberSprintTask machinery in index.html) was NOT
-// ported over — Input's task list isn't structured per-member the way By
-// Member is, and this covers what was actually asked for. If admin control
-// from this page specifically is wanted later, port that machinery in too
-// rather than rebuilding it from scratch — it's a known, tested pattern.
+const findTask = id => tasks.find(t => t.id === id) || allTasksHistory.find(t => t.id === id);
+
+// ── IDENTITY + WEEKLY SPRINT ("This week") ─────────────────────────────────
+// Self-service only here: a task assigned to me can be put into my own week.
+// Managing other people's weeks lives on Home → Team (admin).
 const MY_NAME = localStorage.getItem('wd_myname') || '';
 const SPRINT_MAX = 10;
 let sprintTaskIds = new Set();
 let _sprintInitialized = false;
+const sameName = (a, b) => !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+const myMemberOf = t => (t.members || []).find(m => sameName(m.name, MY_NAME));
 
 function getWeekKey() {
   const d = new Date();
@@ -458,29 +174,27 @@ function getWeekKey() {
   const week = Math.ceil(((monday - start) / 86400000 + start.getDay() + 1) / 7);
   return y + '-W' + String(week).padStart(2, '0');
 }
-// Cap counts ACTIVE (non-done) tasks only, matching index.html's fix —
-// completing a task frees a slot rather than the cap being a lifetime limit.
+// The cap counts ACTIVE tasks only: finishing a task (or my part of it) frees a slot.
 function activeSprintCount(idsSet) {
   let n = 0;
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
-    if (!t || t.status !== 'done') n++;
+    if (!t) { n++; continue; }
+    if (t.status === 'done') continue;
+    const m = myMemberOf(t);
+    if (m && t.memberStatus && t.memberStatus[m.id] === 'done') continue;
+    n++;
   }
   return n;
 }
 function initSprint() {
   if (!MY_NAME || _sprintInitialized) return;
   _sprintInitialized = true;
-  const applySprintData = (data) => {
+  getUserData(MY_NAME).then(data => {
     const stored = data?.sprint;
-    if (stored && stored.week === getWeekKey()) {
-      sprintTaskIds = new Set(stored.ids || []);
-    } else {
-      sprintTaskIds = new Set();
-    }
-    renderTaskList();
-  };
-  getUserData(MY_NAME).then(applySprintData);
+    sprintTaskIds = stored && stored.week === getWeekKey() ? new Set(stored.ids || []) : new Set();
+    renderTaskList(); refreshAddSheet();
+  });
 }
 function saveSprint() {
   if (!MY_NAME) return;
@@ -489,48 +203,38 @@ function saveSprint() {
 window.toggleSprintTask = (taskId) => {
   if (sprintTaskIds.has(taskId)) {
     sprintTaskIds.delete(taskId);
-    saveSprint(); renderTaskList(); toast('Removed from This Week');
+    saveSprint(); renderTaskList(); refreshAddSheet(); toast('Removed from your week');
   } else {
     if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
-      toast('Sprint full — max ' + SPRINT_MAX + ' active tasks per week'); return;
+      toast('Your week is full: ' + SPRINT_MAX + ' open tasks at most', 'err'); return;
     }
     sprintTaskIds.add(taskId);
     if (navigator.vibrate) navigator.vibrate(10);
-    saveSprint(); renderTaskList(); toast('🎯 Added to This Week!');
+    saveSprint(); renderTaskList(); refreshAddSheet(); toast('Added to your week');
   }
 };
 
-// Theme handled by theme.js
-initTheme();
-window.toggleThemePanel = toggleThemePanel;
-initAudio();
-function updateMuteBtn() {
-  const btn = document.getElementById('mute-btn');
-  if (btn) btn.textContent = getMuted() ? '🔇' : '🔊';
-}
-window.handleMuteToggle = () => { toggleMute(); updateMuteBtn(); };
-updateMuteBtn();
+initShell();
 
 // Pre-fill the Project field when arriving via a "＋ Add task" link from a
 // project's status panel (projects.html), e.g. input.html?project=Diwali%20Campaign
 try {
   const prefillProject = new URLSearchParams(location.search).get('project');
-  const projInp = document.getElementById('f-project');
-  if (prefillProject && projInp) projInp.value = prefillProject;
-} catch(e) {}
+  if (prefillProject && $('f-project')) $('f-project').value = prefillProject;
+} catch (e) {}
 
 // ── BOOTSTRAP ──────────────────────────────────────────────────────────────
+renderDue();
 onUserReady(async () => {
   members = await getMembers();
   renderMemberList();
   renderChips();
 
-  // Load full task history once for date range filter (includes archived)
+  // Full task history once, for the date range filter (includes archived)
   allTasksHistory = await getTasks();
 
-  // Real-time task listener (active tasks only — 90-day archive filter applied)
+  // Live listener (active tasks only — the 90-day archive filter is applied upstream)
   onTasksChanged(({ tasks: liveTasks, changes }) => {
-    // Keep allTasksHistory in sync with new additions
     changes.forEach(({ type, task }) => {
       if (type === 'added') allTasksHistory.unshift(task);
       if (type === 'modified') {
@@ -541,859 +245,568 @@ onUserReady(async () => {
     });
     tasks = liveTasks;
 
-    // Play sound if a new task was added that includes this user
-    const myName = localStorage.getItem('wd_myname') || '';
+    // a new task that includes me: chime + a quiet note
     changes.forEach(({ type, task }) => {
-      if (type === 'added' && myName) {
-        const assignedToMe = (task.members || [])
-          .some(m => m.name.toLowerCase() === myName.toLowerCase());
-        if (assignedToMe) {
-          playTaskAssigned();
-          toast('📋 New task assigned to you!');
-        }
+      if (type === 'added' && MY_NAME && (task.members || []).some(m => sameName(m.name, MY_NAME))) {
+        playTaskAssigned();
+        toast('A new task is assigned to you');
       }
     });
 
     renderTaskList();
-    updateProjectSuggestions();  // refresh project list whenever tasks update
-    updateSummary();
-    initSprint(); // loads MY_NAME's own "This Week" list — self-guarded, only actually loads once
-
-    const loader = document.getElementById('page-loader');
+    refreshAddSheet();
+    updateProjectSuggestions();
+    initSprint();
+    const loader = $('page-loader');
     if (loader) loader.remove();
   });
 });
 
 // ── MEMBERS ────────────────────────────────────────────────────────────────
 window.addMember = async () => {
-  const inp = document.getElementById('m-inp');
+  const inp = $('m-inp');
   const name = inp.value.trim();
   if (!name) return;
-  if (members.find(m => m.name.toLowerCase() === name.toLowerCase())) { toast('Already exists', 'err'); return; }
+  if (members.find(m => m.name.toLowerCase() === name.toLowerCase())) { toast('That name is already on the team', 'err'); return; }
   inp.value = '';
   try {
     const id = await fbAddMember(name);
     members.push({ id, name });
-    renderMemberList(); renderChips(); updateMemberToggleLabel();
+    renderMemberList(); renderChips();
     toast('Member added');
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Could not add: ' + e.message, 'err'); }
 };
 
 window.removeMember = async (id) => {
-  if (!confirm('Remove this member?')) return;
+  if (!confirm('Remove this member from the team?')) return;
   await fbDeleteMember(id);
   members = members.filter(m => m.id !== id);
   delete selectedMembers[id];
-  renderMemberList(); renderChips(); updateMemberToggleLabel(); renderRoleSection();
+  renderMemberList(); renderChips(); renderRoleSection();
 };
 
 function renderMemberList() {
-  const el = document.getElementById('member-list');
-  if (!members.length) { el.innerHTML = ''; return; }
+  const el = $('member-list');
+  const c = $('mm-count');
+  if (c) c.textContent = members.length ? String(members.length) : '';
   el.innerHTML = members.map(m =>
-    `<div class="member-list-item">
-      <span class="mli-name"><span class="mli-av">${initials(m.name)}</span>${esc(m.name)}</span>
-      <button class="del-btn" onclick="removeMember('${m.id}')">✕</button>
-    </div>`
-  ).join('') + '<div class="divider"></div>';
-}
-
-// ── CHIPS ──────────────────────────────────────────────────────────────────
-function renderChips() {
-  const el = document.getElementById('chip-area');
-  if (!members.length) {
-    el.innerHTML = '<span style="font-size:14px;color:var(--text3);font-weight:600">Add team members above first</span>';
-    return;
-  }
-  el.innerHTML = members.map(m =>
-    `<div class="m-chip${selectedMembers[m.id] ? ' sel' : ''}" onclick="toggleMember('${m.id}', '${esc(m.name)}')">
-      <span class="m-av">${initials(m.name)}</span>
-      <span>${esc(m.name)}</span>
-      <span class="m-ck">✓</span>
-    </div>`
+    `<div class="wd-ppl"><div class="wd-av sm quiet">${esc(initials(m.name))}</div>
+      <div class="who"><b>${esc(m.name)}</b></div>
+      <button type="button" class="wd-x" aria-label="Remove ${esc(m.name)}" onclick="removeMember('${m.id}')">${ICON.close}</button></div>`
   ).join('');
 }
 
-window.toggleMember = (id, name) => {
-  if (selectedMembers[id]) {
-    delete selectedMembers[id];
-  } else {
-    selectedMembers[id] = { name, role: '' };
+// ── WHO ────────────────────────────────────────────────────────────────────
+function renderChips() {
+  const el = $('chip-area');
+  if (!members.length) {
+    el.innerHTML = '<span class="wd-hint" style="margin:0">No team members yet. Add them under More options.</span>';
+    return;
   }
+  el.innerHTML = members.map(m =>
+    `<button type="button" class="wd-chip${selectedMembers[m.id] ? ' on' : ''}" aria-pressed="${!!selectedMembers[m.id]}" onclick="toggleMember('${m.id}')">${esc(m.name)}</button>`
+  ).join('');
+}
+window.toggleMember = (id) => {
+  const m = members.find(x => x.id === id); if (!m) return;
+  if (selectedMembers[id]) delete selectedMembers[id];
+  else selectedMembers[id] = { name: m.name, role: '' };
   renderChips();
   renderRoleSection();
 };
-
-// ── ROLE SECTION ──────────────────────────────────────────────────────────
-// KEY FIX: We use a global setRole(id, value) function instead of inline
-// oninput with quotes — this avoids the HTML quote-escaping bug that was
-// preventing role values from being saved.
-window.setRole = (id, value) => {
-  if (selectedMembers[id]) selectedMembers[id].role = value;
-};
-
+// A global setter (not inline quoting) so a part containing quotes saves intact.
+window.setRole = (id, value) => { if (selectedMembers[id]) selectedMembers[id].role = value; };
 function renderRoleSection() {
-  const sec = document.getElementById('role-section');
+  const sec = $('role-section');
   const sel = Object.entries(selectedMembers);
   if (!sel.length) { sec.innerHTML = ''; return; }
-  sec.innerHTML = `
-    <div style="border-top:1px solid var(--border);padding-top:13px;margin-top:13px">
-      <div class="sect-label" style="margin-top:0">Respective Task for each member</div>
-      ${sel.map(([id, m]) =>
-        `<div class="role-row">
-          <span class="role-name">${esc(m.name.split(' ')[0])}</span>
-          <input class="role-input"
-            id="role-${id}"
-            placeholder="What's their specific task?"
-            value="${esc(m.role)}"
-            oninput="setRole('${id}', this.value)"
-            maxlength="80">
-        </div>`
-      ).join('')}
-    </div>`;
+  sec.innerHTML = `<div class="wd-lab">Each person's part <span class="opt">optional</span></div>` +
+    sel.map(([id, m]) =>
+      `<div class="wd-role"><span>${esc(m.name.split(' ')[0])}</span>
+        <input class="wd-field" id="role-${id}" placeholder="What is their part?" value="${esc(m.role)}" maxlength="80" oninput="setRole('${id}', this.value)"></div>`
+    ).join('');
 }
 
-// ── PRIORITY ──────────────────────────────────────────────────────────────
-window.selectPriority = (btn) => {
-  document.querySelectorAll('.p-chip').forEach(b => b.className = 'p-chip');
-  const p = btn.dataset.p;
-  selectedPriority = p;
-  btn.classList.add({ critical:'pc', high:'ph', medium:'pm', low:'pl' }[p]);
+window.setTaskType = (type, fromUser) => {
+  selectedTaskType = type;
+  const mbc = type === 'mbc';
+  $('type-mbc').classList.toggle('on', mbc);       $('type-mbc').setAttribute('aria-pressed', mbc);
+  $('type-individual').classList.toggle('on', !mbc); $('type-individual').setAttribute('aria-pressed', !mbc);
+  $('type-hint').textContent = mbc ? 'A team task, shown to everyone.' : 'A personal task. Only you see it.';
+  $('who-wrap').hidden = !mbc;
+  // switching to Individual by hand drops any team picks, so they can't ride along unseen
+  if (!mbc && fromUser) { selectedMembers = {}; renderChips(); renderRoleSection(); }
 };
 
-// ── SIMILARITY / DUPLICATE DETECTION ─────────────────────────────────────
+// ── DUE DATE ───────────────────────────────────────────────────────────────
+function dueOptions() {
+  const now = new Date();
+  const plus = n => { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + n); return localDateStr(d); };
+  // the first Friday at least two days away, so it never repeats "Tomorrow"
+  let k = (5 - now.getDay() + 7) % 7; if (k < 2) k += 7;
+  const fri = plus(k);
+  return [{ v: plus(0), l: 'Today' }, { v: plus(1), l: 'Tomorrow' }, { v: fri, l: shortDate(fri).split(' ').slice(0, 2).join(' ') }];
+}
+function renderDue() {
+  const opts = dueOptions();
+  const isQuick = opts.some(o => o.v === dueValue);
+  const custom = dueValue && !isQuick;
+  $('due-chips').innerHTML = opts.map(o =>
+    `<button type="button" class="wd-chip${dueValue === o.v ? ' on' : ''}" aria-pressed="${dueValue === o.v}" onclick="setDueQuick('${o.v}')">${o.l}</button>`
+  ).join('') +
+    `<button type="button" class="wd-chip${custom || pickOpen ? ' on' : ''}" aria-pressed="${!!custom}" onclick="openDuePick()">${custom ? esc(shortDate(dueValue)) : 'Pick date'}</button>`;
+  const inp = $('f-due');
+  inp.hidden = !pickOpen;
+  inp.value = dueValue || '';
+}
+function setDue(v) { dueValue = v || ''; pickOpen = false; renderDue(); }
+window.setDueQuick = (v) => setDue(dueValue === v ? '' : v);   // tap again to clear
+window.openDuePick = () => {
+  pickOpen = true; renderDue();
+  const inp = $('f-due');
+  try { inp.focus(); if (inp.showPicker) inp.showPicker(); } catch (e) { /* the visible input is the fallback */ }
+};
+window.onDuePicked = (v) => setDue(v);
+
+// ── PRIORITY ───────────────────────────────────────────────────────────────
+function setPriority(p) {
+  selectedPriority = p;
+  document.querySelectorAll('#p-row .wd-chip').forEach(b => {
+    const on = b.dataset.p === p; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+}
+window.setPriority = setPriority;
+
+window.toggleMore = (force) => {
+  const body = $('more-body'), btn = $('more-toggle');
+  const open = typeof force === 'boolean' ? force : body.hidden;
+  body.hidden = !open; btn.setAttribute('aria-expanded', open);
+};
+window.toggleAll = () => {
+  const body = $('all-body'), btn = $('all-toggle');
+  const open = body.hidden;
+  body.hidden = !open; btn.setAttribute('aria-expanded', open);
+};
+
+// ── SIMILARITY / DUPLICATE DETECTION ───────────────────────────────────────
 const STOP_WORDS = new Set(['a','an','the','and','or','for','to','of','in','on','at','with',
   'by','from','is','are','was','were','be','been','being','have','has','had',
   'do','does','did','will','would','could','should','may','might','shall',
   'this','that','these','those','it','its','all','any','as','up','so','but']);
 
 function tokenise(text) {
-  return text.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 1 && !STOP_WORDS.has(w));
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
 }
-
 function bigrams(text) {
   const s = text.toLowerCase().replace(/[^a-z0-9]/g, '');
   const bg = new Set();
-  for (let i = 0; i < s.length - 1; i++) bg.add(s.slice(i, i+2));
+  for (let i = 0; i < s.length - 1; i++) bg.add(s.slice(i, i + 2));
   return bg;
 }
-
 function similarity(a, b) {
-  // Token overlap score
-  const ta = new Set(tokenise(a));
-  const tb = new Set(tokenise(b));
+  const ta = new Set(tokenise(a)), tb = new Set(tokenise(b));
   const common = [...ta].filter(w => tb.has(w)).length;
-  const tokenScore = ta.size + tb.size > 0
-    ? (2 * common) / (ta.size + tb.size) : 0;
-
-  // Bigram score (Sorensen-Dice)
+  const tokenScore = ta.size + tb.size > 0 ? (2 * common) / (ta.size + tb.size) : 0;
   const ba = bigrams(a), bb = bigrams(b);
   const bgCommon = [...ba].filter(bg => bb.has(bg)).length;
-  const bigramScore = ba.size + bb.size > 0
-    ? (2 * bgCommon) / (ba.size + bb.size) : 0;
-
-  // Weighted average — bigrams catch word variations better
-  return tokenScore * 0.45 + bigramScore * 0.55;
+  const bigramScore = ba.size + bb.size > 0 ? (2 * bgCommon) / (ba.size + bb.size) : 0;
+  return tokenScore * 0.45 + bigramScore * 0.55;   // bigrams catch word variations better
 }
-
 function findDuplicates(label, project) {
-  // Was 0.38 — far too sensitive for short, templated task titles ("Review
-  // PR for X", "Fix X bug", "Prepare QX report"...). With names that short,
-  // sharing 3 of 4 words is unavoidable when only the ONE distinguishing
-  // word differs (e.g. "login" vs "signup"), so token/bigram overlap alone
-  // routinely scored 50-75% between tasks that aren't duplicates at all —
-  // the modal was appearing on most new tasks, not just actual repeats.
-  // Retuned against a real test set: 0.72 clears nearly all of those false
-  // positives while still catching genuine near-duplicates (typos, minor
-  // rewording, exact repeats), which cluster at 75%+.
+  // 0.72: retuned against real short, templated titles ("Review PR for X"…) —
+  // lower values flagged most new tasks; real near-duplicates cluster at 75%+.
   const THRESHOLD = 0.72;
   return tasks
     .filter(t => t.status !== 'done' && t.id !== editingId)
     .map(t => {
       let score = similarity(label, t.label);
-      // Boost score if same project
-      if (project && t.project && project.toLowerCase() === t.project.toLowerCase()) {
-        score = Math.min(1, score + 0.1);
-      }
+      if (project && t.project && project.toLowerCase() === t.project.toLowerCase()) score = Math.min(1, score + 0.1);
       return { task: t, score };
     })
     .filter(r => r.score >= THRESHOLD)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3); // show top 3 at most
+    .slice(0, 3);
 }
 
 let _pendingSaveData = null;
-
 function showDupModal(dupes, saveData) {
   _pendingSaveData = saveData;
-  const sub = document.getElementById('dup-sub');
-  sub.textContent = `Found ${dupes.length} similar task${dupes.length>1?'s':''} already in the system. Check if this is a duplicate before saving.`;
-
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('dup-matches').innerHTML = dupes.map(({ task: t, score }) => {
-    const pct = Math.round(score * 100);
-    const members = (t.members||[]).map(m=>m.name).join(', ');
-    const barColor = pct >= 70 ? 'var(--red)' : pct >= 50 ? 'var(--amber)' : 'var(--neon)';
-    return `<div class="dup-item" style="border-left-color:${barColor}">
+  $('dup-sub').textContent = `Found ${dupes.length} similar task${dupes.length > 1 ? 's' : ''} already open. Check this isn't a repeat before saving.`;
+  $('dup-matches').innerHTML = dupes.map(({ task: t, score }) => {
+    const who = (t.members || []).map(m => m.name).join(', ');
+    return `<div class="dup-item">
       <div class="dup-item-name">${esc(t.label)}</div>
-      <div class="dup-item-meta">
-        ${t.project ? `<span>📁 ${esc(t.project)}</span>` : ''}
-        ${members ? `<span>👥 ${members}</span>` : ''}
-        <span>${t.status==='inprog'?'🔄 In Progress':'📋 Todo'}</span>
-        <span class="dup-score">${pct}% similar</span>
-      </div>
+      <div class="dup-item-meta">${[t.project ? esc(t.project) : '', who ? esc(who) : '', STATUS_LABEL[t.status || 'todo']].filter(Boolean).join(', ')}
+        <span class="dup-score">${Math.round(score * 100)}% similar</span></div>
     </div>`;
   }).join('');
-
-  document.getElementById('dup-overlay').classList.add('open');
+  $('dup-overlay').classList.add('open');
 }
-
 window.closeDupModal = () => {
-  document.getElementById('dup-overlay').classList.remove('open');
+  $('dup-overlay').classList.remove('open');
   _pendingSaveData = null;
-  // Re-enable save button
-  const btn = document.getElementById('send-btn');
-  if (btn) { btn.disabled = false; btn.textContent = '⬡ Register Task'; }
+  const btn = $('send-btn');
+  if (btn) { btn.disabled = false; btn.textContent = editingId ? 'Update task' : 'Add task'; }
 };
-
 window.forceSaveTask = async () => {
-  document.getElementById('dup-overlay').classList.remove('open');
-  if (_pendingSaveData) {
-    await _doSave(_pendingSaveData);
-    _pendingSaveData = null;
-  }
+  $('dup-overlay').classList.remove('open');
+  if (_pendingSaveData) { await _doSave(_pendingSaveData); _pendingSaveData = null; }
 };
 
 // ── SUBMIT ─────────────────────────────────────────────────────────────────
 window.submitTask = async () => {
-  const label   = document.getElementById('f-task').value.trim();
-  const project = document.getElementById('f-project')?.value.trim() || '';
+  const label   = $('f-task').value.trim();
+  const project = $('f-project')?.value.trim() || '';
   if (!label) { shake('f-task'); return; }
 
-  const startDate = document.getElementById('f-start').value || null;
+  const startDate = $('f-start').value || null;
+  const dueDate = dueValue || null;
+  const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({ id, name: m.name, role: m.role.trim() }));
 
-  // Collect members with their respective tasks (role field)
-  const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({
-    id,
-    name: m.name,
-    role: m.role.trim()   // role = respective task text
-  }));
-
-  const btn = document.getElementById('send-btn');
-  btn.disabled = true; btn.textContent = '...';
+  const btn = $('send-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
     if (editingId) {
-      const dueDate = document.getElementById('f-due').value || null;
       await fbUpdateTask(editingId, { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
-      const idx = tasks.findIndex(t => t.id === editingId);
-      if (idx > -1) tasks[idx] = { ...tasks[idx], label, project, priority: selectedPriority, members: memberArr, dueDate: startDate };
-      toast('Task updated ✓'); cancelEdit();
+      const t = findTask(editingId);
+      if (t) Object.assign(t, { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      toast('Task updated'); cancelEdit();
       updateProjectSuggestions();
     } else {
-      const dueDate = document.getElementById('f-due').value || null;
-      // For individual tasks with no members, auto-assign the current user
-      const _registrant = localStorage.getItem('wd_myname') || '';
+      // an Individual task with nobody picked belongs to whoever is registering it
       let finalMembers = memberArr;
-      if (selectedTaskType === 'individual' && finalMembers.length === 0 && _registrant) {
-        const me = members.find(m => m.name.toLowerCase() === _registrant.toLowerCase());
+      if (selectedTaskType === 'individual' && !finalMembers.length && MY_NAME) {
+        const me = members.find(m => sameName(m.name, MY_NAME));
         if (me) finalMembers = [{ id: me.id, name: me.name, role: 'Personal task' }];
       }
-
-      // ── DUPLICATE CHECK ────────────────────────────────────────────────
       const dupes = findDuplicates(label, project);
-      if (dupes.length > 0) {
-        btn.disabled = false; btn.textContent = '⬡ Register Task';
+      if (dupes.length) {
+        btn.disabled = false; btn.textContent = 'Add task';
         showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
         return;
       }
-
       await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
-      // Play sound if you're assigned to this task
-      const _myNameCheck = localStorage.getItem('wd_myname') || '';
-      if (_myNameCheck && finalMembers.some(m => m.name.toLowerCase() === _myNameCheck.toLowerCase())) {
-        playTaskAssigned();
-      }
+      if (MY_NAME && finalMembers.some(m => sameName(m.name, MY_NAME))) playTaskAssigned();
     }
     renderTaskList();
-    updateSummary();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Could not save: ' + e.message, 'err'); }
 
   btn.disabled = false;
-  btn.textContent = editingId ? '⬡ Update Task' : '⬡ Register Task';
+  btn.textContent = editingId ? 'Update task' : 'Add task';
 };
 
-// ── DO SAVE (called directly or after duplicate confirmation) ─────────────
 async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType }) {
-  const id = await fbAddTask({
-    label, project, priority,
-    members: finalMembers,
-    dueDate: startDate,
-    taskDueDate: dueDate,
-    taskType
-  });
-  tasks.unshift({
-    id, label, project, priority,
-    members: finalMembers,
-    dueDate: startDate,
-    taskDueDate: dueDate,
-    taskType,
-    status: 'todo',
-    memberStatus: {}
-  });
-  toast('Task registered ✓');
+  const id = await fbAddTask({ label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType });
+  tasks.unshift({ id, label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, status: 'todo', memberStatus: {} });
+  toast('Task added');
   resetForm();
   updateProjectSuggestions();
+  renderTaskList();
 }
 
 // ── EDIT ───────────────────────────────────────────────────────────────────
 window.editTask = (id) => {
-  const t = tasks.find(t => t.id === id); if (!t) return;
+  const t = findTask(id); if (!t) return;
   editingId = id;
-  document.getElementById('f-task').value = t.label;
-  document.getElementById('f-start').value = t.dueDate || '';
-    document.getElementById('f-due').value = t.taskDueDate || '';
-    setTaskType(t.taskType || 'mbc');
-    document.getElementById('f-project').value = t.project || '';
-  selectedPriority = t.priority || 'medium';
+  $('f-task').value = t.label;
+  $('f-start').value = t.dueDate || '';
+  $('f-project').value = t.project || '';
+  setTaskType(t.taskType || 'mbc');
+  setDue(t.taskDueDate || '');
+  setPriority(t.priority || 'medium');
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
-  document.querySelectorAll('.p-chip').forEach(b => {
-    b.className = 'p-chip';
-    if (b.dataset.p === selectedPriority) b.classList.add({critical:'pc',high:'ph',medium:'pm',low:'pl'}[selectedPriority]);
-  });
   renderChips(); renderRoleSection();
-  document.getElementById('edit-badge').style.display = '';
-  document.getElementById('cancel-btn').style.display = '';
-  document.getElementById('send-btn').textContent = '⬡ Update Task';
-  document.getElementById('f-task').scrollIntoView({ behavior: 'smooth' });
-  document.getElementById('f-task').focus();
+  toggleMore(!!t.dueDate);
+  $('add-title').textContent = 'Edit task';
+  $('edit-badge').hidden = false;
+  $('cancel-btn').hidden = false;
+  $('send-btn').textContent = 'Update task';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('f-task').focus({ preventScroll: true });
 };
-
-window.toggleManageMembers = () => {
-  const toggle = document.getElementById('mm-toggle');
-  const body   = document.getElementById('mm-body');
-  toggle.classList.toggle('open');
-  body.classList.toggle('open');
-  // Update label with member count
-  updateMemberToggleLabel();
-};
-
-function updateMemberToggleLabel() {
-  const lbl = document.getElementById('mm-toggle-label');
-  if (!lbl) return;
-  lbl.textContent = members.length
-    ? `Manage Team Members (${members.length})`
-    : 'Manage Team Members';
-}
-
-let selectedTaskType = 'mbc';
-window.setTaskType = (type) => {
-  selectedTaskType = type;
-  document.getElementById('type-mbc').className = 'task-type-btn' + (type==='mbc' ? ' active-mbc' : '');
-  document.getElementById('type-individual').className = 'task-type-btn' + (type==='individual' ? ' active-individual' : '');
-  // Hide member assignment for individual tasks
-  const chipArea  = document.getElementById('chip-area');
-  const roleSection = document.getElementById('role-section');
-  const memberLabel = chipArea?.previousElementSibling;
-  if (type === 'individual') {
-    if (chipArea) chipArea.style.display = 'none';
-    if (roleSection) roleSection.style.display = 'none';
-    if (memberLabel) memberLabel.style.display = 'none';
-  } else {
-    if (chipArea) chipArea.style.display = '';
-    if (roleSection) roleSection.style.display = '';
-    if (memberLabel) memberLabel.style.display = '';
-  }
-};
-
 window.cancelEdit = () => {
   editingId = null; resetForm();
-  document.getElementById('edit-badge').style.display = 'none';
-  document.getElementById('cancel-btn').style.display = 'none';
-  document.getElementById('send-btn').textContent = '⬡ Register Task';
+  $('add-title').textContent = 'Add task';
+  $('edit-badge').hidden = true;
+  $('cancel-btn').hidden = true;
+  $('send-btn').textContent = 'Add task';
 };
+function resetForm() {
+  $('f-task').value = '';
+  $('f-task').classList.remove('bad');
+  $('similar-tasks-wrap').hidden = true;
+  $('f-start').value = '';
+  if ($('f-project')) $('f-project').value = '';
+  setTaskType('mbc');
+  setDue('');
+  selectedMembers = {};
+  setPriority('medium');
+  renderChips(); renderRoleSection();
+}
 
-// ── CYCLE STATUS ───────────────────────────────────────────────────────────
-window.cycleStatus = async (id) => {
-  const t = tasks.find(t => t.id === id); if (!t) return;
-  const next = {todo:'inprog',inprog:'done',done:'todo'}[t.status||'todo'];
+// ── STATUS ─────────────────────────────────────────────────────────────────
+window.setStatus = async (id, next) => {
+  const t = findTask(id); if (!t) return;
+  const prev = t.status || 'todo';
+  if (prev === next) return;
   t.status = next;
-  await fbUpdateTask(id, { status: next });
-  renderTaskList();
-};
-
-// ── TOGGLE OVERALL DONE ────────────────────────────────────────────────────
-window.toggleDone = async (id) => {
-  const t = tasks.find(t => t.id === id); if (!t) return;
-  const next = t.status === 'done' ? 'todo' : 'done';
-  t.status = next;
-  await fbUpdateTask(id, { status: next });
-  if (next === 'done') playMarkDone(); else playReopen();
-  renderTaskList();
-  toast(next === 'done' ? '✓ Task complete!' : 'Task reopened');
+  renderTaskList(); refreshAddSheet();
+  try {
+    await fbUpdateTask(id, { status: next });
+    if (next === 'done') playMarkDone(); else if (prev === 'done') playReopen();
+    toast(next === 'done' ? 'Marked done' : STATUS_LABEL[next]);
+  } catch (e) {
+    t.status = prev; renderTaskList(); refreshAddSheet();
+    toast('Could not change status: ' + e.message, 'err');
+  }
 };
 
 // ── DELETE (password protected) ────────────────────────────────────────────
 window.deleteTask = (id) => {
-  const t = tasks.find(t => t.id === id); if (!t) return;
+  const t = findTask(id); if (!t) return;
   pendingDeleteId = id;
-  document.getElementById('del-modal-task').textContent = t.label;
-  document.getElementById('del-pw-inp').value = '';
-  document.getElementById('del-pw-err').style.display = 'none';
-  document.getElementById('del-pw-inp').classList.remove('wrong');
-  document.getElementById('del-modal').classList.add('open');
-  setTimeout(() => document.getElementById('del-pw-inp').focus(), 120);
+  $('del-modal-task').textContent = t.label;
+  $('del-pw-inp').value = '';
+  $('del-pw-err').style.display = 'none';
+  $('del-pw-inp').classList.remove('wrong');
+  $('del-modal').classList.add('open');
+  setTimeout(() => $('del-pw-inp').focus(), 120);
 };
-window.closeDeleteModal = () => {
-  document.getElementById('del-modal').classList.remove('open');
-  pendingDeleteId = null;
-};
+window.closeDeleteModal = () => { $('del-modal').classList.remove('open'); pendingDeleteId = null; };
 window.confirmDelete = async () => {
-  const pw = document.getElementById('del-pw-inp').value;
-  const errEl = document.getElementById('del-pw-err');
-  const inp = document.getElementById('del-pw-inp');
+  const pw = $('del-pw-inp').value;
+  const errEl = $('del-pw-err'), inp = $('del-pw-inp');
   try {
     await fbDeleteTask(pendingDeleteId, pw);
     tasks = tasks.filter(t => t.id !== pendingDeleteId);
-    closeDeleteModal(); renderTaskList(); updateSummary(); toast('Task deleted');
-  } catch(e) {
+    allTasksHistory = allTasksHistory.filter(t => t.id !== pendingDeleteId);
+    closeDeleteModal(); renderTaskList(); toast('Task deleted');
+  } catch (e) {
     inp.classList.add('wrong'); errEl.style.display = 'block'; inp.value = '';
     inp.focus(); setTimeout(() => inp.classList.remove('wrong'), 600);
   }
 };
 
-// ── TASK LIST ──────────────────────────────────────────────────────────────
-// Track expanded tasks in input page
-const expandedInputTasks = new Set();
-window.toggleInputExpand = (id) => {
-  if (expandedInputTasks.has(id)) expandedInputTasks.delete(id);
-  else expandedInputTasks.add(id);
-  const detail = document.getElementById('tdi-' + id);
-  const btn    = document.getElementById('txi-' + id);
-  if (detail) detail.classList.toggle('open', expandedInputTasks.has(id));
-  if (btn)    btn.classList.toggle('open', expandedInputTasks.has(id));
-};
-
-let _inputDoneOpen = false;
-const _inputDoneMonthOpen = {};
-window.toggleInputDoneMonth = (id) => {
-  _inputDoneMonthOpen[id] = !_inputDoneMonthOpen[id];
-  const body  = document.getElementById(id);
-  const arrow = document.getElementById('idm-arrow-' + id.replace('idm-',''));
-  if (body)  body.classList.toggle('open', _inputDoneMonthOpen[id]);
-  if (arrow) arrow.classList.toggle('open', _inputDoneMonthOpen[id]);
-};
-window.toggleInputDoneSection = () => {
-  _inputDoneOpen = !_inputDoneOpen;
-  const body  = document.getElementById('input-done-body');
-  const arrow = document.getElementById('input-done-arrow');
-  if (body)  body.classList.toggle('open', _inputDoneOpen);
-  if (arrow) arrow.classList.toggle('open', _inputDoneOpen);
-};
-
-// All known projects (updated from tasks + allTasksHistory)
+// ── PROJECT PICKER ─────────────────────────────────────────────────────────
 let _allProjects = [];
-
+let _projHoverIdx = -1;
 function updateProjectSuggestions() {
-  const fromLive    = tasks.map(t => t.project).filter(Boolean);
-  const fromHistory = (allTasksHistory||[]).map(t => t.project).filter(Boolean);
+  const fromLive = tasks.map(t => t.project).filter(Boolean);
+  const fromHistory = (allTasksHistory || []).map(t => t.project).filter(Boolean);
   _allProjects = [...new Set([...fromLive, ...fromHistory])].sort();
 }
-
-let _projHoverIdx = -1;
-
-window.showProjectDrop = function() {
+window.showProjectDrop = () => { updateProjectSuggestions(); filterProjectDrop($('f-project')?.value || ''); };
+window.hideProjectDrop = () => {
+  setTimeout(() => { const d = $('project-drop'); if (d) d.hidden = true; }, 200);   // lets a tap on an item land first
+};
+window.filterProjectDrop = (val) => {
   updateProjectSuggestions();
-  filterProjectDrop(document.getElementById('f-project')?.value || '');
-}
-
-window.hideProjectDrop = function() {
-  // Delay so click on item registers first
-  setTimeout(() => {
-    const drop = document.getElementById('project-drop');
-    if (drop) drop.style.display = 'none';
-  }, 200);
-}
-
-window.filterProjectDrop = function(val) {
-  updateProjectSuggestions(); // always refresh from latest tasks
-  const drop = document.getElementById('project-drop');
-  if (!drop) return;
-  const q = (val||'').trim().toLowerCase();
+  const drop = $('project-drop'); if (!drop) return;
+  const q = (val || '').trim().toLowerCase();
   const matches = _allProjects.filter(p => !q || p.toLowerCase().includes(q));
   _projHoverIdx = -1;
-
-  let html = '';
-
-  if (matches.length) {
-    matches.slice(0, 8).forEach(p => {
-      const safe = p.replace(/'/g, '&#39;');
-      html += '<div class="proj-drop-item" onmousedown="event.preventDefault();selectProject(\'' + safe + '\')">' +
-        '<span class="proj-icon">&#128193;</span>' + esc(p) + '</div>';
-    });
+  let html = matches.slice(0, 8).map(p =>
+    `<div class="wd-drop-item" style="--proj:${projHue(p)}" data-v="${esc(p)}" onpointerdown="event.preventDefault();selectProject(this.dataset.v)"><span class="pd"></span>${esc(p)}</div>`).join('');
+  const exact = _allProjects.some(p => p.toLowerCase() === q);
+  if (q && !exact) {
+    html += `<div class="wd-drop-item new" data-v="${esc(val.trim())}" onpointerdown="event.preventDefault();selectProject(this.dataset.v)">Create “${esc(val.trim())}”</div>`;
   }
-
-  // Always show "Create new" option when user has typed something new
-  const exactMatch = _allProjects.some(p => p.toLowerCase() === q);
-  if (q && !exactMatch) {
-    const safe2 = val.trim().replace(/'/g, '&#39;');
-    html += '<div class="proj-drop-item proj-drop-new" onmousedown="event.preventDefault();selectProject(\'' + safe2 + '\')">' +
-      '<span class="proj-icon">＋</span>Create &ldquo;' + esc(val.trim()) + '&rdquo;</div>';
-  }
-
-  // If no projects exist and no typed value — show hint
-  if (!html) {
-    html = '<div class="proj-drop-empty">No projects yet — type to create one</div>';
-  }
-
+  if (!html) html = '<div class="wd-drop-empty">No projects yet. Type a name to create one.</div>';
   drop.innerHTML = html;
-  drop.style.display = 'block';
-}
-
+  drop.hidden = false;
+};
 window.selectProject = (name) => {
-  const inp = document.getElementById('f-project');
-  if (inp) inp.value = name;
-  const drop = document.getElementById('project-drop');
-  if (drop) drop.style.display = 'none';
+  const inp = $('f-project'); if (inp) inp.value = name;
+  const drop = $('project-drop'); if (drop) drop.hidden = true;
+};
+window.projectKeyNav = (e) => {
+  const drop = $('project-drop');
+  if (!drop || drop.hidden) return;
+  const items = drop.querySelectorAll('.wd-drop-item');
+  const mark = () => items.forEach((item, i) => item.classList.toggle('hovered', i === _projHoverIdx));
+  if (e.key === 'ArrowDown') { e.preventDefault(); _projHoverIdx = Math.min(_projHoverIdx + 1, items.length - 1); mark(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _projHoverIdx = Math.max(_projHoverIdx - 1, 0); mark(); }
+  else if (e.key === 'Enter' && _projHoverIdx >= 0) { e.preventDefault(); selectProject(items[_projHoverIdx].dataset.v); }
+  else if (e.key === 'Escape' || e.key === 'Tab') drop.hidden = true;
 };
 
-window.projectKeyNav = function(e) {
-  const drop = document.getElementById('project-drop');
-  if (!drop || drop.style.display === 'none') return;
-  const items = drop.querySelectorAll('.proj-drop-item');
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    _projHoverIdx = Math.min(_projHoverIdx + 1, items.length - 1);
-    items.forEach((item, i) => item.classList.toggle('hovered', i === _projHoverIdx));
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    _projHoverIdx = Math.max(_projHoverIdx - 1, 0);
-    items.forEach((item, i) => item.classList.toggle('hovered', i === _projHoverIdx));
-  } else if (e.key === 'Enter' && _projHoverIdx >= 0) {
-    e.preventDefault();
-    items[_projHoverIdx]?.dispatchEvent(new MouseEvent('mousedown'));
-  } else if (e.key === 'Escape') {
-    drop.style.display = 'none';
-  } else if (e.key === 'Tab') {
-    drop.style.display = 'none';
-  }
-};
-
-// ── SIMILAR TASK DETECTION ───────────────────────────────────────────────
+// ── "SIMILAR TASK" HINT WHILE TYPING ───────────────────────────────────────
 function getWords(str) {
-  // Extract meaningful words (4+ chars), lowercase, ignore common filler words
-  const stopWords = new Set(['with','that','this','from','have','will','your',
-    'into','they','been','were','also','when','what','more','some','than',
-    'task','work','for','the','and','but','not','are','can','its','our']);
-  return str.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length >= 3 && !stopWords.has(w));
+  const stop = new Set(['with','that','this','from','have','will','your','into','they','been','were','also','when','what','more','some','than','task','work','for','the','and','but','not','are','can','its','our']);
+  return str.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !stop.has(w));
 }
-
 function similarityScore(a, b) {
-  const wa = new Set(getWords(a));
-  const wb = new Set(getWords(b));
+  const wa = new Set(getWords(a)), wb = new Set(getWords(b));
   if (!wa.size || !wb.size) return 0;
   let matches = 0;
   wa.forEach(w => { if (wb.has(w)) matches++; });
-  // Also check partial matches (one word contains the other)
-  wa.forEach(wa_w => {
-    wb.forEach(wb_w => {
-      if (wa_w !== wb_w && (wa_w.includes(wb_w) || wb_w.includes(wa_w))) {
-        matches += 0.6;
-      }
-    });
-  });
+  wa.forEach(x => wb.forEach(y => { if (x !== y && (x.includes(y) || y.includes(x))) matches += 0.6; }));
   return matches / Math.max(wa.size, wb.size);
 }
-
 window.checkSimilarTasks = (val) => {
-  const wrap = document.getElementById('similar-tasks-wrap');
-  const list = document.getElementById('similar-tasks-list');
+  const wrap = $('similar-tasks-wrap'), list = $('similar-tasks-list');
   if (!wrap || !list) return;
-
   const query = val.trim();
-  if (query.length < 4) { wrap.style.display = 'none'; return; }
-
-  // Find similar tasks — was 0.35, retuned to 0.70 for the same reason
-  // findDuplicates() above was retuned: short templated titles routinely
-  // scored 60-100% "similar" under this word-overlap formula even when
-  // completely unrelated (e.g. "Prepare Q3 report" vs "Prepare Q4 report"
-  // hit 100%), making this live hint fire on most typing, not just repeats.
+  if (query.length < 4) { wrap.hidden = true; return; }
+  // 0.70: short templated titles ("Prepare Q3 report" vs "Q4 report") score 100% under
+  // plain word overlap, so anything lower fires on most typing.
   const similar = tasks
-    .filter(t => {
-      if (editingId && t.id === editingId) return false; // skip self when editing
-      return similarityScore(query, t.label) >= 0.70;
-    })
-    .sort((a,b) => similarityScore(query, b.label) - similarityScore(query, a.label))
+    .filter(t => !(editingId && t.id === editingId) && similarityScore(query, t.label) >= 0.70)
+    .sort((a, b) => similarityScore(query, b.label) - similarityScore(query, a.label))
     .slice(0, 4);
-
-  if (!similar.length) { wrap.style.display = 'none'; return; }
-
-  const stClass = { done:'sim-st-done', inprog:'sim-st-inprog',
-    todo:'sim-st-todo', onhold:'sim-st-onhold' };
-  const stLabel = { done:'Done', inprog:'In Progress',
-    todo:'Todo', onhold:'On Hold' };
-
+  if (!similar.length) { wrap.hidden = true; return; }
   list.innerHTML = similar.map(t => `
-    <div class="sim-task-item">
-      <div style="flex:1">
-        <div class="sim-task-name">${esc(t.label)}</div>
-        <div class="sim-task-meta">${[
-          t.project ? '📁 '+esc(t.project) : '',
-          t.taskDueDate ? '📅 '+t.taskDueDate : '',
-          (t.members||[]).map(m=>m.name).join(', ') ? '👥 '+(t.members||[]).map(m=>m.name).join(', ') : ''
-        ].filter(Boolean).join(' · ')}</div>
-      </div>
-      <span class="sim-task-status ${stClass[t.status]||'sim-st-todo'}">
-        ${stLabel[t.status]||'Todo'}
-      </span>
-    </div>`).join('');
-
-  wrap.style.display = '';
+    <div class="wd-sim-i"><span>${esc(t.label)}</span>
+      <span class="m">${[t.project ? esc(t.project) : '', STATUS_LABEL[t.status || 'todo']].filter(Boolean).join(', ')}</span></div>`).join('');
+  wrap.hidden = false;
 };
+
+// ── ALL TASKS ──────────────────────────────────────────────────────────────
+const byDue = (a, b) => (a.taskDueDate || '9999-12-31').localeCompare(b.taskDueDate || '9999-12-31')
+  || (PRIO_ORDER[a.priority || 'medium'] - PRIO_ORDER[b.priority || 'medium']);
+
+function metaText(t) {
+  const w = othersText(t, MY_NAME);
+  return (t.project || 'No project') + (w ? ', ' + w : '');
+}
+function rowHTML(t) {
+  const st = t.status || 'todo';
+  const label = st === 'done' ? '' : dueLabel(t.taskDueDate);
+  return `<div class="wd-task ${urgencyClass(st, t.taskDueDate)}${st === 'done' ? ' is-done' : ''}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
+      onclick="openAddSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAddSheet('${t.id}')}">
+    <span class="wd-g g static">${glyphSVG(st)}</span>
+    <div class="tt">${esc(t.label)}</div>
+    <div class="meta">${esc(metaText(t))}</div>
+    <div class="due">${esc(label)}</div>
+  </div>`;
+}
+const rowsHTML = list => `<div class="wd-tasks">${list.map(rowHTML).join('')}</div>`;
+const groupHTML = (title, list, cls = '') => list.length
+  ? `<div class="wd-gh ${cls}"><span>${title}</span><span>${list.length}</span></div>${rowsHTML(list)}` : '';
+
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthName = key => { const [y, m] = String(key).split('-'); return m ? MN[parseInt(m, 10) - 1] + ' ' + y : 'Earlier'; };
+
+window.toggleFold = (name) => { fold = fold === name ? null : name; renderTaskList(); };
 
 function renderTaskList() {
-  const el = document.getElementById('task-list');
-  const activeTasks = tasks.filter(t => t.status !== 'done');
-  const doneTasks   = tasks.filter(t => t.status === 'done');
-  document.getElementById('task-count').textContent = tasks.length ? tasks.length + ' tasks' : '';
-  if (!tasks.length) { el.innerHTML = '<div class="empty"><div class="ei">◻</div>No tasks yet</div>'; return; }
+  const el = $('task-list'); if (!el) return;
+  $('task-count').textContent = tasks.length ? String(tasks.length) : '';
+  if (!tasks.length) { el.innerHTML = '<div class="wd-empty"><b>No tasks yet</b>Tasks you add show up here.</div>'; return; }
 
-  // Group done tasks by month
-  const doneByMonth = {};
-  doneTasks.forEach(t => {
-    const key = t.month || 'Unknown';
-    if (!doneByMonth[key]) doneByMonth[key] = [];
-    doneByMonth[key].push(t);
-  });
-  const doneMonthKeys = Object.keys(doneByMonth).sort((a,b) => b.localeCompare(a));
-  const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const fmtMK = key => { const [y,m] = key.split('-'); return m ? MN[parseInt(m)-1]+' '+y : key; };
+  const open = tasks.filter(t => (t.status || 'todo') !== 'done' && t.status !== 'onhold').sort(byDue);
+  const hold = tasks.filter(t => t.status === 'onhold').sort(byDue);
+  const done = tasks.filter(t => t.status === 'done');
+  const late = open.filter(t => { const d = dayDiff(t.taskDueDate); return d != null && d < 0; });
+  const today = open.filter(t => dayDiff(t.taskDueDate) === 0);
+  const later = open.filter(t => { const d = dayDiff(t.taskDueDate); return d != null && d > 0; });
+  const nodate = open.filter(t => dayDiff(t.taskDueDate) == null);
 
-  function taskCard(t, i) {
-    const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-    const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
-    const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
-    const pTag = {critical:'t-crit',high:'t-high',medium:'t-med',low:'t-low'}[t.priority||'medium'];
-    const isDone = t.status === 'done';
-    const isInprog = t.status === 'inprog';
-    const statusClass = isInprog ? 'status-inprog' : '';
-    const isExpanded = expandedInputTasks.has(t.id);
-    const accentColor = {critical:'var(--red)',high:'var(--amber)',medium:'var(--neon2)',low:'var(--text3)'}[t.priority||'medium'];
-    const memberNames = (t.members||[]).map(m => esc(m.name)).join(', ');
-    const memberPills = (t.members||[]).map(m =>
-      `<span class="m-pill">
-        <span class="m-pill-name">${esc(m.name)}</span>
-        <span class="m-pill-role">${m.role ? esc(m.role) : 'No task set'}</span>
-      </span>`
-    ).join('');
-    // This Week toggle — self-service only (see the state block near the top
-    // of this file for why admin-for-others wasn't ported here).
-    const isMyTask = MY_NAME && (t.members||[]).some(m => m.name && m.name.toLowerCase() === MY_NAME.toLowerCase());
-    const inSprint = sprintTaskIds.has(t.id);
-    const sprintFull = !inSprint && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
-    const sprintBtnHTML = (isMyTask && !isDone) ? `
-            <button class="sprint-task-btn${inSprint ? ' remove' : (sprintFull ? ' full-disabled' : '')}"
-              onclick="event.stopPropagation();${sprintFull ? '' : `toggleSprintTask('${t.id}')`}"
-              title="${sprintFull ? 'Sprint full (max ' + SPRINT_MAX + ' active)' : ''}">
-              ${inSprint ? '✕ Remove' : sprintFull ? '🎯 Full' : '🎯 This Week'}
-            </button>` : '';
-    return `
-      <div class="fi" style="animation-delay:${i*.03}s">
-        <!-- COMPACT ROW -->
-        <div class="task-row-compact ${statusClass}${isDone?' is-done':''}"
-          id="trc-i-${t.id}"
-          onclick="toggleInputExpand('${t.id}')"
-          style="border-left:3px solid ${accentColor}">
-          <div class="trc-left">
-            <div class="trc-name">${esc(t.label)}</div>
-            <div class="trc-meta">
-              <span class="tag ${pTag}" style="font-size:9px;padding:2px 6px">${t.priority||'medium'}</span>
-              <span class="tag ${stTag}" style="font-size:9px;padding:2px 6px">${stLbl}</span>
-              ${t.project ? `<span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(157,126,255,.1);border:1px solid rgba(157,126,255,.2);padding:2px 6px;border-radius:4px">${esc(t.project)}</span>` : ''}
-              ${t.dueDate ? `<span class="due-badge" style="font-size:9px;padding:2px 6px">${formatDate(t.dueDate)}</span>` : ''}
-              <span class="trc-members">· ${memberNames||'No members'}</span>
-            </div>
-          </div>
-          <div class="trc-expand${isExpanded?' open':''}" id="txi-${t.id}">▾</div>
-        </div>
-        <!-- EXPANDED DETAIL -->
-        <div class="task-detail-inp${isExpanded?' open':''}" id="tdi-${t.id}">
-          <div class="tc-members" style="margin-bottom:10px">${memberPills}</div>
-          <div class="tc-actions-input">
-            <button class="sc-btn" onclick="event.stopPropagation();cycleStatus('${t.id}')">${stLbl} →</button>
-            <button class="mark-done-btn${isDone?' undone':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">
-              ${isDone ? '↩ Reopen' : '✓ Mark Done'}
-            </button>
-            ${sprintBtnHTML}
-            <button class="del-btn" onclick="event.stopPropagation();editTask('${t.id}')" title="Edit" style="font-size:17px">✎</button>
-            <button class="del-btn" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete" style="font-size:17px">✕</button>
-          </div>
-        </div>
-      </div>`;
+  let html = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later', later) + groupHTML('No due date', nodate);
+  if (!open.length) html = '<div class="wd-empty"><b>All clear</b>Nothing open right now.</div>';
+
+  const chips = [];
+  if (hold.length) chips.push(`<button type="button" class="wd-fchip${fold === 'hold' ? ' on' : ''}" aria-pressed="${fold === 'hold'}" onclick="toggleFold('hold')">On hold <b>${hold.length}</b></button>`);
+  if (done.length) chips.push(`<button type="button" class="wd-fchip${fold === 'done' ? ' on' : ''}" aria-pressed="${fold === 'done'}" onclick="toggleFold('done')">Done <b>${done.length}</b></button>`);
+  if (chips.length) html += `<div class="wd-folds">${chips.join('')}</div>`;
+
+  if (fold === 'hold') html += `<div class="wd-fold-body">${rowsHTML(hold)}</div>`;
+  if (fold === 'done') {
+    const byMonth = {};
+    done.forEach(t => { (byMonth[t.month || 'Unknown'] = byMonth[t.month || 'Unknown'] || []).push(t); });
+    html += '<div class="wd-fold-body">' + Object.keys(byMonth).sort((a, b) => b.localeCompare(a)).map(k =>
+      `<div class="wd-gh"><span>${monthName(k)}</span><span>${byMonth[k].length}</span></div>${rowsHTML(byMonth[k])}`).join('') + '</div>';
   }
-
-  const doneHTML = doneTasks.length ? `
-    <div class="done-section-toggle" onclick="toggleInputDoneSection()">
-      <span>✅ Done (${doneTasks.length})</span>
-      <span class="done-section-arrow" id="input-done-arrow">▼</span>
-    </div>
-    <div class="done-section-body" id="input-done-body">
-      ${doneMonthKeys.map((key, mi) => `
-        <div class="done-month-toggle" onclick="toggleInputDoneMonth('idm-${mi}')" id="idm-toggle-${mi}">
-          <span>${fmtMK(key)} · ${doneByMonth[key].length} task${doneByMonth[key].length>1?'s':''}</span>
-          <span class="done-month-arrow" id="idm-arrow-${mi}">▼</span>
-        </div>
-        <div class="done-month-body" id="idm-${mi}">
-          ${doneByMonth[key].map((t,i) => taskCard(t,i)).join('')}
-        </div>
-      `).join('')}
-    </div>
-  ` : '';
-
-  el.innerHTML = activeTasks.map((t,i) => taskCard(t,i)).join('') + doneHTML;
+  el.innerHTML = html;
 }
 
-// ── DUE DATE BADGE ────────────────────────────────────────────────────────
-function dueBadge(dueDate, status) {
-  if (!dueDate || status === 'done') return '';
-  const today = new Date().toISOString().split('T')[0];
-  const isOverdue = dueDate < today;
-  const isToday = dueDate === today;
-  const cls = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const label = isOverdue ? '📅 Started' : isToday ? '⚡ Starts Today' : '📅 ' + formatDate(dueDate);
-  return `<span class="due-badge ${cls}">${label}</span>`;
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  const [y,m,day] = d.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${day} ${months[parseInt(m)-1]}`;
-}
-
-// ── DATE RANGE FILTER ─────────────────────────────────────────────────────
+// ── DATE RANGE (inside All tasks) ──────────────────────────────────────────
 window.applyDateRange = () => {
-  const from = document.getElementById('range-from').value;
-  const to   = document.getElementById('range-to').value;
+  const from = $('range-from').value, to = $('range-to').value;
   if (!from || !to) { toast('Pick both dates', 'err'); return; }
-  if (from > to) { toast('Start date must be before end date', 'err'); return; }
-
-  // Filter tasks by createdAt date (stored as month "YYYY-MM" + dueDate)
-  // We match on dueDate if set, else on month
-  // Use full history so archived tasks show in date range filter
+  if (from > to) { toast('The start date must come before the end date', 'err'); return; }
+  // match on the start date if set, else the task's month (full history so archived tasks appear)
   const filtered = allTasksHistory.filter(t => {
     const d = t.dueDate || (t.month ? t.month + '-01' : null);
-    if (!d) return false;
-    return d >= from && d <= to;
-  });
-
-  const resultsEl = document.getElementById('range-results');
-  const clearBtn  = document.getElementById('range-clear-btn');
-  clearBtn.style.display = '';
-
-  if (!filtered.length) {
-    resultsEl.innerHTML = '<div class="empty" style="padding:16px 0 4px"><div class="ei">◻</div>No tasks in this date range</div>';
-    return;
-  }
-
-  const done   = filtered.filter(t => t.status === 'done').length;
-  const inprog = filtered.filter(t => t.status === 'inprog').length;
-  const todo   = filtered.filter(t => t.status === 'todo').length;
-  const pct    = Math.round(done / filtered.length * 100);
-
-  resultsEl.innerHTML = `
-    <div class="range-banner">
-      ${formatDate(from)} → ${formatDate(to)} &nbsp;·&nbsp; ${filtered.length} tasks &nbsp;·&nbsp; ${pct}% done
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:10px">
-      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-        <div style="font-size:20px;font-weight:800;color:var(--neon)">${done}</div>
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Done</div>
-      </div>
-      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-        <div style="font-size:20px;font-weight:800;color:var(--amber)">${inprog}</div>
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">In Prog</div>
-      </div>
-      <div style="flex:1;text-align:center;padding:8px 4px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r)">
-        <div style="font-size:20px;font-weight:800;color:var(--text2)">${todo}</div>
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Todo</div>
-      </div>
-    </div>
-    ${filtered.map(t => {
-      const pc = {critical:'pc',high:'ph',medium:'pm',low:'pl'}[t.priority||'medium'];
-      const stTag = {todo:'t-todo',inprog:'t-ip',onhold:'t-onhold',done:'t-done'}[t.status||'todo'];
-      const stLbl = {todo:'Todo',inprog:'In Progress',onhold:'On Hold',done:'Done'}[t.status||'todo'];
-      const isDone = t.status === 'done';
-      const memberPills = (t.members||[]).map(m =>
-        `<span class="m-pill" style="display:inline-flex"><span class="m-pill-name">${esc(m.name)}</span><span class="m-pill-role">${m.role ? esc(m.role) : 'Not set'}</span></span>`
-      ).join('');
-      return `<div class="task-card ${pc}${isDone?' is-done':''}">
-        <div class="tc-title">${esc(t.label)}</div>
-        <div class="tc-meta">
-          <span class="tag ${stTag}">${stLbl}</span>
-          ${t.dueDate ? dueBadge(t.dueDate, t.status) : ''}
-        </div>
-        <div class="tc-members">${memberPills}</div>
-      </div>`;
-    }).join('')}`;
+    return d && d >= from && d <= to;
+  }).sort(byDue);
+  rangeActive = true;
+  $('range-clear-btn').hidden = false;
+  $('task-list').hidden = true;
+  const res = $('range-results');
+  if (!filtered.length) { res.innerHTML = '<div class="wd-empty"><b>Nothing in this range</b>Try wider dates.</div>'; return; }
+  const doneN = filtered.filter(t => t.status === 'done').length;
+  const pct = Math.round(doneN / filtered.length * 100);
+  res.innerHTML = `<div class="wd-range-sum"><b>${filtered.length} task${filtered.length > 1 ? 's' : ''}</b>, ${pct}% done · ${esc(dayMonth(from))} to ${esc(dayMonth(to))}</div>${rowsHTML(filtered)}`;
 };
-
 window.clearDateRange = () => {
-  document.getElementById('range-results').innerHTML = '';
-  document.getElementById('range-clear-btn').style.display = 'none';
+  rangeActive = false;
+  $('range-results').innerHTML = '';
+  $('range-clear-btn').hidden = true;
+  $('task-list').hidden = false;
 };
 
-// ── SUMMARY ───────────────────────────────────────────────────────────────
-function updateSummary() {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.status === 'done').length;
-  const inprog = tasks.filter(t => t.status === 'inprog').length;
-  const crit = tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length;
-  const pct = total ? Math.round(done / total * 100) : 0;
-  const s = id => document.getElementById(id);
-  if(s('sum-total')) s('sum-total').textContent = total;
-  if(s('sum-inprog')) s('sum-inprog').textContent = inprog;
-  if(s('sum-done')) s('sum-done').textContent = done;
-  if(s('sum-crit')) s('sum-crit').textContent = crit;
-  if(s('sum-pct')) s('sum-pct').textContent = pct + '%';
-  if(s('sum-bar')) s('sum-bar').style.width = pct + '%';
+// ── TASK SHEET ─────────────────────────────────────────────────────────────
+function addSheetHTML(t) {
+  const st = t.status || 'todo';
+  const mine = !!MY_NAME && !!myMemberOf(t);
+  const inWeek = sprintTaskIds.has(t.id);
+  const full = !inWeek && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
+  const d = dayDiff(t.taskDueDate);
+  const dueLine = t.taskDueDate
+    ? `<div class="wd-ts-due">${ICON.calendar}<span>${esc(longDate(t.taskDueDate))}</span>${d < 0 && st !== 'done' ? `<span class="late">${esc(dueLabel(t.taskDueDate))}</span>` : ''}</div>` : '';
+  const startLine = t.dueDate ? `<div class="wd-sheet-sub" style="margin-top:8px">Starts ${esc(longDate(t.dueDate))}</div>` : '';
+  const people = (t.members || []).length
+    ? `<div class="wd-lab">People</div>` + (t.members || []).map(m =>
+        `<div class="wd-ppl"><div class="wd-av sm quiet">${esc(initials(m.name))}</div><div class="who"><b>${esc(m.name)}</b><span class="r">${m.role ? esc(m.role) : 'No task set'}</span></div></div>`).join('')
+    : '';
+  const weekBtn = mine && st !== 'done'
+    ? `<button type="button" class="wd-btn s" ${full ? 'disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from my week' : full ? 'My week is full' : 'Add to my week'}</button>` : '';
+  return `
+    <div class="wd-sheet-title">${esc(t.label)}</div>
+    <div class="wd-sheet-sub"><span class="wd-pd" style="--proj:${projHue(t.project)}"></span>${esc(t.project || 'No project')}</div>
+    ${dueLine}${startLine}
+    <div class="wd-lab">Status</div>
+    <div class="wd-seg four" role="group" aria-label="Status">${['todo', 'inprog', 'onhold', 'done'].map(s =>
+      `<button type="button" class="${s === st ? 'on' : ''}" aria-pressed="${s === st}" onclick="setStatus('${t.id}','${s}')">${STATUS_LABEL[s]}</button>`).join('')}</div>
+    ${people}
+    <div class="wd-btns" style="margin-top:18px">${weekBtn}<button type="button" class="wd-btn s" onclick="sheetEdit('${t.id}')">Edit details</button></div>
+    <button type="button" class="wd-btn s danger" onclick="sheetDelete('${t.id}')">Delete task</button>`;
 }
+window.openAddSheet = (id) => {
+  const t = findTask(id); if (!t) return;
+  sheetTaskId = id;
+  openSheet('add-sheet', addSheetHTML(t), { onClose: () => { sheetTaskId = null; } });
+};
+function refreshAddSheet() {
+  if (!sheetTaskId) return;
+  const sc = document.getElementById('add-sheet');
+  if (!sc || !sc.classList.contains('open')) return;
+  const t = findTask(sheetTaskId);
+  if (!t) { closeSheet('add-sheet'); return; }
+  const body = sheetBody('add-sheet');
+  const top = body.scrollTop;
+  body.innerHTML = '<div class="wd-grab"></div>' + addSheetHTML(t);
+  body.scrollTop = top;
+}
+window.sheetEdit = (id) => { closeSheet('add-sheet'); editTask(id); };
+window.sheetDelete = (id) => { closeSheet('add-sheet'); deleteTask(id); };
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
-function resetForm() {
-  document.getElementById('f-task').value = '';
-  document.getElementById('similar-tasks-wrap').style.display = 'none';
-  document.getElementById('f-start').value = '';
-  document.getElementById('f-due').value = '';
-  setTaskType('mbc');
-  if (document.getElementById('f-project')) document.getElementById('f-project').value = '';
-  selectedMembers = {}; selectedPriority = 'medium';
-  document.querySelectorAll('.p-chip').forEach(b => { b.className = 'p-chip'; });
-  document.querySelector('[data-p="medium"]').classList.add('pm');
-  renderChips(); renderRoleSection();
-}
-
-function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function shake(id) {
-  const el = document.getElementById(id);
-  el.style.borderColor = 'var(--red)';
-  el.animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:220});
-  setTimeout(()=>el.style.borderColor='',900);
+  const el = $(id);
+  el.classList.add('bad');
+  el.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 });
+  el.focus();
 }
 let _tt;
-function toast(msg, type='') {
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className='toast '+type;
+function toast(msg, type = '') {
+  const el = $('toast');
+  el.textContent = msg; el.className = 'toast ' + type;
   void el.offsetWidth; el.classList.add('show');
-  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2400);
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2400);
 }
 </script>
 <script>
@@ -1404,22 +817,16 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<nav class="bottom-nav">
-  <a href="index.html" class="bn-item"><span class="bn-icon">⊞</span><span class="bn-label">Dashboard</span></a>
-  <a href="input.html" class="bn-item active"><span class="bn-icon">＋</span><span class="bn-label">Input</span></a>
-  <a href="calendar.html" class="bn-item"><span class="bn-icon">🗓</span><span class="bn-label">Calendar</span></a>
-  <a href="projects.html" class="bn-item"><span class="bn-icon">🗂</span><span class="bn-label">Projects</span></a>
-  <a href="report.html" class="bn-item"><span class="bn-icon">▤</span><span class="bn-label">Report</span></a>
-</nav>
-<!-- DUPLICATE WARNING MODAL -->
+
+<!-- DUPLICATE WARNING SHEET -->
 <div class="dup-overlay" id="dup-overlay">
   <div class="dup-box">
-    <div class="dup-title">⚠️ Possible Duplicate</div>
-    <div class="dup-sub" id="dup-sub">We found similar tasks already registered. Check if this is a duplicate before saving.</div>
+    <div class="dup-title">Possible duplicate</div>
+    <div class="dup-sub" id="dup-sub">Found similar tasks already open. Check this isn't a repeat before saving.</div>
     <div id="dup-matches"></div>
     <div class="dup-actions">
-      <button class="dup-btn-cancel" onclick="closeDupModal()">← Go Back</button>
-      <button class="dup-btn-save" onclick="forceSaveTask()">Save Anyway →</button>
+      <button type="button" class="dup-btn-cancel" onclick="closeDupModal()">Go back</button>
+      <button type="button" class="dup-btn-save" onclick="forceSaveTask()">Save anyway</button>
     </div>
   </div>
 </div>

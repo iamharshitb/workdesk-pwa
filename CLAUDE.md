@@ -21,6 +21,78 @@ This file gives Claude full context about the WorkDesk app so any new chat sessi
 
 ---
 
+## Current UI (Oct 2026 redesign) — READ THIS FIRST
+
+**Status:** all eight app pages (Home, Add, Calendar, Projects, Report, Help, Backup, Ideas) were rebuilt on one shared component layer. Where the older sections further down (Design System, Themes (6 total), Navigation Structure, Key Features markup details, Known Issues #16/#19) describe six themes, neumorphism, glass, the Alive layer, the top nav bar, the colour picker or old class names, **this section wins**. The lower sections are still the reference for data model, Firestore, gamification, duplicate detection, report maths and other logic — none of that changed.
+
+**Goal the user set:** "doesn't look cluttered at all and should look clean and pleasant to viewers." One idea per row, folds for anything secondary, no decoration that doesn't carry meaning.
+
+### Look: two themes plus Auto
+
+| | Fair copy (light) | Deep tide (dark) |
+|---|---|---|
+| Class on `<html>` | `theme-light` (also the `:root` default, so first paint is never unstyled) | `theme-dark` |
+| Font | Hanken Grotesk | Jost |
+| Surfaces | paper `#FFFFFF`, mist `#F5F7FA`, rule `#E3E7EE` | `#06141B` base, `#11212D` raised, `#253745` edge, radial light spill, stadium/pill shapes |
+| Text | ink `#1F2B47`, pencil `#5C6883` | `#EEF1F1`, `#CCD0CF`, `#9BA8AB`, `#4A5C6A` |
+| Late | red-pen `#D4332B` — **red only ever means late** | no warning colour: `--late` is `#EEF1F1`, and **lightness stands in for urgency** (later task, lighter pill) |
+| Project colour | `--hue-blue #2F6FED`, `--hue-amber #C77D0A`, `--hue-fern #2E9A6B`, `--hue-violet #7A5AE0` — **glyphs and dots only** | all four `--hue-*` equal `#9BA8AB` (colour is dropped; shape and position carry meaning) |
+
+Design rules that follow from this: **shape is status** (the four glyphs), **colour is project**, **red is only "late"**. Don't add a new accent colour, and never use a project hue as a fill or text colour.
+
+- Appearance is **Light / Dark / Auto**, stored in `localStorage.wd_mode`. `js/theme.js` migrates the legacy `wd_theme` once (old dark themes → dark, everything else → light) and then deletes it. The six old themes and "Run of show" are retired; `themes.css` is now ~240 lines defining only these two skins plus token re-pointing for the legacy components still in `style.css`.
+- Fonts come from the `@import` at the top of `themes.css`. Load order on every page: `style.css` → `themes.css` → `ui.css`.
+- `<meta name="theme-color">` is kept in sync by `theme.js` when the resolved theme changes.
+
+### Shared layer (the files you'll actually edit)
+
+| File | Role |
+|---|---|
+| `css/ui.css` (~1000 lines) | All `wd-*` components (page frame, tabs, segmented control, summary line + ring, groups and task rows, folds `.wd-disc`, bottom nav `.wd-nav`, sheets, buttons, chips, forms, skeleton) plus one clearly banner-commented block per page: Calendar, Report (`.rpt-*`, **reused by Projects/Ideas/Backup**), Projects (`.prj-*`), Help (`.hlp-*`), Backup (`.bk-*`), Ideas (`.idea*`). Add new page CSS as a new banner block at the bottom, not in the pages. |
+| `js/ui.js` | Pure helpers, no Firebase: `esc`, `initials`, `ICON`, `glyphSVG(status,size)`, `STATUS_LABEL`, `ringHTML(pct,size,stroke,label)` (draws no foreground arc at 0%), `openSheet/closeSheet/sheetBody`, `showUndo(msg,onUndo,ms)`, `showNote`, `profileSheetHTML/openProfileSheet`, date helpers (`localDateStr`, `dateFromStr`, `dayDiff`, `dueLabel`, `shortDate`, `longDate`, `dayMonth`), `projHue(name)`, `urgencyClass(status,due)`, `PRIO_ORDER/PRIO_LABEL`, `othersText`. |
+| `js/shell.js` | `initShell()` — used by every page except Home: theme, audio, avatar initials on `#me-btn`, and the profile sheet (Sound toggle, Ideas, Help, Backup and restore). |
+| `js/theme.js` | Mode storage and resolution (`getMode/setMode/resolvedTheme/initTheme/onThemeChange`, `appearanceControlHTML`). `toggleThemePanel` is still exported only because Home's import list names it. |
+| `css/style.css` | Legacy component CSS. Kept because the easter-egg game pages and a few legacy classes still depend on it. Don't extend it. |
+
+**Page chrome (every page):** `header.wd-appbar` (logo → Home, avatar button `#me-btn`) and the bottom `nav.wd-nav` with five items — **Home / Add / Calendar / Projects / Report**. Ideas, Help and Backup are no longer in the nav; they live in the avatar's profile sheet. The old top nav bar, 💡 FAB and 🎮 hint icon are gone.
+
+### Pages
+
+- **Home (`index.html`)** — title "This week" (tap = greeting easter egg), search toggle + India/Germany clocks, `Mine | Team` tabs (Team replaces the old By Member view), summary line with ring, task groups by urgency. **"This week" is the Weekly Sprint**: tasks pinned from the **Backlog** fold (max 10 active, completing one frees a slot, resets every Monday) are what the main list shows; On hold and Done are their own folds. The pin list is stored per person in Firestore user data (`sprint: {week, ids}` via `getUserData/onUserDataChanged`), **not** localStorage. Tapping a **status glyph** marks *your part* done with an **Undo toast**; tapping a row opens the task sheet (`task-sheet`; editing is a second sheet). The focus-timer pill appears in the appbar only while the timer runs; timer, quick notes, announcements, reminders, streak and the Hall of Fame/easter eggs are **Home-only** and live in sheets/overlays. Home's profile sheet is richer than `shell.js`'s (adds Task notifications, Focus timer, Quick notes and admin Post-an-announcement rows).
+- **Add (`input.html`)** — MBC / Individual toggle, project field with smart dropdown, member chips, priority chips, dates, duplicate-detection sheet (`_doSave`, `window.forceSaveTask`), `?project=` pre-fill. The full task list is a **folded "All tasks" row** at the bottom with the date-range filter inside it. Delete uses a confirmation sheet.
+- **Calendar (`calendar.html`)** — month grid, event-type filter chips, portrait/landscape toggle (`localStorage.calView`), Year History fold, add/edit event sheet with the auto-task option.
+- **Projects (`projects.html`)** — chip row (one chip per active project, overdue dot via `.prj-late`), one panel for the selected project (ring, stats, health, per-member breakdown, task folds), "Completed projects" fold at the bottom, New/Edit project sheet. Portrait/landscape toggle (`localStorage.projView`, grid under `body.proj-wide`). Data model unchanged (`projectMeta/{btoa(name)}`, `keyFor`, `getProjects/setProjectComplete/reopenProject`) **except colour: the 8-colour picker was removed on purpose.** A project's colour is now `projHue(name)` — a stable hash into the four hues. `projectMeta.color` is no longer read or written; existing values just sit unused in Firestore. Ticking a task's glyph here uses the same Undo pattern.
+- **Report (`report.html`)** — Quarterly (default) / Monthly / Weekly / Performance behind the same tab control; Chart.js loaded from the CDN; PDF/Share/Copy exports unchanged in behaviour.
+- **Help (`help.html`)** — rewritten as folded sections (`.hlp-fold`) with a glyph legend. Keep wording accurate: timer, notes and streak exist on **Home only**, not in every profile sheet.
+- **Backup (`backup.html`)** — Export / Restore / History (`localStorage.wd_backup_history`), confirm sheet `bk-confirm`. Listeners are attached with `addEventListener` (the old inline `onchange` was unreachable from a module).
+- **Ideas (`ideas.html`)** — quick capture, status chips with counts, expandable ideas with threaded notes, sheets `idea-form` and `idea-del`; Firestore `ideas` and `ideas/{id}/notes`.
+
+### Conventions and gotchas
+
+1. **`[hidden]` is overridden by any class that sets `display:flex/grid`.** Every such component needs its own `.cls[hidden]{display:none}` rule. This bit us repeatedly (chip rows, folds, sheets).
+2. **Light-theme fold stacking:** consecutive `.wd-disc` rows are tightened into one run of hairlines with `html.theme-light … { margin-top:0 }`. If a new fold sits next to existing ones, add its sibling selector to that rule, and add a `tight` class when it follows a fold (see `renderPanel` in Projects). When overriding in a page block, match the specificity (`html.theme-light body.proj-wide …`) or the light rule will beat you.
+3. **Don't style by `:first-of-type` for these sections** — it never matched; use the adjacent-sibling pattern (`.wd-sub + .hlp-fold`).
+4. **Dark mode can't use colour for state.** Anything that was "a coloured dot" needs `currentColor` or a lightness change in dark (e.g. `.prj-late`).
+5. **Empty states say less:** omit labels that would repeat ("No tasks yet" three times) and leave the right-hand column empty.
+6. **Skeleton first:** pages ship a `.wd-skel` block as initial HTML; real render replaces it.
+7. **Service worker:** `sw.js` (labelled v12) is pass-through — it deletes caches on activate and never serves stale files, so CSS/JS changes need **no version bump**. If changes don't appear, it's the browser/GitHub Pages cache.
+8. **Firebase and sounds modules are the user's own** — `js/firebase.js` and `js/sounds.js` were never changed or regenerated by the redesign; every page imports them as before.
+9. **Pre-existing quirks deliberately left alone:** `recordTaskCompletion(MY_NAME)` credits the *viewer* when an admin ticks a teammate's part; `calendarEvents` is never populated on Home.
+
+### Working on this UI (how it was built and checked)
+
+- The redesign was produced by small **re-runnable Python build scripts**, one per page (`build/<page>/`), that took the previous page, dropped its `<style>` block and spliced in `body.html`, the page's JS module, the SW registration script and the bottom nav. Edit the output HTML directly from here on; the scripts are not part of the repo.
+- Verification was done in **real Chromium via Playwright** (not jsdom): every page in both themes, zero console errors, interaction tests for sheets, undo, folds, project create/complete, backup restore, idea create/delete and Add's delete sheet. The harness stubs `js/firebase.js`/`sounds.js`, blocks the service worker, serves fonts locally and routes the Chart.js CDN. If you rebuild that, hide the fixed `.wd-nav` before full-page screenshots.
+
+### Left for later
+
+- The old Home's **Follow-up** tab was not carried over. The older Home notes further down (Sprint, Known Issues #9, #12, #15, #17) describe markup that no longer exists — `myTaskCard`, `renderMyTasks`, `toggleTaskExpand`, `_animatedCards` and `_firstPaintDone` are gone; `_openEditId`/`_editDraft` remain and still protect an open edit sheet from live-sync re-renders. The Firestore and logic behaviour they describe is still valid.
+- **Easter-egg pages** (`cards.html`, `snake.html`, `quiz.html`, `space.html`) were not part of the redesign and have not been checked against the two new themes — they load `style.css` + `themes.css`, whose old theme selectors are gone.
+- In dark mode the logo image sits on a white capsule; a text wordmark would look cleaner.
+- Files in this folder are only the ones that changed; `manifest.json`, `js/firebase.js`, `js/sounds.js` and the game pages stay as they are in the repo.
+
+---
+
 ## Team Members
 
 | Name | Role |
@@ -52,32 +124,39 @@ If the app stops loading (spinner never completes), check Firebase Console → A
 
 ```
 workdesk-pwa/
-├── index.html          — Dashboard (main page)
-├── input.html          — Task input with duplicate detection
-├── report.html         — Reports (Monthly / Weekly / My Report)
+├── index.html          — Home ("This week": Mine / Team)
+├── input.html          — Add task, with duplicate detection and a folded "All tasks" list
 ├── calendar.html       — Communications calendar
-├── projects.html       — Projects tab-view (browser-tab-style project tracker)
-├── ideas.html          — Ideas management
+├── projects.html       — Projects (chip row + one panel per project)
+├── report.html         — Reports (Quarterly / Monthly / Weekly / Performance)
+├── ideas.html          — Ideas
+├── help.html           — Help (folded sections)
 ├── backup.html         — Backup & restore
-├── cards.html          — Player Cards (easter egg)
-├── snake.html          — Snake game (easter egg)
-├── quiz.html           — Comms Trivia Quiz (easter egg)
-├── space.html          — Space Defender game (easter egg)
+├── cards.html          — Player Cards (easter egg; not part of the redesign)
+├── snake.html          — Snake game (easter egg; not part of the redesign)
+├── quiz.html           — Comms Trivia Quiz (easter egg; not part of the redesign)
+├── space.html          — Space Defender game (easter egg; not part of the redesign)
 ├── CLAUDE.md           — This file
 ├── manifest.json       — PWA manifest
-├── sw.js               — Service worker (pass-through, no caching)
+├── sw.js               — Service worker v12 (pass-through, no caching)
 ├── css/
-│   ├── style.css       — Main design system and variables
-│   └── themes.css      — All theme overrides
+│   ├── style.css       — Legacy component CSS (still needed by the game pages; don't extend)
+│   ├── themes.css      — Fair copy (light) + Deep tide (dark) tokens
+│   └── ui.css          — Shared wd-* components + one block per page
 └── js/
-    ├── firebase.js     — All Firestore functions and exports
-    ├── theme.js        — Theme management (THEMES array + initTheme)
-    └── sounds.js       — Audio functions
+    ├── firebase.js     — All Firestore functions and exports (user's file, untouched by the redesign)
+    ├── sounds.js       — Audio functions (user's file, untouched by the redesign)
+    ├── theme.js        — Light / Dark / Auto mode (wd_mode)
+    ├── ui.js           — Shared helpers: glyphs, rings, sheets, undo toast, dates, projHue
+    └── shell.js        — initShell(): theme, audio, avatar and profile sheet (all pages except Home)
 ```
 
 ---
 
 ## Design System
+
+> **SUPERSEDED (Oct 2026 redesign).** The CSS variables, six-theme material rules, Glass/Alive layer, splash and shadow notes below describe the previous look. The live design system is in "Current UI" at the top of this file. Kept as history, and because `style.css` still serves the game pages. Still valid: motion tokens' reduced-motion rule, tap-target and haptics notes, and the task-notification design (Home only).
+
 
 **Default theme:** Neumorphism (`theme-neu`) — `#e0e5ec` clay, accent `#2d56d8`. Changed from Light in `js/theme.js`'s `getValidTheme()` — anyone with no `wd_theme` in localStorage (new install, or migrating off the old `'ios'` default) gets Neumorphism. Existing users who already have a saved theme are untouched.  
 **Status bar colour:** `applyTheme()` now also calls `syncStatusBarColor()`, which writes the active theme's `bg` (already defined per-theme for the picker swatch) into `<meta name="theme-color">`. Previously this was a static dark value hardcoded in each page's `<head>`, which looked fine for the old dark-default themes but would clash badly with Neumorphism/Light's bright backgrounds. Don't hardcode `theme-color` in new pages — it's now managed at runtime.
@@ -183,6 +262,9 @@ Fires from inside `onTasksChanged`'s existing `type === 'added'` + `assignedToMe
 
 ## Themes (6 total)
 
+> **SUPERSEDED (Oct 2026 redesign).** Only two themes exist now — Fair copy (`theme-light`) and Deep tide (`theme-dark`) — chosen with Light / Dark / Auto (`wd_mode`). The table below lists retired themes and is kept only for history.
+
+
 | ID | Name | Description |
 |----|------|-------------|
 | `editorial` | Editorial | Inter font, #F3F3F5 bg, Linear/Notion style |
@@ -202,9 +284,9 @@ Themes are in `css/themes.css`. The THEMES array is in `js/theme.js`. Applied as
 
 ## Navigation Structure
 
-**Bottom nav (all pages):** Dashboard / Input / Calendar / Report  
-**Ideas:** Accessible via purple 💡 FAB button on dashboard (not in nav)  
-**Backup:** Accessible from Report page or direct URL  
+**Bottom nav (all app pages):** Home / Add / Calendar / Projects / Report (`nav.wd-nav`).  
+**Top bar (all app pages):** logo (to Home) and an avatar button. The avatar opens the profile sheet: Appearance (Light / Dark / Auto), Sound, **Ideas**, **Help**, **Backup and restore**. Home's sheet adds Focus timer, Quick notes, Task notifications and, for admins, Post an announcement.  
+**Games:** type `snake`, `quiz` or `space` in Home's search, or tap the logo 5× for Snake.
 
 ---
 
@@ -223,6 +305,8 @@ Status cycles via button in expanded task card:
 ---
 
 ## Key Features
+
+> **Note (Oct 2026):** feature *logic* below is current; *markup and interaction details* (tabs, FABs, filter dropdowns, project colour picker, tab strip, nav icons) were replaced by the redesign — see "Current UI" at the top. Specifically: Projects no longer has per-project colours (`projHue(name)`), the 🗂 nav icon and tab strip are now a chip row, and the Home items about Filters button / My Tasks sections / FABs / Follow-up are superseded.
 
 ### Dashboard (index.html)
 - World clock strip (IST India + CET/CEST Germany, auto-DST)
@@ -376,6 +460,8 @@ workspaces/
 ---
 
 ## Weekly Sprint Details
+
+> **Redesign note (Oct 2026):** the data rules here still apply — per-person Firestore storage, the 10-active-task cap, the Monday reset. In the new Home the Sprint *is* the "This week" list, fed from a **Backlog** fold. The widget markup, class names and some of the admin/manager controls described below were re-laid-out, so check `index.html` before relying on a specific control or element id.
 
 **Per-user, synced via Firestore** (changed from localStorage — see below). Each person's "This Week" list lives on their own Firestore user doc, the same doc used for Quick Notes and `broadcastEnabled`:
 
@@ -561,6 +647,11 @@ If retuning either of these again, don't guess — the test pairs are worth reco
 
     If asked to touch the Industrial theme's layout, sanity-check these three specifically rather than assuming jsdom-verified — this doc is explicit above about which changes were actually simulated (render + real click events) versus reasoned through, and these are in the latter category.
 
+20. **`[hidden]` vs `display:flex/grid`** (redesign) — a class with an explicit `display` beats the `hidden` attribute. Every component that is toggled with `hidden` needs its own `[hidden]{display:none}` rule in `ui.css`.
+21. **Light-theme fold stacking** (redesign) — consecutive `.wd-disc` rows are collapsed into one run of hairlines by `html.theme-light … { margin-top:0 }`. Page-level overrides must match that specificity (e.g. `html.theme-light body.proj-wide …`) or the light rule wins.
+22. **No colour for state in dark** (redesign) — the dark palette has no warning colour and all `--hue-*` tokens are one grey. Use `currentColor` or lightness for markers such as `.prj-late`.
+23. **Old inline handlers don't work from modules** — Backup's `onchange="…"` was silently dead; new code uses `addEventListener`, or assigns to `window.*` for `onclick=` in markup.
+
 ---
 
 ## Developer Preferences
@@ -568,6 +659,8 @@ If retuning either of these again, don't guess — the test pairs are worth reco
 - **Single-file deliverables** — never split into multiple files unless absolutely necessary
 - **No build tools** — no webpack, no npm, no bundlers
 - **Always syntax check** before sharing files using `node --check`
+- **Test UI changes in a real browser** (Playwright/Chromium), not only jsdom, in both Light and Dark — layout, `[hidden]` and stacking bugs don't show up in jsdom
+- **Show visuals before big UI changes** — the user likes to approve a mock first
 - **Preserve all existing functionality** when adding new features
 - **Firebase CDN version:** `10.12.0` — use consistently across all files
 - **Git workflow:** Upload files via GitHub web UI (Add file → Upload files). No VS Code access on this system currently
