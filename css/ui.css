@@ -1165,8 +1165,9 @@ html { scroll-padding-bottom: 104px; }
 html.theme-dark .wd-field:focus { box-shadow: 0 0 0 2px var(--neon); }
 
 /* ═══ Report: Create slide (js/slide.js) ═══════════════════════════════════ */
-.wd-title .rpt-slide { margin-left: auto; margin-right: 8px; }
-@media (max-width: 359px) { .wd-title .rpt-slide { padding: 0 11px; gap: 0; } .wd-title .rpt-slide .rpt-lab { display: none; } }
+.rpt-acts { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-left: auto; flex: none; }
+.rpt-acts .rpt-share { justify-content: center; }
+@media (max-width: 359px) { .rpt-acts { grid-auto-columns: auto; } .rpt-acts .rpt-slide { padding: 0 11px; gap: 0; } .rpt-acts .rpt-slide .rpt-lab { display: none; } }
 .rs-wide { width: 100%; margin-top: 10px; }
 .rs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .rs-two .wd-select, .rs-two .wd-field { width: 100%; min-width: 0; }
