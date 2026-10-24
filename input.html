@@ -165,8 +165,11 @@ let _sprintInitialized = false;
 const sameName = (a, b) => !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 const myMemberOf = t => (t.members || []).find(m => sameName(m.name, MY_NAME));
 
+function isWeekendPlanning() { const g = new Date().getDay(); return g === 0 || g === 6; }
 function getWeekKey() {
+  // Saturday and Sunday belong to the NEXT week, so weekend planning lands on the Monday that follows.
   const d = new Date();
+  if (d.getDay() === 6) d.setDate(d.getDate() + 2); else if (d.getDay() === 0) d.setDate(d.getDate() + 1);
   const day = d.getDay() === 0 ? 6 : d.getDay() - 1;
   const monday = new Date(d); monday.setDate(d.getDate() - day);
   const y = monday.getFullYear();
@@ -203,14 +206,14 @@ function saveSprint() {
 window.toggleSprintTask = (taskId) => {
   if (sprintTaskIds.has(taskId)) {
     sprintTaskIds.delete(taskId);
-    saveSprint(); renderTaskList(); refreshAddSheet(); toast('Removed from your week');
+    saveSprint(); renderTaskList(); refreshAddSheet(); toast(isWeekendPlanning() ? 'Removed from next week' : 'Removed from your week');
   } else {
     if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
       toast('Your week is full: ' + SPRINT_MAX + ' open tasks at most', 'err'); return;
     }
     sprintTaskIds.add(taskId);
     if (navigator.vibrate) navigator.vibrate(10);
-    saveSprint(); renderTaskList(); refreshAddSheet(); toast('Added to your week');
+    saveSprint(); renderTaskList(); refreshAddSheet(); toast(isWeekendPlanning() ? 'Added to next week (from Monday)' : 'Added to your week');
   }
 };
 
