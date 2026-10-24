@@ -46,7 +46,19 @@ Design rules that follow from this: **shape is status** (the four glyphs), **col
 
 - Appearance is **Light / Dark / Auto**, stored in `localStorage.wd_mode`. `js/theme.js` migrates the legacy `wd_theme` once (old dark themes → dark, everything else → light) and then deletes it. The six old themes and "Run of show" are retired; `themes.css` is now ~240 lines defining only these two skins plus token re-pointing for the legacy components still in `style.css`.
 - Fonts come from the `@import` at the top of `themes.css`. Load order on every page: `style.css` → `themes.css` → `ui.css`.
-- `<meta name="theme-color">` is kept in sync by `theme.js` when the resolved theme changes.
+- `<meta name="theme-color">` is kept in sync by `theme.js` when the resolved theme changes. `manifest.json` `theme_color` and `background_color` are both Azure's page `#00000C` (a manifest can't follow the theme, and the icon is built for the dark canvas).
+
+**Brand: the Desk ring (Oct 2026).** The icon is a progress ring (the same ring Home draws) resting on a desk line, on the Azure glow gradient, so the icon and the dark theme share one light source. One glyph, three tunings, all in `icons/`:
+
+| File | Use |
+|---|---|
+| `icon-mark.svg` | Rounded tile. The app-bar mark (`img.wd-mark`) and the splash |
+| `favicon.svg`, `favicon.ico` (16/32/48), `favicon-16/32.png` | Browser tab. Heavier strokes than the mark so the ring survives 16px |
+| `icon-192.png`, `icon-512.png` | Manifest `any`. Rounded, transparent corners |
+| `maskable-192.png`, `maskable-512.png` | Manifest `maskable`. Full bleed square, glyph scaled to 88% so it sits inside the 80% safe circle |
+| `apple-touch-icon.png` | 180px full-bleed square. iOS rounds it itself |
+
+The app-bar lockup is `a.wd-brand` > `img.wd-mark` + `span.wd-name` (`<b>Work</b><i>Desk</i>`), set in Plus Jakarta Sans 800 / 500 so it is live text, crisp in both themes, and needs no filter or blend mode. "Desk" is `#2B66D8` in Light (4.8:1 on the mist pages, 5.3:1 on white) and the pale `#E6EDFF` in Dark, because blue text would fall under 4.5:1 on the glow. On Home the anchor keeps `id="nav-brand-tap"` (the five-tap Snake egg). To change the artwork, edit the glyph in one place and re-export every size from it; don't hand-edit a PNG. Every app page carries the same three head links (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`).
 
 ### Shared layer (the files you'll actually edit)
 
@@ -97,7 +109,6 @@ Design rules that follow from this: **shape is status** (the four glyphs), **col
 
 - The old Home's **Follow-up** tab was not carried over. The older Home notes further down (Sprint, Known Issues #9, #12, #15, #17) describe markup that no longer exists — `myTaskCard`, `renderMyTasks`, `toggleTaskExpand`, `_animatedCards` and `_firstPaintDone` are gone; `_openEditId`/`_editDraft` remain and still protect an open edit sheet from live-sync re-renders. The Firestore and logic behaviour they describe is still valid.
 - **Easter-egg pages** (`cards.html`, `snake.html`, `quiz.html`, `space.html`) were not part of the redesign and have not been checked against the two new themes — they load `style.css` + `themes.css`, whose old theme selectors are gone.
-- In dark mode the logo PNG has a white background, so `html.theme-dark .wd-logo` flips it with `invert(1) hue-rotate(180deg) brightness(1.3)` and screens it onto the glow (`mix-blend-mode: screen`). A real transparent or SVG wordmark would be cleaner (`brightness(0) invert(1)` turns the white background into a blank pill, so don't use it).
 - Light stays Fair copy. It was kept deliberately; don't restyle it without approval, and check any shared-CSS change against it pixel-for-pixel.
 - Files in this folder are only the ones that changed; `manifest.json`, `js/firebase.js`, `js/sounds.js` and the game pages stay as they are in the repo.
 
@@ -147,7 +158,8 @@ workdesk-pwa/
 ├── quiz.html           — Comms Trivia Quiz (easter egg; not part of the redesign)
 ├── space.html          — Space Defender game (easter egg; not part of the redesign)
 ├── CLAUDE.md           — This file
-├── manifest.json       — PWA manifest
+├── manifest.json       — PWA manifest (Azure colours; any + maskable icons)
+├── icons/              — Desk ring: icon-mark.svg, favicon.svg/.ico/.png, icon-192/512, maskable-192/512, apple-touch-icon
 ├── sw.js               — Service worker v12 (pass-through, no caching)
 ├── css/
 │   ├── style.css       — Legacy component CSS (still needed by the game pages; don't extend)
@@ -222,14 +234,14 @@ Rules: effects here must only use tokens, white-gradient overlays, and transform
 
 ### Splash screen (index.html only)
 
-Plays once per session on Dashboard load — the app's actual PWA `start_url`, per `manifest.json`. Markup + gating script sit immediately after `<body>`; CSS is in the head `<style>` block (`.splash-screen` etc). Sequence: the existing nav logo (reused from its base64 `<img>`, not redrawn) springs in → a small dot appears → pulses once → **blooms** (`transform:scale(1→120)`) until it fully covers the viewport in the active theme's accent colour → whole overlay fades to reveal the real dashboard, which has been loading/rendering behind it the entire time.
+Plays once per session on Dashboard load — the app's actual PWA `start_url`, per `manifest.json`. Markup + gating script sit immediately after `<body>`; CSS is in the head `<style>` block (`.splash-screen` etc). Sequence: the Desk ring mark (`icons/icon-mark.svg`, 64px) springs in → a small dot appears → pulses once → **blooms** (`transform:scale(1→120)`) until it fully covers the viewport in the active theme's accent colour → whole overlay fades to reveal the real dashboard, which has been loading/rendering behind it the entire time.
 
 Gating (in the inline script, not CSS, so it never even paints for these cases):
 - `prefers-reduced-motion: reduce` → element is removed outright before first paint.
 - `sessionStorage.wd_splash_shown` → only plays once per session, not on every bottom-nav tap back to Dashboard.
 - Tap anywhere to skip early.
 
-Don't add the splash to other pages — Dashboard is the intentional single entry point. If you touch the nav logo's base64 string, the splash's `<img>` needs updating too (currently duplicated, not derived at runtime).
+Don't add the splash to other pages — Dashboard is the intentional single entry point. The splash and the app bar both point at `icons/icon-mark.svg`, so there is nothing to keep in sync.
 
 ### Skeleton loading
 
