@@ -53,7 +53,7 @@
 </div>
 
 <script type="module">
-import { onUserReady, WORKSPACE_ID, onTasksChanged, getProjects, setProjectComplete, reopenProject } from './js/firebase.js';
+import { onUserReady, WORKSPACE_ID, onTasksChanged, getProjects, setProjectComplete, reopenProject, updateTask } from './js/firebase.js';
 import { getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initShell } from './js/shell.js';
@@ -473,11 +473,69 @@ async function setComplete(name, makeDone) {
   renderAll();
   return true;
 }
+// Completing a project can also close what is still open in it. That is a
+// choice, so it is asked, and one Undo reverses both the project and the tasks.
+const openTasksOf = name => allTasks.filter(t => t.project === name && statusOf(t) !== 'done');
+async function closeTasks(list) {
+  // returns what each task looked like before, or null if any write failed (the ones that did go through are put back)
+  const snap = list.map(t => ({ id: t.id, status: t.status || 'todo', memberStatus: t.memberStatus ? { ...t.memberStatus } : null }));
+  const res = await Promise.allSettled(list.map(t => {
+    const upd = { status: 'done' };
+    (t.members || []).forEach(m => { if (m.id) upd['memberStatus.' + m.id] = 'done'; });
+    return updateTask(t.id, upd);
+  }));
+  if (res.some(r => r.status === 'rejected')) {
+    await restoreTasks(snap.filter((_, i) => res[i].status === 'fulfilled'));
+    showNote('Could not update the tasks. Check your connection and try again.');
+    return null;
+  }
+  return snap;
+}
+async function restoreTasks(snap) {
+  await Promise.allSettled(snap.map(x => {
+    const upd = { status: x.status, completedAt: null };
+    if (x.memberStatus) upd.memberStatus = x.memberStatus;
+    return updateTask(x.id, upd);
+  }));
+}
+async function completeOnly(name) {
+  if (!(await setComplete(name, true))) return;
+  haptic([10, 30, 10]);
+  showUndo('“' + name + '” marked complete', () => setComplete(name, false));
+}
+function openCompleteSheet(name, open) {
+  const n = open.length;
+  const sheet = openSheet('prj-close', `
+    <h2 class="wd-sheet-title">Complete “${esc(name)}”?</h2>
+    <div class="prj-form">
+      <p class="prj-desc">${plural(n, 'task is', 'tasks are')} still open in this project. Mark ${n === 1 ? 'it' : 'them'} done for everyone assigned too?</p>
+      <button type="button" class="wd-btn p" id="pc-all">Mark ${n === 1 ? 'it' : plural(n, 'task', 'tasks')} done and complete</button>
+      <button type="button" class="wd-btn s" id="pc-only">Complete the project only</button>
+      <button type="button" class="wd-btn s" id="pc-cancel">Cancel</button>
+    </div>`);
+  const btns = sheet.querySelectorAll('button');
+  sheet.querySelector('#pc-cancel').onclick = () => closeSheet('prj-close');
+  sheet.querySelector('#pc-only').onclick = async () => { btns.forEach(b => b.disabled = true); closeSheet('prj-close'); await completeOnly(name); };
+  sheet.querySelector('#pc-all').onclick = async () => {
+    btns.forEach(b => b.disabled = true);
+    const snap = await closeTasks(open);
+    if (!snap) { btns.forEach(b => b.disabled = false); return; }
+    closeSheet('prj-close');
+    if (!(await setComplete(name, true))) { await restoreTasks(snap); return; }
+    haptic([10, 30, 10]);
+    showUndo('“' + name + '” complete, ' + plural(n, 'task', 'tasks') + ' marked done', async () => { await setComplete(name, false); await restoreTasks(snap); }, 8000);
+  };
+}
 async function toggleComplete(name) {
   const wasDone = !!projectsData[keyFor(name)];
-  if (!(await setComplete(name, !wasDone))) return;
-  haptic(wasDone ? 6 : [10, 30, 10]);
-  showUndo(wasDone ? 'Reopened “' + name + '”' : '“' + name + '” marked complete', () => setComplete(name, wasDone));
+  if (wasDone) {
+    if (!(await setComplete(name, false))) return;
+    haptic(6);
+    showUndo('Reopened “' + name + '”', () => setComplete(name, true));
+    return;
+  }
+  const open = openTasksOf(name);
+  if (open.length) openCompleteSheet(name, open); else completeOnly(name);
 }
 
 // ── new / edit sheet ───────────────────────────────────────────────────────
