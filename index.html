@@ -862,9 +862,12 @@ function activeSprintCount(idsSet, name) {
   return n;
 }
 
+function isWeekendPlanning() { const g = new Date().getDay(); return g === 0 || g === 6; }
 function getWeekKey() {
   // Returns 'YYYY-Www' — unique key per calendar week, resets every Monday
+  // Saturday and Sunday belong to the NEXT week, so weekend planning lands on the Monday that follows.
   const d = new Date();
+  if (d.getDay() === 6) d.setDate(d.getDate() + 2); else if (d.getDay() === 0) d.setDate(d.getDate() + 1);
   const day = d.getDay() === 0 ? 6 : d.getDay() - 1; // Mon=0
   const monday = new Date(d); monday.setDate(d.getDate() - day);
   const y = monday.getFullYear();
@@ -907,14 +910,14 @@ function saveSprint() {
 window.toggleSprintTask = (taskId) => {
   if (sprintTaskIds.has(taskId)) {
     sprintTaskIds.delete(taskId);
-    saveSprint(); renderAll(); toast('Removed from This Week');
+    saveSprint(); renderAll(); toast(isWeekendPlanning() ? 'Removed from next week' : 'Removed from This Week');
   } else {
     if (activeSprintCount(sprintTaskIds) >= SPRINT_MAX) {
       toast('Sprint full — max ' + SPRINT_MAX + ' active tasks per week'); return;
     }
     sprintTaskIds.add(taskId);
     if (navigator.vibrate) navigator.vibrate(10);
-    saveSprint(); renderAll(); toast('🎯 Added to This Week!');
+    saveSprint(); renderAll(); toast(isWeekendPlanning() ? '🎯 Added to next week (from Monday)' : '🎯 Added to This Week!');
   }
 };
 
