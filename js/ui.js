@@ -15,6 +15,7 @@ export const ICON = {
   home:     S('<path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/>'),
   add:      S('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'),
   calendar: S('<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  repeat:   S('<path d="M4.5 11.5V10a3 3 0 0 1 3-3h10.5M15 4l3 3-3 3M19.5 12.5V14a3 3 0 0 1-3 3H6M9 20l-3-3 3-3"/>'),
   projects: S('<path d="M3.5 8.5a2.5 2.5 0 0 1 2.5-2.5h3.6l2 2.2H18a2.5 2.5 0 0 1 2.5 2.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/>'),
   report:   S('<path d="M5.5 20V12M12 20V4.5M18.5 20v-6.5"/>'),
   search:   S('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>'),

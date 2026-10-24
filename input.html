@@ -50,9 +50,15 @@
       <div id="role-section"></div>
     </div>
 
-    <div class="wd-lab">Due <span class="opt">optional</span></div>
-    <div class="wd-chips" id="due-chips"></div>
-    <input type="date" class="wd-field wd-pick" id="f-due" aria-label="Due date" hidden onchange="onDuePicked(this.value)">
+    <div id="due-wrap">
+      <div class="wd-lab">Due <span class="opt">optional</span></div>
+      <div class="wd-chips" id="due-chips"></div>
+      <input type="date" class="wd-field wd-pick" id="f-due" aria-label="Due date" hidden onchange="onDuePicked(this.value)">
+    </div>
+
+    <div class="wd-lab">Routine <span class="opt">optional</span></div>
+    <div class="wd-chips"><button type="button" class="wd-chip" id="routine-chip" aria-pressed="false" onclick="toggleRoutine()">Repeats every week</button></div>
+    <p class="wd-hint" id="routine-hint" hidden>It shows in This week every week, without using a slot, and comes back after you finish it.</p>
 
     <div class="wd-lab">Project</div>
     <div class="wd-combo">
@@ -133,6 +139,7 @@ import {
   DELETE_PASSWORD, getUserData, saveUserData
 } from './js/firebase.js';
 import { initShell } from './js/shell.js';
+import { isRoutine, rolloverRoutines, routineOn, ROUTINE_OFF, routineDoneCount } from './js/routines.js';
 import { esc, initials, ICON, glyphSVG, STATUS_LABEL, openSheet, closeSheet, sheetBody,
   localDateStr, dayDiff, dueLabel, shortDate, dayMonth, longDate, projHue, urgencyClass, othersText, PRIO_ORDER } from './js/ui.js';
 import { playTaskAssigned, playMarkDone, playReopen } from './js/sounds.js';
@@ -151,6 +158,7 @@ let pendingDeleteId = null;
 let sheetTaskId = null;
 let fold = null;          // 'hold' | 'done' | null — which folded group is open in All tasks
 let rangeActive = false;
+let routineOnForm = false;   // the "Repeats every week" chip
 
 const findTask = id => tasks.find(t => t.id === id) || allTasksHistory.find(t => t.id === id);
 
@@ -182,6 +190,7 @@ function activeSprintCount(idsSet) {
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
     if (!t) { n++; continue; }
+    if (isRoutine(t)) continue;            // routines repeat on their own and never use a slot
     if (t.status === 'done') continue;
     const m = myMemberOf(t);
     if (m && t.memberStatus && t.memberStatus[m.id] === 'done') continue;
@@ -246,6 +255,7 @@ onUserReady(async () => {
       if (type === 'removed') allTasksHistory = allTasksHistory.filter(t => t.id !== task.id);
     });
     tasks = liveTasks;
+    rolloverRoutines(tasks, fbUpdateTask);   // a new week: routines come back as to do
 
     // a new task that includes me: chime + a quiet note
     changes.forEach(({ type, task }) => {
@@ -370,6 +380,15 @@ window.openDuePick = () => {
 };
 window.onDuePicked = (v) => setDue(v);
 
+// ── ROUTINE ────────────────────────────────────────────────────────────────
+function setRoutineForm(on) {
+  routineOnForm = !!on;
+  const c = $('routine-chip'); c.classList.toggle('on', routineOnForm); c.setAttribute('aria-pressed', String(routineOnForm));
+  $('routine-hint').hidden = !routineOnForm;
+  $('due-wrap').hidden = routineOnForm;            // a routine has no due date
+}
+window.toggleRoutine = () => setRoutineForm(!routineOnForm);
+
 // ── PRIORITY ───────────────────────────────────────────────────────────────
 function setPriority(p) {
   selectedPriority = p;
@@ -462,7 +481,8 @@ window.submitTask = async () => {
   if (!label) { shake('f-task'); return; }
 
   const startDate = $('f-start').value || null;
-  const dueDate = dueValue || null;
+  const routine = routineOnForm;
+  const dueDate = routine ? null : (dueValue || null);
   const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({ id, name: m.name, role: m.role.trim() }));
 
   const btn = $('send-btn');
@@ -470,9 +490,13 @@ window.submitTask = async () => {
 
   try {
     if (editingId) {
-      await fbUpdateTask(editingId, { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      const was = isRoutine(findTask(editingId));
+      const upd = { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType };
+      if (routine && !was) Object.assign(upd, routineOn());
+      else if (!routine && was) Object.assign(upd, ROUTINE_OFF);
+      await fbUpdateTask(editingId, upd);
       const t = findTask(editingId);
-      if (t) Object.assign(t, { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType });
+      if (t) Object.assign(t, upd);
       toast('Task updated'); cancelEdit();
       updateProjectSuggestions();
     } else {
@@ -485,10 +509,10 @@ window.submitTask = async () => {
       const dupes = findDuplicates(label, project);
       if (dupes.length) {
         btn.disabled = false; btn.textContent = 'Add task';
-        showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
+        showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine });
         return;
       }
-      await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType });
+      await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine });
       if (MY_NAME && finalMembers.some(m => sameName(m.name, MY_NAME))) playTaskAssigned();
     }
     renderTaskList();
@@ -498,9 +522,10 @@ window.submitTask = async () => {
   btn.textContent = editingId ? 'Update task' : 'Add task';
 };
 
-async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType }) {
-  const id = await fbAddTask({ label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType });
-  tasks.unshift({ id, label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, status: 'todo', memberStatus: {} });
+async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType, routine }) {
+  const extra = routine ? routineOn() : {};
+  const id = await fbAddTask({ label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, ...extra });
+  tasks.unshift({ id, label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, ...extra, status: 'todo', memberStatus: {} });
   toast('Task added');
   resetForm();
   updateProjectSuggestions();
@@ -516,6 +541,7 @@ window.editTask = (id) => {
   $('f-project').value = t.project || '';
   setTaskType(t.taskType || 'mbc');
   setDue(t.taskDueDate || '');
+  setRoutineForm(isRoutine(t));
   setPriority(t.priority || 'medium');
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -543,6 +569,7 @@ function resetForm() {
   if ($('f-project')) $('f-project').value = '';
   setTaskType('mbc');
   setDue('');
+  setRoutineForm(false);
   selectedMembers = {};
   setPriority('medium');
   renderChips(); renderRoleSection();
@@ -675,7 +702,7 @@ function metaText(t) {
 }
 function rowHTML(t) {
   const st = t.status || 'todo';
-  const label = st === 'done' ? '' : dueLabel(t.taskDueDate);
+  const label = st === 'done' ? '' : (isRoutine(t) ? 'Every week' : dueLabel(t.taskDueDate));
   return `<div class="wd-task ${urgencyClass(st, t.taskDueDate)}${st === 'done' ? ' is-done' : ''}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
       onclick="openAddSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAddSheet('${t.id}')}">
     <span class="wd-g g static">${glyphSVG(st)}</span>
@@ -698,7 +725,9 @@ function renderTaskList() {
   $('task-count').textContent = tasks.length ? String(tasks.length) : '';
   if (!tasks.length) { el.innerHTML = '<div class="wd-empty"><b>No tasks yet</b>Tasks you add show up here.</div>'; return; }
 
-  const open = tasks.filter(t => (t.status || 'todo') !== 'done' && t.status !== 'onhold').sort(byDue);
+  const openAll = tasks.filter(t => (t.status || 'todo') !== 'done' && t.status !== 'onhold').sort(byDue);
+  const routines = openAll.filter(isRoutine);
+  const open = openAll.filter(t => !isRoutine(t));
   const hold = tasks.filter(t => t.status === 'onhold').sort(byDue);
   const done = tasks.filter(t => t.status === 'done');
   const late = open.filter(t => { const d = dayDiff(t.taskDueDate); return d != null && d < 0; });
@@ -706,8 +735,8 @@ function renderTaskList() {
   const later = open.filter(t => { const d = dayDiff(t.taskDueDate); return d != null && d > 0; });
   const nodate = open.filter(t => dayDiff(t.taskDueDate) == null);
 
-  let html = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later', later) + groupHTML('No due date', nodate);
-  if (!open.length) html = '<div class="wd-empty"><b>All clear</b>Nothing open right now.</div>';
+  let html = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later', later) + groupHTML('No due date', nodate) + groupHTML('Routine', routines);
+  if (!openAll.length) html = '<div class="wd-empty"><b>All clear</b>Nothing open right now.</div>';
 
   const chips = [];
   if (hold.length) chips.push(`<button type="button" class="wd-fchip${fold === 'hold' ? ' on' : ''}" aria-pressed="${fold === 'hold'}" onclick="toggleFold('hold')">On hold <b>${hold.length}</b></button>`);
@@ -757,14 +786,17 @@ function addSheetHTML(t) {
   const inWeek = sprintTaskIds.has(t.id);
   const full = !inWeek && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
   const d = dayDiff(t.taskDueDate);
-  const dueLine = t.taskDueDate
+  const routine = isRoutine(t);
+  const dueLine = routine
+    ? `<div class="wd-ts-due">${ICON.repeat}<span>Every week${routineDoneCount(t) ? ', done ' + routineDoneCount(t) + (routineDoneCount(t) === 1 ? ' week' : ' weeks') + ' so far' : ''}</span></div>`
+    : t.taskDueDate
     ? `<div class="wd-ts-due">${ICON.calendar}<span>${esc(longDate(t.taskDueDate))}</span>${d < 0 && st !== 'done' ? `<span class="late">${esc(dueLabel(t.taskDueDate))}</span>` : ''}</div>` : '';
   const startLine = t.dueDate ? `<div class="wd-sheet-sub" style="margin-top:8px">Starts ${esc(longDate(t.dueDate))}</div>` : '';
   const people = (t.members || []).length
     ? `<div class="wd-lab">People</div>` + (t.members || []).map(m =>
         `<div class="wd-ppl"><div class="wd-av sm quiet">${esc(initials(m.name))}</div><div class="who"><b>${esc(m.name)}</b><span class="r">${m.role ? esc(m.role) : 'No task set'}</span></div></div>`).join('')
     : '';
-  const weekBtn = mine && st !== 'done'
+  const weekBtn = mine && st !== 'done' && !routine
     ? `<button type="button" class="wd-btn s" ${full ? 'disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from my week' : full ? 'My week is full' : 'Add to my week'}</button>` : '';
   return `
     <div class="wd-sheet-title">${esc(t.label)}</div>

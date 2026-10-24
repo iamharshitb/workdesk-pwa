@@ -811,6 +811,7 @@
 </div>
 
 <script type="module">
+import { isRoutine, rolloverRoutines, routineOn, ROUTINE_OFF, routineDoneCount, weekKeyOf } from './js/routines.js';
 import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML, dayMonth } from './js/ui.js';
@@ -853,6 +854,7 @@ function activeSprintCount(idsSet, name) {
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
     if (!t) { n++; continue; }
+    if (isRoutine(t)) continue;              // routines repeat on their own and never use a slot
     if (t.status === 'done') continue;
     const m = (t.members || []).find(mm => (mm.name || '').trim().toLowerCase() === who);
     if (m && getMemberStatus(t, m.id) === 'done') continue;   // my part is done
@@ -1169,6 +1171,7 @@ onUserReady(async () => {
   // Real-time task listener — fires immediately + on every change
   onTasksChanged(({ tasks: liveTasks, changes }) => {
     tasks = liveTasks;
+    rolloverRoutines(tasks, updateTask);   // a new week: routines come back as to do
 
     // Check for newly added tasks that include this user
     changes.forEach(({ type, task }) => {
@@ -1224,7 +1227,7 @@ function updateWorldClock() {
   if (b) b.textContent = hm('Europe/Berlin');
   if (d) d.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
   const ds = localDateStr(now);
-  if (ds !== todayStr && tasks.length) renderAll();   // midnight rolled over: late/today change
+  if (ds !== todayStr && tasks.length) { rolloverRoutines(tasks, updateTask); renderAll(); }   // midnight rolled over: late/today change
 }
 updateWorldClock();
 setInterval(updateWorldClock, 30000);
@@ -1377,7 +1380,7 @@ function doneTime(t) {
 // ── a task row (same markup in both skins) ─────────────────────────────────
 function taskRowHTML(t) {
   const g = myGlyph(t);
-  const label = g === 'done' ? '' : dueLabel(t.taskDueDate);
+  const label = g === 'done' ? '' : (isRoutine(t) ? 'Every week' : dueLabel(t.taskDueDate));
   const tapLabel = g === 'done' ? 'Reopen my part' : 'Mark my part done';
   return `<div class="wd-task ${urgencyClass(g, t)}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
       onclick="openTaskSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTaskSheet('${t.id}')}">
@@ -1412,11 +1415,14 @@ function renderMine() {
   }
 
   const open = mine.filter(t => !myPartDone(t));
-  const inWeek = open.filter(t => sprintTaskIds.has(t.id) && t.status !== 'onhold');
+  const routines = open.filter(t => isRoutine(t) && t.status !== 'onhold');
+  const routinesAll = mine.filter(t => isRoutine(t) && t.status !== 'onhold');   // open and finished, for the ring
+  const inWeek = open.filter(t => !isRoutine(t) && sprintTaskIds.has(t.id) && t.status !== 'onhold');
   const late = inWeek.filter(t => dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) < 0).sort(byDue);
   const today = inWeek.filter(t => dayDiff(t.taskDueDate) === 0).sort(byDue);
   const later = inWeek.filter(t => !(dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) <= 0)).sort(byDue);
-  const backlog = open.filter(t => !sprintTaskIds.has(t.id) && t.status !== 'onhold').sort(byDue);
+  const backlog = open.filter(t => !isRoutine(t) && !sprintTaskIds.has(t.id) && t.status !== 'onhold').sort(byDue);
+  routines.sort((a, b) => (PRIO_ORDER[a.priority || 'medium'] - PRIO_ORDER[b.priority || 'medium']) || String(a.label).localeCompare(String(b.label)));
   const onhold = open.filter(t => t.status === 'onhold').sort(byDue);
   const done = mine.filter(myPartDone).sort((a, b) => doneTime(b) - doneTime(a));
 
@@ -1427,11 +1433,13 @@ function renderMine() {
   if (today.length) bits.push(`${today.length} due today`);
   let headline;
   if (bits.length) headline = bits.join(', ');
-  else if (inWeek.length) headline = 'Nothing due today';
+  else if (inWeek.length || routines.length) headline = 'Nothing due today';
   else if (backlog.length) headline = 'Plan your week';
   else headline = open.length || done.length ? 'All clear' : 'Nothing assigned yet';
-  const sub = used >= SPRINT_MAX ? `Week is full, ${used} of ${SPRINT_MAX} slots in use`
-    : `${used} of ${SPRINT_MAX} week slots in use`;
+  const rDone = routinesAll.length - routines.length;
+  const rBit = routinesAll.length ? `, ${rDone} of ${routinesAll.length} ${routinesAll.length === 1 ? 'routine' : 'routines'} done` : '';
+  const sub = (used >= SPRINT_MAX ? `Week is full, ${used} of ${SPRINT_MAX} slots in use`
+    : `${used} of ${SPRINT_MAX} week slots in use`) + rBit;
   const slots = `<div class="wd-slots" role="img" aria-label="${used} of ${SPRINT_MAX} week slots in use">${Array.from({ length: SPRINT_MAX }, (_, i) => `<i${i < used ? '' : ' class="free"'}></i>`).join('')}</div>`;
   const qIcon = d => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const qBtn = (id, label, d) => `<button type="button" class="wd-qa-b" onclick="quickAction('${id}')"><i>${qIcon(d)}</i><span>${label}</span></button>`;
@@ -1441,15 +1449,18 @@ function renderMine() {
     + qBtn('plan', 'Plan week', '<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4M9.2 15.2l2 2 3.8-3.8"/>')
     + qBtn('ideas', 'Ideas', '<path d="M9 18h6M10 21h4M12 3.5a5.5 5.5 0 0 0-3.2 10c.8.6 1.2 1.4 1.2 2.5h4c0-1.1.4-1.9 1.2-2.5A5.5 5.5 0 0 0 12 3.5z"/>')
     + `</div>`;
-  const summary = `<div class="wd-sum"><div><div class="lab">Week slots</div><div class="num"><b>${used}</b><i>/${SPRINT_MAX}</i></div>${slots}<div class="t">${headline}</div><div class="s">${sub}</div></div>${ringHTML(used / SPRINT_MAX * 100, 46, 4, String(used))}</div>${quick}`;
+  const summary = `<div class="wd-sum"><div><div class="lab">Week slots</div><div class="num"><b>${used}</b><i>/${SPRINT_MAX}</i></div>${slots}<div class="t">${headline}</div><div class="s">${sub}</div></div>${ringHTML((used + routines.length) / (SPRINT_MAX + routinesAll.length) * 100, 46, 4, String(used + routines.length))}</div>${quick}`;
 
   // groups
   let body = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later this week', later);
-  if (!inWeek.length) {
+  if (!inWeek.length && !routines.length) {
     body = backlog.length
       ? `<div class="wd-empty"><b>Your week is empty</b>Open Backlog below and add the tasks you want to finish this week.</div>`
       : `<div class="wd-empty"><b>${done.length ? 'Everything is done' : 'No tasks yet'}</b>${done.length ? 'Nice work. New tasks you are assigned will show up here.' : 'Tasks you are assigned will show up here.'}</div>`;
   }
+
+  if (!inWeek.length && routines.length && backlog.length) body += `<div class="wd-empty"><b>No other tasks this week</b>Open Backlog below to add some.</div>`;
+  body = groupHTML('Routine', routines, 'routine') + body;
 
   // folded lists
   const folds = [
@@ -1588,7 +1599,7 @@ function renderTeam() {
     const you = isMe(m.name) ? ' <span style="font-weight:400;color:var(--text2)">(you)</span>' : '';
     const canAct = admin || sameName(m.name, _meName);
     const subRow = e => {
-      const label = dueLabel(e.t.taskDueDate);
+      const label = isRoutine(e.t) ? 'Every week' : dueLabel(e.t.taskDueDate);
       const lateTxt = isLateEntry(e);
       let meta = esc(e.t.project || 'No project');
       if (e.done) {
@@ -1638,6 +1649,8 @@ function renderTaskSheetMain() {
   const diff = dayDiff(t.taskDueDate);
   const overall = glyphStatusFor(t, t.status || 'todo');
   const lateTxt = !done && diff != null && diff < 0 ? dueLabel(t.taskDueDate) : (diff === 0 && !done ? 'Today' : '');
+  const routine = isRoutine(t);
+  const canRoutine = mineTask || admin;
   const inWeek = sprintTaskIds.has(t.id);
   const full = !inWeek && activeSprintCount(sprintTaskIds) >= SPRINT_MAX;
 
@@ -1654,7 +1667,7 @@ function renderTaskSheetMain() {
   const cycleLabel = overall === 'todo' ? 'Start' : overall === 'inprog' ? 'Put on hold' : 'Resume';
 
   // admin can plan teammates' weeks from here
-  const teammateWeek = admin ? (t.members || []).filter(x => !sameName(x.name, _meName)).slice(0, 3).map(x => {
+  const teammateWeek = admin && !routine ? (t.members || []).filter(x => !sameName(x.name, _meName)).slice(0, 3).map(x => {
     const set = memberSprintCache[x.name.toLowerCase()] || new Set();
     const inSet = set.has(t.id);
     return `<button type="button" class="wd-btn s" onclick="toggleMemberSprintTask('${members.find(mm2 => sameName(mm2.name, x.name))?.id || x.id}','${t.id}')">${inSet ? 'Remove from ' + esc(x.name) + '’s week' : 'Add to ' + esc(x.name) + '’s week'}</button>`;
@@ -1678,11 +1691,13 @@ function renderTaskSheetMain() {
     <div class="wd-sheet-title">${esc(t.label)}</div>
     <div class="wd-sheet-sub" style="--proj:${projHue(t.project)}"><i class="wd-pd"></i>${esc(t.project || 'No project')}${t.taskType === 'individual' ? ' · Just you' : ''}</div>
     <div class="wd-ts-status" style="--proj:${projHue(t.project)}"><span class="wd-g static">${glyphSVG(overall, 18)}</span>${STATUS_LABEL[overall] || 'To do'} · ${PRIO_LABEL[t.priority || 'medium']} priority</div>
-    ${t.taskDueDate ? `<div class="wd-ts-due">${ICON.calendar}<span>${longDate(t.taskDueDate)}</span>${lateTxt ? `<span class="late">${esc(lateTxt)}</span>` : ''}</div>` : ''}
+    ${routine ? `<div class="wd-ts-due">${ICON.repeat}<span>Every week${routineDoneCount(t) ? ', done ' + routineDoneCount(t) + (routineDoneCount(t) === 1 ? ' week' : ' weeks') + ' so far' : ''}</span></div>`
+      : t.taskDueDate ? `<div class="wd-ts-due">${ICON.calendar}<span>${longDate(t.taskDueDate)}</span>${lateTxt ? `<span class="late">${esc(lateTxt)}</span>` : ''}</div>` : ''}
     ${primary}
     <div class="wd-btns">
       ${!done ? `<button type="button" class="wd-btn s" onclick="cycleOverall('${t.id}')">${cycleLabel}</button>` : ''}
-      ${mineTask && !myDone ? `<button type="button" class="wd-btn s"${full ? ' disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from week' : full ? 'Week is full' : 'Add to week'}</button>` : ''}
+      ${canRoutine ? `<button type="button" class="wd-btn s" onclick="setRoutine('${t.id}',${!routine})">${routine ? 'Stop repeating' : 'Repeat every week'}</button>` : ''}
+      ${mineTask && !myDone && !routine ? `<button type="button" class="wd-btn s"${full ? ' disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from week' : full ? 'Week is full' : 'Add to week'}</button>` : ''}
       ${mineTask ? `<button type="button" class="wd-btn s" onclick="openReminderModal('${t.id}')">${esc(remLabel)}</button>` : ''}
       <button type="button" class="wd-btn s" onclick="openInlineEdit('${t.id}')">Edit details</button>
       ${teammateWeek}
@@ -1694,6 +1709,7 @@ function editFormHTML(t) {
   const id = t.id;
   const d = _editDraft[id] || {};
   const prio = _editPriority[id] ?? t.priority ?? 'medium';
+  const rt = d.routine ?? isRoutine(t);
   return `
     <div class="wd-sheet-title">Edit task</div>
     <div class="wd-lab">Task</div>
@@ -1705,8 +1721,12 @@ function editFormHTML(t) {
     <div class="wd-lab">Priority</div>
     <div class="wd-chips">${['critical', 'high', 'medium', 'low'].map(p =>
       `<button type="button" class="wd-chip${prio === p ? ' on' : ''}" id="edit-p-${id}-${p}" aria-pressed="${prio === p}" onclick="selectEditPriority('${id}','${p}')">${PRIO_LABEL[p]}</button>`).join('')}</div>
+    ${(isMine(t) || isAdminUser()) ? `<div class="wd-lab">Routine</div>
+    <div class="wd-chips"><button type="button" class="wd-chip${rt ? ' on' : ''}" id="edit-rt-${id}" aria-pressed="${rt}" onclick="toggleEditRoutine('${id}')">Repeats every week</button></div>` : ''}
+    <div id="edit-due-wrap-${id}"${rt ? ' hidden' : ''}>
     <div class="wd-lab">Due date</div>
     <input type="date" class="wd-field" id="edit-due-${id}" value="${d.due ?? t.taskDueDate ?? ''}" oninput="__editDraft('${id}','due',this.value)">
+    </div>
     <div class="wd-btns" style="margin-top:20px">
       <button type="button" class="wd-btn s" onclick="closeInlineEdit('${id}')">Cancel</button>
       <button type="button" class="wd-btn p" onclick="saveInlineEdit('${id}')">Save changes</button>
@@ -1735,6 +1755,18 @@ function refreshTaskSheet() {
   if (_openEditId === _sheetTaskId) return; // never clobber an edit in progress
   renderTaskSheetMain();
 }
+// turn the weekly repeat on or off for a task
+window.setRoutine = async (id, on) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const prev = { routine: t.routine === true, routineWeek: t.routineWeek ?? null, taskDueDate: t.taskDueDate ?? null };
+  const patch = on ? routineOn() : { ...ROUTINE_OFF };
+  Object.assign(t, patch); renderAll();
+  try { await updateTask(id, patch); } catch (e) { Object.assign(t, prev); renderAll(); toast('Could not save, try again'); return; }
+  showUndo(on ? 'Repeats every week' : 'Stopped repeating', async () => {
+    Object.assign(t, prev); renderAll();
+    await updateTask(id, prev);
+  });
+};
 window.sheetDoneMine = async (id) => {
   const t = tasks.find(x => x.id === id); if (!t) return;
   const m = myMemberOf(t);
@@ -1763,6 +1795,13 @@ window.closeInlineEdit = (taskId) => {
   delete _editDraft[taskId];
   renderTaskSheetMain();
 };
+window.toggleEditRoutine = (taskId) => {
+  const t = tasks.find(x => x.id === taskId);
+  const on = !((_editDraft[taskId] || {}).routine ?? isRoutine(t));
+  __editDraft(taskId, 'routine', on);
+  const b = $('edit-rt-' + taskId); if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+  const w = $('edit-due-wrap-' + taskId); if (w) w.hidden = on;
+};
 window.selectEditPriority = (taskId, priority) => {
   _editPriority[taskId] = priority;
   ['critical', 'high', 'medium', 'low'].forEach(p => {
@@ -1777,8 +1816,13 @@ window.saveInlineEdit = async (taskId) => {
   const priority = _editPriority[taskId] || 'medium';
   if (!label) { toast('Task name cannot be empty'); return; }
   const t = tasks.find(x => x.id === taskId);
-  if (t) { t.label = label; t.project = project; t.priority = priority; t.taskDueDate = due || null; }
-  await updateTask(taskId, { label, project, priority, taskDueDate: due || null, dueDate: due || null });
+  const wantRt = (_editDraft[taskId] || {}).routine;
+  const patch = { label, project, priority, taskDueDate: due || null, dueDate: due || null };
+  if (wantRt === true && !isRoutine(t)) Object.assign(patch, routineOn(), { dueDate: t?.dueDate ?? null });
+  else if (wantRt === false && isRoutine(t)) Object.assign(patch, ROUTINE_OFF);
+  else if (isRoutine(t)) { patch.taskDueDate = null; patch.dueDate = t?.dueDate ?? null; }   // a routine has no due date
+  if (t) Object.assign(t, patch);
+  await updateTask(taskId, patch);
   closeInlineEdit(taskId);
   renderAll();
   toast('✓ Task updated');
