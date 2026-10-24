@@ -2384,6 +2384,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const logo=document.getElementById('nav-brand-tap');
   if(logo){
     logo.addEventListener('click',e=>{
+      e.preventDefault(); // the link points at this page; without this each tap reloads Home and resets the count
       _logoTaps++;
       clearTimeout(_logoTimer);
       if(_logoTaps>=5){ _logoTaps=0; window.location.href='snake.html'; return; }
