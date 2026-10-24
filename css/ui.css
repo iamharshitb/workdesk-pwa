@@ -9,9 +9,16 @@
 /* ── PAGE FRAME ────────────────────────────────────────────────────────── */
 .wd-page { max-width: 520px; margin: 0 auto; padding: 0 0 calc(120px + env(safe-area-inset-bottom, 0px)); }
 .wd-appbar { display: flex; align-items: center; justify-content: space-between; padding: calc(10px + env(safe-area-inset-top, 0px)) 20px 0; height: calc(56px + env(safe-area-inset-top, 0px)); }
-.wd-logo { height: 30px; width: auto; display: block; border-radius: 0; }
-/* the logo artwork sits on white; in dark flip its lightness and screen it onto the glow */
-html.theme-dark .wd-logo { filter: invert(1) hue-rotate(180deg) brightness(1.3); mix-blend-mode: screen; }
+/* brand: the Desk ring mark (icons/icon-mark.svg) plus a live wordmark, so it is crisp in both themes and needs no filter */
+.wd-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--text); text-decoration: none; --brand: #2B66D8; }
+.wd-mark { width: 30px; height: 30px; display: block; flex: none; }
+.wd-brand { position: relative; border-radius: 8px; }
+.wd-brand::after { content: ''; position: absolute; inset: -8px -6px; }
+.wd-name { font-family: 'Plus Jakarta Sans', var(--sans); font-size: 20px; line-height: 1; letter-spacing: -.03em; color: var(--text); }
+.wd-name b { font-weight: 800; }
+.wd-name i { font-style: normal; font-weight: 500; color: var(--brand); }
+/* on the glow the page's own pale text tint carries "Desk"; blue would drop under 4.5:1 there */
+html.theme-dark .wd-brand { --brand: #E6EDFF; }
 .wd-wordmark { font-size: 17px; font-weight: 600; letter-spacing: -.005em; color: var(--text); text-decoration: none; }
 html.theme-dark .wd-wordmark { font-weight: 700; letter-spacing: -.01em; }
 
