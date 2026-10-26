@@ -1207,3 +1207,8 @@ html.theme-dark .cal-nav { margin-right: 0; }
 html.theme-dark .wd-ask .wd-lab { display: block; margin-bottom: 12px; }
 /* Backup has no 16px cards, so its history card follows the drop zone and buttons above it */
 html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
+
+/* sideways rows (filter chips, Report tabs): fade the edge that has more, see ui.js */
+.wd-filter-chips.fade-r, .rpt-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+.wd-filter-chips.fade-l, .rpt-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
+.wd-filter-chips.fade-l.fade-r, .rpt-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }

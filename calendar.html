@@ -14,7 +14,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261027">
+<link rel="stylesheet" href="css/ui.css?v=20261028">
 </head>
 <body>
 <div class="wd-page" id="main" role="main">
@@ -157,6 +157,8 @@ function renderCalendar() {
   const today = localDateStr();
 
   const cells = [];
+  const gridEl = document.querySelector('.cal-days');
+  const cellW = ((gridEl && gridEl.clientWidth) || innerWidth - 24) / 7;
   for (let i = 0; i < total; i++) {
     let num, key, other = false;
     if (i < gridStart) {
@@ -180,7 +182,9 @@ function renderCalendar() {
       const max = 3, vis = list.slice(0, max);
       inner = `<span class="cal-n">${num}</span><span class="cal-evs">${vis.map(evChip).join('')}${list.length > max ? `<span class="cal-more">+${list.length - max} more</span>` : ''}</span>`;
     } else {
-      const max = 4, vis = list.slice(0, max);
+      // markers are 11px with 3px gaps: show as many as fit the cell, then a "+"
+      const room = cellW - 6, fits = n => n * 14 - 3 <= room;
+      const max = fits(list.length) ? list.length : Math.max(1, Math.floor((room - 10) / 14)), vis = list.slice(0, max);
       inner = `<span class="cal-n">${num}</span><span class="cal-dots">${vis.map(evDot).join('')}${list.length > max ? '<i class="cal-plus">+</i>' : ''}</span>`;
     }
     cells.push(`<button type="button" class="${cls}" data-d="${key}" aria-label="${esc(label)}"${key === today ? ' aria-current="date"' : ''}>${inner}</button>`);

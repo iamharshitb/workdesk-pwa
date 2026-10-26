@@ -242,3 +242,25 @@ export function othersText(t, viewerName) {
   if (!others.length) return '';
   return 'with ' + (others.length <= 2 ? others.join(' and ') : others[0] + ' and ' + (others.length - 1) + ' others');
 }
+
+/* ── Sideways rows ───────────────────────────────────────────────────────────
+   A row of chips or tabs that scrolls sideways gets a soft fade on the edge that
+   has more, so a cut-off "Performan" reads as "scroll me". Classes fade-l / fade-r
+   are toggled here; the mask itself lives in ui.css. */
+const FADE_SEL = '.wd-filter-chips, .rpt-tabs';
+function updateFade(el) {
+  const max = el.scrollWidth - el.clientWidth;
+  el.classList.toggle('fade-r', max > 2 && el.scrollLeft < max - 2);
+  el.classList.toggle('fade-l', max > 2 && el.scrollLeft > 2);
+}
+if (typeof document !== 'undefined') {
+  let pending = false;
+  const scan = () => { pending = false; document.querySelectorAll(FADE_SEL).forEach(updateFade); };
+  const soon = () => { if (!pending) { pending = true; requestAnimationFrame(scan); } };
+  document.addEventListener('scroll', e => { if (e.target.matches && e.target.matches(FADE_SEL)) updateFade(e.target); }, true);
+  addEventListener('resize', soon);
+  addEventListener('load', soon);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(soon);
+  new MutationObserver(soon).observe(document.documentElement, { childList: true, subtree: true });
+  soon();
+}
