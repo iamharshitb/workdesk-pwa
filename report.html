@@ -12,7 +12,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261026">
+<link rel="stylesheet" href="css/ui.css?v=20261028">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
@@ -109,6 +109,7 @@ const toast = m => showNote(m);
 window.closeSheet = closeSheet;
 
 // ── STATE ──────────────────────────────────────────────────────────────────
+const nT = n => (n === 1 ? 'task' : 'tasks');   // 1 task, 2 tasks
 let allTasks = [], allMembers = [], calendarEvents = {}, projectsData = {};
 let selMonth = '';
 let activeFilters = { project: '', member: '', priority: '', status: '' };
@@ -423,7 +424,7 @@ function renderMonthly() {
 
   const hasProjChart = namedProjs.length > 0;
   el.innerHTML = `
-    ${summaryHTML(pct, pct + '% complete', `${done} of ${total} tasks done in ${monthLabel(selMonth)}`)}
+    ${summaryHTML(pct, pct + '% complete', `${done} of ${total} ${nT(total)} done in ${monthLabel(selMonth)}`)}
     ${statsHTML([[total, 'Tasks'], [done, 'Done'], [inprog, 'In progress'], [critOpen.length, 'Critical open']])}
 
     <div class="rpt-fold"><button type="button" class="wd-disc" id="charts-toggle" aria-expanded="${chartsOpen}" aria-controls="charts-body" onclick="toggleCharts(this)"><span>Charts</span><span class="n">${hasProjChart ? 4 : 3}</span>${CHEV}</button>
@@ -578,7 +579,7 @@ window.renderMyReport = () => {
     const memberKeys = Object.keys(byMember).sort((a, b) => byMember[b].length - byMember[a].length);
 
     el.innerHTML = `
-      ${summaryHTML(pct, esc(id), `${pct}% complete · ${totalDone} of ${total} tasks · ${getPeriodLabel()}`)}
+      ${summaryHTML(pct, esc(id), `${pct}% complete · ${totalDone} of ${total} ${nT(total)} · ${getPeriodLabel()}`)}
       ${statsHTML([[total, 'Tasks'], [totalDone, 'Done'], [pct + '%', 'Complete']])}
       ${h2('By contributor', memberKeys.length)}
       ${listHTML(memberKeys.map(name => projectBlockHTML(name, byMember[name], byMember[name].filter(t => t.status === 'done').length)).join(''))}
@@ -602,7 +603,7 @@ window.renderMyReport = () => {
   const indTasks = mt.filter(t => t.taskType === 'individual');
 
   el.innerHTML = `
-    ${summaryHTML(pct, esc(member.name), `${pct}% complete · ${totalDone} of ${total} tasks · ${getPeriodLabel()}`)}
+    ${summaryHTML(pct, esc(member.name), `${pct}% complete · ${totalDone} of ${total} ${nT(total)} · ${getPeriodLabel()}`)}
     ${statsHTML([[total, 'Tasks'], [totalDone, 'Done'], [pct + '%', 'Complete']])}
     ${projKeys.length ? h2('By project', projKeys.length) + listHTML(projKeys.map(p => projectBlockHTML(p, byProj[p], byProj[p].filter(t => isDoneForMember(t, member.name)).length)).join('')) : ''}
     ${mbcTasks.length ? foldHTML('Team tasks', mbcTasks.length, listHTML(mbcTasks.map(taskRowHTML).join(''))) : ''}
@@ -1100,10 +1101,10 @@ window.renderQuarterly = () => {
     <div class="rpt-chart solo"><div class="rpt-chart-wrap"><canvas id="qr-trend-chart"></canvas></div></div>
 
     ${h2('Top performers', stats.leaderboard.length + (stats.leaderboard.length === 1 ? ' contributor' : ' contributors'))}
-    ${listHTML(stats.leaderboard.slice(0, 8).map((m, i) => `<div class="rpt-lb"><span class="rk${i < 3 ? ' top' : ''}">${i + 1}</span><div class="rpt-lb-b"><b>${esc(m.name)}</b><span>${m.done} of ${m.total} tasks done</span>${bar(m.pct)}</div><span class="rpt-lb-pct">${m.pct}%</span></div>`).join(''))}
+    ${listHTML(stats.leaderboard.slice(0, 8).map((m, i) => `<div class="rpt-lb"><span class="rk${i < 3 ? ' top' : ''}">${i + 1}</span><div class="rpt-lb-b"><b>${esc(m.name)}</b><span>${m.done} of ${m.total} ${nT(m.total)} done</span>${bar(m.pct)}</div><span class="rpt-lb-pct">${m.pct}%</span></div>`).join(''))}
 
     ${h2('Project spotlight', `${stats.projectsCompletedThisQ} of ${stats.projectCount} shipped`)}
-    ${listHTML(stats.projectSpotlight.map(p => `<div class="rpt-lb"><div class="rpt-lb-b"><b>${esc(p.name)}${p.completed ? ' <span class="wd-tag">Shipped</span>' : ''}</b><span>${p.done} of ${p.total} tasks complete</span>${bar(p.pct)}</div><span class="rpt-lb-pct">${p.pct}%</span></div>`).join(''))}
+    ${listHTML(stats.projectSpotlight.map(p => `<div class="rpt-lb"><div class="rpt-lb-b"><b>${esc(p.name)}${p.completed ? ' <span class="wd-tag">Shipped</span>' : ''}</b><span>${p.done} of ${p.total} ${nT(p.total)} complete</span>${bar(p.pct)}</div><span class="rpt-lb-pct">${p.pct}%</span></div>`).join(''))}
   `;
 
   const ctx = $('qr-trend-chart');
@@ -1133,7 +1134,7 @@ window.copyQuarterlySummary = async () => {
   const shipped = stats.projectSpotlight.filter(p => p.completed).map(p => p.name);
 
   const text = `📊 *WorkDesk — ${lbl} Summary*\n\n` +
-    `${stats.done}/${stats.total} tasks completed (${stats.pct}%)\n` +
+    `${stats.done}/${stats.total} ${nT(stats.total)} completed (${stats.pct}%)\n` +
     `${stats.onTimeRate !== null ? stats.onTimeRate + '% delivered on time\n' : ''}` +
     `${stats.critResolved} critical issue${stats.critResolved === 1 ? '' : 's'} resolved\n` +
     `${stats.projectsCompletedThisQ}/${stats.projectCount} projects shipped this quarter\n\n` +
@@ -1166,7 +1167,7 @@ window.exportQuarterlyPDF=()=>{
     <tr style="border-bottom:1px solid #f3f4f6">
       <td style="padding:9px 8px;width:28px;font-size:13px">${rankMedal(i)}</td>
       <td style="padding:9px 8px;font-size:12px;font-weight:700;color:#111827">${esc(m.name)}</td>
-      <td style="padding:9px 8px;font-size:11px;color:#6b7280">${m.done}/${m.total} tasks</td>
+      <td style="padding:9px 8px;font-size:11px;color:#6b7280">${m.done}/${m.total} ${nT(m.total)}</td>
       <td style="padding:9px 8px;width:120px">
         <div style="width:100%;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden">
           <div style="width:${m.pct}%;height:100%;background:${m.pct>=80?'#16a34a':m.pct>=50?'#d97706':'#dc2626'};border-radius:3px"></div>
@@ -1183,7 +1184,7 @@ window.exportQuarterlyPDF=()=>{
         <span style="font-size:13px;font-weight:800;color:${col}">${p.pct}%</span>
       </div>
       <div style="width:100%;height:5px;background:#e5e7eb;border-radius:3px;margin-top:7px;overflow:hidden"><div style="width:${p.pct}%;height:100%;background:${col}"></div></div>
-      <div style="font-size:10px;color:#6b7280;margin-top:5px">${p.done}/${p.total} tasks complete</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:5px">${p.done}/${p.total} ${nT(p.total)} complete</div>
     </div>`;
   }).join('');
 

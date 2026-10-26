@@ -651,7 +651,7 @@ html .tg.ev-late { color: var(--late); }
 .cal-dots { display: flex; align-items: center; justify-content: center; gap: 3px; height: 12px; }
 .cal-plus { font-style: normal; font-size: 11px; font-weight: 600; line-height: 1; color: var(--text2); }
 
-html.theme-dark .cal-grid { margin: 16px 14px 0; padding: 14px 8px 8px; background: var(--bg2); border-radius: var(--rrr); box-shadow: var(--shadow-card); }
+html.theme-dark .cal-grid { margin: 16px 16px 0; padding: 14px 8px 8px; background: var(--bg2); border-radius: var(--rrr); box-shadow: var(--shadow-card); }
 html.theme-dark .cal-dow span { font-size: 13px; }
 html.theme-dark .cal-days { border-top: 0; gap: 2px; }
 html.theme-dark .cal-day { height: 58px; border-bottom: 0; border-radius: 18px; }
@@ -777,7 +777,7 @@ html.theme-dark .rpt-stats.c4:not(.q) { padding-left: 18px; padding-right: 18px;
 /* section heads and lists */
 .rpt-h2 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 32px 20px 4px; font-size: 19px; font-weight: 500; letter-spacing: -.01em; color: var(--text); }
 .rpt-h2 .n { font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--text2); }
-html.theme-dark .rpt-h2 { padding: 30px 24px 8px; font-size: 20px; }
+html.theme-dark .rpt-h2 { padding: 30px 20px 8px; font-size: 20px; }
 .rpt-list { margin: 0 20px; }
 html.theme-dark .rpt-list { margin: 4px 16px 0; padding: 4px 22px; background: var(--bg2); border-radius: var(--rrr); box-shadow: var(--shadow-card); }
 
@@ -857,7 +857,6 @@ html.theme-dark .rpt-charts { padding: 6px 16px 0; }
 html.theme-dark .prj-late { background: currentColor; }
 
 .prj-head { padding: 22px 20px 0; }
-html.theme-dark .prj-head { padding-left: 24px; padding-right: 24px; }
 .prj-name { display: flex; align-items: flex-start; gap: 10px; font-size: 27px; line-height: 1.18; font-weight: 300; letter-spacing: -.025em; color: var(--text); }
 html.theme-dark .prj-name { font-size: 29px; letter-spacing: -.015em; }
 .prj-name > span:last-child { min-width: 0; overflow-wrap: anywhere; }
@@ -867,7 +866,6 @@ html.theme-dark .prj-name { font-size: 29px; letter-spacing: -.015em; }
 .prj-meta .late { color: var(--late); font-weight: 600; }
 
 .prj-acts { display: flex; flex-wrap: wrap; gap: 10px; padding: 22px 20px 0; }
-html.theme-dark .prj-acts { padding-left: 24px; padding-right: 24px; }
 .prj-acts .wd-btn { width: auto; flex: none; height: 46px; margin-top: 0; padding: 0 16px; font-size: 15px; }
 .prj-acts .wd-btn.p { flex: 1 1 auto; }
 
@@ -888,7 +886,8 @@ html.theme-dark .prj-crow { padding-left: 22px; padding-right: 22px; }
 .wd-sub.prj-subrow { flex-wrap: wrap; row-gap: 6px; }
 .prj-subrow #prj-sub { white-space: nowrap; }
 .prj-sub-r { margin-left: auto; }
-.prj-merge-link { display: inline-block; margin-top: 14px; padding-left: 0; }
+.prj-merge-link { display: inline-block; margin: 14px 0 0 20px; padding-left: 0; }
+body.proj-wide .prj-merge-link { margin-left: 0; }
 .prj-sug { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
 .prj-sug:first-of-type { border-top: 0; }
 .prj-sug .sb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -1189,3 +1188,27 @@ html.theme-dark .rs-sw.on { background: var(--blue); }
 .rs-ed .wd-field { min-width: 0; }
 .rs-ed.off .wd-field { opacity: .5; text-decoration: line-through; }
 #rs-edit[hidden] { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPACING POLISH (Oct 2026), Azure only unless noted
+   One rule for the edges: cards and card-like folds sit 16px from the screen,
+   text, labels, fields and buttons sit 20px. Nothing here changes Fair copy
+   except the Merge link, which used to touch the screen edge.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Plus Jakarta Sans has a 0.17em space (Hanken Grotesk: 0.25em), so Dark body text read as "Home isyour week" */
+html.theme-dark body, html.theme-dark input, html.theme-dark textarea, html.theme-dark select, html.theme-dark button { word-spacing: .08em; }
+/* folds that sit under 16px cards (Projects, Report, Calendar) line up with them; their text and chevron stay put */
+html.theme-dark .rpt-fold > .wd-disc,
+html.theme-dark #hist-toggle { width: calc(100% - 32px); margin-left: 16px; margin-right: 16px; padding: 0 26px; }
+html.theme-dark body.proj-wide .prj-panel.has .rpt-fold > .wd-disc { padding: 0 22px; }
+/* month arrows end on the same 20px as the avatar above them */
+html.theme-dark .cal-nav { margin-right: 0; }
+/* the title field is a pill, so its label needs the air an underline field gets from its padding */
+html.theme-dark .wd-ask .wd-lab { display: block; margin-bottom: 12px; }
+/* Backup has no 16px cards, so its history card follows the drop zone and buttons above it */
+html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
+
+/* sideways rows (filter chips, Report tabs): fade the edge that has more, see ui.js */
+.wd-filter-chips.fade-r, .rpt-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+.wd-filter-chips.fade-l, .rpt-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
+.wd-filter-chips.fade-l.fade-r, .rpt-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
