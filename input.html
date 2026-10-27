@@ -169,6 +169,9 @@ const MY_NAME = localStorage.getItem('wd_myname') || '';
 const SPRINT_MAX = 10;
 let sprintTaskIds = new Set();
 let _sprintInitialized = false;
+let _tasksReady = false;   // true once the first task snapshot has arrived
+const ADMIN_NAME = 'Harshit';
+const isAdminUser = () => !!MY_NAME && sameName(MY_NAME, ADMIN_NAME);
 const sameName = (a, b) => !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 const myMemberOf = t => (t.members || []).find(m => sameName(m.name, MY_NAME));
 
@@ -185,14 +188,15 @@ function getWeekKey() {
   return y + '-W' + String(week).padStart(2, '0');
 }
 // The cap counts ACTIVE tasks only: finishing a task (or my part of it) frees a slot.
-function activeSprintCount(idsSet) {
+function activeSprintCount(idsSet, name) {
+  const who = name || MY_NAME;
   let n = 0;
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
-    if (!t) { n++; continue; }
+    if (!t) { if (!_tasksReady) n++; continue; }   // a deleted task has no slot; before tasks load, count it so the number never dips
     if (isRoutine(t)) continue;            // routines repeat on their own and never use a slot
     if (t.status === 'done') continue;
-    const m = myMemberOf(t);
+    const m = (t.members || []).find(x => sameName(x.name, who));
     if (m && t.memberStatus && t.memberStatus[m.id] === 'done') continue;
     n++;
   }
@@ -225,6 +229,56 @@ window.toggleSprintTask = (taskId) => {
   }
 };
 
+// ── ADMIN: plan a teammate's week from here ────────────────────────────────
+// Same idea as Home → Team: each person's week lives in their own user doc, so
+// the admin's view of it is fetched once, cached, and the sheet re-renders.
+let memberSprintCache = {};        // { [lowercaseName]: Set(taskIds) }
+let _memberSprintCacheLoaded = false;
+async function loadMemberSprintCache() {
+  const wk = getWeekKey();
+  const results = await Promise.all(members.map(async m => {
+    try {
+      const data = await getUserData(m.name);
+      const stored = data?.sprint;
+      return [m.name.toLowerCase(), new Set(stored && stored.week === wk ? (stored.ids || []) : [])];
+    } catch (e) { return [m.name.toLowerCase(), new Set()]; }
+  }));
+  memberSprintCache = Object.fromEntries(results);
+  _memberSprintCacheLoaded = true;
+  refreshAddSheet();
+}
+window.toggleMemberSprintTask = async (memberId, taskId) => {
+  const member = members.find(m => m.id === memberId);
+  if (!member) return;
+  const name = member.name, key = name.toLowerCase(), wk = getWeekKey();
+  if (sameName(name, MY_NAME)) { window.toggleSprintTask(taskId); return; }
+  let current = memberSprintCache[key];
+  if (!current) {
+    try {
+      const data = await getUserData(name);
+      const stored = data?.sprint;
+      current = stored && stored.week === wk ? new Set(stored.ids || []) : new Set();
+    } catch (e) { current = new Set(); }
+  }
+  const wasIn = current.has(taskId);
+  if (wasIn) current.delete(taskId);
+  else {
+    if (activeSprintCount(current, name) >= SPRINT_MAX) { toast(name + '’s week is full: ' + SPRINT_MAX + ' open tasks at most', 'err'); return; }
+    current.add(taskId);
+  }
+  memberSprintCache[key] = current;      // optimistic
+  refreshAddSheet();
+  try {
+    await saveUserData(name, { sprint: { week: wk, ids: [...current] } });
+    toast(wasIn ? 'Removed from ' + name + '’s week' : 'Added to ' + name + '’s week');
+  } catch (e) {
+    if (wasIn) current.add(taskId); else current.delete(taskId);
+    memberSprintCache[key] = current;
+    refreshAddSheet();
+    toast('Could not update. Try again.', 'err');
+  }
+};
+
 initShell();
 
 // Pre-fill the Project field when arriving via a "＋ Add task" link from a
@@ -254,7 +308,7 @@ onUserReady(async () => {
       }
       if (type === 'removed') allTasksHistory = allTasksHistory.filter(t => t.id !== task.id);
     });
-    tasks = liveTasks;
+    tasks = liveTasks; _tasksReady = true;
     rolloverRoutines(tasks, fbUpdateTask);   // a new week: routines come back as to do
 
     // a new task that includes me: chime + a quiet note
@@ -611,6 +665,7 @@ window.confirmDelete = async () => {
     await fbDeleteTask(pendingDeleteId, pw);
     tasks = tasks.filter(t => t.id !== pendingDeleteId);
     allTasksHistory = allTasksHistory.filter(t => t.id !== pendingDeleteId);
+    if (sprintTaskIds.delete(pendingDeleteId)) saveSprint();   // free its slot in my week right away
     closeDeleteModal(); renderTaskList(); toast('Task deleted');
   } catch (e) {
     inp.classList.add('wrong'); errEl.style.display = 'block'; inp.value = '';
@@ -798,6 +853,12 @@ function addSheetHTML(t) {
     : '';
   const weekBtn = mine && st !== 'done' && !routine
     ? `<button type="button" class="wd-btn s" ${full ? 'disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from my week' : full ? 'My week is full' : 'Add to my week'}</button>` : '';
+  const teammateWeek = isAdminUser() && !routine && st !== 'done'
+    ? (t.members || []).filter(x => !sameName(x.name, MY_NAME)).map(x => {
+        const set = memberSprintCache[x.name.toLowerCase()] || new Set();
+        const mid = members.find(mm => sameName(mm.name, x.name))?.id || x.id;
+        return `<button type="button" class="wd-btn s" onclick="toggleMemberSprintTask('${mid}','${t.id}')">${set.has(t.id) ? 'Remove from ' + esc(x.name) + '’s week' : 'Add to ' + esc(x.name) + '’s week'}</button>`;
+      }).join('') : '';
   return `
     <div class="wd-sheet-title">${esc(t.label)}</div>
     <div class="wd-sheet-sub"><span class="wd-pd" style="--proj:${projHue(t.project)}"></span>${esc(t.project || 'No project')}</div>
@@ -806,12 +867,13 @@ function addSheetHTML(t) {
     <div class="wd-seg four" role="group" aria-label="Status">${['todo', 'inprog', 'onhold', 'done'].map(s =>
       `<button type="button" class="${s === st ? 'on' : ''}" aria-pressed="${s === st}" onclick="setStatus('${t.id}','${s}')">${STATUS_LABEL[s]}</button>`).join('')}</div>
     ${people}
-    <div class="wd-btns" style="margin-top:18px">${weekBtn}<button type="button" class="wd-btn s" onclick="sheetEdit('${t.id}')">Edit details</button></div>
+    <div class="wd-btns" style="margin-top:18px">${weekBtn}${teammateWeek}<button type="button" class="wd-btn s" onclick="sheetEdit('${t.id}')">Edit details</button></div>
     <button type="button" class="wd-btn s danger" onclick="sheetDelete('${t.id}')">Delete task</button>`;
 }
 window.openAddSheet = (id) => {
   const t = findTask(id); if (!t) return;
   sheetTaskId = id;
+  if (isAdminUser() && !_memberSprintCacheLoaded) loadMemberSprintCache();
   openSheet('add-sheet', addSheetHTML(t), { onClose: () => { sheetTaskId = null; } });
 };
 function refreshAddSheet() {

@@ -812,12 +812,13 @@
 
 <script type="module">
 import { isRoutine, rolloverRoutines, routineOn, ROUTINE_OFF, routineDoneCount, weekKeyOf } from './js/routines.js';
-import { onUserReady, onTasksChanged, getMembers, updateTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
+import { onUserReady, onTasksChanged, getMembers, updateTask, deleteTask as fbDeleteTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
 import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML, dayMonth } from './js/ui.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
+let _tasksReady = false;   // true once the first task snapshot has arrived
 let calendarEvents = {}; // comms calendar events
 let todayStr = (() => { const d = new Date(), p = n => String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); })(); // local date, refreshed by renderAll
 let MY_NAME = localStorage.getItem('wd_myname') || '';
@@ -853,7 +854,7 @@ function activeSprintCount(idsSet, name) {
   let n = 0;
   for (const id of idsSet) {
     const t = tasks.find(x => x.id === id);
-    if (!t) { n++; continue; }
+    if (!t) { if (!_tasksReady) n++; continue; }   // a deleted task has no slot; before tasks load, count it so the number never dips
     if (isRoutine(t)) continue;              // routines repeat on their own and never use a slot
     if (t.status === 'done') continue;
     const m = (t.members || []).find(mm => (mm.name || '').trim().toLowerCase() === who);
@@ -1170,7 +1171,7 @@ onUserReady(async () => {
 
   // Real-time task listener — fires immediately + on every change
   onTasksChanged(({ tasks: liveTasks, changes }) => {
-    tasks = liveTasks;
+    tasks = liveTasks; _tasksReady = true;
     rolloverRoutines(tasks, updateTask);   // a new week: routines come back as to do
 
     // Check for newly added tasks that include this user
@@ -1667,7 +1668,7 @@ function renderTaskSheetMain() {
   const cycleLabel = overall === 'todo' ? 'Start' : overall === 'inprog' ? 'Put on hold' : 'Resume';
 
   // admin can plan teammates' weeks from here
-  const teammateWeek = admin && !routine ? (t.members || []).filter(x => !sameName(x.name, _meName)).slice(0, 3).map(x => {
+  const teammateWeek = admin && !routine ? (t.members || []).filter(x => !sameName(x.name, _meName)).map(x => {
     const set = memberSprintCache[x.name.toLowerCase()] || new Set();
     const inSet = set.has(t.id);
     return `<button type="button" class="wd-btn s" onclick="toggleMemberSprintTask('${members.find(mm2 => sameName(mm2.name, x.name))?.id || x.id}','${t.id}')">${inSet ? 'Remove from ' + esc(x.name) + '’s week' : 'Add to ' + esc(x.name) + '’s week'}</button>`;
@@ -1702,8 +1703,42 @@ function renderTaskSheetMain() {
       <button type="button" class="wd-btn s" onclick="openInlineEdit('${t.id}')">Edit details</button>
       ${teammateWeek}
     </div>
-    ${(t.members || []).length ? `<div class="wd-lab">People</div>${people}` : ''}`;
+    ${(t.members || []).length ? `<div class="wd-lab">People</div>${people}` : ''}
+    <button type="button" class="wd-btn s danger" style="margin-top:18px" onclick="openDeleteTask('${t.id}')">Delete task</button>`;
 }
+
+// ── delete a task (asks for the delete password, same rule as the Add page) ──
+window.openDeleteTask = (id) => {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  closeSheet('task-sheet');
+  openSheet('task-del', `
+    <div class="wd-sheet-title">Delete task</div>
+    <p class="wd-hint" style="margin-bottom:14px">“${esc(t.label)}” is removed for good, for everyone. Enter the delete password to continue.</p>
+    <input class="wd-field" id="del-pw" type="password" aria-label="Delete password" placeholder="Password" autocomplete="off"
+      oninput="document.getElementById('del-err').hidden=true" onkeydown="if(event.key==='Enter')confirmDeleteTask('${id}')">
+    <div class="wd-err" id="del-err" role="alert" hidden>Wrong password. Try again.</div>
+    <div class="wd-btns" style="margin-top:20px">
+      <button type="button" class="wd-btn s" onclick="cancelDeleteTask('${id}')">Cancel</button>
+      <button type="button" class="wd-btn p" id="del-go" onclick="confirmDeleteTask('${id}')">Delete task</button>
+    </div>`);
+  setTimeout(() => $('del-pw')?.focus(), 120);
+};
+window.cancelDeleteTask = (id) => { closeSheet('task-del'); openTaskSheet(id); };
+window.confirmDeleteTask = async (id) => {
+  const inp = $('del-pw'); if (!inp) return;
+  const btn = $('del-go'); if (btn) btn.disabled = true;
+  try {
+    await fbDeleteTask(id, inp.value);
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    $('del-err').hidden = false; inp.value = ''; inp.focus();
+    return;
+  }
+  if (sprintTaskIds.delete(id)) saveSprint();   // free its slot in my week right away
+  closeSheet('task-del');
+  tasks = tasks.filter(x => x.id !== id);
+  renderAll(); toast('Task deleted');
+};
 
 function editFormHTML(t) {
   const id = t.id;
@@ -1736,6 +1771,7 @@ function editFormHTML(t) {
 window.openTaskSheet = (id) => {
   const t = tasks.find(x => x.id === id); if (!t) return;
   _sheetTaskId = id;
+  if (isAdminUser() && !_memberSprintCacheLoaded) loadMemberSprintCache();   // so "Add to X’s week" shows the right state from any tab
   const dl = $('proj-list');
   if (dl) dl.innerHTML = [...new Set(tasks.map(x => x.project).filter(Boolean))].sort().map(p => `<option value="${esc(p)}">`).join('');
   openSheet('task-sheet', `<div id="ts-main"></div><div class="wd-lab">Notes</div><div id="ts-comments"></div>`, {
