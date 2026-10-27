@@ -1389,8 +1389,10 @@ function taskRowHTML(t) {
     <div class="tt">${esc(t.label)}</div>
     <div class="meta">${esc(metaText(t, _meName))}</div>
     <div class="due">${esc(label)}</div>
+    <button type="button" class="wd-ed" aria-label="Edit: ${esc(t.label)}" onclick="event.stopPropagation();editTaskFromRow('${t.id}')">${ICON.edit}</button>
   </div>`;
 }
+window.editTaskFromRow = (id) => { openTaskSheet(id); openInlineEdit(id); };
 const rowsHTML = list => `<div class="wd-tasks">${list.map(taskRowHTML).join('')}</div>`;
 const groupHTML = (title, list, cls = '') => list.length
   ? `<div class="wd-gh ${cls}"><span>${title}</span><span>${list.length}</span></div>${rowsHTML(list)}` : '';

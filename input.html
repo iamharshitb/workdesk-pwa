@@ -677,9 +677,9 @@ window.confirmDelete = async () => {
 let _allProjects = [];
 let _projHoverIdx = -1;
 function updateProjectSuggestions() {
-  const fromLive = tasks.map(t => t.project).filter(Boolean);
-  const fromHistory = (allTasksHistory || []).map(t => t.project).filter(Boolean);
-  _allProjects = [...new Set([...fromLive, ...fromHistory])].sort();
+  // Only projects that still have a live task. The full history also holds old finished
+  // tasks (archived after 90 days) that a merge never renamed, which would bring merged-away names back.
+  _allProjects = [...new Set(tasks.map(t => t.project).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
 window.showProjectDrop = () => { updateProjectSuggestions(); filterProjectDrop($('f-project')?.value || ''); };
 window.hideProjectDrop = () => {
@@ -692,10 +692,10 @@ window.filterProjectDrop = (val) => {
   const matches = _allProjects.filter(p => !q || p.toLowerCase().includes(q));
   _projHoverIdx = -1;
   let html = matches.slice(0, 8).map(p =>
-    `<div class="wd-drop-item" style="--proj:${projHue(p)}" data-v="${esc(p)}" onpointerdown="event.preventDefault();selectProject(this.dataset.v)"><span class="pd"></span>${esc(p)}</div>`).join('');
+    `<div class="wd-drop-item" style="--proj:${projHue(p)}" data-v="${esc(p)}" onmousedown="event.preventDefault()" onclick="selectProject(this.dataset.v)"><span class="pd"></span>${esc(p)}</div>`).join('');
   const exact = _allProjects.some(p => p.toLowerCase() === q);
   if (q && !exact) {
-    html += `<div class="wd-drop-item new" data-v="${esc(val.trim())}" onpointerdown="event.preventDefault();selectProject(this.dataset.v)">Create “${esc(val.trim())}”</div>`;
+    html += `<div class="wd-drop-item new" data-v="${esc(val.trim())}" onmousedown="event.preventDefault()" onclick="selectProject(this.dataset.v)">Create “${esc(val.trim())}”</div>`;
   }
   if (!html) html = '<div class="wd-drop-empty">No projects yet. Type a name to create one.</div>';
   drop.innerHTML = html;
