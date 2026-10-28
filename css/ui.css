@@ -1189,6 +1189,11 @@ html.theme-dark .rs-sw.on { background: var(--blue); }
 .rs-ed .wd-field { min-width: 0; }
 .rs-ed.off .wd-field { opacity: .5; text-decoration: line-through; }
 #rs-edit[hidden] { display: none; }
+.rs-sch { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; margin-top: 2px; }
+.rs-swatch { display: flex; gap: 2px; height: 44px; padding: 5px; background: none; border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; }
+.rs-swatch i { flex: 1; border-radius: 5px; }
+.rs-swatch.on { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+html.theme-dark .rs-swatch.on { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SPACING POLISH (Oct 2026), Azure only unless noted
