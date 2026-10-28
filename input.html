@@ -867,7 +867,7 @@ function addSheetHTML(t) {
     <div class="wd-seg four" role="group" aria-label="Status">${['todo', 'inprog', 'onhold', 'done'].map(s =>
       `<button type="button" class="${s === st ? 'on' : ''}" aria-pressed="${s === st}" onclick="setStatus('${t.id}','${s}')">${STATUS_LABEL[s]}</button>`).join('')}</div>
     ${people}
-    <div class="wd-btns" style="margin-top:18px">${weekBtn}${teammateWeek}<button type="button" class="wd-btn s" onclick="sheetEdit('${t.id}')">Edit details</button></div>
+    <div class="wd-btns" style="margin-top:18px"><button type="button" class="wd-btn s" onclick="sheetEdit('${t.id}')">Edit details</button>${weekBtn}${teammateWeek}</div>
     <button type="button" class="wd-btn s danger" onclick="sheetDelete('${t.id}')">Delete task</button>`;
 }
 window.openAddSheet = (id) => {

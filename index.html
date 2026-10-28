@@ -1389,10 +1389,8 @@ function taskRowHTML(t) {
     <div class="tt">${esc(t.label)}</div>
     <div class="meta">${esc(metaText(t, _meName))}</div>
     <div class="due">${esc(label)}</div>
-    <button type="button" class="wd-ed" aria-label="Edit: ${esc(t.label)}" onclick="event.stopPropagation();editTaskFromRow('${t.id}')">${ICON.edit}</button>
   </div>`;
 }
-window.editTaskFromRow = (id) => { openTaskSheet(id); openInlineEdit(id); };
 const rowsHTML = list => `<div class="wd-tasks">${list.map(taskRowHTML).join('')}</div>`;
 const groupHTML = (title, list, cls = '') => list.length
   ? `<div class="wd-gh ${cls}"><span>${title}</span><span>${list.length}</span></div>${rowsHTML(list)}` : '';
@@ -1698,11 +1696,11 @@ function renderTaskSheetMain() {
       : t.taskDueDate ? `<div class="wd-ts-due">${ICON.calendar}<span>${longDate(t.taskDueDate)}</span>${lateTxt ? `<span class="late">${esc(lateTxt)}</span>` : ''}</div>` : ''}
     ${primary}
     <div class="wd-btns">
+      <button type="button" class="wd-btn s" onclick="openInlineEdit('${t.id}')">Edit details</button>
       ${!done ? `<button type="button" class="wd-btn s" onclick="cycleOverall('${t.id}')">${cycleLabel}</button>` : ''}
       ${canRoutine ? `<button type="button" class="wd-btn s" onclick="setRoutine('${t.id}',${!routine})">${routine ? 'Stop repeating' : 'Repeat every week'}</button>` : ''}
       ${mineTask && !myDone && !routine ? `<button type="button" class="wd-btn s"${full ? ' disabled title="Your week is full"' : ''} onclick="toggleSprintTask('${t.id}')">${inWeek ? 'Remove from week' : full ? 'Week is full' : 'Add to week'}</button>` : ''}
       ${mineTask ? `<button type="button" class="wd-btn s" onclick="openReminderModal('${t.id}')">${esc(remLabel)}</button>` : ''}
-      <button type="button" class="wd-btn s" onclick="openInlineEdit('${t.id}')">Edit details</button>
       ${teammateWeek}
     </div>
     ${(t.members || []).length ? `<div class="wd-lab">People</div>${people}` : ''}

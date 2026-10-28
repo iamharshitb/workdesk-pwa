@@ -107,7 +107,7 @@ html.theme-dark .wd-g { color: currentColor; }
 .wd-task .due { grid-area: d; white-space: nowrap; line-height: 22px; }
 .wd-task.is-done .tt { text-decoration: line-through; text-decoration-thickness: 1px; }
 
-html.theme-light .wd-task { grid-template-columns: 20px 1fr auto 28px; grid-template-areas: "g t d e" "g m m e"; padding: 11px 20px; align-items: start; }
+html.theme-light .wd-task { grid-template-columns: 20px 1fr auto; grid-template-areas: "g t d" "g m m"; padding: 11px 20px; align-items: start; }
 html.theme-light .wd-task::after { content: ''; position: absolute; left: 56px; right: 0; bottom: 0; height: 1px; background: var(--border); }
 html.theme-light .wd-task:active { background: var(--bg2); }
 html.theme-light .wd-task .tt { font-size: 16px; }
@@ -123,7 +123,7 @@ html.theme-light .wd-task.is-done .tt, html.theme-light .wd-task.is-done .meta {
 html.theme-dark .wd-tasks { margin: 0 16px; background: var(--bg2); border-radius: 24px; padding: 6px 0; overflow: hidden; }
 html.theme-dark .wd-tasks.flat { margin: 0; background: none; border-radius: 0; padding: 0; }
 html.theme-dark .wd-task {
-  grid-template-columns: 20px 1fr auto 28px; grid-template-areas: "g t t e" "g m d e";
+  grid-template-columns: 20px 1fr auto; grid-template-areas: "g t t" "g m d";
   min-height: 66px; padding: 14px 24px 14px 22px; align-content: center; row-gap: 2px;
 }
 html.theme-dark .wd-task + .wd-task::before { content: ''; position: absolute; left: 58px; right: 24px; top: 0; height: 1px; background: var(--border); }
@@ -1214,9 +1214,3 @@ html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
 .wd-filter-chips.fade-l, .rpt-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
 .wd-filter-chips.fade-l.fade-r, .rpt-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
 
-/* ── Edit button on a Home task row ── */
-.wd-task .wd-ed { grid-area: e; align-self: center; justify-self: end; position: relative; width: 28px; height: 28px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text2); display: grid; place-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.wd-task .wd-ed svg { width: 18px; height: 18px; }
-.wd-task .wd-ed::after { content: ''; position: absolute; inset: -8px; }
-.wd-task .wd-ed:active { background: var(--bg3, var(--border)); }
-html.theme-dark .wd-task .wd-ed { color: var(--neon); }
