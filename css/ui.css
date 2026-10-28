@@ -496,6 +496,7 @@ html.theme-dark .wd-ask-inp:focus { box-shadow: 0 0 0 2px var(--neon); }
 .wd-drop {
   position: absolute; z-index: 60; left: 0; right: 0; top: 100%; margin-top: 6px; max-height: 232px; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-elevated);
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y;
 }
 html.theme-dark .wd-drop { background: var(--bg2); border: 0; border-radius: 22px; }
 .wd-drop-item { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 16px; font-size: 15.5px; color: var(--text); cursor: pointer; border-bottom: 1px solid var(--border); }
@@ -1212,3 +1213,4 @@ html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
 .wd-filter-chips.fade-r, .rpt-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
 .wd-filter-chips.fade-l, .rpt-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
 .wd-filter-chips.fade-l.fade-r, .rpt-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
+
