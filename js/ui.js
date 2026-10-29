@@ -11,6 +11,11 @@ export const initials = name => String(name || '?').trim().split(/\s+/).map(w =>
 
 // ── icons (24px grid, 1.6 stroke — same family as the bottom nav) ─────────
 const S = (inner, extra = '') => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ${extra}>${inner}</svg>`;
+// A small filled star in front of a strategic task's title. Shape, not colour: it takes the text colour,
+// so it needs no new accent in either theme.
+export const STAR_MARK = '<svg class="wd-star" width="14" height="14" viewBox="0 0 24 24" role="img" aria-label="Strategic"><path fill="currentColor" d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6L12 16.8l-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/></svg>';
+export const starOf = t => (t && t.strategic === true ? STAR_MARK : '');
+
 export const ICON = {
   home:     S('<path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h13V9.5"/>'),
   add:      S('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/>'),

@@ -14,7 +14,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261029">
+<link rel="stylesheet" href="css/ui.css?v=20261030">
 </head>
 <body>
 <div class="wd-page" id="main" role="main">
@@ -48,6 +48,7 @@
       <div class="hlp-i"><b>Open a task</b><p>Tap the task itself to start it, put it on hold, add it to your week, set a reminder, edit its details, read the notes, and see each person’s part.</p></div>
       <div class="hlp-i"><b>Plan your week</b><p>Add to week moves a task from Backlog into This week. Ten active tasks fit at once, and finishing one frees a place.</p></div>
       <div class="hlp-i"><b>Routine</b><p>A task that repeats every week. Turn on Repeats every week when you add it, or choose Repeat every week in a task’s sheet. It appears at the top of This week without being added, does not use one of the ten places, and comes back as to do when a new week starts. Finish it and it moves to Done until then. A routine has no due date.</p></div>
+      <div class="hlp-i"><b>Strategic</b><p>Mark a team task as Strategic when you add it, or in Edit details. A small star appears in front of its title. When you make a slide, strategic tasks finished in that period get their own dark band above the boxes, whichever project they belong to, and a star in their box. Switch the band off in the slide preview if you do not want it.</p></div>
       <div class="hlp-i"><b>Team</b><p>Team lists everyone with their progress. Open a person to see their tasks. The admin can mark a teammate’s part done and plan their week.</p></div>
       <div class="hlp-i"><b>Search</b><p>The magnifier beside the title opens search and filters. Type a task, a person or a project, or pick a chip such as Due today.</p></div>
     </div>
@@ -85,7 +86,7 @@
     <button type="button" class="wd-disc" aria-expanded="false" aria-controls="hb-rpt" data-fold="rpt"><span>Report</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     <div class="hlp-body" id="hb-rpt" hidden>
       <div class="hlp-i"><b>Four views</b><p>Quarterly is a quarter at a glance. Monthly lists a month’s team tasks, with filters. Weekly is this week’s digest. Performance shows one person or one project over a week, month, quarter or overall.</p></div>
-      <div class="hlp-i"><b>Slide for management</b><p>The Slide button builds one PowerPoint slide for a month, a quarter or dates you choose. Rank up to four projects, biggest first; each becomes a coloured box sized by rank and lists the tasks finished in that period, with up to two still in progress. Everything else can be grouped as Other work. You can reword or hide tasks in the preview, which changes only the slide, not your tasks. Routines are not included.</p></div>
+      <div class="hlp-i"><b>Slide for management</b><p>The Slide button builds one PowerPoint slide for a month, a quarter or dates you choose. Rank up to four projects, biggest first; each becomes a coloured box sized by rank and lists the tasks finished in that period, with up to two still in progress. Everything else can be grouped as Other work. You can reword or hide tasks in the preview, which changes only the slide, not your tasks. Routines are not included. The colours change with every download (pick one by hand or turn that off in the preview).</p></div>
       <div class="hlp-i"><b>Share</b><p>The Share button copies a summary or opens a printable report you can save as a PDF. Which options appear depends on the view.</p></div>
       <div class="hlp-i"><b>What counts</b><p>Only MBC tasks count in the team numbers. Individual tasks stay out.</p></div>
     </div>

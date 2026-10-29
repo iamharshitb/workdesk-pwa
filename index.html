@@ -10,7 +10,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261029">
+<link rel="stylesheet" href="css/ui.css?v=20261030">
 <link rel="icon" href="icons/favicon.ico" sizes="32x32 48x48">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -814,7 +814,7 @@
 import { isRoutine, rolloverRoutines, routineOn, ROUTINE_OFF, routineDoneCount, weekKeyOf } from './js/routines.js';
 import { onUserReady, onTasksChanged, getMembers, updateTask, deleteTask as fbDeleteTask, getUserData, saveUserData, onUserDataChanged, getStreak, recordTaskCompletion, addComment, updateComment, deleteComment, onCommentsChanged, setReminder, snoozeReminder, dismissReminder, onCalendarChanged, postAnnouncement, clearAnnouncement, onAnnouncementChanged, getAnnouncementHistory } from './js/firebase.js';
 import { initTheme, toggleThemePanel } from './js/theme.js';
-import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML, dayMonth } from './js/ui.js';
+import { openSheet, closeSheet, showUndo, glyphSVG, ringHTML, ICON, STATUS_LABEL, profileSheetHTML, dayMonth, starOf } from './js/ui.js';
 import { initAudio, playTimerDone, playTaskAssigned, playMarkDone, playReopen, toggleMute, getMuted } from './js/sounds.js';
 
 let tasks = [], members = [];
@@ -1386,7 +1386,7 @@ function taskRowHTML(t) {
   return `<div class="wd-task ${urgencyClass(g, t)}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
       onclick="openTaskSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTaskSheet('${t.id}')}">
     <button type="button" class="wd-g g" aria-label="${tapLabel}: ${esc(t.label)}" onclick="event.stopPropagation();tapGlyph('${t.id}')">${glyphSVG(g)}</button>
-    <div class="tt">${esc(t.label)}</div>
+    <div class="tt">${starOf(t)}${esc(t.label)}</div>
     <div class="meta">${esc(metaText(t, _meName))}</div>
     <div class="due">${esc(label)}</div>
   </div>`;
@@ -1609,7 +1609,7 @@ function renderTeam() {
       } else if (label) meta += ', ' + (lateTxt ? `<b>${esc(label)}</b>` : esc(label));
       return `<div class="wd-sub-task${e.done ? ' is-done' : ''}" style="--proj:${projHue(e.t.project)}" onclick="openTaskSheet('${e.t.id}')">
         <span class="wd-g static">${glyphSVG(e.status)}</span>
-        <div class="body"><div class="tt">${esc(e.t.label)}</div><div class="meta">${meta}</div></div>
+        <div class="body"><div class="tt">${starOf(e.t)}${esc(e.t.label)}</div><div class="meta">${meta}</div></div>
         ${canAct && !e.done ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(m.name)}: ${esc(e.t.label)}" onclick="event.stopPropagation();tickMember('${e.t.id}','${e.mid}','${esc(m.name).replace(/'/g, '&#39;')}')">${ICON.check}</button>` : ''}
       </div>`;
     };
@@ -1689,7 +1689,7 @@ function renderTaskSheetMain() {
   }).join('');
 
   box.innerHTML = `
-    <div class="wd-sheet-title">${esc(t.label)}</div>
+    <div class="wd-sheet-title">${starOf(t)}${esc(t.label)}</div>
     <div class="wd-sheet-sub" style="--proj:${projHue(t.project)}"><i class="wd-pd"></i>${esc(t.project || 'No project')}${t.taskType === 'individual' ? ' · Just you' : ''}</div>
     <div class="wd-ts-status" style="--proj:${projHue(t.project)}"><span class="wd-g static">${glyphSVG(overall, 18)}</span>${STATUS_LABEL[overall] || 'To do'} · ${PRIO_LABEL[t.priority || 'medium']} priority</div>
     ${routine ? `<div class="wd-ts-due">${ICON.repeat}<span>Every week${routineDoneCount(t) ? ', done ' + routineDoneCount(t) + (routineDoneCount(t) === 1 ? ' week' : ' weeks') + ' so far' : ''}</span></div>`
@@ -1745,6 +1745,7 @@ function editFormHTML(t) {
   const d = _editDraft[id] || {};
   const prio = _editPriority[id] ?? t.priority ?? 'medium';
   const rt = d.routine ?? isRoutine(t);
+  const st = d.strategic ?? (t.strategic === true);
   return `
     <div class="wd-sheet-title">Edit task</div>
     <div class="wd-lab">Task</div>
@@ -1758,6 +1759,8 @@ function editFormHTML(t) {
       `<button type="button" class="wd-chip${prio === p ? ' on' : ''}" id="edit-p-${id}-${p}" aria-pressed="${prio === p}" onclick="selectEditPriority('${id}','${p}')">${PRIO_LABEL[p]}</button>`).join('')}</div>
     ${(isMine(t) || isAdminUser()) ? `<div class="wd-lab">Routine</div>
     <div class="wd-chips"><button type="button" class="wd-chip${rt ? ' on' : ''}" id="edit-rt-${id}" aria-pressed="${rt}" onclick="toggleEditRoutine('${id}')">Repeats every week</button></div>` : ''}
+    ${t.taskType !== 'individual' ? `<div class="wd-lab">Strategic <span class="opt">shown first when you make a slide</span></div>
+    <div class="wd-chips"><button type="button" class="wd-chip${st ? ' on' : ''}" id="edit-st-${id}" aria-pressed="${st}" onclick="toggleEditStrategic('${id}')">Strategic</button></div>` : ''}
     <div id="edit-due-wrap-${id}"${rt ? ' hidden' : ''}>
     <div class="wd-lab">Due date</div>
     <input type="date" class="wd-field" id="edit-due-${id}" value="${d.due ?? t.taskDueDate ?? ''}" oninput="__editDraft('${id}','due',this.value)">
@@ -1838,6 +1841,12 @@ window.toggleEditRoutine = (taskId) => {
   const b = $('edit-rt-' + taskId); if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
   const w = $('edit-due-wrap-' + taskId); if (w) w.hidden = on;
 };
+window.toggleEditStrategic = (taskId) => {
+  const t = tasks.find(x => x.id === taskId);
+  const on = !((_editDraft[taskId] || {}).strategic ?? (t?.strategic === true));
+  __editDraft(taskId, 'strategic', on);
+  const b = $('edit-st-' + taskId); if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+};
 window.selectEditPriority = (taskId, priority) => {
   _editPriority[taskId] = priority;
   ['critical', 'high', 'medium', 'low'].forEach(p => {
@@ -1857,6 +1866,8 @@ window.saveInlineEdit = async (taskId) => {
   if (wantRt === true && !isRoutine(t)) Object.assign(patch, routineOn(), { dueDate: t?.dueDate ?? null });
   else if (wantRt === false && isRoutine(t)) Object.assign(patch, ROUTINE_OFF);
   else if (isRoutine(t)) { patch.taskDueDate = null; patch.dueDate = t?.dueDate ?? null; }   // a routine has no due date
+  const wantSt = (_editDraft[taskId] || {}).strategic;
+  if (wantSt !== undefined) patch.strategic = wantSt;
   if (t) Object.assign(t, patch);
   await updateTask(taskId, patch);
   closeInlineEdit(taskId);

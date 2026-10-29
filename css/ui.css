@@ -106,6 +106,7 @@ html.theme-dark .wd-g { color: currentColor; }
 .wd-task .meta{ grid-area: m; line-height: 19px; min-width: 0; }
 .wd-task .due { grid-area: d; white-space: nowrap; line-height: 22px; }
 .wd-task.is-done .tt { text-decoration: line-through; text-decoration-thickness: 1px; }
+.wd-star { display: inline-block; vertical-align: -2px; margin-right: 6px; flex: none; }
 
 html.theme-light .wd-task { grid-template-columns: 20px 1fr auto; grid-template-areas: "g t d" "g m m"; padding: 11px 20px; align-items: start; }
 html.theme-light .wd-task::after { content: ''; position: absolute; left: 56px; right: 0; bottom: 0; height: 1px; background: var(--border); }

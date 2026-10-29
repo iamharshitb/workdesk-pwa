@@ -10,7 +10,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261029">
+<link rel="stylesheet" href="css/ui.css?v=20261030">
 <link rel="icon" href="icons/favicon.ico" sizes="32x32 48x48">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -73,6 +73,12 @@
       <button type="button" class="wd-chip" data-p="high" onclick="setPriority('high')">High</button>
       <button type="button" class="wd-chip on" data-p="medium" onclick="setPriority('medium')">Medium</button>
       <button type="button" class="wd-chip" data-p="low" onclick="setPriority('low')">Low</button>
+    </div>
+
+    <div id="strategic-wrap">
+      <div class="wd-lab">Strategic <span class="opt">optional</span></div>
+      <div class="wd-chips"><button type="button" class="wd-chip" id="strategic-chip" aria-pressed="false" onclick="toggleStrategic()">Strategic</button></div>
+      <p class="wd-hint" id="strategic-hint" hidden>When it is done, it gets its own highlighted band on the slide for that period.</p>
     </div>
 
     <button type="button" class="wd-disc" id="more-toggle" aria-expanded="false" aria-controls="more-body" onclick="toggleMore()">
@@ -141,7 +147,7 @@ import {
 import { initShell } from './js/shell.js';
 import { isRoutine, rolloverRoutines, routineOn, ROUTINE_OFF, routineDoneCount } from './js/routines.js';
 import { esc, initials, ICON, glyphSVG, STATUS_LABEL, openSheet, closeSheet, sheetBody,
-  localDateStr, dayDiff, dueLabel, shortDate, dayMonth, longDate, projHue, urgencyClass, othersText, PRIO_ORDER } from './js/ui.js';
+  localDateStr, dayDiff, dueLabel, shortDate, dayMonth, longDate, projHue, urgencyClass, othersText, PRIO_ORDER, starOf } from './js/ui.js';
 import { playTaskAssigned, playMarkDone, playReopen } from './js/sounds.js';
 
 const $ = id => document.getElementById(id);
@@ -159,6 +165,7 @@ let sheetTaskId = null;
 let fold = null;          // 'hold' | 'done' | null — which folded group is open in All tasks
 let rangeActive = false;
 let routineOnForm = false;   // the "Repeats every week" chip
+let strategicOnForm = false; // the "Strategic" chip
 
 const findTask = id => tasks.find(t => t.id === id) || allTasksHistory.find(t => t.id === id);
 
@@ -400,6 +407,8 @@ window.setTaskType = (type, fromUser) => {
   $('type-individual').classList.toggle('on', !mbc); $('type-individual').setAttribute('aria-pressed', !mbc);
   $('type-hint').textContent = mbc ? 'A team task, shown to everyone.' : 'A personal task. Only you see it.';
   $('who-wrap').hidden = !mbc;
+  $('strategic-wrap').hidden = !mbc;               // only team tasks reach a slide
+  if (!mbc) setStrategicForm(false);
   // switching to Individual by hand drops any team picks, so they can't ride along unseen
   if (!mbc && fromUser) { selectedMembers = {}; renderChips(); renderRoleSection(); }
 };
@@ -442,6 +451,14 @@ function setRoutineForm(on) {
   $('due-wrap').hidden = routineOnForm;            // a routine has no due date
 }
 window.toggleRoutine = () => setRoutineForm(!routineOnForm);
+
+// ── STRATEGIC ──────────────────────────────────────────────────────────────
+function setStrategicForm(on) {
+  strategicOnForm = !!on;
+  const c = $('strategic-chip'); c.classList.toggle('on', strategicOnForm); c.setAttribute('aria-pressed', String(strategicOnForm));
+  $('strategic-hint').hidden = !strategicOnForm;
+}
+window.toggleStrategic = () => setStrategicForm(!strategicOnForm);
 
 // ── PRIORITY ───────────────────────────────────────────────────────────────
 function setPriority(p) {
@@ -536,6 +553,7 @@ window.submitTask = async () => {
 
   const startDate = $('f-start').value || null;
   const routine = routineOnForm;
+  const strategic = strategicOnForm && selectedTaskType === 'mbc';
   const dueDate = routine ? null : (dueValue || null);
   const memberArr = Object.entries(selectedMembers).map(([id, m]) => ({ id, name: m.name, role: m.role.trim() }));
 
@@ -545,7 +563,7 @@ window.submitTask = async () => {
   try {
     if (editingId) {
       const was = isRoutine(findTask(editingId));
-      const upd = { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType };
+      const upd = { label, project, priority: selectedPriority, members: memberArr, dueDate: startDate, taskDueDate: dueDate, taskType: selectedTaskType, strategic };
       if (routine && !was) Object.assign(upd, routineOn());
       else if (!routine && was) Object.assign(upd, ROUTINE_OFF);
       await fbUpdateTask(editingId, upd);
@@ -563,10 +581,10 @@ window.submitTask = async () => {
       const dupes = findDuplicates(label, project);
       if (dupes.length) {
         btn.disabled = false; btn.textContent = 'Add task';
-        showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine });
+        showDupModal(dupes, { label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine, strategic });
         return;
       }
-      await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine });
+      await _doSave({ label, project, priority: selectedPriority, members: finalMembers, startDate, dueDate, taskType: selectedTaskType, routine, strategic });
       if (MY_NAME && finalMembers.some(m => sameName(m.name, MY_NAME))) playTaskAssigned();
     }
     renderTaskList();
@@ -576,8 +594,8 @@ window.submitTask = async () => {
   btn.textContent = editingId ? 'Update task' : 'Add task';
 };
 
-async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType, routine }) {
-  const extra = routine ? routineOn() : {};
+async function _doSave({ label, project, priority, members: finalMembers, startDate, dueDate, taskType, routine, strategic }) {
+  const extra = { ...(routine ? routineOn() : {}), ...(strategic ? { strategic: true } : {}) };
   const id = await fbAddTask({ label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, ...extra });
   tasks.unshift({ id, label, project, priority, members: finalMembers, dueDate: startDate, taskDueDate: dueDate, taskType, ...extra, status: 'todo', memberStatus: {} });
   toast('Task added');
@@ -596,6 +614,7 @@ window.editTask = (id) => {
   setTaskType(t.taskType || 'mbc');
   setDue(t.taskDueDate || '');
   setRoutineForm(isRoutine(t));
+  setStrategicForm(t.strategic === true);
   setPriority(t.priority || 'medium');
   selectedMembers = {};
   (t.members || []).forEach(m => { selectedMembers[m.id] = { name: m.name, role: m.role || '' }; });
@@ -624,6 +643,7 @@ function resetForm() {
   setTaskType('mbc');
   setDue('');
   setRoutineForm(false);
+  setStrategicForm(false);
   selectedMembers = {};
   setPriority('medium');
   renderChips(); renderRoleSection();
@@ -761,7 +781,7 @@ function rowHTML(t) {
   return `<div class="wd-task ${urgencyClass(st, t.taskDueDate)}${st === 'done' ? ' is-done' : ''}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
       onclick="openAddSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAddSheet('${t.id}')}">
     <span class="wd-g g static">${glyphSVG(st)}</span>
-    <div class="tt">${esc(t.label)}</div>
+    <div class="tt">${starOf(t)}${esc(t.label)}</div>
     <div class="meta">${esc(metaText(t))}</div>
     <div class="due">${esc(label)}</div>
   </div>`;
@@ -860,7 +880,7 @@ function addSheetHTML(t) {
         return `<button type="button" class="wd-btn s" onclick="toggleMemberSprintTask('${mid}','${t.id}')">${set.has(t.id) ? 'Remove from ' + esc(x.name) + '’s week' : 'Add to ' + esc(x.name) + '’s week'}</button>`;
       }).join('') : '';
   return `
-    <div class="wd-sheet-title">${esc(t.label)}</div>
+    <div class="wd-sheet-title">${starOf(t)}${esc(t.label)}</div>
     <div class="wd-sheet-sub"><span class="wd-pd" style="--proj:${projHue(t.project)}"></span>${esc(t.project || 'No project')}</div>
     ${dueLine}${startLine}
     <div class="wd-lab">Status</div>
