@@ -14,7 +14,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261029">
+<link rel="stylesheet" href="css/ui.css?v=20261030">
 </head>
 <body>
 <div class="wd-page" id="main" role="main">
@@ -56,7 +56,7 @@ import { onUserReady, WORKSPACE_ID, onTasksChanged, getProjects, setProjectCompl
 import { getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initShell } from './js/shell.js';
-import { esc, initials, ICON, glyphSVG, STATUS_LABEL, ringHTML, openSheet, closeSheet, sheetBody, showUndo, showNote, localDateStr, dayDiff, dueLabel, dayMonth, projHue, PRIO_LABEL } from './js/ui.js';
+import { esc, initials, ICON, glyphSVG, STATUS_LABEL, ringHTML, openSheet, closeSheet, sheetBody, showUndo, showNote, localDateStr, dayDiff, dueLabel, dayMonth, projHue, PRIO_LABEL, starOf } from './js/ui.js';
 
 const $ = id => document.getElementById(id);
 const haptic = n => { try { navigator.vibrate && navigator.vibrate(n); } catch (e) {} };
@@ -242,7 +242,7 @@ function taskRow(t) {
   }
   const names = (t.members || []).map(m => m.name).filter(Boolean).join(', ');
   const bits = [esc(STATUS_LABEL[st]), esc(PRIO_LABEL[t.priority] || PRIO_LABEL.medium), due, names ? 'with ' + esc(names) : ''].filter(Boolean).join(' · ');
-  return `<div class="rpt-task${st === 'done' ? ' is-done' : ''}"><span class="g" style="--proj:${projHue(t.project)}">${glyphSVG(st, 20)}</span><div><b>${esc(t.label)}</b><span>${bits}</span></div></div>`;
+  return `<div class="rpt-task${st === 'done' ? ' is-done' : ''}"><span class="g" style="--proj:${projHue(t.project)}">${glyphSVG(st, 20)}</span><div><b>${starOf(t)}${esc(t.label)}</b><span>${bits}</span></div></div>`;
 }
 
 function foldHTML(key, label, n, inner) {

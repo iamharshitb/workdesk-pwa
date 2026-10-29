@@ -57,22 +57,33 @@ const MEASURE_FONT = 'Arial';           // wider than Calibri, so text that fits
 const SLIDE_W = 1280, SLIDE_H = 720;    // px; 96 px = 1 inch, so 13.33 x 7.5 in
 const STRIP = { x: 40, y: 126, w: 1200, h: 30, r: 12, gap: 3 };   // the effort split under the title
 const AREA = { x: 40, y: 170, w: 1200, h: 500 };
+// The Strategic band: strategic tasks finished in the period, on a dark band above the boxes so they read
+// as the important things done. INK is fixed, so it works with every colour scheme.
+const BAND = { x: 40, y: 170, w: 1200, r: 20, padX: 24, padY: 18, labelW: 206, rowH: 30, minH: 84, maxCells: 4, gap: 12 };
+const GOLD = '#F4C95D', BAND_SUB = '#C9D3EA', BAND_MUTED = '#B7C2DD';
 const LH = 1.3;                         // line height used when fitting (generous)
 const MIN_TS = 13;                      // smallest task text, px (about 10 pt)
 
-// boxes in rank order, then "Other work"; sizes in px inside AREA
-const LAYOUTS = {
-  '4o': [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 244, 31, 19), r(606, 256, 291, 244, 26, 16), r(909, 256, 291, 151, 22, 15), r(909, 419, 291, 81, 17, 14)],
-  '4':  [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 244, 31, 19), r(606, 256, 291, 244, 26, 16), r(909, 256, 291, 244, 26, 16)],
-  '3o': [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 244, 31, 19), r(606, 256, 366, 244, 26, 17), r(984, 256, 216, 244, 20, 14)],
-  '3':  [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 244, 31, 19), r(606, 256, 594, 244, 31, 19)],
-  '2o': [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 333, 34, 20), r(606, 345, 594, 155, 22, 15)],
-  '2':  [r(0, 0, 594, 500, 42, 24), r(606, 0, 594, 500, 42, 24)],
-  '1o': [r(0, 0, 1200, 345, 46, 26), r(0, 357, 1200, 143, 22, 16)],
-  '1':  [r(0, 0, 1200, 500, 46, 26)],
-};
+// Boxes in rank order, then "Other work"; sizes in px, y counted from the top of the box area.
+// The area is 500px tall, or shorter when the Strategic band sits above it (H), so every row is
+// worked out from H and the 12px gaps stay 12px.
+function layoutFor(key, H) {
+  const half = Math.round((H - 12) / 2), lo = H - 12 - half, y2 = half + 12;
+  switch (key) {
+    case '4o': { const b5 = Math.max(74, lo - Math.round(lo * 0.62) - 12), b4 = lo - 12 - b5;
+      return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, half, 31, 19), r(606, y2, 291, lo, 26, 16), r(909, y2, 291, b4, 22, 15), r(909, y2 + b4 + 12, 291, b5, 17, 14)]; }
+    case '4':  return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, half, 31, 19), r(606, y2, 291, lo, 26, 16), r(909, y2, 291, lo, 26, 16)];
+    case '3o': return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, half, 31, 19), r(606, y2, 366, lo, 26, 17), r(984, y2, 216, lo, 20, 14)];
+    case '3':  return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, half, 31, 19), r(606, y2, 594, lo, 31, 19)];
+    case '2o': { const sec = Math.round((H - 12) * 0.682); return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, sec, 34, 20), r(606, sec + 12, 594, H - 12 - sec, 22, 15)]; }
+    case '2':  return [r(0, 0, 594, H, 42, 24), r(606, 0, 594, H, 42, 24)];
+    case '1o': { const first = Math.round((H - 12) * 0.707); return [r(0, 0, 1200, first, 46, 26), r(0, first + 12, 1200, H - 12 - first, 22, 16)]; }
+    case '1':  return [r(0, 0, 1200, H, 46, 26)];
+    default:   return [];
+  }
+}
 function r(x, y, w, h, hs, ts) { return { x, y, w, h, hs, ts }; }
-const padFor = b => Math.round(Math.min(36, Math.max(18, Math.min(b.w, b.h) * 0.075)));
+const padFor = b => Math.round(Math.min(36, Math.max(b.h < 120 ? 14 : 18, Math.min(b.w, b.h) * 0.075)));
 
 // ── data ───────────────────────────────────────────────────────────────────
 const toDate = c => { if (!c) return null; const d = typeof c.toDate === 'function' ? c.toDate() : new Date(c); return isNaN(d.getTime()) ? null : d; };
@@ -171,11 +182,15 @@ function contentHeight(b, ts, done, open, extra) {
   return h;
 }
 function fitBox(b, doneTexts, openTexts) {
-  let ts = b.ts, done = doneTexts, extra = 0;
-  const fits = (s, d, e) => contentHeight(b, s, d, openTexts, e) <= b.h;
-  while (ts > MIN_TS && !fits(ts, done, extra)) ts -= 1;
-  while (done.length > 1 && !fits(ts, done, extra)) { done = done.slice(0, -1); extra = doneTexts.length - done.length; }
-  return { ts, done, more: extra, lastFits: fits(ts, done, extra) };
+  let ts = b.ts, hs = b.hs, done = doneTexts, open = openTexts, extra = 0;
+  const fits = () => contentHeight({ ...b, hs }, ts, done, open, extra) <= b.h;
+  while (ts > MIN_TS && !fits()) ts -= 1;                                                  // smaller text first,
+  const keep = Math.min(2, doneTexts.length);                                              // then fewer finished tasks, but keep two,
+  while (done.length > keep && !fits()) { done = done.slice(0, -1); extra = doneTexts.length - done.length; }
+  while (open.length && !fits()) open = open.slice(0, -1);                                 // then the open ones,
+  while (done.length > 0 && !fits()) { done = done.slice(0, -1); extra = doneTexts.length - done.length; }   // then the rest
+  while (hs > 16 && !fits()) hs -= 1;                                                      // last, a smaller heading
+  return { ts, hs, done, open, more: extra };
 }
 
 // ── the slide model (shared by the preview and the PowerPoint file) ───────
@@ -199,27 +214,65 @@ function buildStrip(items) {
   });
 }
 
+// cut a line with an ellipsis so it fits one row (measured in Arial, wider than Calibri)
+function clip(text, px, maxW, bold) {
+  if (width(text, px, bold) <= maxW) return text;
+  let t = String(text);
+  while (t.length > 1 && width(t + '…', px, bold) > maxW) t = t.slice(0, -1);
+  return t.trimEnd() + '…';
+}
+// the Strategic band: a label block on the left, then the tasks in two columns (at most 4 cells, the last
+// one reads "+ N more" when there are more), each one line: star, task, and its project when there is room
+function buildBand(items) {
+  const n = items.length;
+  const cells = n > BAND.maxCells ? [...items.slice(0, BAND.maxCells - 1), { more: n - (BAND.maxCells - 1) }] : items;
+  const rows = Math.ceil(cells.length / 2);
+  const h = Math.max(BAND.minH, BAND.padY * 2 + rows * BAND.rowH);
+  const colW = Math.floor((BAND.w - BAND.padX * 2 - BAND.labelW - 24) / 2);
+  const x0 = BAND.x + BAND.padX + BAND.labelW, y0 = BAND.y + Math.round((h - rows * BAND.rowH) / 2);
+  const out = cells.map((c, i) => {
+    const cell = { x: x0 + (i % 2) * (colW + 24), y: y0 + Math.floor(i / 2) * BAND.rowH, w: colW, h: BAND.rowH };
+    if (c.more) return { ...cell, more: `+ ${c.more} more strategic ${c.more === 1 ? 'task' : 'tasks'}` };
+    const maxW = colW - 28;
+    let proj = '', taskMax = maxW;
+    if (c.project && c.project !== 'No project' && maxW - Math.min(width(c.project, 14, false), 170) - 14 >= 200) {
+      proj = clip(c.project, 14, 170, false); taskMax = maxW - width(proj, 14, false) - 14;
+    }
+    return { ...cell, task: clip(c.text, 17, taskMax, false), proj };
+  });
+  return { h, n, label: `${n} ${n === 1 ? 'task' : 'tasks'} finished`, cells: out };
+}
+
 export function buildModel(tasks, state) {
   const period = periodRange(state);
   const rows = projectRows(tasks, state);
   const ranked = state.ranked.map(n => rows.find(x => x.name === n)).filter(Boolean).slice(0, MAX_RANKED);
   const rest = rows.filter(x => !ranked.includes(x));
   const hasOther = state.group && rest.length > 0;
-  const layout = LAYOUTS[ranked.length + (hasOther ? 'o' : '')] || [];
   const colors = (SCHEMES[state.scheme] || SCHEMES[0]).colors;
   const txt = t => { const e = state.edits[t.id]; return e && e.text != null && e.text.trim() ? e.text.trim() : t.label; };
   const shown = t => !(state.edits[t.id] && state.edits[t.id].hidden);
+  // strategic tasks finished in the period, wherever their project sits (ranked or not): ranked projects
+  // first in rank order, then by the day they were finished
+  const rankOf = name => { const i = ranked.findIndex(x => x.name === name); return i < 0 ? 99 : i; };
+  const strategicAll = rows.flatMap(x => x.tasks.map(t => ({ t, project: x.name }))).filter(e => e.t.strategic === true)
+    .sort((a, b) => rankOf(a.project) - rankOf(b.project) || doneDate(a.t) - doneDate(b.t));
+  const strategicShown = strategicAll.filter(e => shown(e.t));
+  const band = state.strategic !== false && strategicShown.length ? buildBand(strategicShown.map(e => ({ text: txt(e.t), project: e.project }))) : null;
+  const taken = band ? band.h + BAND.gap : 0;                      // the band pushes the boxes down
+  const boxTop = AREA.y + taken;
+  const layout = layoutFor(ranked.length + (hasOther ? 'o' : ''), AREA.h - taken);
   const restN = rest.reduce((s, x) => s + x.tasks.length, 0);
   const pcts = shares([...ranked.map(x => x.tasks.length), ...(restN ? [restN] : [])]);   // last one is everything not ranked
   const boxes = ranked.map((row, i) => {
-    const open = openTasksOf(tasks, row.name, state);
-    const doneAll = row.tasks.filter(shown);
-    const box = { ...layout[i], name: row.name, n: row.tasks.length, pct: pcts[i], other: false, ...colors[i], tasksAll: row.tasks, openAll: open };
-    const f = fitBox(box, doneAll.map(txt), open.filter(shown).map(txt));
-    return { ...box, ts: f.ts, done: f.done, more: f.more, open: open.filter(shown).map(txt) };
+    const openAll = openTasksOf(tasks, row.name, state);
+    const doneAll = row.tasks.filter(shown).sort((a, b) => (b.strategic === true) - (a.strategic === true));   // strategic first, so a star survives trimming
+    const box = { ...layout[i], name: row.name, n: row.tasks.length, pct: pcts[i], other: false, ...colors[i], tasksAll: row.tasks, openAll };
+    const f = fitBox(box, doneAll.map(txt), openAll.filter(shown).map(txt));
+    return { ...box, hs: f.hs, ts: f.ts, done: f.done, stars: doneAll.slice(0, f.done.length).map(t => t.strategic === true), more: f.more, open: f.open };
   });
   if (hasOther) {
-    boxes.push({ ...layout[ranked.length], name: 'Other work', n: restN, pct: pcts[ranked.length], other: true, ...colors[4], done: [`${restN} ${restN === 1 ? 'task' : 'tasks'} across ${rest.length} other ${rest.length === 1 ? 'project' : 'projects'}`], open: [], more: 0, tasksAll: [], openAll: [] });
+    boxes.push({ ...layout[ranked.length], name: 'Other work', n: restN, pct: pcts[ranked.length], other: true, ...colors[4], stars: [], done: [`${restN} ${restN === 1 ? 'task' : 'tasks'} across ${rest.length} other ${rest.length === 1 ? 'project' : 'projects'}`], open: [], more: 0, tasksAll: [], openAll: [] });
   }
   // finished work that was not ranked still takes part of the effort, so it gets a (neutral) segment even without a box
   const stripItems = boxes.map(b => ({ n: b.n, pct: b.pct, bg: b.bg, fg: b.fg }));
@@ -229,7 +282,7 @@ export function buildModel(tasks, state) {
   const label = state.kind === 'month' && +state.month.slice(0, 4) === new Date().getFullYear() ? MONTHS[+state.month.slice(5) - 1] : period.label;
   const title = `Where the team's effort went in ${label}`;
   const auto = `${total} ${total === 1 ? 'task' : 'tasks'} finished across ${rows.length} ${rows.length === 1 ? 'project' : 'projects'}${ranked.length > 1 ? ', in order of priority' : ''}`;
-  return { title, titleFs: fitTitle(title), period: period.label, file: period.file, subtitle: (state.subtitle || '').trim() || auto, autoSubtitle: auto, total, projects: rows.length, boxes, strip: buildStrip(stripItems), scheme: (SCHEMES[state.scheme] || SCHEMES[0]).name };
+  return { title, titleFs: fitTitle(title), band, boxTop, strategicCount: strategicAll.length, period: period.label, file: period.file, subtitle: (state.subtitle || '').trim() || auto, autoSubtitle: auto, total, projects: rows.length, boxes, strip: buildStrip(stripItems), scheme: (SCHEMES[state.scheme] || SCHEMES[0]).name };
 }
 
 // ── preview (HTML twin of the PowerPoint slide) ───────────────────────────
@@ -240,19 +293,26 @@ function slideHTML(m) {
     const item = (t, glyph) => `<div style="margin-top:${gap}px;font-size:${px(ts)};line-height:${LH};padding-left:${ts + 8}px;text-indent:-${ts + 8}px">${glyph}&nbsp;&nbsp;${esc(t)}</div>`;
     const body = b.other
       ? `<div style="margin-top:6px;font-size:${px(ts)}">${esc(b.done[0])}</div>`
-      : b.done.map(t => item(t, '✓')).join('') + (b.more ? `<div style="margin-top:${gap}px;font-size:${px(ts)};font-weight:700;opacity:.9">+ ${b.more} more</div>` : '')
+      : b.done.map((t, i) => item(t, b.stars[i] ? '★' : '✓')).join('') + (b.more ? `<div style="margin-top:${gap}px;font-size:${px(ts)};font-weight:700;opacity:.9">+ ${b.more} more</div>` : '')
         + (b.open.length ? `<div style="margin-top:${Math.round(ts * 0.9)}px;font-size:${px(Math.max(12, ts - 2))};font-weight:700;opacity:.85">Still in progress</div>` + b.open.map(t => item(t, '○')).join('') : '');
     const sub = b.other ? '' : `<div style="margin-top:5px;font-size:${px(Math.max(12, ts - 2))};font-weight:600;line-height:1.2;opacity:.85">${esc(subText(b))}</div>`;
-    return `<div style="position:absolute;left:${AREA.x + b.x}px;top:${AREA.y + b.y}px;width:${b.w}px;height:${b.h}px;background:${b.bg};color:${b.fg};border-radius:20px;padding:${pad}px;box-sizing:border-box;overflow:hidden"><div style="font-size:${px(b.hs)};font-weight:800;letter-spacing:-.01em;line-height:1.15">${esc(b.name)}</div>${sub}<div style="margin-top:${Math.max(8, Math.round(ts / 2))}px">${body}</div></div>`;
+    return `<div style="position:absolute;left:${AREA.x + b.x}px;top:${m.boxTop + b.y}px;width:${b.w}px;height:${b.h}px;background:${b.bg};color:${b.fg};border-radius:20px;padding:${pad}px;box-sizing:border-box;overflow:hidden"><div style="font-size:${px(b.hs)};font-weight:800;letter-spacing:-.01em;line-height:1.15">${esc(b.name)}</div>${sub}<div style="margin-top:${Math.max(8, Math.round(ts / 2))}px">${body}</div></div>`;
   }).join('');
   const strip = m.strip.map(g => {
     const R = STRIP.r, rad = g.first && g.last ? `${R}px` : g.first ? `${R}px 0 0 ${R}px` : g.last ? `0 ${R}px ${R}px 0` : '0';
     return `<div style="position:absolute;left:${STRIP.x + g.x}px;top:${STRIP.y}px;width:${g.w}px;height:${STRIP.h}px;background:${g.bg};color:${g.fg};border-radius:${rad};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden">${esc(g.label)}</div>`;
   }).join('');
+  const band = !m.band ? '' : `<div style="position:absolute;left:${BAND.x}px;top:${BAND.y}px;width:${BAND.w}px;height:${m.band.h}px;background:${INK};border-radius:${BAND.r}px"></div>`
+    + `<div style="position:absolute;left:${BAND.x + BAND.padX}px;top:${BAND.y}px;width:${BAND.labelW}px;height:${m.band.h}px;display:flex;flex-direction:column;justify-content:center;color:#FFFFFF"><div style="font-size:22px;font-weight:800;line-height:1.15;white-space:nowrap"><span style="color:${GOLD}">★</span>&nbsp;&nbsp;Strategic</div><div style="margin-top:3px;font-size:14px;line-height:1.2;color:${BAND_SUB}">${esc(m.band.label)}</div></div>`
+    + m.band.cells.map(c => `<div style="position:absolute;left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;color:#FFFFFF;font-size:17px">`
+      + (c.more ? `<span style="color:${BAND_MUTED};font-weight:700">${esc(c.more)}</span>`
+        : `<span style="color:${GOLD};width:26px;flex:none">★</span><span>${esc(c.task)}</span>${c.proj ? `<span style="margin-left:14px;font-size:14px;color:${BAND_MUTED}">${esc(c.proj)}</span>` : ''}`)
+      + '</div>').join('');
   return `<div style="width:${SLIDE_W}px;height:${SLIDE_H}px;position:relative;background:${PAPER};font-family:${FONT},${MEASURE_FONT},sans-serif;color:${INK};overflow:hidden">`
     + `<div style="position:absolute;left:40px;top:34px"><div style="font-size:${m.titleFs}px;font-weight:800;letter-spacing:-.02em;line-height:1;white-space:nowrap">${esc(m.title)}</div><div style="margin-top:10px;font-size:20px;color:${PENCIL}">${esc(m.subtitle)}</div></div>`
     + `<div style="position:absolute;right:40px;top:30px;text-align:right"><div style="font-size:54px;font-weight:800;line-height:1;letter-spacing:-.02em">${m.total}</div><div style="margin-top:6px;font-size:16px;color:${PENCIL}">${m.total === 1 ? 'task' : 'tasks'} finished across ${m.projects} ${m.projects === 1 ? 'project' : 'projects'}</div></div>`
     + strip
+    + band
     + boxes
     + `<div style="position:absolute;left:40px;bottom:16px;font-size:13px;color:${PENCIL}">MBC-IN Internal Communications, Bosch Mobility India</div></div>`;
 }
@@ -300,6 +360,19 @@ export async function downloadPptx(m) {
       x: inch(x), w: inch(g.w), ...at, margin: 0, align: 'center', valign: 'middle', fontFace: FONT, fontSize: pt(15), bold: true, color: hex(g.fg), fit: 'none',
     });
   });
+  // the Strategic band: a dark rounded shape, then editable text on top of it
+  if (m.band) {
+    s.addShape(pptx.ShapeType.roundRect, { x: inch(BAND.x), y: inch(BAND.y), w: inch(BAND.w), h: inch(m.band.h), rectRadius: 0.2, fill: { color: hex(INK) }, line: { type: 'none' } });
+    text([{ text: '★  ', options: { color: hex(GOLD), fontSize: pt(22), bold: true } }, { text: 'Strategic', options: { color: 'FFFFFF', fontSize: pt(22), bold: true, breakLine: true } },
+      { text: m.band.label, options: { color: hex(BAND_SUB), fontSize: pt(14), paraSpaceBefore: 2 } }],
+      { x: inch(BAND.x + BAND.padX), y: inch(BAND.y), w: inch(BAND.labelW), h: inch(m.band.h), valign: 'middle', fit: 'none' });
+    m.band.cells.forEach(c => {
+      const runs = c.more ? [{ text: c.more, options: { color: hex(BAND_MUTED), fontSize: pt(17), bold: true } }]
+        : [{ text: '★  ', options: { color: hex(GOLD), fontSize: pt(17) } }, { text: c.task, options: { color: 'FFFFFF', fontSize: pt(17) } },
+           ...(c.proj ? [{ text: '    ' + c.proj, options: { color: hex(BAND_MUTED), fontSize: pt(14) } }] : [])];
+      text(runs, { x: inch(c.x), y: inch(c.y), w: inch(c.w), h: inch(c.h), valign: 'middle', fit: 'none' });
+    });
+  }
   for (const b of m.boxes) {
     const padPt = padFor(b) * 0.75, ts = b.ts, gap = Math.max(5, Math.round(ts / 3)) * 0.75;
     const runs = [{ text: b.name, options: { fontSize: pt(b.hs), bold: true, color: hex(b.fg), breakLine: true } }];
@@ -307,7 +380,7 @@ export async function downloadPptx(m) {
       runs.push({ text: b.done[0], options: { fontSize: pt(ts), color: hex(b.fg), paraSpaceBefore: 6 } });
     } else {
       runs.push({ text: subText(b), options: { fontSize: pt(Math.max(12, ts - 2)), bold: true, color: hex(b.fg), breakLine: true, paraSpaceBefore: 4 } });
-      b.done.forEach((t, i) => runs.push({ text: t, options: { fontSize: pt(ts), color: hex(b.fg), breakLine: true, bullet: { code: '2713', indent: pt(ts + 8) }, paraSpaceBefore: i === 0 ? Math.round(ts / 2 * 0.75) : gap } }));
+      b.done.forEach((t, i) => runs.push({ text: t, options: { fontSize: pt(ts), color: hex(b.fg), breakLine: true, bullet: { code: b.stars[i] ? '2605' : '2713', indent: pt(ts + 8) }, paraSpaceBefore: i === 0 ? Math.round(ts / 2 * 0.75) : gap } }));
       if (b.more) runs.push({ text: `+ ${b.more} more`, options: { fontSize: pt(ts), bold: true, color: hex(b.fg), breakLine: true, paraSpaceBefore: gap } });
       if (b.open.length) {
         runs.push({ text: 'Still in progress', options: { fontSize: pt(Math.max(12, ts - 2)), bold: true, color: hex(b.fg), breakLine: true, paraSpaceBefore: Math.round(ts * 0.9 * 0.75) } });
@@ -316,7 +389,7 @@ export async function downloadPptx(m) {
     }
     s.addText(runs, {
       shape: pptx.ShapeType.roundRect, rectRadius: 0.2, fill: { color: hex(b.bg) }, line: { type: 'none' },
-      x: inch(AREA.x + b.x), y: inch(AREA.y + b.y), w: inch(b.w), h: inch(b.h), margin: padPt, valign: 'top', fontFace: FONT, fit: 'none',
+      x: inch(AREA.x + b.x), y: inch(m.boxTop + b.y), w: inch(b.w), h: inch(b.h), margin: padPt, valign: 'top', fontFace: FONT, fit: 'none',
     });
   }
   text('MBC-IN Internal Communications, Bosch Mobility India', { x: inch(40), y: inch(690), w: inch(700), h: inch(20), fontSize: pt(13), color: hex(PENCIL) });
@@ -331,7 +404,7 @@ export function openSlideBuilder(allTasks) {
     kind: 'month', month: monthKey(now), quarter: Math.floor(now.getMonth() / 3) + 1, year: now.getFullYear(),
     from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to: ymd(now),
     ranked: [], group: true, subtitle: '', edits: {}, step: 'rank', editOpen: false,
-    scheme: loadScheme(), auto: loadAuto(),
+    scheme: loadScheme(), auto: loadAuto(), strategic: true,
   };
   // months that have finished work, plus the current month
   const monthOpts = (() => {
@@ -387,14 +460,21 @@ export function openSlideBuilder(allTasks) {
   function editRows() {
     const out = [];
     const m = model();
+    const row = (t, g) => {
+      const e = state.edits[t.id] || {}, hid = !!e.hidden;
+      return `<div class="rs-ed${hid ? ' off' : ''}"><span class="g" aria-hidden="true">${g}</span><input class="wd-field" aria-label="Wording on the slide" data-act="text" data-id="${esc(t.id)}" value="${esc(e.text != null ? e.text : t.label)}"${hid ? ' disabled' : ''}>
+          <button type="button" class="wd-link" data-act="hide" data-id="${esc(t.id)}">${hid ? 'Show' : 'Hide'}</button></div>`;
+    };
+    // strategic tasks are edited here once, wherever their project sits, and left out of the project lists below
+    const strat = projectRows(allTasks, state).flatMap(x => x.tasks).filter(t => t.strategic === true);
+    if (strat.length && state.strategic) { out.push(`<div class="wd-lab">Strategic</div>`); strat.forEach(t => out.push(row(t, '★'))); }
+    const inBand = new Set(state.strategic ? strat.map(t => t.id) : []);
     for (const b of m.boxes) {
       if (b.other) continue;
+      const list = [...b.tasksAll.filter(t => !inBand.has(t.id)).map(t => [t, '✓']), ...b.openAll.map(t => [t, '○'])];
+      if (!list.length) continue;
       out.push(`<div class="wd-lab">${esc(b.name)}</div>`);
-      [...b.tasksAll.map(t => [t, '✓']), ...b.openAll.map(t => [t, '○'])].forEach(([t, g]) => {
-        const e = state.edits[t.id] || {}, hid = !!e.hidden;
-        out.push(`<div class="rs-ed${hid ? ' off' : ''}"><span class="g" aria-hidden="true">${g}</span><input class="wd-field" aria-label="Wording on the slide" data-act="text" data-id="${esc(t.id)}" value="${esc(e.text != null ? e.text : t.label)}"${hid ? ' disabled' : ''}>
-          <button type="button" class="wd-link" data-act="hide" data-id="${esc(t.id)}">${hid ? 'Show' : 'Hide'}</button></div>`);
-      });
+      list.forEach(([t, g]) => out.push(row(t, g)));
     }
     return out.join('');
   }
@@ -403,6 +483,7 @@ export function openSlideBuilder(allTasks) {
     return `<h2 class="wd-sheet-title">Your slide</h2>
       <div class="wd-sheet-sub">${esc(m.period)}, ${m.boxes.filter(b => !b.other).length} ranked ${m.boxes.filter(b => !b.other).length === 1 ? 'project' : 'projects'}</div>
       <div class="rs-thumb" id="rs-thumb"><div>${slideHTML(m)}</div></div>
+      ${m.strategicCount ? `<button type="button" class="rs-tog" data-act="strategic" role="switch" aria-checked="${state.strategic}"><span>Highlight strategic work<small>${m.strategicCount} strategic ${m.strategicCount === 1 ? 'task' : 'tasks'} finished this period</small></span><i class="rs-sw${state.strategic ? ' on' : ''}"></i></button>` : ''}
       <div class="wd-lab">Colours <span class="opt">${esc(m.scheme)}</span></div>
       <div class="rs-sch" role="group" aria-label="Colour scheme">${SCHEMES.map((sc, i) => `<button type="button" class="rs-swatch${i === state.scheme ? ' on' : ''}" data-act="scheme" data-i="${i}" aria-pressed="${i === state.scheme}" aria-label="${esc(sc.name)}">${sc.colors.slice(0, 4).map(c => `<i style="background:${c.bg}"></i>`).join('')}</button>`).join('')}</div>
       <button type="button" class="rs-tog" data-act="auto" role="switch" aria-checked="${state.auto}"><span>New colours with every download<small>${state.auto ? `Next one: ${esc(SCHEMES[(state.scheme + 1) % SCHEMES.length].name)}` : 'Always this scheme'}</small></span><i class="rs-sw${state.auto ? ' on' : ''}"></i></button>
@@ -429,6 +510,7 @@ export function openSlideBuilder(allTasks) {
     }
     else if (act === 'group') { state.group = !state.group; render(); }
     else if (act === 'scheme') { state.scheme = +el.dataset.i; lsSet(SCHEME_KEY, String(state.scheme)); keepScroll(); }
+    else if (act === 'strategic') { state.strategic = !state.strategic; keepScroll(); }
     else if (act === 'auto') { state.auto = !state.auto; lsSet(AUTO_KEY, state.auto ? '1' : '0'); keepScroll(); }
     else if (act === 'preview') { state.step = 'preview'; render(); sheet.scrollTop = 0; }
     else if (act === 'back') { state.step = 'rank'; render(); }
