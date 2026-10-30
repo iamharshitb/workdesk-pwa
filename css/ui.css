@@ -1220,3 +1220,16 @@ html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
 .wd-filter-chips.fade-l, .rpt-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
 .wd-filter-chips.fade-l.fade-r, .rpt-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IN PROGRESS — started tasks lead the week and their glyph breathes
+   One quiet ring leaves the glyph every two seconds. It uses the glyph's own
+   colour (project hue in Light, text in Dark), so there is no new accent.
+   Off entirely for reduced motion; the half-filled shape still says "started".
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wd-g.live::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid currentColor; opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .wd-g.live::before { animation: wd-halo 2.2s var(--ease-out) infinite; }
+}
+@keyframes wd-halo { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(2); opacity: 0; } }
