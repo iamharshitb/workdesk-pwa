@@ -10,7 +10,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261030">
+<link rel="stylesheet" href="css/ui.css?v=20261030b">
 <link rel="icon" href="icons/favicon.ico" sizes="32x32 48x48">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1385,7 +1385,7 @@ function taskRowHTML(t) {
   const tapLabel = g === 'done' ? 'Reopen my part' : 'Mark my part done';
   return `<div class="wd-task ${urgencyClass(g, t)}" role="button" tabindex="0" data-id="${t.id}" style="--proj:${projHue(t.project)}"
       onclick="openTaskSheet('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTaskSheet('${t.id}')}">
-    <button type="button" class="wd-g g" aria-label="${tapLabel}: ${esc(t.label)}" onclick="event.stopPropagation();tapGlyph('${t.id}')">${glyphSVG(g)}</button>
+    <button type="button" class="wd-g g${g === 'inprog' ? ' live' : ''}" aria-label="${tapLabel}: ${esc(t.label)}" onclick="event.stopPropagation();tapGlyph('${t.id}')">${glyphSVG(g)}</button>
     <div class="tt">${starOf(t)}${esc(t.label)}</div>
     <div class="meta">${esc(metaText(t, _meName))}</div>
     <div class="due">${esc(label)}</div>
@@ -1419,9 +1419,12 @@ function renderMine() {
   const routines = open.filter(t => isRoutine(t) && t.status !== 'onhold');
   const routinesAll = mine.filter(t => isRoutine(t) && t.status !== 'onhold');   // open and finished, for the ring
   const inWeek = open.filter(t => !isRoutine(t) && sprintTaskIds.has(t.id) && t.status !== 'onhold');
+  // started tasks lead the week; the late / today counts below still include them
+  const started = inWeek.filter(t => myGlyph(t) === 'inprog').sort(byDue);
+  const notStarted = inWeek.filter(t => myGlyph(t) !== 'inprog');
   const late = inWeek.filter(t => dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) < 0).sort(byDue);
   const today = inWeek.filter(t => dayDiff(t.taskDueDate) === 0).sort(byDue);
-  const later = inWeek.filter(t => !(dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) <= 0)).sort(byDue);
+  const later = notStarted.filter(t => !(dayDiff(t.taskDueDate) != null && dayDiff(t.taskDueDate) <= 0)).sort(byDue);
   const backlog = open.filter(t => !isRoutine(t) && !sprintTaskIds.has(t.id) && t.status !== 'onhold').sort(byDue);
   routines.sort((a, b) => (PRIO_ORDER[a.priority || 'medium'] - PRIO_ORDER[b.priority || 'medium']) || String(a.label).localeCompare(String(b.label)));
   const onhold = open.filter(t => t.status === 'onhold').sort(byDue);
@@ -1453,7 +1456,8 @@ function renderMine() {
   const summary = `<div class="wd-sum"><div><div class="lab">Week slots</div><div class="num"><b>${used}</b><i>/${SPRINT_MAX}</i></div>${slots}<div class="t">${headline}</div><div class="s">${sub}</div></div>${ringHTML((used + routines.length) / (SPRINT_MAX + routinesAll.length) * 100, 46, 4, String(used + routines.length))}</div>${quick}`;
 
   // groups
-  let body = groupHTML('Late', late, 'late') + groupHTML('Today', today) + groupHTML('Later this week', later);
+  const notStartedOf = list => list.filter(t => myGlyph(t) !== 'inprog');
+  let body = groupHTML('Late', notStartedOf(late), 'late') + groupHTML('Today', notStartedOf(today)) + groupHTML('Later this week', later);
   if (!inWeek.length && !routines.length) {
     body = backlog.length
       ? `<div class="wd-empty"><b>Your week is empty</b>Open Backlog below and add the tasks you want to finish this week.</div>`
@@ -1461,7 +1465,7 @@ function renderMine() {
   }
 
   if (!inWeek.length && routines.length && backlog.length) body += `<div class="wd-empty"><b>No other tasks this week</b>Open Backlog below to add some.</div>`;
-  body = groupHTML('Routine', routines, 'routine') + body;
+  body = groupHTML('In progress', started, 'live') + groupHTML('Routine', routines, 'routine') + body;
 
   // folded lists
   const folds = [
@@ -1608,7 +1612,7 @@ function renderTeam() {
         if (dt) meta += ', done ' + esc(dayMonth(localDateStr(new Date(dt))));
       } else if (label) meta += ', ' + (lateTxt ? `<b>${esc(label)}</b>` : esc(label));
       return `<div class="wd-sub-task${e.done ? ' is-done' : ''}" style="--proj:${projHue(e.t.project)}" onclick="openTaskSheet('${e.t.id}')">
-        <span class="wd-g static">${glyphSVG(e.status)}</span>
+        <span class="wd-g static${e.status === 'inprog' ? ' live' : ''}">${glyphSVG(e.status)}</span>
         <div class="body"><div class="tt">${starOf(e.t)}${esc(e.t.label)}</div><div class="meta">${meta}</div></div>
         ${canAct && !e.done ? `<button type="button" class="wd-tick" aria-label="Mark done for ${esc(m.name)}: ${esc(e.t.label)}" onclick="event.stopPropagation();tickMember('${e.t.id}','${e.mid}','${esc(m.name).replace(/'/g, '&#39;')}')">${ICON.check}</button>` : ''}
       </div>`;
