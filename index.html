@@ -10,7 +10,7 @@
 <script>/* set the skin before first paint (js/theme.js owns the rest) */(function(){var c='theme-light';try{var m=localStorage.getItem('wd_mode')||'auto';if(m==='dark'||(m==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))c='theme-dark';}catch(e){}document.documentElement.classList.add(c);})();</script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/ui.css?v=20261030b">
+<link rel="stylesheet" href="css/ui.css?v=20261101">
 <link rel="icon" href="icons/favicon.ico" sizes="32x32 48x48">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -892,7 +892,12 @@ function initSprint() {
       sprintTaskIds = new Set(stored.ids || []);
     } else {
       sprintTaskIds = new Set();
-      if (stored) saveSprint(); // stale week from a previous session — reset it in Firestore too
+      if (stored) {
+        // stale week from a previous session: reset it in Firestore, but keep the list as "last week"
+        const patch = { sprint: { week: getWeekKey(), ids: [] } };
+        if ((stored.ids || []).length) patch.sprintPrev = { week: stored.week, ids: stored.ids };
+        saveUserData(MY_NAME, patch);
+      }
     }
     renderAll();
   };
@@ -939,7 +944,9 @@ window.toggleSprintTask = (taskId) => {
 // render already happens via renderAll() on every task change) pick up the
 // resolved data. Refreshed only when stale (see loadMemberSprintCache).
 let memberSprintCache = {};        // { [lowercaseName]: Set(taskIds) }
+let memberLastWeek = {};           // { [lowercaseName]: [taskIds] } pinned to the week that just ended
 let _memberSprintCacheLoaded = false;
+const lastWeekKey = () => weekKeyOf(new Date(Date.now() - 7 * 864e5));
 
 async function loadMemberSprintCache() {
   const wk = getWeekKey();
@@ -948,12 +955,16 @@ async function loadMemberSprintCache() {
       const data = await getUserData(m.name);
       const stored = data?.sprint;
       const ids = (stored && stored.week === wk) ? (stored.ids || []) : [];
-      return [m.name.toLowerCase(), new Set(ids)];
+      // not rolled over yet (they have not opened the app this week): their sprint IS last week's list
+      const lk = lastWeekKey(), prev = data?.sprintPrev;
+      const last = stored?.week === lk ? (stored.ids || []) : prev?.week === lk ? (prev.ids || []) : [];
+      return [m.name.toLowerCase(), new Set(ids), last];
     } catch (e) {
-      return [m.name.toLowerCase(), new Set()];
+      return [m.name.toLowerCase(), new Set(), []];
     }
   }));
-  memberSprintCache = Object.fromEntries(results);
+  memberSprintCache = Object.fromEntries(results.map(r => [r[0], r[1]]));
+  memberLastWeek = Object.fromEntries(results.map(r => [r[0], r[2]]));
   _memberSprintCacheLoaded = true;
   renderTeam(); refreshTaskSheet();
 }
@@ -1561,7 +1572,7 @@ window.switchHomeTab = (id) => {
   $('home-mine').hidden = id !== 'mine';
   $('home-team').hidden = id !== 'team';
   if (id === 'team' && !$('search-panel').hidden) toggleSearch();
-  if (id === 'team' && isAdminUser() && !_memberSprintCacheLoaded) loadMemberSprintCache();
+  if (id === 'team' && !_memberSprintCacheLoaded) loadMemberSprintCache();
   document.querySelector('.wd-title')?.classList.toggle('no-search', id === 'team');
 };
 
@@ -1581,6 +1592,13 @@ function memberTasks(m) {
 // finished work, newest first (the Team tab keeps it behind a quiet "Done" row)
 function memberDoneEntries(m) {
   return memberTasks(m).filter(e => e.done).sort((a, b) => (doneTime(b.t) - doneTime(a.t)) || byDue(b.t, a.t));
+}
+// what a person pinned to the week that just ended, with their own part's state
+function lastWeekEntries(m) {
+  const ids = memberLastWeek[m.name.toLowerCase()];
+  if (!ids || !ids.length) return [];
+  const set = new Set(ids);
+  return memberTasks(m).filter(e => set.has(e.t.id));
 }
 function memberEntries(m) {
   const out = memberTasks(m).filter(e => !e.done);
@@ -1619,9 +1637,25 @@ function renderTeam() {
     };
     const doneEntries = open ? memberDoneEntries(m) : [];
     const doneOpen = teamDoneOpen.has(m.id);
-    const doneBlock = doneEntries.length
-      ? `<button type="button" class="wd-team-done" aria-expanded="${doneOpen}" onclick="toggleTeamDone('${m.id}')"><span>Done</span><span class="n">${doneEntries.length}</span>${ICON.chevron}</button>`
-        + (doneOpen ? `<div class="wd-tasks flat">${doneEntries.map(subRow).join('')}</div>` : '')
+    const lw = open ? lastWeekEntries(m) : [];
+    const lwDone = lw.filter(e => e.done).sort((a, b) => doneTime(b.t) - doneTime(a.t));
+    const lwOpen = lw.filter(e => !e.done).sort((a, b) => byDue(a.t, b.t));
+    const list = es => `<div class="wd-tasks flat">${es.map(subRow).join('')}</div>`;
+    let doneBody = '';
+    if (doneOpen) {
+      if (!lw.length) {
+        doneBody = `<div class="wd-lw"><b>Last week</b><span>No week plan saved</span></div>` + (doneEntries.length ? list(doneEntries) : '');
+      } else {
+        const inLw = new Set(lw.map(e => e.t.id));
+        const earlier = doneEntries.filter(e => !inLw.has(e.t.id));
+        doneBody = `<div class="wd-lw"><b>Last week</b><span>${lwDone.length} of ${lw.length} done</span></div>`
+          + (lwDone.length ? list(lwDone) : '')
+          + (lwOpen.length ? `<div class="wd-lw-sub">Not finished</div>` + list(lwOpen) : '')
+          + (earlier.length ? `<div class="wd-lw-sub">Earlier</div>` + list(earlier) : '');
+      }
+    }
+    const doneBlock = doneEntries.length || lw.length
+      ? `<button type="button" class="wd-team-done" aria-expanded="${doneOpen}" onclick="toggleTeamDone('${m.id}')"><span>Done</span><span class="n">${doneEntries.length}</span>${lw.length ? `<span class="lw">${lwDone.length} of ${lw.length} last week</span>` : ''}${ICON.chevron}</button>` + doneBody
       : '';
     const subs = open ? (entries.length ? `<div class="wd-tasks flat">` + entries.map(subRow).join('') + '</div>' : '<div class="wd-empty" style="padding:6px 28px 14px">Nothing open.</div>') + doneBlock : '';
     return `<button type="button" class="wd-mem" aria-expanded="${open}" onclick="toggleTeamMember('${m.id}')">

@@ -1233,3 +1233,14 @@ html.theme-dark .bk-hist { margin-left: 20px; margin-right: 20px; }
   .wd-g.live::before { animation: wd-halo 2.2s var(--ease-out) infinite; }
 }
 @keyframes wd-halo { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(2); opacity: 0; } }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEAM — last week inside a person's Done row
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wd-team-done .lw { margin-left: auto; font-size: 13px; color: var(--text2); font-weight: 400; white-space: nowrap; }
+.wd-team-done .lw + svg { margin-left: 8px; }
+.wd-lw { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 22px 4px 66px; font-size: 14px; color: var(--text2); }
+.wd-lw b { font-weight: 600; color: var(--text); }
+.wd-lw-sub { padding: 10px 22px 2px 66px; font-size: 13px; font-weight: 600; color: var(--text2); }
+html.theme-dark .wd-lw, html.theme-dark .wd-lw-sub { padding-left: 68px; }
